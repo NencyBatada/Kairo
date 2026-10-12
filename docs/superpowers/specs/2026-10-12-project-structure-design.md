@@ -16,6 +16,7 @@ Turn the empty repository into a runnable skeleton of the three parts described 
 | Local development | Aspire AppHost, for local development only | One command starts and wires every part, with one dashboard for logs and traces |
 | Deployment script | `deploy.bat` deferred until a Google Cloud project exists | An untested deploy script gives false confidence |
 | CI | GitHub Actions running the three test suites | Not in the docs; catches boundary violations when local tests are skipped |
+| Comments | None in code: no comments, XML doc comments or docstrings | `CLAUDE.md` §3; explanations live in the README, this spec and the SAD |
 
 ## Notes on the documentation
 
@@ -42,6 +43,7 @@ Kairo/
 ├─ web/             Next.js web app
 ├─ docs/            BRD, PRD, SAD, and specs and plans under docs/superpowers/
 ├─ .github/workflows/ci.yml   build and test on every push and pull request
+├─ global.json      pins the .NET 10 SDK and makes dotnet test use Microsoft Testing Platform
 ├─ .editorconfig    indentation and charset rules for C#, TypeScript, Python and Markdown
 ├─ .gitattributes   text=auto with LF endings; CRLF for .bat and .cmd
 ├─ .gitignore       .NET, Node, Python, editor and OS artefacts
@@ -50,6 +52,8 @@ Kairo/
 
 `CLAUDE.md` and `.claude/` stay untracked, as they are today.
 
+`global.json` sits at the root rather than in `core/`. The .NET SDK looks for it starting from the current directory, and the README runs every command from the repository root.
+
 ## Core
 
 ### Solution layout
@@ -57,7 +61,6 @@ Kairo/
 ```
 core/
 ├─ Kairo.slnx
-├─ global.json                 pins the .NET 10 SDK (roll forward to the latest feature band)
 ├─ Directory.Build.props       net10.0, nullable, implicit usings, warnings as errors
 ├─ Directory.Packages.props    central package versions
 ├─ .dockerignore
@@ -69,6 +72,7 @@ core/
 │  ├─ Kairo.SharedKernel/      IModule
 │  ├─ Kairo.Contracts/         cross-module interfaces and events (empty for now)
 │  └─ Modules/
+│     ├─ Directory.Build.props gives every module the same framework and project references
 │     └─ Kairo.Modules.<Name>/ one project per module (14)
 └─ tests/
    ├─ Directory.Build.props    links the shared test helper into every test project
@@ -82,7 +86,7 @@ NuGet audit warnings stay warnings rather than errors, so a newly published advi
 
 ### Modules
 
-Each module project holds one public class implementing `IModule`; every other type in the module is `internal`. The class's XML summary records what the module owns, from SAD §3.
+Each module project holds one public class implementing `IModule`; every other type in the module is `internal`. Following `CLAUDE.md` §3, the code has no comments, including XML doc comments. The table below and SAD §3 record what each module owns.
 
 ```csharp
 namespace Kairo.SharedKernel;
@@ -144,8 +148,9 @@ Responses contain only the status word (`Healthy`, `Degraded` or `Unhealthy`), s
 
 All test projects use xUnit v3. The expected set of modules is the list of project folders under `core/src/Modules`, read by a shared helper, so adding a module folder without wiring it up fails the tests.
 
-- **`Kairo.Api.Tests`** and **`Kairo.Worker.Tests`** start the host with `WebApplicationFactory`, using placeholder connection strings, and check that:
-  - `/alive` returns 200
+- **`Kairo.Api.Tests`** and **`Kairo.Worker.Tests`** start the host with `WebApplicationFactory`. The connection strings point at a closed local port, so SQL Server and Redis are unreachable. The tests check that:
+  - `/alive` returns 200 `Healthy` even though the dependencies are down, so a database outage never makes Cloud Run restart healthy instances
+  - `/health` returns 503 with only `Unhealthy` in the body, with no exception text or connection details
   - the `IModule` instances registered in dependency injection match the module folders exactly
 - **`Kairo.ArchitectureTests`** reference SharedKernel, Contracts and every module, and use plain reflection to check that:
   - each module assembly has exactly one public type, `Kairo.Modules.<Name>.<Name>Module`, which implements `IModule`
@@ -175,7 +180,7 @@ agents/
 ```
 
 - `GET /health` returns `{"status": "ok"}`.
-- Every package contains only an `__init__.py`, whose docstring records its purpose. For agents, the docstring records the role, ADK pattern, models and tools from SAD §4.
+- Every package contains only an empty `__init__.py`. Following `CLAUDE.md` §3, there are no comments or docstrings. The table below and SAD §4 record each agent's role, ADK pattern, models and tools.
 
   | Package | SAD agent | ADK pattern |
   | --- | --- | --- |
@@ -188,8 +193,8 @@ agents/
   | `ask` | Ask Kairo | Conversational agent with tools |
 
 - When an agent is built, its package gains an `agent.py` exposing `root_agent`, following ADK's convention, so `adk web src/kairo_agents/agents` runs it in ADK's development UI.
-- Runtime dependencies are `fastapi`, `uvicorn[standard]`, `google-adk` and `google-genai`.
-- Development dependencies are `pytest`, `httpx` and `ruff`.
+- Runtime dependencies are `fastapi`, `uvicorn[standard]`, `google-adk` and `google-genai`. ADK caps the FastAPI version, so uv resolves FastAPI 0.141 rather than 0.143.
+- Development dependencies are `pytest`, `httpx2` and `ruff`. Starlette 1.7's test client deprecates `httpx` in favour of `httpx2`.
 - Ruff handles both linting and formatting.
 - `test_health.py` checks the health endpoint. `test_layout.py` checks that the seven agent packages import.
 - The Dockerfile uses `python:3.13-slim`, installs FFmpeg, installs dependencies with uv from the lock file, runs as a non-root user, and starts Uvicorn on `$PORT` (default 8080).
@@ -199,12 +204,13 @@ agents/
 ```
 web/
 ├─ package.json             scripts: dev, build, start, lint, test
-├─ next.config.ts           output: "standalone"
+├─ next.config.ts           output: "standalone", plus create-next-app's defaults
 ├─ eslint.config.mjs
-├─ postcss.config.mjs
-├─ vitest.config.ts
+├─ vitest.config.mts
+├─ vitest.setup.ts          cleans up rendered components after each test
 ├─ .dockerignore
 ├─ Dockerfile
+├─ public/robots.txt        keeps the private app out of search engines
 └─ src/
    ├─ app/                  one route per PRD §4 screen (table below)
    └─ components/           app shell, navigation menu, page placeholder
@@ -235,10 +241,21 @@ Each screen is a placeholder page showing its title and the "What it shows" text
 | `/health` | Route handler returning `{"status": "ok"}` |
 
 - `campaigns/[id]/layout.tsx` shows links to the six tabs above the tab content, so notifications can deep-link to a tab.
+  - The links come from `campaigns/[id]/_components/campaign-room-tabs.tsx`, which takes the room ID as a prop and URL-encodes it.
+  - Under Cache Components the room ID is request-time data, so the layout reads it inside `<Suspense>`.
+- create-next-app 16.4 has some new defaults, which the app keeps:
+  - `cacheComponents` and `partialPrefetching` are on.
+  - Tailwind runs through Turbopack's `@tailwindcss/turbopack` loader, so there is no PostCSS config.
+- Two dev-tool versions differ from the template:
+  - `@types/node` moves to `^24`, which Vitest 5 requires.
+  - ESLint stays on 9, because `eslint-config-next`'s plugins don't yet support ESLint 10.
 - Components used by a single area will sit next to its routes in private `_components/` folders.
 - Shared clients (core API, Google sign-in, SignalR) will go in `src/lib/`.
 - Both kinds of folder are created when the first feature needs them.
-- Tests use Vitest with Testing Library. They check that the menu lists the seven areas with the right links, and that `/health` returns 200.
+- Tests use Vitest with Testing Library. They check that:
+  - the menu lists the seven areas with the right links
+  - the campaign room links to its six tabs and encodes unusual room IDs
+  - `/health` returns 200
 - ESLint is configured as `create-next-app` sets it up.
 - The Dockerfile is a multi-stage build on Node 24 that packages the standalone output and serves it on `$PORT`.
 
@@ -293,7 +310,7 @@ The Aspire dashboard shows logs and resource health for all six resources. It sh
 
 ## Done criteria
 
-1. `dotnet build` and `dotnet test` pass in `core/`.
+1. `dotnet build core/Kairo.slnx` and `dotnet test --solution core/Kairo.slnx` pass when run from the repository root.
 2. `uv run ruff check`, `uv run ruff format --check` and `uv run pytest` pass in `agents/`.
 3. `npm run lint`, `npm test` and `npm run build` pass in `web/`.
 4. `dotnet run --project core/src/Kairo.AppHost` starts all six resources, and each reports healthy.
