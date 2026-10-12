@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Microsoft.Data.SqlClient" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kairo.ServiceDefaults\Kairo.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Kairo.SharedKernel\Kairo.SharedKernel.csproj" />
+    <ProjectReference Include="../Modules/*/Kairo.Modules.*.csproj" />
+  </ItemGroup>
+
+</Project>

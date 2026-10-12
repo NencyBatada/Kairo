@@ -1,7 +1,10 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Kairo.Api/Kairo.Api.csproj" />
     <Project Path="src/Kairo.Contracts/Kairo.Contracts.csproj" />
+    <Project Path="src/Kairo.ServiceDefaults/Kairo.ServiceDefaults.csproj" />
     <Project Path="src/Kairo.SharedKernel/Kairo.SharedKernel.csproj" />
+    <Project Path="src/Kairo.Worker/Kairo.Worker.csproj" />
   </Folder>
   <Folder Name="/src/Modules/">
     <Project Path="src/Modules/Kairo.Modules.Approvals/Kairo.Modules.Approvals.csproj" />
@@ -20,6 +23,8 @@
     <Project Path="src/Modules/Kairo.Modules.Triggers/Kairo.Modules.Triggers.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Kairo.Api.Tests/Kairo.Api.Tests.csproj" />
     <Project Path="tests/Kairo.ArchitectureTests/Kairo.ArchitectureTests.csproj" />
+    <Project Path="tests/Kairo.Worker.Tests/Kairo.Worker.Tests.csproj" />
   </Folder>
 </Solution>
