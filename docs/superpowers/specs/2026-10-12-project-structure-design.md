@@ -246,6 +246,7 @@ Each screen is a placeholder page showing its title and the "What it shows" text
 - create-next-app 16.4 has some new defaults, which the app keeps:
   - `cacheComponents` and `partialPrefetching` are on.
   - Tailwind runs through Turbopack's `@tailwindcss/turbopack` loader, so there is no PostCSS config.
+- `agentRules: false` stops `next dev` from writing an `AGENTS.md` whenever it detects an AI coding agent. This matches scaffolding with `--no-agents-md` and keeps agent instruction files out of the repository.
 - Two dev-tool versions differ from the template:
   - `@types/node` moves to `^24`, which Vitest 5 requires.
   - ESLint stays on 9, because `eslint-config-next`'s plugins don't yet support ESLint 10.
