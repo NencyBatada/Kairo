@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Kairo.Api/Kairo.Api.csproj" />
+    <Project Path="src/Kairo.AppHost/Kairo.AppHost.csproj" />
     <Project Path="src/Kairo.Contracts/Kairo.Contracts.csproj" />
     <Project Path="src/Kairo.ServiceDefaults/Kairo.ServiceDefaults.csproj" />
     <Project Path="src/Kairo.SharedKernel/Kairo.SharedKernel.csproj" />
