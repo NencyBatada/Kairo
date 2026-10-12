@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kairo.SharedKernel\Kairo.SharedKernel.csproj" />
+  </ItemGroup>
+
+</Project>

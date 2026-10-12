@@ -1,0 +1,16 @@
+namespace Kairo.Modules.Catalogue;
+
+public sealed class CatalogueModule : IModule
+{
+    public void AddServices(IServiceCollection services, IConfiguration configuration)
+    {
+    }
+
+    public void MapApi(IEndpointRouteBuilder api)
+    {
+    }
+
+    public void MapJobs(IEndpointRouteBuilder jobs)
+    {
+    }
+}

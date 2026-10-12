@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kairo.Contracts/Kairo.Contracts.csproj" />
+    <Project Path="src/Kairo.SharedKernel/Kairo.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/Kairo.Modules.Approvals/Kairo.Modules.Approvals.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Audit/Kairo.Modules.Audit.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.BrandKit/Kairo.Modules.BrandKit.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.BrandMemory/Kairo.Modules.BrandMemory.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Brands/Kairo.Modules.Brands.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.CampaignRooms/Kairo.Modules.CampaignRooms.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Care/Kairo.Modules.Care.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Catalogue/Kairo.Modules.Catalogue.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Identity/Kairo.Modules.Identity.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Launch/Kairo.Modules.Launch.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Measurement/Kairo.Modules.Measurement.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Notifications/Kairo.Modules.Notifications.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Opportunities/Kairo.Modules.Opportunities.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Triggers/Kairo.Modules.Triggers.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kairo.ArchitectureTests/Kairo.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>
