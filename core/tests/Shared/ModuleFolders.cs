@@ -2,9 +2,16 @@ namespace Kairo.Testing;
 
 internal static class ModuleFolders
 {
-    public static IReadOnlyList<string> Names { get; } = Find();
+    public static string ModulesDirectory { get; } = FindModulesDirectory();
 
-    private static string[] Find()
+    public static IReadOnlyList<string> Names { get; } = Directory.GetDirectories(ModulesDirectory, "Kairo.Modules.*")
+        .Select(path => Path.GetFileName(path))
+        .Order(StringComparer.Ordinal)
+        .ToArray();
+
+    public static string ProjectFile(string name) => Path.Combine(ModulesDirectory, name, $"{name}.csproj");
+
+    private static string FindModulesDirectory()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Kairo.slnx")))
@@ -17,9 +24,6 @@ internal static class ModuleFolders
             throw new InvalidOperationException($"No Kairo.slnx found above {AppContext.BaseDirectory}.");
         }
 
-        return Directory.GetDirectories(Path.Combine(dir.FullName, "src", "Modules"), "Kairo.Modules.*")
-            .Select(path => Path.GetFileName(path))
-            .Order(StringComparer.Ordinal)
-            .ToArray();
+        return Path.Combine(dir.FullName, "src", "Modules");
     }
 }

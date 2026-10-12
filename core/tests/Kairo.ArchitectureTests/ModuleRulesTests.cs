@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Xml.Linq;
 using Kairo.SharedKernel;
 using Kairo.Testing;
 
@@ -34,6 +35,18 @@ public sealed class ModuleRulesTests
         var references = KairoReferencesOf(Assembly.Load(assemblyName));
 
         Assert.Subset(new HashSet<string> { "Kairo.SharedKernel", "Kairo.Contracts" }, references);
+    }
+
+    [Theory]
+    [MemberData(nameof(Modules))]
+    public void Module_project_adds_no_project_references(string assemblyName)
+    {
+        var references = XDocument.Load(ModuleFolders.ProjectFile(assemblyName))
+            .Descendants()
+            .Where(element => element.Name.LocalName == "ProjectReference")
+            .Select(element => (string?)element.Attribute("Include"));
+
+        Assert.Empty(references);
     }
 
     [Fact]

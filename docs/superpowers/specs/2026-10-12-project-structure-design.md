@@ -155,6 +155,7 @@ All test projects use xUnit v3. The expected set of modules is the list of proje
 - **`Kairo.ArchitectureTests`** reference SharedKernel, Contracts and every module, and use plain reflection to check that:
   - each module assembly has exactly one public type, `Kairo.Modules.<Name>.<Name>Module`, which implements `IModule`
   - module assemblies reference no Kairo assembly except `Kairo.SharedKernel` and `Kairo.Contracts`
+  - module project files add no `ProjectReference` of their own, since the allowed references come from `src/Modules/Directory.Build.props`. This catches a cross-module reference even before any code uses it, which the compiled-reference check can't see.
   - `Kairo.Contracts` references no Kairo assembly except `Kairo.SharedKernel`, and `Kairo.SharedKernel` references no Kairo assembly
 
 ## Agent service
