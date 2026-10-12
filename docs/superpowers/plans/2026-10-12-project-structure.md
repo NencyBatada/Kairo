@@ -2191,7 +2191,7 @@ jobs:
         working-directory: agents
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.0
         with:
           version: "0.12.5"
           enable-cache: true
