@@ -242,6 +242,7 @@ Each screen is a placeholder page showing its title and the "What it shows" text
 
 - `campaigns/[id]/layout.tsx` shows links to the six tabs above the tab content, so notifications can deep-link to a tab.
   - The links come from `campaigns/[id]/_components/campaign-room-tabs.tsx`, which takes the room ID as a prop and URL-encodes it.
+  - Next.js 16.4 passes the `id` route parameter still percent-encoded. `_components/room-tabs.tsx` therefore decodes it before handing it over, falling back to the raw value if it isn't valid percent-encoding. Without this, an ID such as `a%2Fb` would be encoded twice.
   - Under Cache Components the room ID is request-time data, so the layout reads it inside `<Suspense>`.
 - create-next-app 16.4 has some new defaults, which the app keeps:
   - `cacheComponents` and `partialPrefetching` are on.

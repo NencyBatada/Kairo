@@ -1,0 +1,22 @@
+import { render, screen, within } from "@testing-library/react";
+import { expect, test } from "vitest";
+
+import { RoomTabs } from "./room-tabs";
+
+async function evidenceHref(id: string) {
+  render(await RoomTabs({ params: Promise.resolve({ id }) }));
+  const nav = screen.getByRole("navigation", { name: "Campaign room" });
+  return within(nav).getByRole("link", { name: "Evidence" }).getAttribute("href");
+}
+
+test("keeps a room id that arrives percent-encoded from the URL", async () => {
+  expect(await evidenceHref("a%2Fb%3Fc")).toBe("/campaigns/a%2Fb%3Fc/evidence");
+});
+
+test("keeps an encoded space in a room id", async () => {
+  expect(await evidenceHref("hello%20world")).toBe("/campaigns/hello%20world/evidence");
+});
+
+test("keeps a room id that is not valid percent-encoding", async () => {
+  expect(await evidenceHref("100%")).toBe("/campaigns/100%25/evidence");
+});

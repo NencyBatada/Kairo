@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { CampaignRoomTabs } from "./_components/campaign-room-tabs";
+import { RoomTabs } from "./_components/room-tabs";
 
 export default function CampaignRoomLayout({ children, params }: LayoutProps<"/campaigns/[id]">) {
   return (
@@ -11,9 +11,4 @@ export default function CampaignRoomLayout({ children, params }: LayoutProps<"/c
       {children}
     </div>
   );
-}
-
-async function RoomTabs({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  return <CampaignRoomTabs roomId={id} />;
 }
