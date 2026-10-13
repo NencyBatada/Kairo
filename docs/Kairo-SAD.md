@@ -12,7 +12,7 @@ The .NET core runs the campaign lifecycle and is the only part that can change G
 flowchart LR
     U["Marketers, approvers and admins"] -->|Google sign-in| W
     subgraph K["Kairo on Google Cloud"]
-        W["Web app<br/>Next.js on Cloud Run"] -->|HTTPS and SignalR| C["Core API and worker<br/>ASP.NET Core"]
+        W["Web app<br/>Next.js on Cloud Run"] -->|HTTPS and Server-Sent Events| C["Core API and worker<br/>ASP.NET Core"]
         C <-->|jobs and tool calls| A["Agent service<br/>Python with ADK"]
         W --> F[("Cloud Storage")]
         C --> S[("SQL Server<br/>Cloud SQL")]
@@ -41,8 +41,8 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 
 | Layer | Technology | Purpose |
 | --- | --- | --- |
-| Web app | Next.js and React in TypeScript, Tailwind CSS, shadcn/ui on Base UI, SignalR client | Screens, approvals, the Ask Kairo panel and live updates |
-| Core service | ASP.NET Core in C#, EF Core, SignalR, Google Ads API .NET client library, Google API .NET clients | Campaign lifecycle, approvals, schedules, notifications and every change to Google Ads, YouTube and Merchant Center |
+| Web app | Next.js and React in TypeScript, Tailwind CSS, shadcn/ui on Base UI, the browser's EventSource | Screens, approvals, the Ask Kairo panel and live updates |
+| Core service | ASP.NET Core in C#, EF Core, Server-Sent Events, Google Ads API .NET client library, Google API .NET clients | Campaign lifecycle, approvals, schedules, notifications and every change to Google Ads, YouTube and Merchant Center |
 | Agent service | Python, Google's Agent Development Kit (ADK), Google Gen AI SDK, FastAPI | The Sense, Plan, Create, Check, Prove and Learn agents, Ask Kairo and lift measurement |
 | Measurement | Python with TensorFlow Probability's CausalImpact (tfp-causalimpact) and the BigQuery client | Holdout matching, smallest detectable lift, lift estimates and Impact Lab |
 | Media processing | FFmpeg in the agent service container | Adding voiceover, captions and logo to generated video |
@@ -51,7 +51,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Analytics | BigQuery, BigQuery Data Transfer Service for Google Ads, GA4 export to BigQuery | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
 | Jobs and events | Cloud Scheduler, Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
-| Cache | Memorystore | SignalR backplane and short-lived caches |
+| Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
 | Email | Gmail API with a Google Workspace sender | Notification emails |
@@ -77,7 +77,7 @@ The core is one .NET codebase deployed twice: the API serves the web app and the
 | Care | Pacing checks, health checks, the stock pause log, recommendations | Watch delivery, pause and resume ads for stock, and queue recommendations |
 | Measurement | Test windows, impact reports, Impact Lab analyses | Start Prove runs when a test ends, and store results |
 | Brand Memory | Memory entries and where each was used | Save what Learn finds, serve entries to agents and honour removals |
-| Notifications | In-app notifications, email digests, preferences | Send live updates over SignalR and emails through the Gmail API |
+| Notifications | In-app notifications, email digests, preferences | Send in-app notifications as live updates and emails through the Gmail API |
 | Audit | Append-only audit log | Record every agent and user action, approval, override and automatic change |
 
 The Launch module is the PRD's Launch agent. It is deterministic code with no model in the loop.
@@ -121,7 +121,7 @@ sequenceDiagram
     A->>G: Generate assets
     A->>A: Check, fix loop
     A-->>C: Save assets, checks
-    C-->>W: Assets ready (SignalR)
+    C-->>W: Assets ready (live update)
     W->>C: Approve gates 2 and 3
     C->>C: Bind to plan hash
     C->>D: Upload video, build campaigns paused
@@ -139,6 +139,7 @@ Approvals happen in the core, which binds each one to the exact plan. Any change
 4. **Health and pacing checks.** The worker checks each campaign 24 hours after launch for ad approvals and delivery, then daily for pacing against plan, and raises alerts.
 5. **Test end and impact report.** When a test window closes, the core queues a Prove run. It reads Google Ads, sales and GA4 data from BigQuery, estimates lift against the holdout regions and drafts recommendations. Learn then saves the lessons to Brand Memory.
 6. **Ask Kairo.** The web app sends the question and the current screen to the core, which adds the user's permissions and recent turns and streams the agent's answer back. A proposed change shows as a preview, and the core applies it through the normal rules once the user confirms.
+7. **Live updates.** A change and its live event are written in one transaction: the event goes to a SQL Server outbox. Each core API instance reads new outbox rows about once a second and streams them as Server-Sent Events on `GET /api/brands/{brandId}/live` to that workspace's members, filtered by role or person. Events are signals that tell the screen to refetch. A reconnecting browser sends `Last-Event-ID` and gets what it missed, or a `reset` if that is more than a day old.
 
 ## 6. Data architecture
 
@@ -157,7 +158,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Approvals and launch | Approval, LaunchRecord, ProductAdMap | Approval holds the plan hash; ProductAdMap links products to ads for stock pauses |
 | Care and results | Recommendation, ImpactReport, ImpactLabAnalysis | Results and model diagnostics stored as JSON |
 | Memory and chat | MemoryEntry, MemoryUse, Conversation, Message | MemoryUse records which entries shaped which output |
-| Operations | Notification, AuditLog | AuditLog is append-only |
+| Operations | Notification, AuditLog, LiveOutbox | AuditLog is append-only; LiveOutbox keeps live updates for 24 hours |
 
 ### BigQuery
 
@@ -204,7 +205,7 @@ Security rests on one rule: money moves only through code that checks a person's
 | Spend safety | Only the Launch module calls Google Ads write methods. It needs a valid approval whose plan hash matches the current plan, or the stock rule, which can only pause and resume mapped ads. Every call carries an idempotency key. |
 | Service access | Cloud Run services accept only Google-signed identity tokens. The agent service accepts calls only from the core, and worker endpoints only from Cloud Scheduler, Cloud Tasks and Pub/Sub. |
 | Secrets | The OAuth client secret and API keys sit in Secret Manager. Each brand connection's refresh token is encrypted with the Cloud KMS key `connection-tokens`, which rotates every 90 days, with the brand and connection IDs as additional authenticated data. Only the API and worker service accounts can use the key. |
-| Network | Cloud SQL and Memorystore use private IPs, reached through Direct VPC egress. Public traffic enters through an HTTPS load balancer with Cloud Armor. |
+| Network | Cloud SQL uses a private IP, reached through Direct VPC egress. Public traffic enters through an HTTPS load balancer with Cloud Armor. |
 | AI safety | Untrusted text is screened by Model Armor, each agent gets only the tools it needs, outputs are checked against schemas, and no tool can spend money. |
 | Audit | An append-only audit log in SQL Server, plus Cloud Audit Logs for platform actions. |
 | Privacy | No personal customer data is stored. Sales data is held by region and day, and each brand's data sits in its own rows and datasets. |
@@ -216,11 +217,10 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | Component | Runs on | Settings |
 | --- | --- | --- |
 | Web app | Cloud Run service | At least 1 instance; public through the load balancer |
-| Core API | Cloud Run service | At least 1 instance, with session affinity for SignalR |
+| Core API | Cloud Run service | At least 1 instance; 60-minute request timeout for live update streams |
 | Core worker | Cloud Run service | Scales to zero; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
 | Agent service | Cloud Run service | Internal access only; long request timeout for video jobs |
 | Database | Cloud SQL for SQL Server | Express edition for the prototype; Standard with high availability in production; automated backups and point-in-time recovery |
-| Cache | Memorystore | Small instance on a private IP |
 | Queues | Cloud Tasks | Separate queues for agent runs, Google Ads changes and notifications, each with its own rate limit |
 
 - **Region.** The app and its data run in asia-south1 (Mumbai), close to Indian brands. Gemini calls can use the global endpoint, while Veo and Imagen run in the nearest region that offers them.
@@ -263,7 +263,7 @@ Each BRD target maps to a specific design choice.
 | AD-6 Analytics store | BigQuery | Reporting from SQL Server | Built-in Google Ads and GA4 transfers, and time-series analysis at scale |
 | AD-7 Campaign build | Create everything paused, then turn it on together | Create live, item by item | A failed launch never leaves half a campaign spending |
 | AD-8 Stock pauses | Rule-based code | A model's judgement | Predictable, testable and auditable |
-| AD-9 Live updates | SignalR with Memorystore | Polling; Firestore listeners | Native to .NET, with no second database |
+| AD-9 Live updates | Server-Sent Events fed by a SQL Server outbox | SignalR with a Memorystore backplane; Firestore listeners | Events commit with the change they describe, the worker publishes the same way as the API, several API instances need no backplane, and plain HTTP passes through the development project's web proxy and the load balancer |
 | AD-10 Model use | Prompting, structured output, grounding and evaluation | Fine-tuning models | No training data needed; the Brand Kit and Brand Memory carry each brand's style |
 
 ## 13. Risks and open questions

@@ -104,7 +104,7 @@ This section is what Nency's **Live status** task builds against.
 
 - **Opening the stream.** Open `new EventSource("/api/brands/{brandId}/live")` from the browser. The session cookie goes with it, because the stream is on the same origin. No `X-Kairo-Request` header is needed, because it is a GET.
 - **Listening.** Listen with `addEventListener(type, …)` for each type above. `data` is JSON.
-- **On an event.** Refetch the affected data through the normal API, or call `router.refresh()` for server-rendered screens. Don't render from the payload alone.
+- **On an event.** Refetch the affected data through the normal API, or call `router.refresh()` for server-rendered screens. Don't render from the payload alone. The same event can arrive twice, and an event can arrive with a lower ID than the one before it, so handle every event as "something changed, refetch".
 - **On `reset`.** Refetch everything the screen shows.
 - **Errors and reconnects.**
   - `EventSource` reconnects on its own after a dropped connection or the 15-minute limit.
