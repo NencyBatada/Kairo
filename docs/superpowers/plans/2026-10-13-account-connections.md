@@ -66,7 +66,12 @@
 - **Running tests.**
   - One class: `dotnet test --project core/tests/Kairo.IntegrationTests --filter-class "<namespace>.<Class>"`
   - Whole core: `dotnet test --solution core/Kairo.slnx`
-  - `OpenApiDocumentTests` fails from Task 2 until Task 6 regenerates the document. Until Task 6, run each task's own test classes.
+  - Every task ends with the whole core suite passing. A task that adds or changes endpoints (Tasks 2 to 5) therefore finishes by regenerating the API contract, then stages `core/src/Kairo.Api/openapi.json` and `web/src/lib/core-api/schema.ts` in its own commit:
+    ```bash
+    KAIRO_UPDATE_OPENAPI=1 dotnet test --project core/tests/Kairo.IntegrationTests --filter-class "Kairo.IntegrationTests.Api.OpenApiDocumentTests"
+    npm --prefix web run generate:api
+    ```
+    Task 6 then adds the permission matrix and confirms the contract needs no further change.
 
 ## Review Focus
 
@@ -3144,8 +3149,8 @@ npm --prefix web run build
 
 Expected:
 - The second `dotnet test` passes.
-- `git diff --stat` shows only `core/src/Kairo.Api/openapi.json` and `web/src/lib/core-api/schema.ts` changed.
-- The diff adds `/api/brands/{brandId}/connections`, its `{product}` routes and `/api/connections/callback/google`.
+- `git diff --stat` shows no change to `core/src/Kairo.Api/openapi.json` or `web/src/lib/core-api/schema.ts`, because Tasks 2 to 5 regenerated them as they went. If anything changed, the earlier task missed a regeneration; commit the change here.
+- The committed document has `/api/brands/{brandId}/connections`, its `{product}` routes and `/api/connections/callback/google`.
 - The web lint, tests and build pass.
 
 - [ ] **Step 4: Run the whole core suite**
