@@ -41,7 +41,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 
 | Layer | Technology | Purpose |
 | --- | --- | --- |
-| Web app | Next.js and React in TypeScript, Tailwind CSS, Identity Platform client SDK, SignalR client | Screens, approvals, the Ask Kairo panel and live updates |
+| Web app | Next.js and React in TypeScript, Tailwind CSS, SignalR client | Screens, approvals, the Ask Kairo panel and live updates |
 | Core service | ASP.NET Core in C#, EF Core, SignalR, Google Ads API .NET client library, Google API .NET clients | Campaign lifecycle, approvals, schedules, notifications and every change to Google Ads, YouTube and Merchant Center |
 | Agent service | Python, Google's Agent Development Kit (ADK), Google Gen AI SDK, FastAPI | The Sense, Plan, Create, Check, Prove and Learn agents, Ask Kairo and lift measurement |
 | Measurement | Python with TensorFlow Probability's CausalImpact (tfp-causalimpact) and the BigQuery client | Holdout matching, smallest detectable lift, lift estimates and Impact Lab |
@@ -52,7 +52,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
 | Jobs and events | Cloud Scheduler, Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Cache | Memorystore | SignalR backplane and short-lived caches |
-| Identity and secrets | Identity Platform (Google sign-in), Secret Manager, Cloud KMS | User sign-in, API keys and the developer token, and encrypted OAuth tokens |
+| Identity and secrets | Google OAuth 2.0 client (Google sign-in), Secret Manager, Cloud KMS | User sign-in, API keys and the developer token, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
 | Email | Gmail API with a Google Workspace sender | Notification emails |
 | Hosting | Cloud Run | Web app, core API, core worker and agent service |
@@ -148,7 +148,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 
 | Area | Main tables | Notes |
 | --- | --- | --- |
-| Access | Brand, User, Membership, ApproverAssignment, Connection | OAuth tokens encrypted with Cloud KMS |
+| Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; OAuth tokens encrypted with Cloud KMS |
 | Brand | BrandKitVersion, BrandRule, BrandFile, BestAd | Kit content stored as JSON; one approved version at a time |
 | Catalogue | Product, StockEvent, FeedImport | Current stock on Product; full history in BigQuery |
 | Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
@@ -199,7 +199,7 @@ Security rests on one rule: money moves only through code that checks a person's
 
 | Area | Design |
 | --- | --- |
-| Sign-in | Identity Platform with Google sign-in. The web app sends the ID token with each request, and the core validates it. |
+| Sign-in | Google sign-in through the core's own OAuth client, using OpenID Connect. The core keeps each session in SQL Server behind an httpOnly cookie, and the web app's server code passes that cookie on when it calls the core. |
 | Roles | Admin, marketer and approver roles per brand, enforced by ASP.NET Core authorization policies. SQL Server row-level security keeps brands apart. |
 | Spend safety | Only the Launch module calls Google Ads write methods. It needs a valid approval whose plan hash matches the current plan, or the stock rule, which can only pause and resume mapped ads. Every call carries an idempotency key. |
 | Service access | Cloud Run services accept only Google-signed identity tokens. The agent service accepts calls only from the core, and worker endpoints only from Cloud Scheduler, Cloud Tasks and Pub/Sub. |
