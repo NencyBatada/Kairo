@@ -146,7 +146,7 @@ The full range is for continuous scales such as heatmaps and maps. For discrete 
 
 | Family | Role | Loaded as |
 | --- | --- | --- |
-| Instrument Serif | Display only: page titles, headline figures, empty-state titles, card display titles | `next/font/google`, weight 400, normal and italic |
+| Instrument Serif | Display only: page titles, headline figures, empty-state titles, card display titles | `next/font/google`, weight 400, upright only. Load the italic when a screen first uses it. |
 | Geist | Everything else: headings, body, labels, buttons, tables, forms | `next/font/google`, variable |
 | Geist Mono | IDs and machine values, such as Google Ads IDs | `next/font/google` |
 
@@ -175,6 +175,7 @@ When Hindi content appears in previews, add Noto Sans Devanagari to the sans sta
 - **One `h1` per page**: the serif page title. Then `h2` for sections and `h3` for cards, in order.
 - **Tabular numerals** (`tabular-nums`) for any column, stat or money that must line up. Hero figures may stay proportional.
 - **Line length** for reading text is at most 70 characters (`max-w-prose`).
+- **Line breaks.** Headings balance their lines (`text-wrap: balance`) and paragraphs avoid a lone word on the last line (`text-wrap: pretty`). Both are set once in the base layer of `globals.css`; a display line that isn't a heading, such as the sign-in headline, adds `text-balance`.
 - **Inputs use 16px text on phones** so iOS doesn't zoom, and 14px from `sm` up.
 
 ## 5. Layout

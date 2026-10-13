@@ -15,7 +15,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
       <div className="relative hidden flex-col overflow-hidden border-r border-border bg-sidebar p-10 lg:flex xl:p-14">
         <Logo />
         <div className="mt-auto max-w-xl">
-          <p className="font-display text-display-xl text-foreground">From rising demand to proven lift.</p>
+          <p className="font-display text-display-xl text-balance text-foreground">From rising demand to proven lift.</p>
           <p className="mt-4 max-w-prose text-base text-muted-foreground">
             Kairo finds rising demand, drafts on-brand Google Ads campaigns and measures the extra sales they cause. People approve every
             step.
