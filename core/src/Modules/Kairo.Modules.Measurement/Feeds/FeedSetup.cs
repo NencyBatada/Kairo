@@ -15,6 +15,7 @@ internal static class FeedSetup
         services.AddSingleton<Ga4Reports>();
         services.AddScoped<IFeed, GoogleAdsFeed>();
         services.AddScoped<IFeed, Ga4Feed>();
+        services.AddScoped<IFeed, SalesTableFeed>();
         services.AddScoped<BrandFeeds>();
         services.AddScoped<FeedRunner>();
     }
