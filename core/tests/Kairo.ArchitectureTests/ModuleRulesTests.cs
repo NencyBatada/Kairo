@@ -1,7 +1,11 @@
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Kairo.SharedKernel;
+using Kairo.SharedKernel.Persistence;
 using Kairo.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace Kairo.ArchitectureTests;
 
@@ -47,6 +51,27 @@ public sealed class ModuleRulesTests
             .Select(element => (string?)element.Attribute("Include"));
 
         Assert.Empty(references);
+    }
+
+    [Theory]
+    [MemberData(nameof(Modules))]
+    public void Module_tables_live_in_the_module_schema(string assemblyName)
+    {
+        var assembly = Assembly.Load(assemblyName);
+        var schema = Regex.Replace(assemblyName["Kairo.Modules.".Length..], "(?<!^)([A-Z])", "_$1").ToLowerInvariant();
+        var contextTypes = assembly.GetTypes().Where(type => type.IsSubclassOf(typeof(ModuleDbContext)) && !type.IsAbstract);
+
+        foreach (var contextType in contextTypes)
+        {
+            var factoryInterface = typeof(IDesignTimeDbContextFactory<>).MakeGenericType(contextType);
+            var factoryType = Assert.Single(assembly.GetTypes(), type => type.GetInterfaces().Contains(factoryInterface));
+            var factory = Activator.CreateInstance(factoryType)!;
+            using var context = (DbContext)factoryInterface
+                .GetMethod(nameof(IDesignTimeDbContextFactory<DbContext>.CreateDbContext))!
+                .Invoke(factory, [Array.Empty<string>()])!;
+
+            Assert.All(context.Model.GetEntityTypes(), entityType => Assert.Equal(schema, entityType.GetSchema()));
+        }
     }
 
     [Fact]
