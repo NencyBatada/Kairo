@@ -9,8 +9,8 @@ const tabs = [
   { segment: "results", label: "Results" },
 ];
 
-export function CampaignRoomTabs({ roomId }: { roomId: string }) {
-  const base = `/campaigns/${encodeURIComponent(roomId)}`;
+export function CampaignRoomTabs({ workspace, roomId }: { workspace: string; roomId: string }) {
+  const base = `/${workspace}/campaigns/${encodeURIComponent(roomId)}`;
 
   return (
     <nav aria-label="Campaign room">
