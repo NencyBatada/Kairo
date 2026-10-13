@@ -1,5 +1,6 @@
 using Kairo.Contracts.Notifications;
 using Kairo.Modules.Notifications.Data;
+using Kairo.Modules.Notifications.EmailSettings;
 using Kairo.Modules.Notifications.Inbox;
 using Kairo.Modules.Notifications.Publishing;
 
@@ -17,6 +18,7 @@ public sealed class NotificationsModule : IModule
     public void MapApi(IEndpointRouteBuilder api)
     {
         api.MapInbox();
+        api.MapEmailSettings();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)

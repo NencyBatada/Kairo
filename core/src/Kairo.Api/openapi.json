@@ -978,6 +978,82 @@
         }
       }
     },
+    "/api/brands/{brandId}/notifications/email-settings": {
+      "get": {
+        "tags": [
+          "EmailSettingsEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettings"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "EmailSettingsEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveEmailSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/live": {
       "get": {
         "tags": [
@@ -1378,6 +1454,62 @@
           }
         }
       },
+      "EmailSetting": {
+        "required": [
+          "kind",
+          "name",
+          "description",
+          "email",
+          "canTurnOff"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "email": {
+            "type": "boolean"
+          },
+          "canTurnOff": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EmailSettingChange": {
+        "required": [
+          "kind",
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "email": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EmailSettings": {
+        "required": [
+          "kinds"
+        ],
+        "type": "object",
+        "properties": {
+          "kinds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailSetting"
+            }
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -1747,6 +1879,23 @@
           }
         }
       },
+      "SaveEmailSettingsRequest": {
+        "required": [
+          "kinds"
+        ],
+        "type": "object",
+        "properties": {
+          "kinds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/EmailSettingChange"
+            }
+          }
+        }
+      },
       "SseItemOfstring": {
         "type": "object",
         "properties": {
@@ -1889,6 +2038,9 @@
     },
     {
       "name": "InboxEndpoints"
+    },
+    {
+      "name": "EmailSettingsEndpoints"
     },
     {
       "name": "LiveEndpoints"

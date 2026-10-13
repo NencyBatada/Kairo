@@ -1071,6 +1071,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/notifications/email-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EmailSettings"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveEmailSettingsRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["EmailSettings"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/live": {
         parameters: {
             query?: never;
@@ -1208,6 +1276,20 @@ export interface components {
             timeZone: string;
             currency: string;
         };
+        EmailSetting: {
+            kind: string;
+            name: string;
+            description: string;
+            email: boolean;
+            canTurnOff: boolean;
+        };
+        EmailSettingChange: {
+            kind: string;
+            email: boolean;
+        };
+        EmailSettings: {
+            kinds: components["schemas"]["EmailSetting"][];
+        };
         HttpValidationProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -1282,6 +1364,9 @@ export interface components {
             launchApprovers: string[];
             budgetOwners: string[];
             budgetLimit: null | number | string;
+        };
+        SaveEmailSettingsRequest: {
+            kinds: null | components["schemas"]["EmailSettingChange"][];
         };
         SseItemOfstring: {
             data?: null | string;
