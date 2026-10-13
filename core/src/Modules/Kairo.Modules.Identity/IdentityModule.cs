@@ -26,6 +26,7 @@ public sealed class IdentityModule : IModule
     public void MapApi(IEndpointRouteBuilder api)
     {
         api.MapSignIn();
+        api.MapMembers();
         api.MapInvitations();
         api.MapApprovalSettings();
     }
