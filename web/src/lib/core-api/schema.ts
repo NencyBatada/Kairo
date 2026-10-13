@@ -1110,6 +1110,7 @@ export interface components {
         ProductAccount: {
             id: string;
             name: string;
+            managerId?: null | string;
         };
         SaveApprovalSettingsRequest: {
             briefApprovers: string[];

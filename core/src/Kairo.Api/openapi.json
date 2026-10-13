@@ -1472,6 +1472,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "managerId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
