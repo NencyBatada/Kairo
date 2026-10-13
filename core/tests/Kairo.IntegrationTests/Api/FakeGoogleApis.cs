@@ -14,6 +14,7 @@ public sealed record IssuedCode(string Code, string RefreshToken, string Subject
 public sealed class FakeGoogleApis : HttpMessageHandler
 {
     public const string ClientSecret = "kairo-test-secret";
+    public const string ServiceToken = "kairo-service-account-token";
 
     private readonly ConcurrentDictionary<string, PendingCode> _codes = new();
     private readonly ConcurrentDictionary<string, string> _refreshTokens = new();
@@ -22,6 +23,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public ConcurrentQueue<string> Requests { get; } = new();
 
     public ConcurrentQueue<string> Revoked { get; } = new();
+
+    public FakeBigQuery BigQuery { get; } = new();
 
     public bool RevocationFails { get; set; }
 
@@ -70,9 +73,15 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         }
 
         Requests.Enqueue($"{request.Method} {uri.Host}{uri.AbsolutePath}");
-        if (request.Headers.Authorization?.Parameter is not { } accessToken || !_accessTokens.ContainsKey(accessToken))
+        if (request.Headers.Authorization?.Parameter is not { } accessToken
+            || (accessToken != ServiceToken && !_accessTokens.ContainsKey(accessToken)))
         {
             return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        }
+
+        if (uri.Host == "bigquery.googleapis.com" && BigQuery.Handle(request, body, accessToken) is { } answer)
+        {
+            return answer;
         }
 
         var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;

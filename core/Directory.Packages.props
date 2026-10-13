@@ -35,6 +35,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Google">
+    <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageVersion Include="Google.Cloud.Kms.V1" Version="3.27.0" />
   </ItemGroup>
 

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
+using Kairo.Modules.Measurement.Feeds;
 using Kairo.SharedKernel.Http;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
@@ -27,6 +28,8 @@ public sealed class KairoApiFactory(
     public FakeGoogle Google { get; } = new();
 
     public FakeGoogleApis GoogleApis { get; } = new();
+
+    public string? AnalyticsProject { get; init; } = FakeBigQuery.KairoProject;
 
     public HttpClient CreateBrowser(bool withRequestHeader = true)
     {
@@ -76,17 +79,25 @@ public sealed class KairoApiFactory(
         builder.UseSetting("Authentication:Google:ClientSecret", FakeGoogleApis.ClientSecret);
         builder.UseSetting("Kairo:PublicOrigin", PublicOrigin);
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
+        if (AnalyticsProject is not null)
+        {
+            builder.UseSetting("Kairo:Analytics:Project", AnalyticsProject);
+        }
+
         builder.UseSetting("Kairo:Notifications:DeliveryLoop", "off");
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
         {
             builder.UseSetting(key, value);
         }
+
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Clock);
             services.PostConfigureAll<OpenIdConnectOptions>(Google.Configure);
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-gmail").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddSingleton<IServiceAccessToken, FakeServiceToken>();
             configureServices?.Invoke(services);
         });
     }

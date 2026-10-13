@@ -1,4 +1,5 @@
 using Kairo.Modules.Measurement.Data;
+using Kairo.Modules.Measurement.Feeds;
 
 namespace Kairo.Modules.Measurement;
 
@@ -8,6 +9,7 @@ public sealed class MeasurementModule : IModule
     {
         services.AddDbContext<MeasurementDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, MeasurementDbContext.SchemaName));
+        services.AddFeeds();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
