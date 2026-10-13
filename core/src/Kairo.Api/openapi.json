@@ -868,6 +868,90 @@
         }
       }
     },
+    "/api/brands/{brandId}/analytics/sales/uploads": {
+      "post": {
+        "tags": [
+          "SalesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "$ref": "#/components/schemas/IFormFile"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesUploadView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "SalesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesUploadView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/notifications": {
       "get": {
         "tags": [
@@ -1557,6 +1641,10 @@
           }
         }
       },
+      "IFormFile": {
+        "type": "string",
+        "format": "binary"
+      },
       "InviteRequest": {
         "required": [
           "email",
@@ -1830,6 +1918,60 @@
           }
         }
       },
+      "SalesUploadView": {
+        "required": [
+          "id",
+          "fileName",
+          "rows",
+          "firstDate",
+          "lastDate",
+          "days",
+          "uploadedBy",
+          "uploadedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "rows": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "firstDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "lastDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "uploadedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "SaveApprovalSettingsRequest": {
         "required": [
           "briefApprovers",
@@ -2035,6 +2177,9 @@
     },
     {
       "name": "AccountEndpoints"
+    },
+    {
+      "name": "SalesEndpoints"
     },
     {
       "name": "InboxEndpoints"
