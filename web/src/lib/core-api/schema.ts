@@ -1027,6 +1027,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/analytics/sales/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalesSourceView"];
+                    };
+                };
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SalesSourceRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SalesSourceView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/notifications": {
         parameters: {
             query?: never;
@@ -1428,6 +1520,29 @@ export interface components {
             id: string;
             name: string;
             managerId?: null | string;
+        };
+        SalesColumns: {
+            date: string;
+            region: string;
+            orders: string;
+            revenue: string;
+        };
+        SalesColumnsRequest: {
+            date: null | string;
+            region: null | string;
+            orders: null | string;
+            revenue: null | string;
+        };
+        SalesSourceRequest: {
+            table: null | string;
+            columns: null | components["schemas"]["SalesColumnsRequest"];
+        };
+        SalesSourceView: {
+            table: string;
+            columns: components["schemas"]["SalesColumns"];
+            location: string;
+            setBy: string;
+            setAt: string;
         };
         SalesUploadView: {
             id: string;

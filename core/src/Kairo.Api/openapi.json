@@ -952,6 +952,105 @@
         }
       }
     },
+    "/api/brands/{brandId}/analytics/sales/source": {
+      "get": {
+        "tags": [
+          "SalesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesSourceView"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SalesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesSourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesSourceView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SalesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/notifications": {
       "get": {
         "tags": [
@@ -1915,6 +2014,118 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "SalesColumns": {
+        "required": [
+          "date",
+          "region",
+          "orders",
+          "revenue"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          },
+          "orders": {
+            "type": "string"
+          },
+          "revenue": {
+            "type": "string"
+          }
+        }
+      },
+      "SalesColumnsRequest": {
+        "required": [
+          "date",
+          "region",
+          "orders",
+          "revenue"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "region": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orders": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "revenue": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "SalesSourceRequest": {
+        "required": [
+          "table",
+          "columns"
+        ],
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "columns": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SalesColumnsRequest"
+              }
+            ]
+          }
+        }
+      },
+      "SalesSourceView": {
+        "required": [
+          "table",
+          "columns",
+          "location",
+          "setBy",
+          "setAt"
+        ],
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string"
+          },
+          "columns": {
+            "$ref": "#/components/schemas/SalesColumns"
+          },
+          "location": {
+            "type": "string"
+          },
+          "setBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
