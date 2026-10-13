@@ -68,6 +68,21 @@ public sealed class ConnectionReleaseTests(SqlServer sqlServer) : IAsyncDisposab
         Assert.Equal("connected", (await Connections.GetAsync(other.Browser, elsewhere, "youtube")).GetProperty("state").GetString());
     }
 
+    [Fact]
+    public async Task Removing_an_admin_works_when_their_token_cannot_be_decrypted()
+    {
+        var (owner, other, brandId) = await TwoAdminsAsync();
+        await Connections.ConnectAsync(_api, other.Browser, brandId, "google-ads");
+        await Connections.SetKeyVersionAsync(sqlServer.KairoConnectionString, brandId, "google-ads", "projects/elsewhere/cryptoKeyVersions/1");
+
+        (await owner.Browser.DeleteAsync($"/api/brands/{brandId}/members/{other.UserId}", Token)).EnsureSuccessStatusCode();
+
+        var connection = await Connections.GetAsync(owner.Browser, brandId, "google-ads");
+        Assert.Equal("needsReconnect", connection.GetProperty("state").GetString());
+        Assert.Equal("admin_left", connection.GetProperty("reconnectReason").GetString());
+        Assert.Null(await Connections.StoredTokenAsync(sqlServer.KairoConnectionString, brandId, "google-ads"));
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private async Task<(Member Owner, Member Other, Guid BrandId)> TwoAdminsAsync()

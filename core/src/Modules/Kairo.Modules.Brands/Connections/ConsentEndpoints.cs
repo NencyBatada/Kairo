@@ -94,7 +94,7 @@ internal static class ConsentEndpoints
         {
             var connection = await ConnectionLifecycle.FindAsync(db, product.Product, cancellationToken);
             var before = connection is null ? null : ConnectionLifecycle.Snapshot(connection);
-            if (connection is not null && await tokens.OpenAsync(connection, cancellationToken) is { } oldToken)
+            if (connection is not null && await tokens.OpenForRevocationAsync(connection, cancellationToken) is { } oldToken)
             {
                 replaced = (connection.GoogleSubject, oldToken);
             }

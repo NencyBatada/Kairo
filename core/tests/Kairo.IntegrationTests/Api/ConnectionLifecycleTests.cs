@@ -125,6 +125,19 @@ public sealed class ConnectionLifecycleTests(SqlServer sqlServer) : IAsyncDispos
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Disconnecting_works_when_the_token_cannot_be_decrypted()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Connections.ConnectAsync(_api, admin, brandId, "google-ads");
+        await Connections.SetKeyVersionAsync(sqlServer.KairoConnectionString, brandId, "google-ads", "projects/elsewhere/cryptoKeyVersions/1");
+
+        var response = await admin.DeleteAsync($"/api/brands/{brandId}/connections/google-ads", Token);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Equal("notConnected", (await Connections.GetAsync(admin, brandId, "google-ads")).GetProperty("state").GetString());
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private async Task<(HttpClient Admin, Guid BrandId)> WorkspaceAsync()

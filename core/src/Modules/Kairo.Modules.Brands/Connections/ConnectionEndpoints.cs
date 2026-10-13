@@ -76,7 +76,7 @@ internal static class ConnectionEndpoints
             return TypedResults.NoContent();
         }
 
-        var refreshToken = await tokens.OpenAsync(connection, cancellationToken);
+        var refreshToken = await tokens.OpenForRevocationAsync(connection, cancellationToken);
         var before = ConnectionLifecycle.Snapshot(connection);
         db.Connections.Remove(connection);
         cache.Forget(connection.Id);

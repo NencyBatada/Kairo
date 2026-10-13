@@ -42,7 +42,7 @@ internal sealed class BrandConnections(
         var revoke = new List<(string Subject, string Token)>();
         foreach (var connection in theirs)
         {
-            if (await tokens.OpenAsync(connection, cancellationToken) is { } refreshToken)
+            if (await tokens.OpenForRevocationAsync(connection, cancellationToken) is { } refreshToken)
             {
                 revoke.Add((connection.GoogleSubject, refreshToken));
             }
