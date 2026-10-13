@@ -36,11 +36,19 @@ if (!string.IsNullOrWhiteSpace(mailSender) && !string.IsNullOrWhiteSpace(mailSen
         .WithEnvironment("Kairo__Notifications__SenderRefreshToken", mailSenderRefreshToken);
 }
 
-builder.AddProject<Projects.Kairo_Worker>("worker")
+var worker = builder.AddProject<Projects.Kairo_Worker>("worker")
     .WithReference(sql).WaitFor(sql)
     .WithReference(agents)
     .WaitForCompletion(migrator)
+    .WithEnvironment("Authentication__Google__ClientId", googleClientId)
+    .WithEnvironment("Authentication__Google__ClientSecret", googleClientSecret)
     .WithHttpHealthCheck("/health");
+
+if (builder.Configuration["Parameters:analytics-project"] is { Length: > 0 } analyticsProject)
+{
+    api.WithEnvironment("Kairo__Analytics__Project", analyticsProject);
+    worker.WithEnvironment("Kairo__Analytics__Project", analyticsProject);
+}
 
 var web = builder.AddNextJsApp("web", "../../../web")
     .WithEnvironment("KAIRO_API_URL", api.GetEndpoint("http"))

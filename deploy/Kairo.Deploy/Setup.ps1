@@ -3,9 +3,9 @@ $script:Apis = @(
     'artifactregistry.googleapis.com', 'cloudbuild.googleapis.com', 'secretmanager.googleapis.com',
     'iam.googleapis.com', 'storage.googleapis.com', 'cloudkms.googleapis.com',
     'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
-    'bigquery.googleapis.com', 'gmail.googleapis.com'
+    'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com'
 )
-$script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build')
+$script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
 $script:MailRedirectUri = 'http://localhost:8765/'
 $script:GmailSendScope = 'https://www.googleapis.com/auth/gmail.send'
@@ -186,7 +186,15 @@ function Initialize-KairoServiceAccounts {
         Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $script:SqlSecret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $name)") + $accessor + $scope)
     }
     foreach ($secret in $script:GoogleSecrets.Values) {
-        Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $secret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-api')") + $accessor + $scope)
+        foreach ($name in 'kairo-api', 'kairo-worker') {
+            Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $secret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $name)") + $accessor + $scope)
+        }
+    }
+
+    foreach ($name in 'kairo-api', 'kairo-worker') {
+        foreach ($role in 'roles/bigquery.dataOwner', 'roles/bigquery.jobUser') {
+            Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $name)", '--role', $role, '--condition', 'None')
+        }
     }
     Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $script:MailSecret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-api')") + $accessor + $scope)
 

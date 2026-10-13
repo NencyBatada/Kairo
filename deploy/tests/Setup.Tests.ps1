@@ -32,7 +32,7 @@ Describe 'Initialize-KairoProject' {
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
-                'bigquery.googleapis.com gmail.googleapis.com --project kairo-test')
+                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {
@@ -71,8 +71,8 @@ Describe 'Initialize-KairoProject' {
             $calls | Should -Contain 'secrets create mail-sender-refresh-token --replication-policy automatic --project kairo-test'
         }
 
-        It 'creates one service account per service' {
-            foreach ($name in 'kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build') {
+        It 'creates one service account per service, and one for Cloud Scheduler' {
+            foreach ($name in 'kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler') {
                 $calls | Should -Contain "iam service-accounts create $name --project kairo-test"
             }
         }
@@ -82,9 +82,12 @@ Describe 'Initialize-KairoProject' {
                 $calls | Should -Contain "secrets add-iam-policy-binding kairo-sql-connection --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/secretmanager.secretAccessor --project kairo-test"
             }
             foreach ($secret in 'google-client-id', 'google-client-secret') {
-                $calls | Should -Contain "secrets add-iam-policy-binding $secret --member serviceAccount:kairo-api@kairo-test.iam.gserviceaccount.com --role roles/secretmanager.secretAccessor --project kairo-test"
+                foreach ($name in 'kairo-api', 'kairo-worker') {
+                    $calls | Should -Contain "secrets add-iam-policy-binding $secret --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/secretmanager.secretAccessor --project kairo-test"
+                }
             }
             ($calls | Where-Object { $_ -like 'secrets add-iam-policy-binding google-*kairo-web@*' }) | Should -BeNullOrEmpty
+            ($calls | Where-Object { $_ -like 'secrets add-iam-policy-binding *kairo-scheduler@*' }) | Should -BeNullOrEmpty
         }
 
         It 'lets only the API read the sender mailbox token' {
@@ -114,6 +117,15 @@ Describe 'Initialize-KairoProject' {
                 $calls | Should -Contain "kms keys add-iam-policy-binding connection-tokens --keyring kairo --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/cloudkms.cryptoKeyEncrypterDecrypter --location asia-south1 --project kairo-test"
             }
             ($calls | Where-Object { $_ -like 'kms keys add-iam-policy-binding*kairo-web@*' }) | Should -BeNullOrEmpty
+        }
+
+        It 'lets the API and the worker write brand datasets and run BigQuery jobs' {
+            foreach ($name in 'kairo-api', 'kairo-worker') {
+                foreach ($role in 'roles/bigquery.dataOwner', 'roles/bigquery.jobUser') {
+                    $calls | Should -Contain "projects add-iam-policy-binding kairo-test --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role $role --condition None"
+                }
+            }
+            ($calls | Where-Object { $_ -like 'projects add-iam-policy-binding*bigquery*kairo-web@*' -or $_ -like 'projects add-iam-policy-binding*kairo-web@*bigquery*' }) | Should -BeNullOrEmpty
         }
     }
 

@@ -12,15 +12,18 @@ Describe 'Invoke-KairoDeploy' {
     BeforeEach {
         $script:calls = [System.Collections.Generic.List[string]]::new()
         $script:googleConfigured = $true
+        $script:scheduleExists = $false
         Mock -ModuleName Kairo.Deploy Assert-KairoCleanTree { }
         Mock -ModuleName Kairo.Deploy Get-KairoCommit { 'abc123def456' }
         Mock -ModuleName Kairo.Deploy Invoke-KairoTests { $script:calls.Add('tests') }
         Mock -ModuleName Kairo.Deploy Get-KairoProjectNumber { '123' }
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $script:googleConfigured }
+        Mock -ModuleName Kairo.Deploy Test-Gcloud { $script:scheduleExists }
         Mock -ModuleName Kairo.Deploy Invoke-Gcloud {
             $line = $ArgumentList -join ' '
             $script:calls.Add($line)
             if ($line -like 'run services describe kairo-api *') { 'https://kairo-api-abc123-el.a.run.app' }
+            if ($line -like 'run services describe kairo-worker *') { 'https://kairo-worker-abc123-el.a.run.app' }
         }
     }
 
@@ -106,18 +109,53 @@ Describe 'Invoke-KairoDeploy' {
 
         Invoke-KairoDeploy -Environment $environment -Root $root 3>$null | Out-Null
 
-        $api = $calls | Where-Object { $_ -like 'run deploy kairo-api *' }
-        $api | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest'
-        $api | Should -Not -BeLike '*google-client*'
+        foreach ($service in 'kairo-api', 'kairo-worker') {
+            $deploy = $calls | Where-Object { $_ -like "run deploy $service *" }
+            $deploy | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest'
+            $deploy | Should -Not -BeLike '*google-client*'
+        }
     }
 
-    It 'deploys the worker privately with the database' {
+    It 'deploys the worker privately with the database, the Google client and an hour to finish a run' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
         $worker = $calls | Where-Object { $_ -like 'run deploy kairo-worker *' }
         $worker | Should -BeLike '*--no-allow-unauthenticated*'
         $worker | Should -BeLike '*--network kairo --subnet kairo-run --vpc-egress private-ranges-only*'
-        $worker | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest*'
+        $worker | Should -BeLike '*--timeout 3600*'
+        $worker | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest,Authentication__Google__ClientId=google-client-id:latest,Authentication__Google__ClientSecret=google-client-secret:latest*'
+    }
+
+    It 'tells the API and the worker where brand datasets live' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        foreach ($service in 'kairo-api', 'kairo-worker') {
+            ($calls | Where-Object { $_ -like "run deploy $service *" }) |
+                Should -BeLike '*Kairo__Analytics__Project=kairo-test,Kairo__Analytics__Location=asia-south1*'
+        }
+    }
+
+    It 'creates the nightly analytics job when it is missing' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        Should -Invoke -ModuleName Kairo.Deploy Test-Gcloud -ParameterFilter {
+            ($ArgumentList -join ' ') -eq 'scheduler jobs describe kairo-analytics-daily --location asia-south1 --project kairo-test'
+        }
+        $calls | Should -Contain ('scheduler jobs create http kairo-analytics-daily --schedule 0 5 * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/analytics/daily --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
+    It 'updates the nightly analytics job when it already exists' {
+        $script:scheduleExists = $true
+
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'scheduler jobs create *' }) | Should -BeNullOrEmpty
+        ($calls | Where-Object { $_ -like 'scheduler jobs update http kairo-analytics-daily *' }) |
+            Should -BeLike '*--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com*'
     }
 
     It 'tells the API and the worker which key encrypts connection tokens' {
@@ -235,10 +273,11 @@ Describe 'Invoke-KairoDeploy' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
         $grants = $calls | Where-Object { $_ -like 'run services add-iam-policy-binding*' }
-        $grants | Should -HaveCount 3
+        $grants | Should -HaveCount 4
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-api --region asia-south1 --project kairo-test --member serviceAccount:kairo-web@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-agents --region asia-south1 --project kairo-test --member serviceAccount:kairo-api@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-agents --region asia-south1 --project kairo-test --member serviceAccount:kairo-worker@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
+        $grants | Should -Contain 'run services add-iam-policy-binding kairo-worker --region asia-south1 --project kairo-test --member serviceAccount:kairo-scheduler@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
     }
 
     It 'returns the service addresses' {

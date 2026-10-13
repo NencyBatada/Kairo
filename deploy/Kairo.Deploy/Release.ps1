@@ -28,7 +28,8 @@ function Invoke-KairoDeploy {
 
     $sqlSecret = "ConnectionStrings__kairo=$($script:SqlSecret):latest"
     $keyName = Get-KairoTokenKeyName -Environment $Environment
-    $apiSecrets = @($sqlSecret)
+    $analytics = "Kairo__Analytics__Project=$($Environment.Project),Kairo__Analytics__Location=$($Environment.Region)"
+    $serviceSecrets = @($sqlSecret)
     $googleConfigured = $true
     foreach ($secret in $script:GoogleSecrets.Values) {
         if (-not (Test-KairoSecretHasValue -Environment $Environment -Name $secret)) {
@@ -37,10 +38,11 @@ function Invoke-KairoDeploy {
     }
     if ($googleConfigured) {
         foreach ($entry in $script:GoogleSecrets.GetEnumerator()) {
-            $apiSecrets += "$($entry.Key)=$($entry.Value):latest"
+            $serviceSecrets += "$($entry.Key)=$($entry.Value):latest"
         }
     }
-    $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName"
+    $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName,$analytics"
+    $apiSecrets = @($serviceSecrets)
     $mailSender = "$($Environment.MailSender)".Trim()
     $mailConfigured = $googleConfigured -and $mailSender -and (Test-KairoSecretHasValue -Environment $Environment -Name $script:MailSecret)
     if ($mailConfigured) {
@@ -66,7 +68,11 @@ function Invoke-KairoDeploy {
     $apiAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-api'
 
     Publish-KairoService -Environment $Environment -Service 'kairo-worker' -Image (Get-KairoImage -Environment $Environment -Name 'worker' -Tag $tag) `
-        -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @("--set-env-vars=Kairo__Kms__KeyName=$keyName", "--set-secrets=$sqlSecret"))
+        -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
+            '--timeout', '3600',
+            "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics",
+            "--set-secrets=$($serviceSecrets -join ',')"
+        ))
 
     Publish-KairoService -Environment $Environment -Service 'kairo-web' -Image (Get-KairoImage -Environment $Environment -Name 'web' -Tag $tag) `
         -Settings @(
@@ -80,6 +86,8 @@ function Invoke-KairoDeploy {
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-api' -Caller 'kairo-web'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-agents' -Caller 'kairo-api'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-agents' -Caller 'kairo-worker'
+    Grant-KairoInvoker -Environment $Environment -Service 'kairo-worker' -Caller 'kairo-scheduler'
+    Publish-KairoSchedule -Environment $Environment -WorkerUrl (Get-KairoServiceAudience -Environment $Environment -Service 'kairo-worker')
 
     Write-Host ''
     Write-Host "Kairo $tag is live in $($Environment.Name) at $($urls['kairo-web'])"
@@ -208,4 +216,30 @@ function Grant-KairoInvoker {
         '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $Caller)",
         '--role', 'roles/run.invoker'
     )
+}
+
+function Publish-KairoSchedule {
+    param(
+        [Parameter(Mandatory)][hashtable]$Environment,
+        [Parameter(Mandatory)][string]$WorkerUrl
+    )
+
+    $scope = @('--location', $Environment.Region, '--project', $Environment.Project)
+    $verb = 'create'
+    if (Test-Gcloud -ArgumentList (@('scheduler', 'jobs', 'describe', $script:AnalyticsJob) + $scope)) {
+        $verb = 'update'
+    }
+
+    Write-Host "Scheduling $script:AnalyticsJob"
+    Invoke-Gcloud -ArgumentList (@(
+            'scheduler', 'jobs', $verb, 'http', $script:AnalyticsJob,
+            '--schedule', '0 5 * * *',
+            '--time-zone', 'Asia/Kolkata',
+            '--uri', "$WorkerUrl/jobs/analytics/daily",
+            '--http-method', 'POST',
+            '--oidc-service-account-email', (Get-KairoServiceAccount -Environment $Environment -Name 'kairo-scheduler'),
+            '--oidc-token-audience', $WorkerUrl,
+            '--attempt-deadline', '1800s',
+            '--max-retry-attempts', '0'
+        ) + $scope)
 }
