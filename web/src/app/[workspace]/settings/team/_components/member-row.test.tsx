@@ -75,3 +75,18 @@ test("keeps long names and emails whole in a title", () => {
   expect(screen.getByText(long.name).getAttribute("title")).toBe(long.name);
   expect(screen.getByText(long.email).getAttribute("title")).toBe(long.email);
 });
+
+test("blocks a second removal while the first is still running", async () => {
+  let finish: (state: FormState) => void = () => {};
+  const remove = vi.fn(() => new Promise<FormState>((resolve) => (finish = resolve)));
+  render(<MemberRow member={priya} isSelf={false} canManage remove={remove} changeRoles={vi.fn()} />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+  const dialog = await screen.findByRole("alertdialog", { name: "Remove Priya Shah?" });
+  fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+
+  await waitFor(() => expect(screen.getByRole("button", { name: "Remove" }).matches(":disabled")).toBe(true));
+  finish({ status: "saved", message: "Removed." });
+  await waitFor(() => expect(screen.getByRole("button", { name: "Remove" }).matches(":disabled")).toBe(false));
+});

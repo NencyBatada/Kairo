@@ -21,7 +21,7 @@ type MemberRowProps = {
 
 export function MemberRow({ member, isSelf, canManage, changeRoles, remove }: MemberRowProps) {
   const [rolesState, rolesAction, savingRoles] = useActionState(changeRoles, idle);
-  const [removeState, removeAction] = useActionState(remove, idle);
+  const [removeState, removeAction, removing] = useActionState(remove, idle);
 
   return (
     <li className="flex flex-col gap-3 px-4 py-4 md:px-5">
@@ -57,7 +57,7 @@ export function MemberRow({ member, isSelf, canManage, changeRoles, remove }: Me
         {(canManage || isSelf) && (
           <ConfirmDialog
             trigger={
-              <Button variant="destructive" size="sm" className="self-start lg:self-auto">
+              <Button variant="destructive" size="sm" pending={removing} className="self-start lg:self-auto">
                 {isSelf ? "Leave workspace" : "Remove"}
               </Button>
             }
