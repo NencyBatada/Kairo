@@ -1,4 +1,5 @@
 using Kairo.Contracts.Identity;
+using Kairo.Modules.Identity.Approvals;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Invitations;
 using Kairo.Modules.Identity.Members;
@@ -26,6 +27,7 @@ public sealed class IdentityModule : IModule
     {
         api.MapSignIn();
         api.MapInvitations();
+        api.MapApprovalSettings();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
