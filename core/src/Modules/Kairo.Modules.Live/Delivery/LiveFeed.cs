@@ -85,10 +85,11 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
             try
             {
                 await PollAsync(stopping);
-                if (time.GetUtcNow() - lastCleanup >= LiveTimings.CleanupInterval)
+                var now = time.GetUtcNow();
+                if (now - lastCleanup >= LiveTimings.CleanupInterval)
                 {
                     await CleanUpAsync(stopping);
-                    lastCleanup = time.GetUtcNow();
+                    lastCleanup = now;
                 }
             }
             catch (OperationCanceledException) when (stopping.IsCancellationRequested)
