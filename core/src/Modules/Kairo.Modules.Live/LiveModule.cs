@@ -14,6 +14,7 @@ public sealed class LiveModule : IModule
         services.AddScoped<ILiveUpdates, LiveUpdates>();
         services.AddSingleton<LiveFeed>();
         services.AddScoped<LiveStream>();
+        services.AddScoped<OutboxCleanup>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)

@@ -79,11 +79,17 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
 
     private async Task RunAsync(CancellationToken stopping)
     {
+        var lastCleanup = DateTimeOffset.MinValue;
         while (!stopping.IsCancellationRequested)
         {
             try
             {
                 await PollAsync(stopping);
+                if (time.GetUtcNow() - lastCleanup >= LiveTimings.CleanupInterval)
+                {
+                    await CleanUpAsync(stopping);
+                    lastCleanup = time.GetUtcNow();
+                }
             }
             catch (OperationCanceledException) when (stopping.IsCancellationRequested)
             {
@@ -91,7 +97,7 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
             }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Reading live updates failed.");
+                logger.LogWarning(exception, "Reading or cleaning up live updates failed.");
             }
 
             try
@@ -132,5 +138,11 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
                 subscription.Offer(row);
             }
         }
+    }
+
+    private async Task CleanUpAsync(CancellationToken cancellationToken)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<OutboxCleanup>().RunAsync(cancellationToken);
     }
 }
