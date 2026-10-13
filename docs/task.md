@@ -24,7 +24,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 - [x] **Sign-in check**: The core checks each user's Google sign-in on every request.
 - [x] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit.
 - [x] **Account connections**: Connects Google Ads, YouTube, Merchant Center, GA4 and BigQuery with the brand's consent, and keeps access tokens encrypted.
-- [/] **Live updates**: Pushes agent progress and status changes to the web app as they happen.
+- [x] **Live updates**: Pushes agent progress and status changes to the web app as they happen.
 - [ ] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports.
 - [x] **Audit log**: Records every user and agent action, approval, override and automatic change.
 - [ ] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
