@@ -39,7 +39,7 @@ export function ApprovalsForm({ action, settings, approvers, canEdit }: Approval
       <fieldset disabled={!canEdit || pending} className="flex min-w-0 flex-col gap-6">
         <div className="grid gap-4 md:grid-cols-2">
           {duties.map((duty) => (
-            <Card key={duty.field}>
+            <Card key={duty.field} className="min-w-0">
               <fieldset className="min-w-0 px-4 md:px-5">
                 <legend className="text-base font-semibold text-foreground">{duty.label}</legend>
                 <p className="mt-1 text-small text-subtle-foreground">{duty.help}</p>
