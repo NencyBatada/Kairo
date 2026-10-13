@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 type WithClassName<T> = Omit<T, "className"> & { className?: string };
 
 const itemClassName =
-  "relative flex min-h-9 cursor-default items-center gap-2.5 rounded-md px-2.5 text-sm text-foreground outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-accent pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-subtle-foreground";
+  "relative flex min-h-9 cursor-default items-center gap-2.5 rounded-md px-2.5 text-sm text-foreground outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-accent data-highlighted:shadow-[inset_3px_0_0_var(--color-primary)] pointer-coarse:min-h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-subtle-foreground";
 
 function DropdownMenu(props: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root {...props} />;
