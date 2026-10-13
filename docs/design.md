@@ -431,7 +431,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 
 | Piece | Location |
 | --- | --- |
-| Tokens (light in `:root`, dark in the `prefers-color-scheme: dark` block, mapped to Tailwind with `@theme inline`), and the `data-open`, `data-closed` and other state variants the components use | `web/src/app/globals.css` |
+| Tokens (light in `:root`, dark in the `prefers-color-scheme: dark` block, mapped to Tailwind with `@theme`), and the `no-scrollbar` utility. Base UI's `data-open`, `data-closed` and other state attributes need no custom variants: Tailwind matches `data-*` attributes natively. | `web/src/app/globals.css` |
 | Fonts | `web/src/app/layout.tsx` |
 | Primitives | `web/src/components/ui/` |
 | Composites | `web/src/components/` |
@@ -453,6 +453,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 - No `dark:` overrides where a token already handles both themes.
 - `font-display` only for the display sizes.
 - Shared components go in `src/components/`, and components used by one area go in that area's `_components/` folder.
+- Third-party marks, such as the Google G on the sign-in button, keep their official colours.
 
 **Changing the system.**
 

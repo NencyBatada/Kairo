@@ -41,7 +41,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 
 | Layer | Technology | Purpose |
 | --- | --- | --- |
-| Web app | Next.js and React in TypeScript, Tailwind CSS, SignalR client | Screens, approvals, the Ask Kairo panel and live updates |
+| Web app | Next.js and React in TypeScript, Tailwind CSS, shadcn/ui on Base UI, SignalR client | Screens, approvals, the Ask Kairo panel and live updates |
 | Core service | ASP.NET Core in C#, EF Core, SignalR, Google Ads API .NET client library, Google API .NET clients | Campaign lifecycle, approvals, schedules, notifications and every change to Google Ads, YouTube and Merchant Center |
 | Agent service | Python, Google's Agent Development Kit (ADK), Google Gen AI SDK, FastAPI | The Sense, Plan, Create, Check, Prove and Learn agents, Ask Kairo and lift measurement |
 | Measurement | Python with TensorFlow Probability's CausalImpact (tfp-causalimpact) and the BigQuery client | Holdout matching, smallest detectable lift, lift estimates and Impact Lab |

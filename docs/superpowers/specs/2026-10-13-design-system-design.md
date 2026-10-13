@@ -93,6 +93,7 @@ Every colour pair was computed, not judged by eye. Text is at least 4.5:1 and co
 | Remove, Leave and Revoke confirm in a dialog instead of `window.confirm` | `member-row.test.tsx` and `pending-invitations.test.tsx` confirm through the dialog |
 | The menu and Settings tabs mark the current page with `aria-current` | New tests |
 | Welcome gains Sign out | New test |
+| The sign-in link reads "Continue with Google" | `sign-in-panel.test.tsx` uses the new name |
 
 Every other existing test keeps its assertions, because the forms keep their native controls, labels and accessible names. A test may gain a mock of the current path where a component starts reading it.
 
@@ -102,8 +103,8 @@ Every other existing test keeps its assertions, because the forms keep their nat
 | --- | --- |
 | Tokens and fonts | `web/src/app/globals.css`, `web/src/app/layout.tsx`, `web/src/app/theme.test.ts` (new) |
 | shadcn setup | `web/components.json`, `web/src/lib/utils.ts` |
-| Primitives | `web/src/components/ui/`: button, input, native-select, checkbox, choice-chip, field, card, badge, alert, avatar, table, dropdown-menu, sheet, alert-dialog, skeleton, separator |
-| Composites | `web/src/components/`: logo, app-shell, nav-menu, workspace-switcher, user-menu, page-header, link-tabs, empty-state, form-status, field-error, role-checkboxes, sign-out-button. `page-placeholder` is replaced by `empty-state`. |
+| Primitives | `web/src/components/ui/`: button, input, native-select, checkbox, choice-chip, label, field, card, badge, alert, avatar, table, dropdown-menu, sheet, alert-dialog, skeleton |
+| Composites | `web/src/components/`: logo, app-shell, mobile-nav, skeletons, nav-menu, workspace-switcher, user-menu, user-avatar, page-header, link-tabs, empty-state, site-header, confirm-dialog, not-found-state, error-state, form-status, field-error, role-checkboxes, sign-out-button. `page-placeholder` is removed. |
 | Screens | Every page and `_components` folder under `web/src/app/`, plus `not-found.tsx`, `error.tsx` and loading fallbacks |
 | Docs | `docs/design.md` (new), `web/README.md` (links to it), `docs/Kairo-SAD.md` §2 (web app row) |
 

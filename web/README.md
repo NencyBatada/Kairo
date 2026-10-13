@@ -2,6 +2,8 @@
 
 The Next.js app marketers, approvers and admins use. It talks only to the core API.
 
+**Design.** Every screen follows [the design system](../docs/design.md). Primitives live in `src/components/ui/` (shadcn/ui on Base UI, restyled to the tokens), and Kairo's own composites, such as the shell, page header and empty state, live in `src/components/`. Forms use native controls, and Base UI is used only for menus, sheets and dialogs.
+
 Run it on its own with `npm run dev`, with `KAIRO_API_URL` set to the core's address. Or start the whole stack as described in the [root README](../README.md) and open http://localhost:8000.
 
 **Routes and components.**
