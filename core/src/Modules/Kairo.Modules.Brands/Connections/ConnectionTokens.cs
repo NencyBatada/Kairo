@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Data;
 using Microsoft.Extensions.Logging;
 
@@ -19,6 +20,7 @@ internal sealed class ConnectionTokens(
     GoogleOAuth oauth,
     AccessTokenCache cache,
     IAuditLog audit,
+    ILiveUpdates live,
     IServiceScopeFactory scopes,
     ILogger<ConnectionTokens> logger)
 {
@@ -101,6 +103,7 @@ internal sealed class ConnectionTokens(
         await audit.RecordAsync(
             new AuditRecord("connection.needs_reconnect", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
             cancellationToken);
+        await live.PublishAsync(ConnectionEvents.Changed(connection.Product), cancellationToken);
     }
 
     private async Task LoseOnItsOwnAsync(Connection connection, string reason, CancellationToken cancellationToken)

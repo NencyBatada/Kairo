@@ -1,5 +1,6 @@
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Connections.Accounts;
 using Kairo.Modules.Brands.Data;
 
@@ -51,6 +52,7 @@ internal static class AccountEndpoints
         ConnectionTokens tokens,
         ProductCatalog catalog,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -109,6 +111,7 @@ internal static class AccountEndpoints
         await audit.RecordAsync(
             new AuditRecord("connection.account_chosen", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
             cancellationToken);
+        await live.PublishAsync(ConnectionEvents.Changed(info.Product), cancellationToken);
         return TypedResults.Ok(ConnectionView.Of(info, connection, now));
     }
 

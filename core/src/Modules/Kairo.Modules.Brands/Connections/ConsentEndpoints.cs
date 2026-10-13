@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Data;
 using Microsoft.Data.SqlClient;
 
@@ -37,6 +38,7 @@ internal static class ConsentEndpoints
         ConnectionTokens tokens,
         GoogleRevocations revocations,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         HttpRequest request,
         CancellationToken cancellationToken)
@@ -121,6 +123,7 @@ internal static class ConsentEndpoints
             await audit.RecordAsync(
                 new AuditRecord("connection.connected", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
                 cancellationToken);
+            await live.PublishAsync(ConnectionEvents.Changed(product.Product), cancellationToken);
             await database.CommitAsync(cancellationToken);
         }
         catch

@@ -95,8 +95,9 @@ public sealed record LiveEvent(string Type, object Payload, LiveAudience Audienc
 | `team.changed` | A member's roles change, a member is removed or leaves, or an invitation is accepted | Everyone | `{ userId, removed }` |
 | `invitations.changed` | An invitation is sent, revoked, accepted or declined | Admins | `{}` |
 | `approval_settings.changed` | Duties or the budget limit change | Everyone | `{}` |
+| `connection.changed` | A product is consented to, gets its account chosen, is disconnected, or needs a reconnect (token rejected or unreadable, or its admin left) | Everyone | `{ product }` |
 
-**Connections.** The Account connections task is being built in parallel and will publish `connection.changed`. Whichever of the two branches merges second wires that event up.
+**Connections.** Account connections merged first, so this branch publishes `connection.changed` from the Brands module.
 
 ## Contract for the web app
 

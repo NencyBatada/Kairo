@@ -1,5 +1,6 @@
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Connections.Accounts;
 using Kairo.Modules.Brands.Data;
 
@@ -67,6 +68,7 @@ internal static class ConnectionEndpoints
         AccessTokenCache cache,
         GoogleRevocations revocations,
         IAuditLog audit,
+        ILiveUpdates live,
         CancellationToken cancellationToken)
     {
         if (Products.FindBySlug(product) is not { } info)
@@ -85,6 +87,7 @@ internal static class ConnectionEndpoints
         cache.Forget(connection.Id);
         await db.SaveChangesAsync(cancellationToken);
         await audit.RecordAsync(new AuditRecord("connection.disconnected", "connection", connection.Id.ToString(), before), cancellationToken);
+        await live.PublishAsync(ConnectionEvents.Changed(info.Product), cancellationToken);
         if (refreshToken is not null)
         {
             await revocations.RevokeIfUnusedAsync(connection.GoogleSubject, refreshToken, cancellationToken);
