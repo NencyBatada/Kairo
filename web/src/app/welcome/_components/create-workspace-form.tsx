@@ -33,6 +33,7 @@ export function CreateWorkspaceForm({ action, timeZones, currencies }: CreateWor
         <Label htmlFor="handle">Handle</Label>
         <FieldDescription id="handle-help">
           3 to 40 lowercase letters, digits and single hyphens, starting with a letter. It appears in your workspace&apos;s web address, like /acme.
+          You can&apos;t change it later.
         </FieldDescription>
         <Input
           id="handle"
@@ -61,13 +62,14 @@ export function CreateWorkspaceForm({ action, timeZones, currencies }: CreateWor
         </Field>
         <Field>
           <Label htmlFor="currency">Currency</Label>
-          <NativeSelect id="currency" name="currency" defaultValue="INR" aria-describedby="currency-error">
+          <NativeSelect id="currency" name="currency" defaultValue="INR" aria-describedby="currency-help currency-error">
             {currencies.map((currency) => (
               <option key={currency} value={currency}>
                 {currency}
               </option>
             ))}
           </NativeSelect>
+          <FieldDescription id="currency-help">Budgets and reports use it. You can&apos;t change it later.</FieldDescription>
           <FieldError id="currency-error" errors={errors.currency} />
         </Field>
       </div>

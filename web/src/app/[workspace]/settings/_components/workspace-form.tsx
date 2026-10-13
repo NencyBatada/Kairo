@@ -59,12 +59,15 @@ export function WorkspaceForm({ action, workspace, timeZones, canEdit }: Workspa
               <FieldError id="timeZone-error" errors={errors.timeZone} />
             </Field>
           </fieldset>
-          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-2 text-sm">
-            <dt className="text-subtle-foreground">Handle</dt>
-            <dd className="font-mono text-small break-all text-foreground">{workspace.handle}</dd>
-            <dt className="text-subtle-foreground">Currency</dt>
-            <dd className="text-foreground">{workspace.currency}</dd>
-          </dl>
+          <div className="flex flex-col gap-2 rounded-md bg-muted px-4 py-3">
+            <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-8 gap-y-2 text-sm">
+              <dt className="text-subtle-foreground">Handle</dt>
+              <dd className="font-mono text-small break-all text-foreground">{workspace.handle}</dd>
+              <dt className="text-subtle-foreground">Currency</dt>
+              <dd className="text-foreground">{workspace.currency}</dd>
+            </dl>
+            <p className="text-small text-subtle-foreground">The handle and currency can&apos;t be changed after a workspace is created.</p>
+          </div>
         </CardContent>
         {canEdit && (
           <CardFooter>

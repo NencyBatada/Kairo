@@ -310,9 +310,11 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 
 - One column, with labels above controls. Two-column rows are fine from `md` for short related fields, such as time zone and currency.
 - Mark optional fields with "(optional)". Don't use asterisks.
-- Help text goes under the label. Errors go under the control, in plain words, linked with `aria-describedby`.
+- Help text goes under the label. Errors go under the control, in plain words, linked with `aria-describedby`. In a two-column row, help text goes under the control too, so the two controls stay level.
+- A choice that can't be undone says so before it's made: its help text ends "You can't change it later."
 - The main action is the last thing in the form, aligned left. On phones it spans the full width.
 - Fields an admin can't edit show their value with a note explaining why, rather than a silently disabled form.
+- Values nobody can change, such as a workspace's handle and currency, sit on a `muted` panel after the fields, with one line saying so.
 
 ### 9.2 Empty, loading and error states
 

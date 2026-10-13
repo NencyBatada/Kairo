@@ -31,6 +31,20 @@ test("shows field errors from the core next to their fields", async () => {
   expect(await screen.findByText("That handle is taken.")).toBeTruthy();
 });
 
+function description(element: HTMLElement) {
+  return (element.getAttribute("aria-describedby") ?? "")
+    .split(" ")
+    .map((id) => document.getElementById(id)?.textContent ?? "")
+    .join(" ");
+}
+
+test("warns that the handle and currency can't be changed later", () => {
+  render(<CreateWorkspaceForm action={vi.fn()} timeZones={["Asia/Kolkata"]} currencies={["INR"]} />);
+
+  expect(description(screen.getByLabelText("Handle"))).toContain("You can't change it later.");
+  expect(description(screen.getByLabelText("Currency"))).toContain("You can't change it later.");
+});
+
 test("starts on India's time zone when every zone is offered", () => {
   render(<CreateWorkspaceForm action={vi.fn()} timeZones={timeZoneOptions()} currencies={["INR"]} />);
 
