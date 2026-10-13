@@ -15,27 +15,27 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Both
 
-- [ ] **Project setup**: One repository with the web app, core service and agent service, plus the first agreed contract for sign-in and settings.
+- [x] **Project setup**: One repository with the web app, core service and agent service, plus the first agreed contract for sign-in and settings.
 - [ ] **Demo brand**: A sample footwear brand with products, stock, sales history and a Google Ads test account, used to build and demo every feature.
 
 ### Talha (core and agents)
 
 - [ ] **Deployment script**: deploy.bat runs the tests and deploys every service to the chosen project (development, staging or production), applying database migrations first.
-- [ ] **Sign-in check**: The core checks each user's Google sign-in on every request.
-- [ ] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit.
+- [/] **Sign-in check**: The core checks each user's Google sign-in on every request. *Built and tested against a fake Google. Blocked: needs the real Google OAuth client in the kairo2 project for the browser check.*
+- [x] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit.
 - [ ] **Account connections**: Connects Google Ads, YouTube, Merchant Center, GA4 and BigQuery with the brand's consent, and keeps access tokens encrypted.
 - [ ] **Live updates**: Pushes agent progress and status changes to the web app as they happen.
 - [ ] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports.
-- [ ] **Audit log**: Records every user and agent action, approval, override and automatic change.
+- [x] **Audit log**: Records every user and agent action, approval, override and automatic change.
 - [ ] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
 
 ### Nency (web app)
 
-- [ ] **Sign-in and app layout**: The Google sign-in screen, the Today home, a left-hand menu for the seven areas and the Ask Kairo side panel.
-- [ ] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit.
+- [/] **Sign-in and app layout**: The Google sign-in screen, the Today home, a left-hand menu for the seven areas and the Ask Kairo side panel. *Done: sign-in screen, workspace switcher, left-hand menu. Left: Today home content, Ask Kairo panel.*
+- [/] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit. *Done: invite users, assign roles, choose approvers, budget limit. Left: connect accounts.*
 - [ ] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh.
 - [ ] **Notifications**: The in-app notification list with links to where to act, email settings per user, and the email templates.
-- [ ] **Audit log screen**: Lists every recorded action, with filters and export.
+- [/] **Audit log screen**: Lists every recorded action, with filters and export. *Done: the list. Left: filters and export.*
 - [ ] **Phone-friendly approvals**: Approval screens work in a phone browser.
 
 ## 2. Brand Kit and catalogue
