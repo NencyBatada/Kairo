@@ -1,0 +1,34 @@
+steps:
+  - id: api
+    name: gcr.io/cloud-builders/docker
+    args: [build, -f, core/src/Kairo.Api/Dockerfile, -t, "${_REGISTRY}/api:${_TAG}", core]
+    waitFor: ["-"]
+  - id: worker
+    name: gcr.io/cloud-builders/docker
+    args: [build, -f, core/src/Kairo.Worker/Dockerfile, -t, "${_REGISTRY}/worker:${_TAG}", core]
+    waitFor: ["-"]
+  - id: migrator
+    name: gcr.io/cloud-builders/docker
+    args: [build, -f, core/src/Kairo.Migrator/Dockerfile, -t, "${_REGISTRY}/migrator:${_TAG}", core]
+    waitFor: ["-"]
+  - id: agents
+    name: gcr.io/cloud-builders/docker
+    args: [build, -t, "${_REGISTRY}/agents:${_TAG}", agents]
+    waitFor: ["-"]
+  - id: web
+    name: gcr.io/cloud-builders/docker
+    args: [build, -t, "${_REGISTRY}/web:${_TAG}", web]
+    waitFor: ["-"]
+images:
+  - "${_REGISTRY}/api:${_TAG}"
+  - "${_REGISTRY}/worker:${_TAG}"
+  - "${_REGISTRY}/migrator:${_TAG}"
+  - "${_REGISTRY}/agents:${_TAG}"
+  - "${_REGISTRY}/web:${_TAG}"
+substitutions:
+  _REGISTRY: ""
+  _TAG: ""
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+timeout: 3600s
