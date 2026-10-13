@@ -11,7 +11,7 @@ export function ErrorState({ retry }: { retry: () => void }) {
       as="h1"
       icon={TriangleAlert}
       title="Something went wrong"
-      description="Kairo couldn't load this page. Your work is saved. Try again, and if it keeps happening, tell your admin."
+      description="Kairo couldn't load this page. Try again, and if it keeps happening, tell your admin."
     >
       <Button onClick={() => retry()}>
         <RotateCcw aria-hidden="true" />

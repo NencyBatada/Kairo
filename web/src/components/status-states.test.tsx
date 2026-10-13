@@ -16,6 +16,7 @@ test("the error state retries when asked", () => {
   render(<ErrorState retry={retry} />);
 
   expect(screen.getByRole("heading", { level: 1, name: "Something went wrong" })).toBeTruthy();
+  expect(screen.getByText("Kairo couldn't load this page. Try again, and if it keeps happening, tell your admin.")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
   expect(retry).toHaveBeenCalledOnce();
