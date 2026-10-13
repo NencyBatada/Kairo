@@ -1,3 +1,5 @@
+using Kairo.Modules.Brands.Connections.Accounts;
+
 namespace Kairo.Modules.Brands.Connections;
 
 internal static class ConnectionSetup
@@ -8,6 +10,13 @@ internal static class ConnectionSetup
         services.AddSingleton<ConsentStates>();
         services.AddSingleton<GoogleOAuth>();
         services.AddSingleton<ITokenCipher, DataProtectionTokenCipher>();
+        services.AddSingleton<AccessTokenCache>();
+        services.AddSingleton<IProductAccounts, GoogleAdsAccounts>();
+        services.AddSingleton<IProductAccounts, YouTubeAccounts>();
+        services.AddSingleton<IProductAccounts, MerchantCenterAccounts>();
+        services.AddSingleton<IProductAccounts, Ga4Accounts>();
+        services.AddSingleton<IProductAccounts, BigQueryAccounts>();
+        services.AddSingleton<ProductCatalog>();
         services.AddScoped<ConnectionTokens>();
         services.AddScoped<GoogleRevocations>();
     }
@@ -21,5 +30,7 @@ internal static class ConnectionSetup
 
         var product = connections.MapGroup("/{product}").RequireBrandRole(BrandRoles.Admin);
         product.MapGet("/connect", ConsentEndpoints.Connect);
+        product.MapGet("/accounts", AccountEndpoints.ListAsync);
+        product.MapPost("/account", AccountEndpoints.ChooseAsync);
     }
 }

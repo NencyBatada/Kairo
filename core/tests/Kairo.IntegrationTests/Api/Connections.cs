@@ -65,4 +65,23 @@ internal static class Connections
         command.Parameters.AddWithValue("@product", StoredProducts[product]);
         return await command.ExecuteScalarAsync() as byte[];
     }
+
+    public static string DefaultAccount(string product) => product switch
+    {
+        "google-ads" => "1111111111",
+        "youtube" => "UC-acme",
+        "merchant-center" => "555",
+        "ga4" => "777",
+        "bigquery" => "acme-data",
+        _ => throw new ArgumentOutOfRangeException(nameof(product), product, null),
+    };
+
+    public static async Task<IssuedCode> ConnectAsync(KairoApiFactory api, HttpClient admin, Guid brandId, string product, string? subject = null)
+    {
+        var callback = await CompleteAsync(api, admin, await StartAsync(admin, brandId, product), subject);
+        Assert.Contains($"choose={product}", callback.Location);
+        var chosen = await admin.PostAsJsonAsync($"/api/brands/{brandId}/connections/{product}/account", new { externalId = DefaultAccount(product) });
+        Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
+        return callback.Issued;
+    }
 }
