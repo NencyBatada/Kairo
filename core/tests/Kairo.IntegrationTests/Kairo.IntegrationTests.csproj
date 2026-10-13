@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <PackageReference Include="Testcontainers.MsSql" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
   </ItemGroup>
 
   <ItemGroup>

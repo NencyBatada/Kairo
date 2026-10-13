@@ -1,3 +1,4 @@
+using Kairo.SharedKernel.Access;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ public static class KairoCoreServices
         services.AddScoped(provider => new KairoDatabase(
             provider.GetRequiredService<IConfiguration>().GetConnectionString("kairo")
                 ?? throw new InvalidOperationException("The 'kairo' connection string is missing.")));
+        services.AddScoped<CurrentMember>();
         return services;
     }
 }

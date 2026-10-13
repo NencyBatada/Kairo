@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Kairo.Modules.Approvals;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
@@ -13,12 +15,17 @@ using Kairo.Modules.Notifications;
 using Kairo.Modules.Opportunities;
 using Kairo.Modules.Triggers;
 using Kairo.SharedKernel;
+using Kairo.SharedKernel.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddSqlServerClient("kairo");
 builder.AddRedisClient("redis");
+builder.Services.AddKairoCore();
+builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 
 IModule[] modules =
 [
@@ -46,9 +53,11 @@ foreach (var module in modules)
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 app.MapDefaultEndpoints();
 
-var api = app.MapGroup("/api");
+var api = app.MapKairoApi();
 foreach (var module in modules)
 {
     module.MapApi(api);

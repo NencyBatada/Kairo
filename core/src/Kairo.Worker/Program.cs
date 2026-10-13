@@ -18,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddSqlServerClient("kairo");
+builder.Services.AddKairoCore();
 
 IModule[] modules =
 [
