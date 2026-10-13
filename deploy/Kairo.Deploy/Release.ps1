@@ -48,6 +48,7 @@ function Invoke-KairoDeploy {
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
             '--session-affinity',
             '--timeout', '3600',
+            '--concurrency', '500',
             "--min-instances=$($Environment.MinInstances.api)",
             "--set-env-vars=Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName",
             "--set-secrets=$($apiSecrets -join ',')"
@@ -62,6 +63,7 @@ function Invoke-KairoDeploy {
         -Settings @(
             '--no-invoker-iam-check',
             '--timeout', '3600',
+            '--concurrency', '500',
             "--min-instances=$($Environment.MinInstances.web)",
             "--set-env-vars=KAIRO_API_URL=$($urls['kairo-api']),KAIRO_API_AUDIENCE=$apiAudience"
         )

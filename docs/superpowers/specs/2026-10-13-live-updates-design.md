@@ -58,7 +58,7 @@ public sealed record LiveEvent(string Type, object Payload, LiveAudience Audienc
 
 `GET /api/brands/{brandId}/live` is open to every member, with the usual membership check (401, then 404).
 
-- It responds with `text/event-stream` and `Cache-Control: no-cache`, using ASP.NET Core's `TypedResults.ServerSentEvents`.
+- It responds with `text/event-stream`, `Cache-Control: no-cache, no-store, no-transform` and `X-Accel-Buffering: no`, using ASP.NET Core's `TypedResults.ServerSentEvents`, so no proxy compresses or buffers it. The web app's proxy cancels its request to the core when the browser goes away.
 - Each event is written with `id:` set to its event ID, `event:` set to its type, and `data:` set to its payload as camel-case JSON.
 - A comment line is sent every 20 seconds when nothing else has been, so proxies don't time out an idle stream.
 
@@ -68,6 +68,8 @@ public sealed record LiveEvent(string Type, object Payload, LiveAudience Audienc
 - If it does, the stream first replays every event for that brand and listener after that ID, then carries on live.
 - If that ID is older than the oldest event kept, the stream sends one `reset` event first, telling the client to refetch the screen.
 - A stream with no `Last-Event-ID` starts from the newest event.
+- Heartbeats and `reset` carry a time mark as their ID, `t` followed by Unix milliseconds. A browser that reconnects with a mark gets every event created from a minute before it, or a `reset` if the mark is more than a day old. A tab that saw no events therefore loses none across a reconnect.
+- A stream only takes live events created at most a minute before it opened. Older ones reach it only through its own replay, so an instance whose feed fell behind, for example while Cloud Run throttled its CPU, can't flood a new stream with a backlog.
 
 ### The poller
 
@@ -126,7 +128,7 @@ The module follows the existing rules: one public type, references only to `Kair
 ## Deployment
 
 - The core API's Cloud Run request timeout goes to 60 minutes, and so does the web app's, because in the development project the web app proxies the stream.
-- Nothing else changes, and no Memorystore is needed.
+- Both services also take up to 500 concurrent requests per instance, because each open stream counts as one. No Memorystore is needed.
 
 ## Testing
 

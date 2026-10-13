@@ -153,6 +153,13 @@ Describe 'Invoke-KairoDeploy' {
         $calls | Where-Object { $_ -like 'run deploy kairo-web *' } | Should -BeLike '*--timeout 3600*'
     }
 
+    It 'lets each API and web instance hold many idle live update streams' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $calls | Where-Object { $_ -like 'run deploy kairo-api *' } | Should -BeLike '*--concurrency 500*'
+        $calls | Where-Object { $_ -like 'run deploy kairo-web *' } | Should -BeLike '*--concurrency 500*'
+    }
+
     It 'signs the web app''s calls for the address Cloud Run accepts as the API''s audience' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
