@@ -3,11 +3,13 @@
   <ItemGroup>
     <PackageReference Include="Testcontainers.MsSql" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kairo.SharedKernel\Kairo.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\Kairo.Migrator\Kairo.Migrator.csproj" />
+    <ProjectReference Include="..\..\src\Kairo.Api\Kairo.Api.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,18 +1,30 @@
+using Kairo.Modules.Identity.Data;
+using Kairo.Modules.Identity.SignIn;
+using Microsoft.AspNetCore.DataProtection;
+
 namespace Kairo.Modules.Identity;
 
 public sealed class IdentityModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddDbContext<IdentityDbContext>((provider, options) =>
+            options.UseKairoDatabase(provider, IdentityDbContext.SchemaName));
+        services.AddDataProtection()
+            .SetApplicationName("Kairo")
+            .PersistKeysToDbContext<IdentityDbContext>();
+        services.AddKairoSignIn();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.MapSignIn();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
     }
 
-    public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>
+        services.GetRequiredService<IdentityDbContext>().Database.MigrateAsync(cancellationToken);
 }
