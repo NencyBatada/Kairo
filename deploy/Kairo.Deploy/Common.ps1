@@ -4,6 +4,8 @@ $script:Subnet = 'kairo-run'
 $script:SqlInstance = 'kairo-sql'
 $script:Database = 'kairo'
 $script:SqlSecret = 'kairo-sql-connection'
+$script:KeyRing = 'kairo'
+$script:TokenKey = 'connection-tokens'
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'
     'Authentication__Google__ClientSecret' = 'google-client-secret'
@@ -33,6 +35,12 @@ function Get-KairoServiceAccount {
     param([Parameter(Mandatory)][hashtable]$Environment, [Parameter(Mandatory)][string]$Name)
 
     "$Name@$($Environment.Project).iam.gserviceaccount.com"
+}
+
+function Get-KairoTokenKeyName {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    "projects/$($Environment.Project)/locations/$($Environment.Region)/keyRings/$script:KeyRing/cryptoKeys/$script:TokenKey"
 }
 
 function Get-KairoServiceUrl {

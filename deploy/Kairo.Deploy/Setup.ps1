@@ -1,7 +1,9 @@
 $script:Apis = @(
     'run.googleapis.com', 'sqladmin.googleapis.com', 'compute.googleapis.com', 'servicenetworking.googleapis.com',
     'artifactregistry.googleapis.com', 'cloudbuild.googleapis.com', 'secretmanager.googleapis.com',
-    'iam.googleapis.com', 'storage.googleapis.com'
+    'iam.googleapis.com', 'storage.googleapis.com', 'cloudkms.googleapis.com',
+    'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
+    'bigquery.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build')
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
@@ -19,6 +21,7 @@ function Initialize-KairoProject {
     Initialize-KairoDatabase -Environment $Environment
     Initialize-KairoSecrets -Environment $Environment
     Initialize-KairoServiceAccounts -Environment $Environment
+    Initialize-KairoKeys -Environment $Environment
 }
 
 function Initialize-KairoRegistry {
@@ -182,6 +185,35 @@ function Initialize-KairoServiceAccounts {
     Add-KairoBinding -ArgumentList (@('artifacts', 'repositories', 'add-iam-policy-binding', $script:Registry, '--location', $Environment.Region, '--member', $build, '--role', 'roles/artifactregistry.writer') + $scope)
     Add-KairoBinding -ArgumentList (@('storage', 'buckets', 'add-iam-policy-binding', "gs://$($Environment.Project)-builds", '--member', $build, '--role', 'roles/storage.objectViewer') + $scope)
     Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', $build, '--role', 'roles/logging.logWriter', '--condition', 'None')
+}
+
+function Initialize-KairoKeys {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $scope = @('--location', $Environment.Region, '--project', $Environment.Project)
+    if (-not (Test-Gcloud -ArgumentList (@('kms', 'keyrings', 'describe', $script:KeyRing) + $scope))) {
+        Invoke-Gcloud -ArgumentList (@('kms', 'keyrings', 'create', $script:KeyRing) + $scope)
+    }
+
+    if (-not (Test-Gcloud -ArgumentList (@('kms', 'keys', 'describe', $script:TokenKey, '--keyring', $script:KeyRing) + $scope))) {
+        $nextRotation = [DateTime]::UtcNow.AddDays(90).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", [Globalization.CultureInfo]::InvariantCulture)
+        Invoke-Gcloud -ArgumentList (@(
+                'kms', 'keys', 'create', $script:TokenKey,
+                '--keyring', $script:KeyRing,
+                '--purpose', 'encryption',
+                '--rotation-period', '90d',
+                '--next-rotation-time', $nextRotation
+            ) + $scope)
+    }
+
+    foreach ($name in 'kairo-api', 'kairo-worker') {
+        Add-KairoBinding -ArgumentList (@(
+                'kms', 'keys', 'add-iam-policy-binding', $script:TokenKey,
+                '--keyring', $script:KeyRing,
+                '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $name)",
+                '--role', 'roles/cloudkms.cryptoKeyEncrypterDecrypter'
+            ) + $scope)
+    }
 }
 
 function Add-KairoBinding {

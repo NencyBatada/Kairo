@@ -30,7 +30,9 @@ Describe 'Initialize-KairoProject' {
         It 'enables the APIs Kairo needs' {
             $calls | Should -Contain ('services enable run.googleapis.com sqladmin.googleapis.com compute.googleapis.com ' +
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
-                'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com --project kairo-test')
+                'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
+                'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
+                'bigquery.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {
@@ -89,6 +91,23 @@ Describe 'Initialize-KairoProject' {
             $calls | Should -Contain "artifacts repositories add-iam-policy-binding kairo --location asia-south1 --member $build --role roles/artifactregistry.writer --project kairo-test"
             $calls | Should -Contain "storage buckets add-iam-policy-binding gs://kairo-test-builds --member $build --role roles/storage.objectViewer --project kairo-test"
             $calls | Should -Contain "projects add-iam-policy-binding kairo-test --member $build --role roles/logging.logWriter --condition None"
+        }
+
+        It 'creates a key for connection tokens that rotates every 90 days' {
+            $calls | Should -Contain 'kms keyrings create kairo --location asia-south1 --project kairo-test'
+            $key = $calls | Where-Object { $_ -like 'kms keys create connection-tokens *' }
+            $key | Should -BeLike '*--keyring kairo*'
+            $key | Should -BeLike '*--purpose encryption*'
+            $key | Should -BeLike '*--rotation-period 90d*'
+            $key | Should -Match '--next-rotation-time \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z'
+            $key | Should -BeLike '*--location asia-south1 --project kairo-test'
+        }
+
+        It 'lets only the API and the worker use the token key' {
+            foreach ($name in 'kairo-api', 'kairo-worker') {
+                $calls | Should -Contain "kms keys add-iam-policy-binding connection-tokens --keyring kairo --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/cloudkms.cryptoKeyEncrypterDecrypter --location asia-south1 --project kairo-test"
+            }
+            ($calls | Where-Object { $_ -like 'kms keys add-iam-policy-binding*kairo-web@*' }) | Should -BeNullOrEmpty
         }
     }
 

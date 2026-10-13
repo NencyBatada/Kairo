@@ -27,6 +27,7 @@ function Invoke-KairoDeploy {
     Invoke-KairoMigration -Environment $Environment -Tag $tag
 
     $sqlSecret = "ConnectionStrings__kairo=$($script:SqlSecret):latest"
+    $keyName = Get-KairoTokenKeyName -Environment $Environment
     $apiSecrets = @($sqlSecret)
     $googleConfigured = $true
     foreach ($secret in $script:GoogleSecrets.Values) {
@@ -47,14 +48,14 @@ function Invoke-KairoDeploy {
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
             '--session-affinity',
             "--min-instances=$($Environment.MinInstances.api)",
-            "--set-env-vars=Kairo__PublicOrigin=$($urls['kairo-web'])",
+            "--set-env-vars=Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName",
             "--set-secrets=$($apiSecrets -join ',')"
         ))
 
     $apiAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-api'
 
     Publish-KairoService -Environment $Environment -Service 'kairo-worker' -Image (Get-KairoImage -Environment $Environment -Name 'worker' -Tag $tag) `
-        -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @("--set-secrets=$sqlSecret"))
+        -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @("--set-env-vars=Kairo__Kms__KeyName=$keyName", "--set-secrets=$sqlSecret"))
 
     Publish-KairoService -Environment $Environment -Service 'kairo-web' -Image (Get-KairoImage -Environment $Environment -Name 'web' -Tag $tag) `
         -Settings @(
@@ -70,6 +71,7 @@ function Invoke-KairoDeploy {
     Write-Host ''
     Write-Host "Kairo $tag is live in $($Environment.Name) at $($urls['kairo-web'])"
     Write-Host "Google sign-in redirect URI: $($urls['kairo-web'])/api/auth/callback/google"
+    Write-Host "Google account connections redirect URI: $($urls['kairo-web'])/api/connections/callback/google"
     if (-not $googleConfigured) {
         Write-Warning 'Google sign-in is off until google-client-id and google-client-secret have a value. See "Deploy" in README.md.'
     }

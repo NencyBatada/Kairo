@@ -120,6 +120,15 @@ Describe 'Invoke-KairoDeploy' {
         $worker | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest*'
     }
 
+    It 'tells the API and the worker which key encrypts connection tokens' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $key = 'Kairo__Kms__KeyName=projects/kairo-test/locations/asia-south1/keyRings/kairo/cryptoKeys/connection-tokens'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) |
+            Should -BeLike "*--set-env-vars=Kairo__PublicOrigin=https://kairo-web-123.asia-south1.run.app,$key*"
+        ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike "*--set-env-vars=$key*"
+    }
+
     It 'deploys the agent service privately with a long timeout' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

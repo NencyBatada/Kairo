@@ -37,6 +37,11 @@ Describe 'names' {
         Get-KairoServiceAccount -Environment $environment -Name 'kairo-web' |
             Should -Be 'kairo-web@kairo-test.iam.gserviceaccount.com'
     }
+
+    It 'derives the key that encrypts connection tokens' {
+        Get-KairoTokenKeyName -Environment $environment |
+            Should -Be 'projects/kairo-test/locations/asia-south1/keyRings/kairo/cryptoKeys/connection-tokens'
+    }
 }
 
 Describe 'Hide-KairoSecrets' {

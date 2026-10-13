@@ -10,7 +10,16 @@ internal static class ConnectionSetup
         services.AddHttpClient(GoogleHttp.ClientName);
         services.AddSingleton<ConsentStates>();
         services.AddSingleton<GoogleOAuth>();
-        services.AddSingleton<ITokenCipher, DataProtectionTokenCipher>();
+        var keyName = configuration["Kairo:Kms:KeyName"];
+        if (string.IsNullOrEmpty(keyName))
+        {
+            services.AddSingleton<ITokenCipher, DataProtectionTokenCipher>();
+        }
+        else
+        {
+            services.AddSingleton<ITokenCipher>(new KmsTokenCipher(keyName));
+        }
+
         services.AddSingleton<AccessTokenCache>();
         services.AddSingleton<IProductAccounts, GoogleAdsAccounts>();
         services.AddSingleton<IProductAccounts, YouTubeAccounts>();
