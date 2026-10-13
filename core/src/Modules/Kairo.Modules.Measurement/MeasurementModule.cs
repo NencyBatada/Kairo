@@ -19,6 +19,7 @@ public sealed class MeasurementModule : IModule
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
+        jobs.MapFeedJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

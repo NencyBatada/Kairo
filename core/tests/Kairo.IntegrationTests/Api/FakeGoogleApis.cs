@@ -1,15 +1,20 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Kairo.Modules.Measurement.Feeds;
 using Microsoft.AspNetCore.WebUtilities;
 using MimeKit;
 
 namespace Kairo.IntegrationTests.Api;
 
 public sealed record IssuedCode(string Code, string RefreshToken, string Subject);
+
+public sealed record AdsReport(string Customer, string? Login, string Query);
 
 public sealed class FakeGoogleApis : HttpMessageHandler
 {
@@ -48,6 +53,14 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public IReadOnlyList<MimeMessage> SentMail =>
         GmailMessages.Select(raw => MimeMessage.Load(new MemoryStream(Convert.FromBase64String(raw.Replace('-', '+').Replace('_', '/'))))).ToList();
+
+    public string AdsTimeZone { get; set; } = "Asia/Kolkata";
+
+    public HashSet<string> AdsEmptyDays { get; } = [];
+
+    public HashSet<string> AdsFailures { get; } = [];
+
+    public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
     public int Refreshes => Requests.Count(request => request == "refresh_token");
 
@@ -159,6 +172,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             ("googleads.googleapis.com", "/v25/customers:listAccessibleCustomers") =>
                 Json(HttpStatusCode.OK, new { resourceNames = new[] { "customers/1111111111", "customers/2222222222", "customers/3333333333" } }),
             ("googleads.googleapis.com", _) when !AdsReachable(path, login) => new HttpResponseMessage(HttpStatusCode.Forbidden),
+            ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:searchStream", StringComparison.Ordinal) => AdsStream(path, body, login),
             ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:search", StringComparison.Ordinal) =>
                 body.Contains("FROM customer_client", StringComparison.Ordinal) ? AdsClients(path) : AdsCustomer(path),
             ("googleads.googleapis.com", _) when path.EndsWith("/campaignBudgets:mutate", StringComparison.Ordinal) =>
@@ -199,6 +213,88 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         using var request = JsonDocument.Parse(body);
         GmailMessages.Enqueue(request.RootElement.GetProperty("raw").GetString()!);
         return Json(HttpStatusCode.OK, new { id = $"message-{GmailMessages.Count}", threadId = "thread" });
+    }
+
+    private HttpResponseMessage AdsStream(string path, string body, string? login)
+    {
+        var customer = path.Split('/')[3];
+        var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
+        AdsReports.Enqueue(new AdsReport(customer, login, query));
+        if (AdsFailures.Contains(customer))
+        {
+            return Json(
+                HttpStatusCode.InternalServerError,
+                new[] { new { error = new { code = 500, message = "Internal error encountered.", status = "INTERNAL" } } });
+        }
+
+        object[] results;
+        if (query.EndsWith("FROM customer", StringComparison.Ordinal))
+        {
+            results = [new { customer = new { resourceName = $"customers/{customer}", id = customer, timeZone = AdsTimeZone, currencyCode = "INR" } }];
+        }
+        else if (query.Contains("FROM geo_target_constant", StringComparison.Ordinal))
+        {
+            results = [new { geoTargetConstant = new { resourceName = "geoTargetConstants/21342", id = "21342", name = "Maharashtra", countryCode = "IN" } }];
+        }
+        else
+        {
+            results = AdsDays(query).Select(date => AdsResult(query, date)).ToArray();
+        }
+
+        return Json(HttpStatusCode.OK, new[] { new { results, requestId = "fake-request" } });
+    }
+
+    private IEnumerable<string> AdsDays(string query)
+    {
+        var range = Regex.Match(query, "segments.date BETWEEN '(?<from>[0-9-]+)' AND '(?<to>[0-9-]+)'");
+        var from = DateOnly.ParseExact(range.Groups["from"].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var to = DateOnly.ParseExact(range.Groups["to"].Value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        for (var day = from; day <= to; day = day.AddDays(1))
+        {
+            var date = day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            if (!AdsEmptyDays.Contains(date))
+            {
+                yield return date;
+            }
+        }
+    }
+
+    private static object AdsResult(string query, string date)
+    {
+        var metrics = new { impressions = "1000", clicks = "50", costMicros = "2500000", conversions = 3.0, conversionsValue = 4500.5 };
+        if (query.Contains("FROM geographic_view", StringComparison.Ordinal))
+        {
+            return new Dictionary<string, object>
+            {
+                ["segments"] = new Dictionary<string, object> { ["date"] = date, [GoogleAdsReports.RegionJson] = "geoTargetConstants/21342" },
+                ["campaign"] = new { id = "9001" },
+                ["metrics"] = metrics,
+            };
+        }
+
+        if (query.Contains("FROM ad_group_ad", StringComparison.Ordinal))
+        {
+            return new
+            {
+                segments = new { date },
+                campaign = new { id = "9001" },
+                adGroup = new { id = "8001" },
+                adGroupAd = new { ad = new { id = "7001", type = "RESPONSIVE_SEARCH_AD" } },
+                metrics,
+            };
+        }
+
+        if (query.Contains("FROM ad_group", StringComparison.Ordinal))
+        {
+            return new { segments = new { date }, campaign = new { id = "9001" }, adGroup = new { id = "8001", name = "Running shoes" }, metrics };
+        }
+
+        return new
+        {
+            segments = new { date },
+            campaign = new { id = "9001", name = "Diwali Search", advertisingChannelType = "SEARCH", status = "ENABLED" },
+            metrics,
+        };
     }
 
     private static bool AdsReachable(string path, string? login) =>

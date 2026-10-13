@@ -9,6 +9,8 @@ internal static class MeasurementHttp
 {
     public const string ClientName = "kairo-measurement-google";
 
+    public static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
+
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public static async Task<HttpResponseMessage> RequestAsync(

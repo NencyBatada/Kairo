@@ -17,4 +17,16 @@ internal sealed class BrandDirectory(BrandsDbContext db, KairoDatabase database)
                 .ToListAsync(cancellationToken);
         }
     }
+
+    public async Task<IReadOnlyList<BrandSummary>> ListAllAsync(CancellationToken cancellationToken)
+    {
+        await using (await database.EnterSystemScopeAsync(cancellationToken))
+        {
+            return await db.Brands
+                .OrderBy(brand => brand.Name)
+                .ThenBy(brand => brand.Id)
+                .Select(brand => new BrandSummary(brand.Id, brand.Handle, brand.Name))
+                .ToListAsync(cancellationToken);
+        }
+    }
 }

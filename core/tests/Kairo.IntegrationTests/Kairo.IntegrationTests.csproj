@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\src\Kairo.SharedKernel\Kairo.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\Kairo.Migrator\Kairo.Migrator.csproj" />
     <ProjectReference Include="..\..\src\Kairo.Api\Kairo.Api.csproj" />
+    <ProjectReference Include="..\..\src\Kairo.Worker\Kairo.Worker.csproj" Aliases="worker" />
   </ItemGroup>
 
 </Project>
