@@ -8,6 +8,7 @@ using Kairo.Modules.Care;
 using Kairo.Modules.Catalogue;
 using Kairo.Modules.Identity;
 using Kairo.Modules.Launch;
+using Kairo.Modules.Live;
 using Kairo.Modules.Measurement;
 using Kairo.Modules.Notifications;
 using Kairo.Modules.Opportunities;
@@ -42,6 +43,7 @@ public static class MigratorHost
             new MeasurementModule(),
             new BrandMemoryModule(),
             new NotificationsModule(),
+            new LiveModule(),
             new AuditModule(),
         ];
 

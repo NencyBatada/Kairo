@@ -19,6 +19,7 @@
     <Project Path="src/Modules/Kairo.Modules.Catalogue/Kairo.Modules.Catalogue.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Identity/Kairo.Modules.Identity.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Launch/Kairo.Modules.Launch.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Live/Kairo.Modules.Live.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Measurement/Kairo.Modules.Measurement.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Notifications/Kairo.Modules.Notifications.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Opportunities/Kairo.Modules.Opportunities.csproj" />
