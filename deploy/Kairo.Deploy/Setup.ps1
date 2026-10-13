@@ -217,3 +217,14 @@ function New-KairoPassword {
 
     $password
 }
+
+function Set-KairoGoogleSignIn {
+    param(
+        [Parameter(Mandatory)][hashtable]$Environment,
+        [Parameter(Mandatory)][string]$ClientId,
+        [Parameter(Mandatory)][string]$ClientSecret
+    )
+
+    Set-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientId'] -Value $ClientId.Trim()
+    Set-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientSecret'] -Value $ClientSecret.Trim()
+}

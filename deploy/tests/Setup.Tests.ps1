@@ -213,3 +213,27 @@ Describe 'Add-KairoBinding' {
         Should -Invoke -ModuleName Kairo.Deploy Invoke-Gcloud -Times 5 -Exactly
     }
 }
+
+Describe 'Set-KairoGoogleSignIn' {
+    It 'stores the OAuth client ID and secret in their secrets' {
+        Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
+
+        Set-KairoGoogleSignIn -Environment $environment -ClientId 'client-id.apps.googleusercontent.com' -ClientSecret 'GOCSPX-secret'
+
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 1 -Exactly -ParameterFilter {
+            $Name -eq 'google-client-id' -and $Value -eq 'client-id.apps.googleusercontent.com'
+        }
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 1 -Exactly -ParameterFilter {
+            $Name -eq 'google-client-secret' -and $Value -eq 'GOCSPX-secret'
+        }
+    }
+
+    It 'ignores spaces pasted around the values' {
+        Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
+
+        Set-KairoGoogleSignIn -Environment $environment -ClientId " id `r`n" -ClientSecret "`tsecret "
+
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -ParameterFilter { $Name -eq 'google-client-id' -and $Value -ceq 'id' }
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -ParameterFilter { $Name -eq 'google-client-secret' -and $Value -ceq 'secret' }
+    }
+}

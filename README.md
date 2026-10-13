@@ -110,12 +110,7 @@ You need the gcloud CLI, signed in with an account that owns the project.
 
 1. **Set up the project, once.** `powershell -ExecutionPolicy Bypass -File deploy/setup.ps1 development` enables the APIs and creates the network, Cloud SQL, secrets and service accounts. It takes about fifteen minutes the first time and is safe to run again.
 2. **Deploy.** Commit your changes, then run `deploy.bat development`. It runs the tests, builds every image with Cloud Build, applies database migrations as a Cloud Run job, deploys the four services and prints the web app's address. Add `-SkipTests` to skip the tests.
-3. **Turn on Google sign-in, once per project.** In the Cloud Console, add the redirect URI that `deploy.bat` prints to the project's web OAuth client. Then store the client ID and secret, and deploy again:
-
-   ```bash
-   printf '%s' '<client id>' | gcloud secrets versions add google-client-id --data-file=- --project kairo2
-   printf '%s' '<client secret>' | gcloud secrets versions add google-client-secret --data-file=- --project kairo2
-   ```
+3. **Turn on Google sign-in, once per project.** In the Cloud Console, add the redirect URI that `deploy.bat` prints to the project's web OAuth client. Then run `powershell -ExecutionPolicy Bypass -File deploy/set-google-sign-in.ps1 development`, paste the client ID and secret when it asks, and deploy again. The script stores them in Secret Manager exactly as typed; piping a value into `gcloud` from PowerShell would add a line break and break sign-in.
 
 In development there is no load balancer: the web app forwards `/api/*` to the core itself, sending a Google identity token. Only the web app is public; the API, worker and agent service accept calls only from Kairo's own service accounts.
 

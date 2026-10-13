@@ -117,12 +117,7 @@ Service URLs follow Cloud Run's fixed form, `https://<service>-<project number>.
 Google lets OAuth clients be created only in the Cloud Console. After the first deploy:
 
 1. The product owner adds `<web URL>/api/auth/callback/google` as an authorized redirect URI on the web client in `kairo2`.
-2. They store the client ID and secret:
-
-   ```bash
-   printf '%s' '<client id>' | gcloud secrets versions add google-client-id --data-file=- --project kairo2
-   printf '%s' '<client secret>' | gcloud secrets versions add google-client-secret --data-file=- --project kairo2
-   ```
+2. They store the client ID and secret with `deploy/set-google-sign-in.ps1 development`, which asks for both and writes them to Secret Manager without a trailing line break.
 
 3. `deploy.bat development` runs again, and passes the secrets to the API.
 
