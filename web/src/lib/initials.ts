@@ -5,6 +5,10 @@ function firstGrapheme(word: string) {
   return first.done ? "" : first.value.segment;
 }
 
+export function initial(name: string) {
+  return firstGrapheme(name.trim()).toLocaleUpperCase() || "?";
+}
+
 export function initials(name: string) {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) {

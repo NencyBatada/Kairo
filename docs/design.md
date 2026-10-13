@@ -283,7 +283,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Card | Header (title and description), content, footer | `card` surface, `border`, `rounded-lg` |
 | Badge | `neutral`, `gate`, `success`, `warning`, `destructive`, `info` | A pill in `text-xs` 500. Status variants include their icon. |
 | Alert | `neutral`, `info`, `success`, `warning`, `destructive` | A soft background with an icon, a title and a description, for messages that stay on screen |
-| Avatar | Image, initials fallback | The Google photo when available, otherwise initials on `accent` (`primary-soft` for you) |
+| Avatar | Image, initials fallback | The Google photo when available, otherwise initials on `accent` (`primary-soft` for you). Initials, and the one-letter workspace tiles, are built from whole characters (`initials()` and `initial()` in `lib/initials.ts`), so an emoji or a Devanagari letter is never cut in half. |
 | Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground` on a `muted` band; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
 | DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`. The highlighted item gets an `accent` fill and a 3px terracotta bar on its left, so keyboard focus clears 3:1. Arrow keys move, Escape closes and focus returns to the trigger. |
 | Sheet | Left (navigation), right (Ask Kairo) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim |

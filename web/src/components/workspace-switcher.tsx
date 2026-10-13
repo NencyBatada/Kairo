@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { initials } from "@/lib/initials";
+import { initial } from "@/lib/initials";
 
 type WorkspaceLink = { id: string; handle: string; name: string };
 
@@ -31,7 +31,7 @@ export function WorkspaceSwitcher({ current, workspaces, pendingInvitations }: W
         className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border-strong bg-card px-2.5 text-left text-sm font-semibold text-foreground transition-colors duration-120 hover:bg-accent data-popup-open:bg-accent pointer-coarse:h-11"
       >
         <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-md bg-primary-soft text-xs font-bold text-primary-strong">
-          {initials(current.name).slice(0, 1)}
+          {initial(current.name)}
         </span>
         <span className="min-w-0 flex-1 truncate">{current.name}</span>
         <ChevronsUpDown className="size-4 shrink-0 text-subtle-foreground" aria-hidden="true" />

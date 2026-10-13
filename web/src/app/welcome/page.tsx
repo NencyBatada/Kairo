@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyInvitations, getMyWorkspaces } from "@/lib/core-api/queries";
-import { initials } from "@/lib/initials";
+import { initial } from "@/lib/initials";
 import { timeZoneOptions } from "@/lib/time-zones";
 
 import { acceptInvitation, createWorkspace, declineInvitation } from "./actions";
@@ -65,7 +65,7 @@ async function YourWorkspaces() {
                     className="group flex items-center gap-3 px-4 py-3.5 transition-colors duration-120 hover:bg-accent focus-visible:-outline-offset-2 focus-visible:bg-accent md:px-5"
                   >
                     <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-primary-soft text-small font-bold text-primary-strong">
-                      {initials(workspace.name).slice(0, 1)}
+                      {initial(workspace.name)}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-semibold text-foreground" title={workspace.name}>
                       {workspace.name}

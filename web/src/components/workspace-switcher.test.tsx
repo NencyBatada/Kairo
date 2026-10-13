@@ -18,6 +18,13 @@ test("names the current workspace on its button, in full even when the text is c
   expect(screen.getByRole("button", { name: `Workspace: ${long.name}` }).getAttribute("title")).toBe(long.name);
 });
 
+test("shows the workspace's first character whole on its tile", () => {
+  const rocket = { ...acme, name: "🚀 Rocket Co" };
+  render(<WorkspaceSwitcher current={rocket} workspaces={[rocket]} pendingInvitations={0} />);
+
+  expect(screen.getByText("🚀")).toBeTruthy();
+});
+
 test("links to every workspace and marks the current one", async () => {
   render(<WorkspaceSwitcher current={acme} workspaces={[acme, beta]} pendingInvitations={0} />);
 
