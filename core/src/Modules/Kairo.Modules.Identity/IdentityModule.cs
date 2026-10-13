@@ -23,6 +23,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IWorkspaceFounding, WorkspaceFounding>();
         services.AddScoped<ISessionDirectory, SessionDirectory>();
+        services.AddScoped<IBrandMembers, BrandMembers>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
