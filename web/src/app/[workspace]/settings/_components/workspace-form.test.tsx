@@ -34,3 +34,9 @@ test("shows the settings read-only to everyone else", () => {
   expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   expect(screen.getByText("INR")).toBeTruthy();
 });
+
+test("keeps the saved time zone selected even when it is not in the offered list", () => {
+  render(<WorkspaceForm action={vi.fn()} workspace={workspace} timeZones={["Europe/London"]} canEdit />);
+
+  expect((screen.getByLabelText("Time zone") as HTMLSelectElement).value).toBe("Asia/Kolkata");
+});

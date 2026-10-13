@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { FieldError } from "@/components/field-error";
 import { idle, type FormState } from "@/lib/forms";
+import { DEFAULT_TIME_ZONE } from "@/lib/time-zones";
 
 type CreateWorkspaceFormProps = {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
@@ -28,7 +29,7 @@ export function CreateWorkspaceForm({ action, timeZones, currencies }: CreateWor
       </div>
       <div className="space-y-1">
         <label htmlFor="timeZone" className="block text-sm font-medium">Time zone</label>
-        <select id="timeZone" name="timeZone" defaultValue="Asia/Kolkata" className="w-full rounded-md border px-3 py-2">
+        <select id="timeZone" name="timeZone" defaultValue={DEFAULT_TIME_ZONE} className="w-full rounded-md border px-3 py-2">
           {timeZones.map((zone) => (
             <option key={zone} value={zone}>{zone}</option>
           ))}

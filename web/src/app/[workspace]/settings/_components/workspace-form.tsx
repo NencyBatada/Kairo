@@ -16,6 +16,7 @@ type WorkspaceFormProps = {
 
 export function WorkspaceForm({ action, workspace, timeZones, canEdit }: WorkspaceFormProps) {
   const [state, formAction, pending] = useActionState(action, idle);
+  const zones = timeZones.includes(workspace.timeZone) ? timeZones : [workspace.timeZone, ...timeZones];
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
@@ -28,7 +29,7 @@ export function WorkspaceForm({ action, workspace, timeZones, canEdit }: Workspa
         <div className="space-y-1">
           <label htmlFor="timeZone" className="block text-sm font-medium">Time zone</label>
           <select id="timeZone" name="timeZone" defaultValue={workspace.timeZone} className="w-full rounded-md border px-3 py-2">
-            {timeZones.map((zone) => (
+            {zones.map((zone) => (
               <option key={zone} value={zone}>{zone}</option>
             ))}
           </select>

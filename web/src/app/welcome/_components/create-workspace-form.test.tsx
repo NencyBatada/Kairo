@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 
 import type { FormState } from "@/lib/forms";
+import { timeZoneOptions } from "@/lib/time-zones";
 
 import { CreateWorkspaceForm } from "./create-workspace-form";
 
@@ -28,4 +29,10 @@ test("shows field errors from the core next to their fields", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
 
   expect(await screen.findByText("That handle is taken.")).toBeTruthy();
+});
+
+test("starts on India's time zone when every zone is offered", () => {
+  render(<CreateWorkspaceForm action={vi.fn()} timeZones={timeZoneOptions()} currencies={["INR"]} />);
+
+  expect((screen.getByLabelText("Time zone") as HTMLSelectElement).value).toBe("Asia/Kolkata");
 });

@@ -1,5 +1,6 @@
 import { coreApi, unwrap } from "@/lib/core-api/client";
 import { getWorkspace } from "@/lib/core-api/queries";
+import { timeZoneOptions } from "@/lib/time-zones";
 
 import { updateWorkspace } from "./actions";
 import { WorkspaceForm } from "./_components/workspace-form";
@@ -15,7 +16,7 @@ export default async function WorkspaceSettingsPage({ params }: PageProps<"/[wor
     <WorkspaceForm
       action={updateWorkspace.bind(null, workspace.id)}
       workspace={details}
-      timeZones={Intl.supportedValuesOf("timeZone")}
+      timeZones={timeZoneOptions()}
       canEdit={workspace.roles.includes("admin")}
     />
   );

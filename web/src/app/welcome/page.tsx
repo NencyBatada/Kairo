@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { getMyInvitations, getMyWorkspaces } from "@/lib/core-api/queries";
+import { timeZoneOptions } from "@/lib/time-zones";
 
 import { acceptInvitation, createWorkspace, declineInvitation } from "./actions";
 import { CreateWorkspaceForm } from "./_components/create-workspace-form";
@@ -20,7 +21,7 @@ export default function WelcomePage() {
         <h2 className="text-lg font-semibold">Create a workspace</h2>
         <CreateWorkspaceForm
           action={createWorkspace}
-          timeZones={Intl.supportedValuesOf("timeZone")}
+          timeZones={timeZoneOptions()}
           currencies={currencies}
         />
       </section>
