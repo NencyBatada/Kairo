@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kairo.SharedKernel\Kairo.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Kairo.Migrator\Kairo.Migrator.csproj" />
   </ItemGroup>
 
 </Project>
