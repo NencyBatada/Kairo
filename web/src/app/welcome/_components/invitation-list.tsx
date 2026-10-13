@@ -18,7 +18,7 @@ export function InvitationList({ invitations, accept, decline }: InvitationListP
               <p className="truncate font-semibold text-foreground" title={invitation.workspaceName}>
                 {invitation.workspaceName}
               </p>
-              <p className="text-small text-subtle-foreground">
+              <p className="text-small wrap-anywhere text-subtle-foreground">
                 {invitation.invitedBy} invited you as {invitation.roles.map((role) => roleLabels[role]).join(", ")}.
               </p>
             </div>

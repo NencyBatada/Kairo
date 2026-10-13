@@ -20,7 +20,7 @@ export function PendingInvitations({ invitations, revoke }: PendingInvitationsPr
             <p className="truncate font-semibold text-foreground" title={invitation.email}>
               {invitation.email}
             </p>
-            <p className="text-small text-subtle-foreground">
+            <p className="text-small wrap-anywhere text-subtle-foreground">
               {invitation.roles.map((role) => roleLabels[role]).join(", ")} · invited by {invitation.invitedBy}
             </p>
           </div>

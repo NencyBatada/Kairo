@@ -36,7 +36,7 @@ export function WorkspaceSwitcher({ current, workspaces, pendingInvitations }: W
         <span className="min-w-0 flex-1 truncate">{current.name}</span>
         <ChevronsUpDown className="size-4 shrink-0 text-subtle-foreground" aria-hidden="true" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent aria-label="Workspaces" className="w-(--anchor-width) min-w-60">
+      <DropdownMenuContent aria-label="Workspaces" className="w-(--anchor-width) max-w-(--available-width) min-w-72">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
           {workspaces.map((workspace) => (

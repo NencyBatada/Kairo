@@ -49,7 +49,7 @@ export function ApprovalsForm({ action, settings, approvers, canEdit }: Approval
                   <ul className="mt-4 flex flex-col gap-2.5">
                     {approvers.map((approver) => (
                       <li key={approver.userId}>
-                        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+                        <label className="flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-foreground pointer-coarse:min-h-11">
                           <Checkbox name={duty.field} value={approver.userId} defaultChecked={settings[duty.field].includes(approver.userId)} />
                           <span className="min-w-0 truncate" title={approver.name}>
                             {approver.name}

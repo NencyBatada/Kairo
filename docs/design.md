@@ -287,7 +287,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground`; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
 | DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`. The highlighted item gets an `accent` fill and a 3px terracotta bar on its left, so keyboard focus clears 3:1. Arrow keys move, Escape closes and focus returns to the trigger. |
 | Sheet | Left (navigation), right (Ask Kairo) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim |
-| AlertDialog | Title, description, Cancel, confirm | For destructive or irreversible actions (section 9.4) |
+| AlertDialog | Title, description, Cancel, confirm | For destructive or irreversible actions (section 9.4). On a very short screen it scrolls inside instead of running off the screen. |
 | Skeleton | Text line, block | `accent` fill with a slow pulse that stops under reduced motion |
 
 ### 8.2 Kairo composites
@@ -297,7 +297,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Logo | The mark plus the serif wordmark, at one size everywhere, optionally as a link |
 | AppShell | The sidebar from `lg`, and the top bar plus left sheet below it. The sheet closes when a page is chosen. |
 | NavMenu | The seven areas with icons. The current area gets `aria-current="page"`, a `primary-soft` fill and a terracotta icon. |
-| WorkspaceSwitcher | A trigger showing the workspace initial and name. The menu links to each workspace, ticks the current one, and ends with "Invitations (n) and new workspaces" or "Create a workspace". The trigger keeps its `accent` fill while the menu is open. |
+| WorkspaceSwitcher | A trigger showing the workspace initial and name. The menu links to each workspace, ticks the current one, and ends with "Invitations (n) and new workspaces" or "Create a workspace". The menu is at least 288px wide (`min-w-72`), so that last item stays on one line. The trigger keeps its `accent` fill while the menu is open. |
 | UserMenu | A trigger with the avatar, name and email. The menu shows who is signed in and offers Sign out. The trigger keeps its `accent` fill while the menu is open. |
 | PageHeader | Eyebrow, title, description and actions (section 7.2) |
 | LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline; hovering another tab previews its underline in `border-strong`. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
@@ -414,6 +414,7 @@ Every list and page has all three.
 ### 9.12 Lists and rows
 
 - Lists of people, invitations and workspaces sit in one card with hairlines between rows (`divide-y`), not a card per row.
+- Names and emails come from people and can be long or unbroken. A name or email on its own line truncates, with the full value in a `title`; a meta line that mixes names into a sentence wraps instead (`wrap-anywhere`).
 - **A row that opens a page** is one link. It fills with `accent` on hover and focus, and ends with an arrow that moves 2px right, so the row reads as a way in.
 - **A row with controls and actions**, such as a member with role chips, Save roles and Remove:
   - below `xl` it stacks: who or what the row is, then its controls, then its actions on one line, with the main action on the left and the destructive one on the right
@@ -429,7 +430,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 | Contrast | The token pairs in section 3 are enforced by `theme.test.ts` |
 | Focus | Every interactive element shows a 2px `ring` with a 2px offset on keyboard focus (`focus-visible`). Where a container clips (rows inside cards with hidden overflow), the ring is drawn inset instead, and scrolling containers leave 4px of room around it. Sticky bars never cover the focused element: below `lg`, the page reserves `scroll-padding-top` for the phone top bar. |
 | Keyboard | Everything works without a mouse. Menus use arrow keys, Escape closes overlays, and focus returns to the trigger. |
-| Targets | At least 24 × 24px everywhere, and 44 × 44px on touch screens |
+| Targets | At least 24 × 24px everywhere, and 44 × 44px on touch screens. That includes the label rows of checkbox lists, which grow with `pointer-coarse:min-h-11`. |
 | Names | Every control has a visible label. Icon-only buttons have an `aria-label`. |
 | Structure | One `h1` per page and headings in order. Landmarks: `nav` "Main", `main`, and named sub-navigation such as "Settings". |
 | Announcements | Form results use `role="status"` or `role="alert"`. Live counts announce in words, such as "3 approvals waiting". |
