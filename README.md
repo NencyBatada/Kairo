@@ -37,6 +37,32 @@ Kairo signs people in with a Google OAuth client from the Google Cloud project `
    dotnet user-secrets set "Parameters:google-client-secret" "<client secret>" --project core/src/Kairo.AppHost
    ```
 
+## Set up account connections
+
+Admins connect the brand's Google Ads, YouTube, Merchant Center, Google Analytics 4 and BigQuery accounts in Settings → Connections. Each product gets its own Google consent through the same OAuth client used for sign-in.
+
+Since 9 September 2026 the Google Ads API needs no developer token. Access levels belong to the Google Cloud project behind the OAuth client, and `kairo2` has Basic access.
+
+Do this once in the Cloud Console for `kairo2`:
+
+1. **APIs.** `deploy/setup.ps1` enables the Google Ads, YouTube Data, Merchant, Analytics Admin, BigQuery and Cloud KMS APIs. Run it once before connecting accounts locally, too.
+2. **Data access.** In Google Auth Platform → Data Access, add these scopes:
+   - `https://www.googleapis.com/auth/adwords`
+   - `https://www.googleapis.com/auth/youtube.readonly`
+   - `https://www.googleapis.com/auth/youtube.upload`
+   - `https://www.googleapis.com/auth/content`
+   - `https://www.googleapis.com/auth/analytics.readonly`
+   - `https://www.googleapis.com/auth/bigquery`
+3. **Redirect URIs.** Add `http://localhost:8000/api/connections/callback/google` to the web OAuth client, plus the connections redirect URI that `deploy.bat` prints for each environment.
+4. **Verification.**
+   - These scopes are sensitive. Until Google verifies the app for them, people see an "unverified app" warning, and at most 100 users can give consent. That is enough for the pilot.
+   - To verify, open Google Auth Platform → Verification Center and submit:
+     - a public homepage and privacy policy on a verified domain
+     - a demo video showing each scope in use
+     - a short reason for each scope
+
+Locally, refresh tokens are encrypted with ASP.NET Data Protection. In Google Cloud, `deploy.bat` points the API and worker at the Cloud KMS key `connection-tokens`.
+
 ## Run everything locally
 
 From the repository root:

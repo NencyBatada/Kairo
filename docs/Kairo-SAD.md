@@ -52,7 +52,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
 | Jobs and events | Cloud Scheduler, Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Cache | Memorystore | SignalR backplane and short-lived caches |
-| Identity and secrets | Google OAuth 2.0 client (Google sign-in), Secret Manager, Cloud KMS | User sign-in, API keys and the developer token, and encrypted OAuth tokens |
+| Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
 | Email | Gmail API with a Google Workspace sender | Notification emails |
 | Hosting | Cloud Run | Web app, core API, core worker and agent service |
@@ -148,7 +148,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 
 | Area | Main tables | Notes |
 | --- | --- | --- |
-| Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; OAuth tokens encrypted with Cloud KMS |
+| Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; Connection rows live in the brands schema; OAuth refresh tokens encrypted with Cloud KMS |
 | Brand | BrandKitVersion, BrandRule, BrandFile, BestAd | Kit content stored as JSON; one approved version at a time |
 | Catalogue | Product, StockEvent, FeedImport | Current stock on Product; full history in BigQuery |
 | Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
@@ -181,10 +181,10 @@ The core connects to every Google service that holds the brand's ads or data; th
 
 | System | Used for | How Kairo connects | Limits to plan for |
 | --- | --- | --- | --- |
-| Google Ads API | Keyword metrics, performance and recommendations; creating campaigns, pausing and resuming ads, budgets and bid targets | Google Ads .NET client library in the core, with Kairo's developer token and each brand's OAuth consent | Keyword planning needs Basic access or above. Basic allows 15,000 operations a day; Standard has no daily cap. |
+| Google Ads API | Keyword metrics, performance and recommendations; creating campaigns, pausing and resuming ads, budgets and bid targets | The Google Ads REST API from the core, with each brand's OAuth consent through Kairo's OAuth client. Since 9 September 2026 access levels belong to the Google Cloud project behind the OAuth client, and no developer token is sent. | Keyword planning needs Basic access or above, which the `kairo2` project has. Basic allows 15,000 operations a day; Standard has no daily cap. |
 | BigQuery Data Transfer Service | Daily Google Ads performance in BigQuery | One transfer per brand | Data lands daily, so same-day pacing reads the API |
 | YouTube Data API | Uploading approved videos as unlisted | Google API .NET client in the core, with the brand's channel consent | Uploads have their own limit of 100 a day per project |
-| Merchant API | Checking the Merchant Center link and product status, and updating titles if chosen | Google API .NET client in the core | Shopping needs the Merchant Center account linked to Google Ads |
+| Merchant API | Checking the Merchant Center link and product status, and updating titles if chosen | The Merchant API v1 REST endpoints from the core, with the brand's consent. The Content API for Shopping it replaces was sunset on 18 August 2026. | Shopping needs the Merchant Center account linked to Google Ads |
 | Google Maps Platform Weather API | Hourly and daily forecasts for trigger rules | REST from the core worker, with a server-only API key | Billed per call, so forecasts are cached by region and hour |
 | Google Analytics 4 | Outcome data for Impact Lab | BigQuery export, or the GA4 Data API | Export history starts only when it is switched on |
 | Gemini Enterprise Agent Platform | Gemini, Imagen, Veo and Google Search grounding | Google Gen AI SDK in the agent service | Per-model quotas; Veo and Imagen run in fewer regions than Gemini |
@@ -203,7 +203,7 @@ Security rests on one rule: money moves only through code that checks a person's
 | Roles | Admin, marketer and approver roles per brand, enforced by ASP.NET Core authorization policies. SQL Server row-level security keeps brands apart. |
 | Spend safety | Only the Launch module calls Google Ads write methods. It needs a valid approval whose plan hash matches the current plan, or the stock rule, which can only pause and resume mapped ads. Every call carries an idempotency key. |
 | Service access | Cloud Run services accept only Google-signed identity tokens. The agent service accepts calls only from the core, and worker endpoints only from Cloud Scheduler, Cloud Tasks and Pub/Sub. |
-| Secrets | The developer token, OAuth client secret and API keys sit in Secret Manager. Brand OAuth refresh tokens are encrypted with Cloud KMS keys. |
+| Secrets | The OAuth client secret and API keys sit in Secret Manager. Each brand connection's refresh token is encrypted with the Cloud KMS key `connection-tokens`, which rotates every 90 days, with the brand and connection IDs as additional authenticated data. Only the API and worker service accounts can use the key. |
 | Network | Cloud SQL and Memorystore use private IPs, reached through Direct VPC egress. Public traffic enters through an HTTPS load balancer with Cloud Armor. |
 | AI safety | Untrusted text is screened by Model Armor, each agent gets only the tools it needs, outputs are checked against schemas, and no tool can spend money. |
 | Audit | An append-only audit log in SQL Server, plus Cloud Audit Logs for platform actions. |
@@ -268,11 +268,11 @@ Each BRD target maps to a specific design choice.
 
 ## 13. Risks and open questions
 
-The biggest technical risk is Google Ads API access: keyword planning needs Basic access, which takes brand verification and a review.
+The biggest technical risk is Google's review of Kairo's OAuth app: connecting brand accounts asks for sensitive scopes, which need OAuth verification before more than 100 users can consent.
 
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
-| Google Ads developer token access | Explorer access blocks keyword planning; Basic access needs brand verification and a review | Apply for Basic access early and for Standard before scaling; build on test accounts meanwhile |
+| OAuth verification for sensitive scopes | Until `kairo2` is verified, consent shows an "unverified app" warning and is limited to 100 users | Enough for the pilot; submit verification with a privacy policy, homepage, demo video and scope justifications before scaling. Google Ads Basic access is already granted to the project; apply for Standard before scaling. |
 | YouTube upload limit | 100 uploads a day per project | Enough at launch; request more quota before scaling |
 | Model quotas and regions | Veo or Imagen quota limits, or no regional availability | Request quotas early; fall back to image-only Demand Gen ads |
 | Generation cost | Video is the most expensive step | Per-campaign generation limits, cost dashboards and Flash models for bulk work |
@@ -282,7 +282,7 @@ The biggest technical risk is Google Ads API access: keyword planning needs Basi
 ### Open questions
 
 - [ ] Must brand data and model processing stay in India? That would rule out the global Gemini endpoint and possibly some models.
-- [ ] Who owns the Google Ads manager account and developer token, and who completes brand verification?
+- [ ] Who completes OAuth verification for `kairo2`'s sensitive scopes?
 - [ ] Which Google Workspace account sends notification emails?
 - [ ] Can each brand's stock feed update hourly (a BRD open question)? It sets how often the worker polls.
 - [ ] Should Kairo push shopping titles through the Merchant API or export them (a BRD open question)?
