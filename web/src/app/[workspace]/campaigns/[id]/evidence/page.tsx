@@ -1,10 +1,9 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { FileSearch } from "lucide-react";
 
-export default function EvidenceTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function EvidencePage() {
   return (
-    <PagePlaceholder
-      title="Evidence"
-      description="The evidence attached when the opportunity was accepted: trend, regions, matching products and sourced reasons."
-    />
+    <EmptyState icon={FileSearch} title="No evidence yet" description="The opportunity's trend, regions, matching products and sources will be attached here." />
   );
 }

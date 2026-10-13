@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { Rocket } from "lucide-react";
 
-export default function LaunchTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function LaunchPage() {
   return (
-    <PagePlaceholder
-      title="Launch"
-      description="Launch summary and checks, then launch progress and Google Ads IDs."
+    <EmptyState
+      icon={Rocket}
+      title="Not ready to launch"
+      description="The launch summary, its checks and live progress will appear here after the assets are approved."
     />
   );
 }

@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { Activity } from "lucide-react";
 
-export default function PerformanceTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function PerformancePage() {
   return (
-    <PagePlaceholder
-      title="Performance"
-      description="Pacing against plan, daily spend and results, early lift readings, the automatic pause log and recommendations."
+    <EmptyState
+      icon={Activity}
+      title="No performance yet"
+      description="Pacing against plan, daily spend and results, early readings and the pause log will appear here once the campaign is live."
     />
   );
 }

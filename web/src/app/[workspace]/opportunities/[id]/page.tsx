@@ -1,10 +1,20 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { ChartLine } from "lucide-react";
+import type { Metadata } from "next";
 
-export default function OpportunityDetailPage() {
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+
+export const metadata: Metadata = { title: "Opportunity" };
+
+export default function OpportunityPage() {
   return (
-    <PagePlaceholder
-      title="Opportunity"
-      description="Trend chart, regional view, matching products, sourced reasons and score breakdown."
-    />
+    <div className="flex flex-col gap-8">
+      <PageHeader eyebrow="Opportunities" title="Opportunity" description="The evidence behind one opportunity." />
+      <EmptyState
+        icon={ChartLine}
+        title="Nothing to show yet"
+        description="The search trend, rising regions, matching products, sourced reasons and the score breakdown will appear here."
+      />
+    </div>
   );
 }

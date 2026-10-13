@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { Images } from "lucide-react";
 
-export default function AssetsTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function AssetsPage() {
   return (
-    <PagePlaceholder
-      title="Assets"
-      description="Assets by campaign type and language, each with its Guardian score, issues and before-and-after fixes."
+    <EmptyState
+      icon={Images}
+      title="No assets yet"
+      description="Search ads, Demand Gen ads, images and the video will appear here once the brief is approved, each with its Brand Guardian score."
     />
   );
 }

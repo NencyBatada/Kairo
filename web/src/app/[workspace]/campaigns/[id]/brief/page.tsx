@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { FileText } from "lucide-react";
 
-export default function BriefTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function BriefPage() {
   return (
-    <PagePlaceholder
-      title="Brief"
-      description="Each field with its reasoning, budget against the limit, test and holdout regions on a map, test window and smallest detectable lift."
+    <EmptyState
+      icon={FileText}
+      title="No brief yet"
+      description="Kairo drafts the brief here, with the reasoning for each field, the budget against your limit, and the test and holdout regions."
     />
   );
 }

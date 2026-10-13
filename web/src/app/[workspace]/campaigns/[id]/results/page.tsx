@@ -1,10 +1,13 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { ChartColumn } from "lucide-react";
 
-export default function ResultsTabPage() {
+import { EmptyState } from "@/components/empty-state";
+
+export default function ResultsPage() {
   return (
-    <PagePlaceholder
-      title="Results"
-      description="The impact report: lift with confidence range, spend, cost per extra result, next step and what went to Brand Memory."
+    <EmptyState
+      icon={ChartColumn}
+      title="No results yet"
+      description="The impact report, with the lift, its range and the recommended next step, will appear here when the test ends."
     />
   );
 }
