@@ -146,6 +146,13 @@ Describe 'Invoke-KairoDeploy' {
         $web | Should -BeLike '*--set-env-vars=KAIRO_API_URL=https://kairo-api-123.asia-south1.run.app,KAIRO_API_AUDIENCE=https://kairo-api-abc123-el.a.run.app*'
     }
 
+    It 'lets live update streams stay open for an hour through the web app and the API' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $calls | Where-Object { $_ -like 'run deploy kairo-api *' } | Should -BeLike '*--timeout 3600*'
+        $calls | Where-Object { $_ -like 'run deploy kairo-web *' } | Should -BeLike '*--timeout 3600*'
+    }
+
     It 'signs the web app''s calls for the address Cloud Run accepts as the API''s audience' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

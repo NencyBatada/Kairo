@@ -47,6 +47,7 @@ function Invoke-KairoDeploy {
     Publish-KairoService -Environment $Environment -Service 'kairo-api' -Image (Get-KairoImage -Environment $Environment -Name 'api' -Tag $tag) `
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
             '--session-affinity',
+            '--timeout', '3600',
             "--min-instances=$($Environment.MinInstances.api)",
             "--set-env-vars=Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName",
             "--set-secrets=$($apiSecrets -join ',')"
@@ -60,6 +61,7 @@ function Invoke-KairoDeploy {
     Publish-KairoService -Environment $Environment -Service 'kairo-web' -Image (Get-KairoImage -Environment $Environment -Name 'web' -Tag $tag) `
         -Settings @(
             '--no-invoker-iam-check',
+            '--timeout', '3600',
             "--min-instances=$($Environment.MinInstances.web)",
             "--set-env-vars=KAIRO_API_URL=$($urls['kairo-api']),KAIRO_API_AUDIENCE=$apiAudience"
         )
