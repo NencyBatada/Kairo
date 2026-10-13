@@ -36,6 +36,8 @@ internal static class MemberEndpoints
     private static async Task<Results<Ok<MemberResponse>, ValidationProblem, NotFound, ProblemHttpResult>> ChangeRolesAsync(
         Guid userId,
         ChangeRolesRequest request,
+        CurrentMember member,
+        KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
         CancellationToken cancellationToken)
@@ -44,6 +46,8 @@ internal static class MemberEndpoints
         {
             return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["roles"] = ["Choose at least one role."] });
         }
+
+        await TeamRules.LockAsync(database, member.BrandId, cancellationToken);
 
         var membership = await db.Memberships.SingleOrDefaultAsync(m => m.UserId == userId, cancellationToken);
         if (membership is null)
@@ -82,6 +86,7 @@ internal static class MemberEndpoints
     private static async Task<Results<NoContent, NotFound, ProblemHttpResult>> RemoveAsync(
         Guid userId,
         CurrentMember member,
+        KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
         CancellationToken cancellationToken)
@@ -91,6 +96,8 @@ internal static class MemberEndpoints
         {
             return TypedResults.Problem(statusCode: StatusCodes.Status403Forbidden, title: "Only admins can remove other members.");
         }
+
+        await TeamRules.LockAsync(database, member.BrandId, cancellationToken);
 
         var membership = await db.Memberships.SingleOrDefaultAsync(m => m.UserId == userId, cancellationToken);
         if (membership is null)

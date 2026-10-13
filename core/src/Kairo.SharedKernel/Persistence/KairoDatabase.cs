@@ -57,6 +57,24 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
         }
     }
 
+    public async Task LockAsync(string resource, CancellationToken cancellationToken)
+    {
+        var transaction = _transaction ?? throw new InvalidOperationException("A lock needs a transaction.");
+        await using var command = Connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            DECLARE @result int;
+            EXEC @result = sys.sp_getapplock @Resource = @resource, @LockMode = N'Exclusive', @LockOwner = N'Transaction', @LockTimeout = 15000;
+            SELECT @result;
+            """;
+        command.Parameters.Add(new SqlParameter("@resource", SqlDbType.NVarChar, 255) { Value = resource });
+        var result = (int)(await command.ExecuteScalarAsync(cancellationToken))!;
+        if (result < 0)
+        {
+            throw new TimeoutException($"Could not lock {resource}.");
+        }
+    }
+
     public async Task CommitAsync(CancellationToken cancellationToken)
     {
         var transaction = _transaction ?? throw new InvalidOperationException("No transaction is in progress.");

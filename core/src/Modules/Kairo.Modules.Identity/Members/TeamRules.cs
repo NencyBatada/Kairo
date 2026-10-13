@@ -6,6 +6,9 @@ internal static class TeamRules
 {
     public const string LastAdmin = "A workspace needs at least one admin. Make someone else an admin first.";
 
+    public static Task LockAsync(KairoDatabase database, Guid brandId, CancellationToken cancellationToken) =>
+        database.LockAsync($"kairo.team.{brandId}", cancellationToken);
+
     public static async Task<bool> IsLastAdminAsync(IdentityDbContext db, Guid userId, CancellationToken cancellationToken)
     {
         var admins = await db.Memberships

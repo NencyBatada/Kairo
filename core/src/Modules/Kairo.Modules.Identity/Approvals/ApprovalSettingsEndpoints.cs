@@ -21,6 +21,7 @@ internal static class ApprovalSettingsEndpoints
     private static async Task<Results<Ok<ApprovalSettings>, ValidationProblem>> SaveAsync(
         SaveApprovalSettingsRequest request,
         CurrentMember member,
+        KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
         CancellationToken cancellationToken)
@@ -32,6 +33,8 @@ internal static class ApprovalSettingsEndpoints
             ("launchApprovers", ApprovalDuty.Launch, request.LaunchApprovers),
             ("budgetOwners", ApprovalDuty.BudgetOwner, request.BudgetOwners),
         ];
+
+        await TeamRules.LockAsync(database, member.BrandId, cancellationToken);
 
         var approvers = (await db.Memberships
                 .Where(membership => (membership.Roles & BrandRoles.Approver) == BrandRoles.Approver)

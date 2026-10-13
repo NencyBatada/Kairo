@@ -66,6 +66,33 @@ public sealed class TeamTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Two_admins_demoting_each_other_at_the_same_time_leave_one_admin()
+    {
+        var workspaces = new List<(Guid BrandId, Member Owner, Member Other)>();
+        for (var i = 0; i < 10; i++)
+        {
+            var owner = await Workspaces.SignInAsync(_api);
+            var brandId = await Workspaces.CreateAsync(owner.Browser);
+            var other = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "admin");
+            workspaces.Add((brandId, owner, other));
+        }
+
+        await Task.WhenAll(workspaces.SelectMany(w => new[]
+        {
+            ChangeRolesAsync(w.Owner, w.BrandId, w.Other.UserId, "marketer"),
+            ChangeRolesAsync(w.Other, w.BrandId, w.Owner.UserId, "approver"),
+        }));
+
+        foreach (var (brandId, owner, _) in workspaces)
+        {
+            var members = await owner.Browser.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/members", Token);
+            var admins = members.EnumerateArray()
+                .Count(member => member.GetProperty("roles").EnumerateArray().Any(role => role.GetString() == "admin"));
+            Assert.Equal(1, admins);
+        }
+    }
+
+    [Fact]
     public async Task The_only_person_on_a_duty_keeps_the_approver_role()
     {
         var owner = await Workspaces.SignInAsync(_api);
