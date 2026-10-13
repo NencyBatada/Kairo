@@ -57,6 +57,41 @@
         }
       }
     },
+    "/api/connections/callback/google": {
+      "get": {
+        "tags": [
+          "ConsentEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/members": {
       "get": {
         "tags": [
@@ -595,6 +630,68 @@
         }
       }
     },
+    "/api/brands/{brandId}/connections": {
+      "get": {
+        "tags": [
+          "ConnectionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectionView"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/connections/{product}/connect": {
+      "get": {
+        "tags": [
+          "ConsentEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/audit-log": {
       "get": {
         "tags": [
@@ -813,6 +910,85 @@
             "items": {
               "$ref": "#/components/schemas/BrandRole"
             }
+          }
+        }
+      },
+      "ConnectionState": {
+        "enum": [
+          "notConnected",
+          "choosingAccount",
+          "connected",
+          "needsReconnect"
+        ]
+      },
+      "ConnectionView": {
+        "required": [
+          "product",
+          "name",
+          "state",
+          "externalId",
+          "displayName",
+          "connectedBy",
+          "connectedByName",
+          "connectedAt",
+          "checkedAt",
+          "reconnectReason"
+        ],
+        "type": "object",
+        "properties": {
+          "product": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ConnectionState"
+          },
+          "externalId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "connectedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "connectedByName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "connectedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "checkedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reconnectReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1215,6 +1391,9 @@
       "name": "Kairo.Api"
     },
     {
+      "name": "ConsentEndpoints"
+    },
+    {
       "name": "MemberEndpoints"
     },
     {
@@ -1225,6 +1404,9 @@
     },
     {
       "name": "WorkspaceEndpoints"
+    },
+    {
+      "name": "ConnectionEndpoints"
     },
     {
       "name": "AuditLogEndpoints"

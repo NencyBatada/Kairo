@@ -99,6 +99,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/connections/callback/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    code?: string;
+                    state?: string;
+                    error?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/members": {
         parameters: {
             query?: never;
@@ -668,6 +704,77 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/brands/{brandId}/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectionView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/connections/{product}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    product: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/audit-log": {
         parameters: {
             query?: never;
@@ -738,6 +845,19 @@ export interface components {
         BrandRole: "admin" | "marketer" | "approver";
         ChangeRolesRequest: {
             roles: components["schemas"]["BrandRole"][];
+        };
+        ConnectionState: "notConnected" | "choosingAccount" | "connected" | "needsReconnect";
+        ConnectionView: {
+            product: string;
+            name: string;
+            state: components["schemas"]["ConnectionState"];
+            externalId: null | string;
+            displayName: null | string;
+            connectedBy: null | string;
+            connectedByName: null | string;
+            connectedAt: null | string;
+            checkedAt: null | string;
+            reconnectReason: null | string;
         };
         CreatedWorkspace: {
             id: string;
