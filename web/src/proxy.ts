@@ -9,10 +9,7 @@ export function proxy(request: NextRequest) {
   const path = pathname + search;
 
   if (pathname !== "/sign-in" && !request.cookies.has(SESSION_COOKIE)) {
-    return new Response(null, {
-      status: 307,
-      headers: { Location: `/sign-in?returnUrl=${encodeURIComponent(path)}` },
-    });
+    return NextResponse.redirect(new URL(`/sign-in?returnUrl=${encodeURIComponent(path)}`, request.url), 307);
   }
 
   const headers = new Headers(request.headers);

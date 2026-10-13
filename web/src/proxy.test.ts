@@ -18,7 +18,7 @@ test("sends visitors without a session to sign-in, remembering where they were g
   const response = proxy(request("/acme/today?tab=open"));
 
   expect(response.status).toBe(307);
-  expect(response.headers.get("location")).toBe("/sign-in?returnUrl=%2Facme%2Ftoday%3Ftab%3Dopen");
+  expect(response.headers.get("location")).toBe("http://localhost:8000/sign-in?returnUrl=%2Facme%2Ftoday%3Ftab%3Dopen");
 });
 
 test("lets the sign-in page through without a session", () => {
