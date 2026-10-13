@@ -51,14 +51,16 @@ public sealed class KairoApiFactory(string connectionString, Action<IServiceColl
         return browser;
     }
 
-    public async Task<string> SignInAsync(HttpClient browser, GoogleUser user, string? returnUrl)
+    public async Task<string> SignInAsync(HttpClient browser, GoogleUser user, string? returnUrl) =>
+        (await CompleteSignInAsync(browser, user, returnUrl)).Headers.Location!.OriginalString;
+
+    public async Task<HttpResponseMessage> CompleteSignInAsync(HttpClient browser, GoogleUser user, string? returnUrl)
     {
         var challenge = await browser.GetAsync($"/api/auth/sign-in?returnUrl={Uri.EscapeDataString(returnUrl ?? "")}");
         var authorize = QueryHelpers.ParseQuery(challenge.Headers.Location!.Query);
         var code = Google.IssueCode(user, authorize["nonce"]!);
         var callbackPath = new Uri(authorize["redirect_uri"]!).AbsolutePath;
-        var callback = await browser.GetAsync($"{callbackPath}?code={code}&state={Uri.EscapeDataString(authorize["state"]!)}");
-        return callback.Headers.Location!.OriginalString;
+        return await browser.GetAsync($"{callbackPath}?code={code}&state={Uri.EscapeDataString(authorize["state"]!)}");
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

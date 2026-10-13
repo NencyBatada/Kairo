@@ -12,7 +12,7 @@ internal static class SignInEndpoints
 
         auth.MapGet("/sign-in", (string? returnUrl) =>
             TypedResults.Challenge(
-                new AuthenticationProperties { RedirectUri = ReturnUrls.Sanitize(returnUrl) },
+                new AuthenticationProperties { RedirectUri = ReturnUrls.Sanitize(returnUrl), IsPersistent = true },
                 [IdentitySchemes.Google]));
 
         auth.MapPost("/sign-out", async (HttpContext http) =>

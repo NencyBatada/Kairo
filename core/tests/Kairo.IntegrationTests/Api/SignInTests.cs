@@ -22,6 +22,15 @@ public sealed class SignInTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task The_session_cookie_lasts_beyond_the_browser_window()
+    {
+        var callback = await _api.CompleteSignInAsync(_api.CreateBrowser(), GoogleUser.Create(), "/");
+
+        var cookie = Assert.Single(callback.Headers.GetValues("Set-Cookie"), value => value.StartsWith("__Host-kairo-session="));
+        Assert.Contains("expires=", cookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Emails_are_stored_in_lowercase()
     {
         var user = GoogleUser.Create() with { Email = $"Mixed.Case-{Guid.NewGuid():N}@Example.com" };
