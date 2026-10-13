@@ -795,6 +795,79 @@
         }
       }
     },
+    "/api/brands/{brandId}/connections/{product}/check": {
+      "post": {
+        "tags": [
+          "ConnectionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/connections/{product}": {
+      "delete": {
+        "tags": [
+          "ConnectionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/audit-log": {
       "get": {
         "tags": [
@@ -1013,6 +1086,24 @@
             "items": {
               "$ref": "#/components/schemas/BrandRole"
             }
+          }
+        }
+      },
+      "CheckResult": {
+        "required": [
+          "connection",
+          "problem"
+        ],
+        "type": "object",
+        "properties": {
+          "connection": {
+            "$ref": "#/components/schemas/ConnectionView"
+          },
+          "problem": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
