@@ -217,7 +217,7 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | Component | Runs on | Settings |
 | --- | --- | --- |
 | Web app | Cloud Run service | At least 1 instance; public through the load balancer |
-| Core API | Cloud Run service | At least 1 instance; 60-minute request timeout for live update streams |
+| Core API | Cloud Run service | At least 1 instance; 60-minute request timeout for live update streams; CPU always allocated so the email outbox keeps sending between requests |
 | Core worker | Cloud Run service | Scales to zero; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
 | Agent service | Cloud Run service | Internal access only; long request timeout for video jobs |
 | Database | Cloud SQL for SQL Server | Express edition for the prototype; Standard with high availability in production; automated backups and point-in-time recovery |

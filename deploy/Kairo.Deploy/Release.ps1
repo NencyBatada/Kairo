@@ -47,6 +47,7 @@ function Invoke-KairoDeploy {
         $apiSettings += ",Kairo__Notifications__Sender=$mailSender"
         $apiSecrets += "Kairo__Notifications__SenderRefreshToken=$($script:MailSecret):latest"
     }
+    $apiMinInstances = if ($mailConfigured) { [Math]::Max(1, [int]$Environment.MinInstances.api) } else { $Environment.MinInstances.api }
 
     Publish-KairoService -Environment $Environment -Service 'kairo-agents' -Image (Get-KairoImage -Environment $Environment -Name 'agents' -Tag $tag) `
         -Settings @('--no-allow-unauthenticated', '--timeout', '3600')
@@ -56,7 +57,8 @@ function Invoke-KairoDeploy {
             '--session-affinity',
             '--timeout', '3600',
             '--concurrency', '500',
-            "--min-instances=$($Environment.MinInstances.api)",
+            '--no-cpu-throttling',
+            "--min-instances=$apiMinInstances",
             "--set-env-vars=$apiSettings",
             "--set-secrets=$($apiSecrets -join ',')"
         ))

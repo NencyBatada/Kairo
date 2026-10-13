@@ -129,6 +129,31 @@ Describe 'Invoke-KairoDeploy' {
         ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike "*--set-env-vars=$key*"
     }
 
+    It 'keeps CPU on for the API between requests, so the email loop keeps running' {
+        Invoke-KairoDeploy -Environment $environment -Root $root 3>$null | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -BeLike '*--no-cpu-throttling*'
+    }
+
+    It 'keeps one API instance running once a sender mailbox can send' {
+        $withSender = $environment.Clone()
+        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MinInstances = @{ web = 0; api = 0 }
+
+        Invoke-KairoDeploy -Environment $withSender -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -BeLike '*--min-instances=1 *'
+    }
+
+    It 'lets the API scale to zero while emails are only logged' {
+        $quiet = $environment.Clone()
+        $quiet.MinInstances = @{ web = 0; api = 0 }
+
+        Invoke-KairoDeploy -Environment $quiet -Root $root 3>$null | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -BeLike '*--min-instances=0 *'
+    }
+
     It 'passes the sender mailbox to the API once it is signed in' {
         $withSender = $environment.Clone()
         $withSender.MailSender = 'kairo-alerts@acme.example'
