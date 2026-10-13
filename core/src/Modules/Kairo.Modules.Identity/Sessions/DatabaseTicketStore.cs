@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using Kairo.Modules.Identity.Data;
 using Microsoft.AspNetCore.Authentication;
@@ -13,6 +14,7 @@ internal sealed class DatabaseTicketStore(IServiceScopeFactory scopes, TimeProvi
     public async Task<string> StoreAsync(AuthenticationTicket ticket)
     {
         var key = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        ticket.Principal.Identities.First().AddClaim(new Claim(KairoClaims.SessionKey, key));
         var now = time.GetUtcNow();
         await using var scope = scopes.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();

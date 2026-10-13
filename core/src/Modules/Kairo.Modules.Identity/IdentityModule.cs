@@ -3,6 +3,7 @@ using Kairo.Modules.Identity.Approvals;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Invitations;
 using Kairo.Modules.Identity.Members;
+using Kairo.Modules.Identity.Sessions;
 using Kairo.Modules.Identity.SignIn;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -21,6 +22,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<IBrandAccess, BrandAccess>();
         services.AddScoped<IMembershipDirectory, MembershipDirectory>();
         services.AddScoped<IWorkspaceFounding, WorkspaceFounding>();
+        services.AddScoped<ISessionDirectory, SessionDirectory>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)

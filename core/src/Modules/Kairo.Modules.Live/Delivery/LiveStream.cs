@@ -1,10 +1,11 @@
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
+using Kairo.Contracts.Identity;
 using Kairo.Modules.Live.Data;
 
 namespace Kairo.Modules.Live.Delivery;
 
-internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, TimeProvider time)
+internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, IBrandAccess access, ISessionDirectory sessions, TimeProvider time)
 {
     private const int ReplayLimit = 1000;
 
@@ -13,6 +14,7 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, TimeProvider t
         long? lastEventId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var opened = time.GetUtcNow();
         using var subscription = await feed.SubscribeAsync(viewer.BrandId, cancellationToken);
         yield return LiveItems.Heartbeat();
         var sent = new HashSet<long>();
@@ -36,22 +38,65 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, TimeProvider t
         }
 
         var lastWrite = time.GetUtcNow();
+        var lastCheck = opened;
         while (true)
         {
             var now = time.GetUtcNow();
+            if (now - opened >= LiveTimings.Lifetime)
+            {
+                yield break;
+            }
+
+            if (now - lastCheck >= LiveTimings.AccessCheckInterval)
+            {
+                if (!await StillAllowedAsync(viewer, cancellationToken))
+                {
+                    yield break;
+                }
+
+                lastCheck = now;
+            }
+
             if (now - lastWrite >= LiveTimings.HeartbeatInterval)
             {
                 yield return LiveItems.Heartbeat();
                 lastWrite = now;
             }
 
-            var row = await subscription.NextAsync(lastWrite + LiveTimings.HeartbeatInterval - now, cancellationToken);
-            if (row is not null && viewer.CanSee(row) && sent.Add(row.Id))
+            var wake = new[]
+            {
+                opened + LiveTimings.Lifetime,
+                lastCheck + LiveTimings.AccessCheckInterval,
+                lastWrite + LiveTimings.HeartbeatInterval,
+            }.Min();
+            var row = await subscription.NextAsync(wake - now, cancellationToken);
+            if (row is null)
+            {
+                continue;
+            }
+
+            if (viewer.CanSee(row) && sent.Add(row.Id))
             {
                 yield return LiveItems.From(row);
                 lastWrite = time.GetUtcNow();
             }
         }
+    }
+
+    private async Task<bool> StillAllowedAsync(Viewer viewer, CancellationToken cancellationToken)
+    {
+        if (viewer.SessionKey is { } key && !await sessions.IsActiveAsync(key, cancellationToken))
+        {
+            return false;
+        }
+
+        if (await access.FindRolesAsync(viewer.BrandId, viewer.UserId, cancellationToken) is not { } roles)
+        {
+            return false;
+        }
+
+        viewer.Roles = roles;
+        return true;
     }
 
     private async Task<List<OutboxEvent>?> ReplayAsync(long after, CancellationToken cancellationToken)
