@@ -23,10 +23,10 @@ internal sealed class BigQueryAccounts(IHttpClientFactory http) : IProductAccoun
         return (page?.Projects ?? []).Select(project => new ProductAccount(project.Id, project.FriendlyName ?? project.Id)).ToList();
     }
 
-    public async Task<string?> TestAsync(string accessToken, string externalId, CancellationToken cancellationToken)
+    public async Task<string?> TestAsync(string accessToken, ProductAccount account, CancellationToken cancellationToken)
     {
         var client = http.CreateClient(GoogleHttp.ClientName);
-        var project = Uri.EscapeDataString(externalId);
+        var project = Uri.EscapeDataString(account.Id);
         using var datasets = await client.CallAsync(HttpMethod.Get, $"{BaseUrl}/{project}/datasets?maxResults=1", accessToken, null, cancellationToken);
         if (!datasets.IsSuccessStatusCode)
         {

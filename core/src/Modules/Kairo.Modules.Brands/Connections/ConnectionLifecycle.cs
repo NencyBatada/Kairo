@@ -23,6 +23,7 @@ internal static class ConnectionLifecycle
         State = connection.State.ToString(),
         connection.ExternalId,
         connection.DisplayName,
+        connection.ManagerId,
         connection.ReconnectReason,
     };
 }

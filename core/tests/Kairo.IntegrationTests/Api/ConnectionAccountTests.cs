@@ -45,7 +45,24 @@ public sealed class ConnectionAccountTests(SqlServer sqlServer) : IAsyncDisposab
 
         var accounts = await admin.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/connections/google-ads/accounts", Token);
 
-        Assert.Equal(["1111111111", "3333333333"], accounts.EnumerateArray().Select(account => account.GetProperty("id").GetString()!));
+        Assert.Equal(["1111111111", "3333333333", "4444444444"], accounts.EnumerateArray().Select(account => account.GetProperty("id").GetString()!));
+        var throughManager = accounts.EnumerateArray().Single(account => account.GetProperty("id").GetString() == "4444444444");
+        Assert.Equal("2222222222", throughManager.GetProperty("managerId").GetString());
+        Assert.Equal("Agency Client Shoes (through Acme Agency)", throughManager.GetProperty("name").GetString());
+        Assert.Equal(JsonValueKind.Null, accounts[0].GetProperty("managerId").ValueKind);
+    }
+
+    [Fact]
+    public async Task A_client_account_reached_through_a_manager_connects_and_checks_with_the_manager_as_login()
+    {
+        var (admin, brandId) = await ConsentedAsync("google-ads");
+
+        var chosen = await admin.PostAsJsonAsync($"/api/brands/{brandId}/connections/google-ads/account", new { externalId = "4444444444" }, Token);
+        var check = await admin.PostAsync($"/api/brands/{brandId}/connections/google-ads/check", null, Token);
+
+        Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
+        Assert.Equal("connected", (await Connections.GetAsync(admin, brandId, "google-ads")).GetProperty("state").GetString());
+        Assert.Equal(JsonValueKind.Null, (await check.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("problem").ValueKind);
     }
 
     [Fact]

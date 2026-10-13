@@ -25,10 +25,10 @@ internal sealed class MerchantCenterAccounts(IHttpClientFactory http) : IProduct
             .ToList();
     }
 
-    public async Task<string?> TestAsync(string accessToken, string externalId, CancellationToken cancellationToken)
+    public async Task<string?> TestAsync(string accessToken, ProductAccount account, CancellationToken cancellationToken)
     {
         using var response = await http.CreateClient(GoogleHttp.ClientName).CallAsync(
-            HttpMethod.Get, $"{BaseUrl}/{Uri.EscapeDataString(externalId)}/users/me", accessToken, null, cancellationToken);
+            HttpMethod.Get, $"{BaseUrl}/{Uri.EscapeDataString(account.Id)}/users/me", accessToken, null, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             return CannotOpen;

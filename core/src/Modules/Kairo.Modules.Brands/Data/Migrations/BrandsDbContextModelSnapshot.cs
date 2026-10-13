@@ -62,6 +62,10 @@ namespace Kairo.Modules.Brands.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("ManagerId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Product")
                         .IsRequired()
                         .HasMaxLength(20)

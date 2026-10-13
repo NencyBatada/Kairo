@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Kairo.Contracts.Connections;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,9 +22,24 @@ public sealed class ConnectionAccessTests(SqlServer sqlServer) : IAsyncDisposabl
         var second = await InBrandAsync(brandId, connections => connections.GetAccessAsync(ConnectedProduct.GoogleAds, Token));
 
         Assert.Equal("1111111111", first.ExternalId);
+        Assert.Null(first.ManagerId);
         Assert.StartsWith("access-", first.AccessToken);
         Assert.Equal(first.AccessToken, second.AccessToken);
         Assert.Equal(refreshes, _api.GoogleApis.Refreshes);
+    }
+
+    [Fact]
+    public async Task Access_to_a_client_account_names_the_manager_to_log_in_through()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Connections.CompleteAsync(_api, admin, await Connections.StartAsync(admin, brandId, "google-ads"));
+        (await admin.PostAsJsonAsync($"/api/brands/{brandId}/connections/google-ads/account", new { externalId = "4444444444" }, Token))
+            .EnsureSuccessStatusCode();
+
+        var access = await InBrandAsync(brandId, connections => connections.GetAccessAsync(ConnectedProduct.GoogleAds, Token));
+
+        Assert.Equal("4444444444", access.ExternalId);
+        Assert.Equal("2222222222", access.ManagerId);
     }
 
     [Fact]

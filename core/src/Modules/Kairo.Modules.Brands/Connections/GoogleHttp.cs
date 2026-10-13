@@ -21,10 +21,16 @@ internal static class GoogleHttp
         string url,
         string accessToken,
         object? body,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        params (string Name, string Value)[] headers)
     {
         using var request = new HttpRequestMessage(method, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        foreach (var (name, value) in headers)
+        {
+            request.Headers.Add(name, value);
+        }
+
         if (body is not null)
         {
             request.Content = JsonContent.Create(body, options: Json);

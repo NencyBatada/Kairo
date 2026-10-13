@@ -28,7 +28,7 @@ public interface IConnections
 
 public sealed record ConnectionStatus(ConnectedProduct Product, ConnectionState State, string? ExternalId, string? DisplayName);
 
-public sealed record ConnectionAccess(string ExternalId, string AccessToken, DateTimeOffset ExpiresAt);
+public sealed record ConnectionAccess(string ExternalId, string AccessToken, DateTimeOffset ExpiresAt, string? ManagerId);
 
 public sealed class ConnectionUnavailableException(ConnectedProduct product, string reason)
     : Exception($"The {product} connection is unavailable: {reason}.")

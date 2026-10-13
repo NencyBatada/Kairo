@@ -22,8 +22,8 @@ internal sealed class YouTubeAccounts(IHttpClientFactory http) : IProductAccount
         return (page?.Items ?? []).Select(channel => new ProductAccount(channel.Id, channel.Snippet?.Title ?? channel.Id)).ToList();
     }
 
-    public async Task<string?> TestAsync(string accessToken, string externalId, CancellationToken cancellationToken) =>
-        (await ListAsync(accessToken, cancellationToken)).Any(channel => channel.Id == externalId) ? null : NotManaged;
+    public async Task<string?> TestAsync(string accessToken, ProductAccount account, CancellationToken cancellationToken) =>
+        (await ListAsync(accessToken, cancellationToken)).Any(channel => channel.Id == account.Id) ? null : NotManaged;
 
     private sealed record ChannelPage(Channel[]? Items);
 

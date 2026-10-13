@@ -24,10 +24,10 @@ internal sealed class Ga4Accounts(IHttpClientFactory http) : IProductAccounts
             .ToList();
     }
 
-    public async Task<string?> TestAsync(string accessToken, string externalId, CancellationToken cancellationToken)
+    public async Task<string?> TestAsync(string accessToken, ProductAccount account, CancellationToken cancellationToken)
     {
         using var response = await http.CreateClient(GoogleHttp.ClientName).CallAsync(
-            HttpMethod.Get, $"{BaseUrl}/properties/{Uri.EscapeDataString(externalId)}", accessToken, null, cancellationToken);
+            HttpMethod.Get, $"{BaseUrl}/properties/{Uri.EscapeDataString(account.Id)}", accessToken, null, cancellationToken);
         return response.IsSuccessStatusCode ? null : CannotRead;
     }
 

@@ -108,6 +108,7 @@ internal static class ConsentEndpoints
             connection.State = ConnectionState.ChoosingAccount;
             connection.ExternalId = null;
             connection.DisplayName = null;
+            connection.ManagerId = null;
             connection.Scopes = string.Join(' ', product.Scopes);
             connection.GoogleSubject = subject;
             connection.ConnectedBy = userId;

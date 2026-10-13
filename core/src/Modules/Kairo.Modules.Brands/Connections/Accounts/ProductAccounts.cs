@@ -2,7 +2,7 @@ using Kairo.Contracts.Connections;
 
 namespace Kairo.Modules.Brands.Connections.Accounts;
 
-internal sealed record ProductAccount(string Id, string Name);
+internal sealed record ProductAccount(string Id, string Name, string? ManagerId = null);
 
 internal interface IProductAccounts
 {
@@ -10,7 +10,7 @@ internal interface IProductAccounts
 
     Task<IReadOnlyList<ProductAccount>> ListAsync(string accessToken, CancellationToken cancellationToken);
 
-    Task<string?> TestAsync(string accessToken, string externalId, CancellationToken cancellationToken);
+    Task<string?> TestAsync(string accessToken, ProductAccount account, CancellationToken cancellationToken);
 }
 
 internal sealed class ProductCatalog(IEnumerable<IProductAccounts> all)

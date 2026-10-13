@@ -39,6 +39,8 @@ Task: `docs/task.md` §1, Talha, **Account connections**. PRD US-1.1, BRD FR-1.1
 
 GA4 and BigQuery are optional, as PRD journey 3.1 has them.
 
+**Google Ads manager accounts.** Agencies often reach a brand's Google Ads account only through a manager account. Kairo expands every manager account the login can reach into its enabled client accounts, through a `customer_client` query, and lists them as "Client name (through Manager name)". A client chosen this way stores its manager's ID, and the test call and every later call send it as the `login-customer-id` header. `ConnectionAccess` carries it as `ManagerId`. Chosen by the product owner after review.
+
 ## States
 
 ```mermaid
@@ -98,7 +100,7 @@ public interface IConnections
     Task ReleaseAsync(Guid userId, CancellationToken cancellationToken);
 }
 
-public sealed record ConnectionAccess(string ExternalId, string AccessToken, DateTimeOffset ExpiresAt);
+public sealed record ConnectionAccess(string ExternalId, string AccessToken, DateTimeOffset ExpiresAt, string? ManagerId);
 ```
 
 - Each method works on the current brand context.

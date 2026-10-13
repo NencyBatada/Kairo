@@ -37,6 +37,7 @@ internal sealed class BrandsDbContext(DbContextOptions<BrandsDbContext> options,
             connection.Property(c => c.State).HasConversion<string>().HasMaxLength(20);
             connection.Property(c => c.ExternalId).HasMaxLength(100);
             connection.Property(c => c.DisplayName).HasMaxLength(200);
+            connection.Property(c => c.ManagerId).HasMaxLength(100);
             connection.Property(c => c.Scopes).HasMaxLength(1000);
             connection.Property(c => c.GoogleSubject).HasMaxLength(255);
             connection.Property(c => c.RefreshToken).HasMaxLength(4096);

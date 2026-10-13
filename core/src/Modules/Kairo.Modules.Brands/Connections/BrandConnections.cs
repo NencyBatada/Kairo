@@ -30,7 +30,7 @@ internal sealed class BrandConnections(
 
         var token = await tokens.GetAsync(connection, fresh: false, cancellationToken)
             ?? throw new ConnectionUnavailableException(product, connection.ReconnectReason ?? ReconnectReasons.TokenRejected);
-        return new ConnectionAccess(externalId, token.Value, token.ExpiresAt);
+        return new ConnectionAccess(externalId, token.Value, token.ExpiresAt, connection.ManagerId);
     }
 
     public async Task ReleaseAsync(Guid userId, CancellationToken cancellationToken)

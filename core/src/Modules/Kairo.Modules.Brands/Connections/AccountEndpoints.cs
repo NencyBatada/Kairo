@@ -85,7 +85,7 @@ internal static class AccountEndpoints
                 return Invalid("Choose one of the accounts this Google account can reach.");
             }
 
-            problem = await accounts.TestAsync(token.Value, account.Id, cancellationToken);
+            problem = await accounts.TestAsync(token.Value, account, cancellationToken);
         }
         catch (HttpRequestException)
         {
@@ -101,6 +101,7 @@ internal static class AccountEndpoints
         var before = ConnectionLifecycle.Snapshot(connection);
         connection.ExternalId = account.Id;
         connection.DisplayName = account.Name;
+        connection.ManagerId = account.ManagerId;
         connection.State = ConnectionState.Connected;
         connection.CheckedAt = now;
         connection.ReconnectReason = null;

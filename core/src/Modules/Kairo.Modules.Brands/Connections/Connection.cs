@@ -16,6 +16,8 @@ internal sealed class Connection : IBrandOwned
 
     public string? DisplayName { get; set; }
 
+    public string? ManagerId { get; set; }
+
     public string Scopes { get; set; } = "";
 
     public string GoogleSubject { get; set; } = "";

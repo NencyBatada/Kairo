@@ -63,7 +63,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             return new HttpResponseMessage(HttpStatusCode.Unauthorized);
         }
 
-        return Product(uri, body);
+        var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;
+        return Product(uri, body, login);
     }
 
     private HttpResponseMessage Token(Dictionary<string, string> form)
@@ -129,14 +130,16 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         return new HttpResponseMessage(HttpStatusCode.OK);
     }
 
-    private HttpResponseMessage Product(Uri uri, string body)
+    private HttpResponseMessage Product(Uri uri, string body, string? login)
     {
         var path = uri.AbsolutePath;
         return (uri.Host, path) switch
         {
             ("googleads.googleapis.com", "/v25/customers:listAccessibleCustomers") =>
                 Json(HttpStatusCode.OK, new { resourceNames = new[] { "customers/1111111111", "customers/2222222222", "customers/3333333333" } }),
-            ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:search", StringComparison.Ordinal) => AdsCustomer(path),
+            ("googleads.googleapis.com", _) when !AdsReachable(path, login) => new HttpResponseMessage(HttpStatusCode.Forbidden),
+            ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:search", StringComparison.Ordinal) =>
+                body.Contains("FROM customer_client", StringComparison.Ordinal) ? AdsClients(path) : AdsCustomer(path),
             ("googleads.googleapis.com", _) when path.EndsWith("/campaignBudgets:mutate", StringComparison.Ordinal) =>
                 body.Contains("\"validateOnly\":true", StringComparison.Ordinal) ? Json(AdsWrite, new { }) : new HttpResponseMessage(HttpStatusCode.BadRequest),
             ("www.googleapis.com", "/youtube/v3/channels") =>
@@ -156,6 +159,14 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         };
     }
 
+    private static bool AdsReachable(string path, string? login) =>
+        path.Split('/') is not [_, _, _, "4444444444", ..] || login == "2222222222";
+
+    private static HttpResponseMessage AdsClients(string path) =>
+        path.Split('/')[3] == "2222222222"
+            ? Json(HttpStatusCode.OK, new { results = new[] { new { customerClient = new { id = "4444444444", descriptiveName = "Agency Client Shoes", manager = false } } } })
+            : Json(HttpStatusCode.OK, new { results = Array.Empty<object>() });
+
     private static HttpResponseMessage AdsCustomer(string path)
     {
         var id = path.Split('/')[3];
@@ -164,6 +175,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             "1111111111" => new { id, descriptiveName = "Acme Shoes India", manager = false },
             "2222222222" => new { id, descriptiveName = "Acme Agency", manager = true },
             "3333333333" => new { id, descriptiveName = "Acme Outlet", manager = false },
+            "4444444444" => new { id, descriptiveName = "Agency Client Shoes", manager = false },
             _ => null,
         };
         return customer is null

@@ -45,7 +45,10 @@ internal static class ConnectionEndpoints
         string? problem;
         try
         {
-            problem = await catalog.For(info.Product).TestAsync(token.Value, connection.ExternalId!, cancellationToken);
+            problem = await catalog.For(info.Product).TestAsync(
+                token.Value,
+                new ProductAccount(connection.ExternalId!, connection.DisplayName ?? connection.ExternalId!, connection.ManagerId),
+                cancellationToken);
         }
         catch (HttpRequestException)
         {
