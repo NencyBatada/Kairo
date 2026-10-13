@@ -47,8 +47,8 @@ export function AuditLogTable({ page, timeZone, olderHref }: AuditLogTableProps)
           <TableCaption>Audit log, newest first</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-40 md:w-48">When</TableHead>
-              <TableHead className="w-36 md:w-52">Who</TableHead>
+              <TableHead className="md:w-48">When</TableHead>
+              <TableHead className="md:w-52">Who</TableHead>
               <TableHead>What</TableHead>
             </TableRow>
           </TableHeader>
