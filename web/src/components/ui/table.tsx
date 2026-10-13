@@ -33,7 +33,7 @@ function TableHead({ className, ...props }: ComponentProps<"th">) {
 }
 
 function TableCell({ className, ...props }: ComponentProps<"td">) {
-  return <td data-slot="table-cell" className={cn("px-4 py-3 align-top md:px-5", className)} {...props} />;
+  return <td data-slot="table-cell" className={cn("px-4 py-3 align-baseline md:px-5", className)} {...props} />;
 }
 
 function TableCaption({ className, ...props }: ComponentProps<"caption">) {
