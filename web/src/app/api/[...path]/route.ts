@@ -44,6 +44,7 @@ async function forward(request: Request): Promise<Response> {
     body: hasBody ? await request.arrayBuffer() : undefined,
     redirect: "manual",
     cache: "no-store",
+    signal: request.signal,
   });
 
   const responseHeaders = new Headers();

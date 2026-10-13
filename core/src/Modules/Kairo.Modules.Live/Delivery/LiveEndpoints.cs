@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Security.Claims;
 
 namespace Kairo.Modules.Live.Delivery;
@@ -12,14 +11,17 @@ internal static class LiveEndpoints
         api.MapBrandApi().MapGet("/live", Open);
     }
 
-    private static ServerSentEventsResult<string> Open(HttpContext http, CurrentMember member, LiveStream stream) =>
-        TypedResults.ServerSentEvents(stream.ReadAsync(
+    private static ServerSentEventsResult<string> Open(HttpContext http, CurrentMember member, LiveStream stream)
+    {
+        http.Response.OnStarting(() =>
+        {
+            http.Response.Headers.CacheControl = "no-cache, no-store, no-transform";
+            http.Response.Headers["X-Accel-Buffering"] = "no";
+            return Task.CompletedTask;
+        });
+        return TypedResults.ServerSentEvents(stream.ReadAsync(
             new Viewer(member.BrandId, member.UserId, member.Roles, http.User.FindFirstValue(KairoClaims.SessionKey)),
-            LastEventId(http.Request),
+            LivePosition.Parse(http.Request.Headers[LastEventIdHeader].ToString()),
             http.RequestAborted));
-
-    private static long? LastEventId(HttpRequest request) =>
-        long.TryParse(request.Headers[LastEventIdHeader].ToString(), NumberStyles.None, CultureInfo.InvariantCulture, out var id)
-            ? id
-            : null;
+    }
 }

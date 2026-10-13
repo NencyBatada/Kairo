@@ -26,6 +26,19 @@ public sealed class LiveDeliveryTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Proxies_are_told_not_to_compress_or_buffer_the_stream()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+
+        await using var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId);
+
+        Assert.True(listener.Response.Headers.CacheControl?.NoTransform);
+        Assert.True(listener.Response.Headers.CacheControl?.NoCache);
+        Assert.Equal("no", Assert.Single(listener.Response.Headers.GetValues("X-Accel-Buffering")));
+    }
+
+    [Fact]
     public async Task An_event_published_outside_a_request_reaches_the_workspace_s_streams()
     {
         var owner = await Workspaces.SignInAsync(_api);

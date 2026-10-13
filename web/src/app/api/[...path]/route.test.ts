@@ -38,6 +38,16 @@ test("forwards the method, path, query, headers and body to the core", async () 
   expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"email":"a@b.c"}');
 });
 
+test("stops the core request when the browser goes away", async () => {
+  const browser = new AbortController();
+  const request = new Request("https://web.test/api/brands/7/live", { signal: browser.signal });
+
+  await GET(request);
+  browser.abort();
+
+  expect(fetch.mock.calls[0][1].signal?.aborted).toBe(true);
+});
+
 test("sends no body with a GET", async () => {
   await GET(new Request("https://web.test/api/me"));
 
