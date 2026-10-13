@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
+
 import { coreApi, unwrap } from "@/lib/core-api/client";
 import { getWorkspace } from "@/lib/core-api/queries";
 import { timeZoneOptions } from "@/lib/time-zones";
 
 import { updateWorkspace } from "./actions";
 import { WorkspaceForm } from "./_components/workspace-form";
+
+export const metadata: Metadata = { title: "Workspace settings" };
 
 export default async function WorkspaceSettingsPage({ params }: PageProps<"/[workspace]/settings">) {
   const { workspace: handle } = await params;

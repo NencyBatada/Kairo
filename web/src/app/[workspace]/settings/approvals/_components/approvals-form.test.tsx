@@ -48,3 +48,15 @@ test("is read-only for members who are not admins", () => {
   expect(screen.queryByRole("button", { name: "Save approval settings" })).toBeNull();
   expect(screen.getByLabelText("Per-campaign budget limit (INR)").matches(":disabled")).toBe(true);
 });
+
+test("tells members who aren't admins why they can't edit", () => {
+  render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={approvers} canEdit={false} />);
+
+  expect(screen.getByText("Only admins can change who approves what.")).toBeTruthy();
+});
+
+test("explains an empty list of approvers", () => {
+  render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={[]} canEdit />);
+
+  expect(screen.getAllByText("Nobody has the approver role yet. Give someone the role on the Team page.")).toHaveLength(4);
+});

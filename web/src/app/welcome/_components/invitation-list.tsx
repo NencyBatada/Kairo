@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { roleLabels, type MyInvitation } from "@/lib/core-api/types";
 
 type InvitationListProps = {
@@ -8,29 +10,33 @@ type InvitationListProps = {
 
 export function InvitationList({ invitations, accept, decline }: InvitationListProps) {
   return (
-    <ul className="divide-y divide-black/10 dark:divide-white/15">
-      {invitations.map((invitation) => (
-        <li key={invitation.id} className="flex items-center justify-between gap-4 py-3">
-          <div>
-            <p className="font-medium">{invitation.workspaceName}</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {invitation.invitedBy} invited you as {invitation.roles.map((role) => roleLabels[role]).join(", ")}.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <form action={accept.bind(null, invitation.id)}>
-              <button type="submit" className="rounded-md bg-black px-3 py-1 text-sm text-white dark:bg-white dark:text-black">
-                Accept
-              </button>
-            </form>
-            <form action={decline.bind(null, invitation.id)}>
-              <button type="submit" className="rounded-md border px-3 py-1 text-sm">
-                Decline
-              </button>
-            </form>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <Card className="gap-0 overflow-hidden py-0 md:gap-0 md:py-0">
+      <ul className="divide-y divide-border">
+        {invitations.map((invitation) => (
+          <li key={invitation.id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-5">
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-foreground" title={invitation.workspaceName}>
+                {invitation.workspaceName}
+              </p>
+              <p className="text-small text-subtle-foreground">
+                {invitation.invitedBy} invited you as {invitation.roles.map((role) => roleLabels[role]).join(", ")}.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <form action={accept.bind(null, invitation.id)} className="flex-1 md:flex-none">
+                <Button type="submit" variant="secondary" size="sm" className="w-full">
+                  Accept
+                </Button>
+              </form>
+              <form action={decline.bind(null, invitation.id)} className="flex-1 md:flex-none">
+                <Button type="submit" variant="ghost" size="sm" className="w-full">
+                  Decline
+                </Button>
+              </form>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

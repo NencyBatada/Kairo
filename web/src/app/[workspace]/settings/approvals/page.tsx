@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
+
 import { coreApi, unwrap } from "@/lib/core-api/client";
 import { getWorkspace } from "@/lib/core-api/queries";
 
 import { saveApprovalSettings } from "../actions";
 import { ApprovalsForm } from "./_components/approvals-form";
+
+export const metadata: Metadata = { title: "Approvals" };
 
 export default async function ApprovalsPage({ params }: PageProps<"/[workspace]/settings/approvals">) {
   const { workspace: handle } = await params;

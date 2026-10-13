@@ -40,3 +40,9 @@ test("keeps the saved time zone selected even when it is not in the offered list
 
   expect((screen.getByLabelText("Time zone") as HTMLSelectElement).value).toBe("Asia/Kolkata");
 });
+
+test("tells members who aren't admins why they can't edit", () => {
+  render(<WorkspaceForm action={vi.fn()} workspace={workspace} timeZones={["Asia/Kolkata"]} canEdit={false} />);
+
+  expect(screen.getByText("Only admins can change these details.")).toBeTruthy();
+});
