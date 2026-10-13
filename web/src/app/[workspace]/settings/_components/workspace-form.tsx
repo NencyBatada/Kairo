@@ -61,7 +61,7 @@ export function WorkspaceForm({ action, workspace, timeZones, canEdit }: Workspa
           </fieldset>
           <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-8 gap-y-2 text-sm">
             <dt className="text-subtle-foreground">Handle</dt>
-            <dd className="font-mono text-small text-foreground">{workspace.handle}</dd>
+            <dd className="font-mono text-small break-all text-foreground">{workspace.handle}</dd>
             <dt className="text-subtle-foreground">Currency</dt>
             <dd className="text-foreground">{workspace.currency}</dd>
           </dl>
