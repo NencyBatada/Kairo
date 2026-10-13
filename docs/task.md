@@ -20,7 +20,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Deployment script**: deploy.bat runs the tests and deploys every service to the chosen project (development, staging or production), applying database migrations first.
+- [/] **Deployment script**: deploy.bat runs the tests and deploys every service to the chosen project (development, staging or production), applying database migrations first.
 - [/] **Sign-in check**: The core checks each user's Google sign-in on every request. *Built and tested against a fake Google. Blocked: needs the real Google OAuth client in the kairo2 project for the browser check.*
 - [x] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit.
 - [ ] **Account connections**: Connects Google Ads, YouTube, Merchant Center, GA4 and BigQuery with the brand's consent, and keeps access tokens encrypted.
