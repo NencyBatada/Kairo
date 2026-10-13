@@ -11,4 +11,6 @@ public interface IModule
     void MapApi(IEndpointRouteBuilder api);
 
     void MapJobs(IEndpointRouteBuilder jobs);
+
+    Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken);
 }

@@ -26,6 +26,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Kairo.Api.Tests/Kairo.Api.Tests.csproj" />
     <Project Path="tests/Kairo.ArchitectureTests/Kairo.ArchitectureTests.csproj" />
+    <Project Path="tests/Kairo.IntegrationTests/Kairo.IntegrationTests.csproj" />
     <Project Path="tests/Kairo.Worker.Tests/Kairo.Worker.Tests.csproj" />
   </Folder>
 </Solution>

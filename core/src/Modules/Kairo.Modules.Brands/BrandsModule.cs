@@ -13,4 +13,6 @@ public sealed class BrandsModule : IModule
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
     }
+
+    public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) => Task.CompletedTask;
 }
