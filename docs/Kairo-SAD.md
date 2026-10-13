@@ -224,7 +224,7 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | Queues | Cloud Tasks | Separate queues for agent runs, Google Ads changes and notifications, each with its own rate limit |
 
 - **Region.** The app and its data run in asia-south1 (Mumbai), close to Indian brands. Gemini calls can use the global endpoint, while Veo and Imagen run in the nearest region that offers them.
-- **Delivery.** A deploy.bat script deploys Kairo with the gcloud CLI, taking the target project (development, staging or production) as an argument. It runs the tests, builds each service's container image with Cloud Build into Artifact Registry and deploys it to Cloud Run. Database changes ship as EF Core migrations, which the script applies before the services update. Shared resources such as the database, buckets, queues and secrets are created once per project with gcloud commands.
+- **Delivery.** `deploy.bat` deploys Kairo with the gcloud CLI, taking the target environment (development, staging or production) as an argument; `deploy/environments.psd1` maps each to its project. It runs the tests, builds each service's container image with Cloud Build into Artifact Registry, runs the Migrator as a Cloud Run job inside the VPC to apply EF Core migrations, then deploys the services to Cloud Run. Shared resources such as the network, database, secrets and service accounts are created once per project by `deploy/setup.ps1`. The development project has no load balancer: the web app forwards `/api/*` to the core with a Google identity token.
 
 ## 10. Observability and operations
 

@@ -54,3 +54,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - shell: pwsh
+        run: |
+          Install-Module Pester -RequiredVersion 5.9.1 -Scope CurrentUser -Force -SkipPublisherCheck
+          Import-Module Pester -RequiredVersion 5.9.1
+          Invoke-Pester -Path deploy/tests -CI -Output Detailed

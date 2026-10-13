@@ -9,6 +9,7 @@ Kairo takes a marketer from a rising demand signal to a live, on-brand Google Ad
 | `core/` | The ASP.NET Core API and worker, the 14 modules, the Migrator, and the Aspire AppHost for local development |
 | `agents/` | The Python agent service, built with Google's Agent Development Kit and FastAPI |
 | `web/` | The Next.js web app |
+| `deploy/` | `deploy.bat`'s scripts, the per-environment settings and their tests |
 | `docs/` | Requirements, architecture, and design specs and plans |
 
 ## Prerequisites
@@ -61,8 +62,11 @@ From the repository root:
 | Core | `dotnet test --solution core/Kairo.slnx` |
 | Agent service | `uv run --directory agents ruff check`, `uv run --directory agents ruff format --check`, `uv run --directory agents pytest` |
 | Web app | `npm --prefix web run lint`, `npm --prefix web test`, `npm --prefix web run build` |
+| Deployment scripts | `powershell -NoProfile -Command "Import-Module Pester -RequiredVersion 5.9.1; Invoke-Pester -Path deploy/tests"` |
 
 The core tests need Docker running, because `Kairo.IntegrationTests` starts SQL Server in a container. To run one test class, use `dotnet test --project core/tests/Kairo.IntegrationTests --filter-class "<namespace>.<Class>"`.
+
+The deployment script tests need Pester 5.9.1: `Install-Module Pester -RequiredVersion 5.9.1 -Scope CurrentUser -SkipPublisherCheck`.
 
 GitHub Actions runs all of these on every push and pull request to `main` and `develop`.
 
@@ -93,9 +97,27 @@ Each deployable has a Dockerfile. Every image listens on port 8080, or on `$PORT
 ```bash
 docker build -f core/src/Kairo.Api/Dockerfile -t kairo-api core
 docker build -f core/src/Kairo.Worker/Dockerfile -t kairo-worker core
+docker build -f core/src/Kairo.Migrator/Dockerfile -t kairo-migrator core
 docker build -t kairo-agents agents
 docker build -t kairo-web web
 ```
+
+## Deploy
+
+Kairo deploys to Google Cloud with `deploy.bat`. Each environment (development, staging, production) maps to a Google Cloud project in `deploy/environments.psd1`. Only development, the `kairo2` project, is set up.
+
+You need the gcloud CLI, signed in with an account that owns the project.
+
+1. **Set up the project, once.** `powershell -ExecutionPolicy Bypass -File deploy/setup.ps1 development` enables the APIs and creates the network, Cloud SQL, secrets and service accounts. It takes about fifteen minutes the first time and is safe to run again.
+2. **Deploy.** Commit your changes, then run `deploy.bat development`. It runs the tests, builds every image with Cloud Build, applies database migrations as a Cloud Run job, deploys the four services and prints the web app's address. Add `-SkipTests` to skip the tests.
+3. **Turn on Google sign-in, once per project.** In the Cloud Console, add the redirect URI that `deploy.bat` prints to the project's web OAuth client. Then store the client ID and secret, and deploy again:
+
+   ```bash
+   printf '%s' '<client id>' | gcloud secrets versions add google-client-id --data-file=- --project kairo2
+   printf '%s' '<client secret>' | gcloud secrets versions add google-client-secret --data-file=- --project kairo2
+   ```
+
+In development there is no load balancer: the web app forwards `/api/*` to the core itself, sending a Google identity token. Only the web app is public; the API, worker and agent service accept calls only from Kairo's own service accounts.
 
 ## Conventions
 
