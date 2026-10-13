@@ -8,6 +8,7 @@
     <PackageVersion Include="Aspire.Hosting.Python" Version="13.6.1" />
     <PackageVersion Include="Aspire.Hosting.Redis" Version="13.6.1" />
     <PackageVersion Include="Aspire.Hosting.SqlServer" Version="13.6.1" />
+    <PackageVersion Include="Aspire.Hosting.Yarp" Version="13.6.1" />
     <PackageVersion Include="Aspire.Microsoft.Data.SqlClient" Version="13.6.1" />
     <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.6.1" />
   </ItemGroup>

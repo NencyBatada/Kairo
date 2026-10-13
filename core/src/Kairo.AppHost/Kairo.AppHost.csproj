@@ -11,10 +11,12 @@
     <PackageReference Include="Aspire.Hosting.Python" />
     <PackageReference Include="Aspire.Hosting.Redis" />
     <PackageReference Include="Aspire.Hosting.SqlServer" />
+    <PackageReference Include="Aspire.Hosting.Yarp" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kairo.Api\Kairo.Api.csproj" />
+    <ProjectReference Include="..\Kairo.Migrator\Kairo.Migrator.csproj" />
     <ProjectReference Include="..\Kairo.Worker\Kairo.Worker.csproj" />
   </ItemGroup>
 
