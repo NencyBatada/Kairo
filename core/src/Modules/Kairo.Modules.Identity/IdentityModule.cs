@@ -13,7 +13,7 @@ public sealed class IdentityModule : IModule
         services.AddDataProtection()
             .SetApplicationName("Kairo")
             .PersistKeysToDbContext<IdentityDbContext>();
-        services.AddKairoSignIn();
+        services.AddKairoSignIn(configuration);
     }
 
     public void MapApi(IEndpointRouteBuilder api)

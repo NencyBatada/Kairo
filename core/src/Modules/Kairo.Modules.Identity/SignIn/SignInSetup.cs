@@ -8,14 +8,14 @@ namespace Kairo.Modules.Identity.SignIn;
 
 internal static class SignInSetup
 {
-    public static void AddKairoSignIn(this IServiceCollection services)
+    public static void AddKairoSignIn(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<SessionTimeouts>().BindConfiguration("Kairo:Sessions");
         services.AddSingleton<DatabaseTicketStore>();
         services.AddScoped<GoogleAccountSignIn>();
         services.AddAuthorization();
 
-        services.AddAuthentication(IdentitySchemes.Session)
+        var authentication = services.AddAuthentication(IdentitySchemes.Session)
             .AddCookie(IdentitySchemes.Session, options =>
             {
                 options.Cookie.Name = IdentitySchemes.SessionCookie;
@@ -34,8 +34,11 @@ internal static class SignInSetup
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return Task.CompletedTask;
                 };
-            })
-            .AddOpenIdConnect(IdentitySchemes.Google, options =>
+            });
+
+        if (!string.IsNullOrEmpty(configuration["Authentication:Google:ClientId"]))
+        {
+            authentication.AddOpenIdConnect(IdentitySchemes.Google, options =>
             {
                 options.Authority = "https://accounts.google.com";
                 options.CallbackPath = IdentitySchemes.CallbackPath;
@@ -74,6 +77,7 @@ internal static class SignInSetup
                     return Task.CompletedTask;
                 };
             });
+        }
 
         services.AddOptions<CookieAuthenticationOptions>(IdentitySchemes.Session)
             .Configure<DatabaseTicketStore, IOptions<SessionTimeouts>, TimeProvider>((options, store, sessions, time) =>
