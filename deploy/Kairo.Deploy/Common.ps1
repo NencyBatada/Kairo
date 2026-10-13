@@ -74,6 +74,7 @@ function Invoke-Native {
         [switch]$Capture
     )
 
+    $null = Get-Command -Name $FilePath -ErrorAction Stop
     if ($Capture) {
         $output = & $FilePath @ArgumentList
     }

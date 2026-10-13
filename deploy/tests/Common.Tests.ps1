@@ -59,6 +59,17 @@ Describe 'Invoke-Native' {
             Should -Throw '*failed with exit code 3*'
     }
 
+    It 'stops when the program is not installed, even when called from a prompt that carries on after errors' {
+        $module = (Resolve-Path "$PSScriptRoot/../Kairo.Deploy").Path
+        $command = "Import-Module '$module'; Invoke-Native -FilePath '$shell' -ArgumentList @('-NoProfile', '-Command', 'exit 0'); " +
+            "Invoke-Native -FilePath 'kairo-no-such-tool' -ArgumentList @('--version'); 'carried on'"
+
+        $output = & $shell -NoProfile -Command $command 2>&1 | ForEach-Object { "$_" }
+
+        $output | Should -Not -Contain 'carried on'
+        ($output -join ' ') | Should -BeLike '*kairo-no-such-tool*'
+    }
+
     It 'keeps passwords out of the failure message' {
         $message = $null
         try {
