@@ -23,6 +23,7 @@ internal static class FeedSetup
     public static void MapFeeds(this IEndpointRouteBuilder api)
     {
         var analytics = api.MapBrandApi().MapGroup("/analytics");
+        analytics.MapGet("/feeds", FeedEndpoints.StatusAsync);
         var sales = analytics.MapGroup("/sales");
         sales.MapPost("/uploads", SalesEndpoints.UploadAsync)
             .RequireBrandRole(BrandRoles.Admin | BrandRoles.Marketer)

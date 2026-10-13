@@ -37,6 +37,11 @@ public sealed class PermissionTests(SqlServer sqlServer) : IAsyncDisposable
             (HttpMethod.Post, $"{brand}/connections/google-ads/account", new { externalId = "1" }, true),
             (HttpMethod.Post, $"{brand}/connections/google-ads/check", null, true),
             (HttpMethod.Delete, $"{brand}/connections/google-ads", null, true),
+            (HttpMethod.Get, $"{brand}/analytics/feeds", null, false),
+            (HttpMethod.Get, $"{brand}/analytics/sales/uploads", null, false),
+            (HttpMethod.Get, $"{brand}/analytics/sales/source", null, false),
+            (HttpMethod.Put, $"{brand}/analytics/sales/source", new { table = "bad" }, true),
+            (HttpMethod.Delete, $"{brand}/analytics/sales/source", null, true),
         ];
 
         var wrong = new List<string>();
