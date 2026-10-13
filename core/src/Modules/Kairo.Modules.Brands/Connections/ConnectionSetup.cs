@@ -32,5 +32,7 @@ internal static class ConnectionSetup
         product.MapGet("/connect", ConsentEndpoints.Connect);
         product.MapGet("/accounts", AccountEndpoints.ListAsync);
         product.MapPost("/account", AccountEndpoints.ChooseAsync);
+        product.MapPost("/check", ConnectionEndpoints.CheckAsync);
+        product.MapDelete("", ConnectionEndpoints.DisconnectAsync);
     }
 }

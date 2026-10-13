@@ -84,4 +84,21 @@ internal static class Connections
         Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
         return callback.Issued;
     }
+
+    public static async Task CopyStoredTokenAsync(string connectionString, Guid fromBrand, Guid toBrand, string product)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            UPDATE brands.Connections
+            SET RefreshToken = (SELECT RefreshToken FROM brands.Connections WHERE BrandId = @from AND Product = @product)
+            WHERE BrandId = @to AND Product = @product;
+            """;
+        command.Parameters.AddWithValue("@from", fromBrand);
+        command.Parameters.AddWithValue("@to", toBrand);
+        command.Parameters.AddWithValue("@product", StoredProducts[product]);
+        Assert.Equal(1, await command.ExecuteNonQueryAsync());
+    }
 }
