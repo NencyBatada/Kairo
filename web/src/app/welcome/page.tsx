@@ -62,7 +62,7 @@ async function YourWorkspaces() {
                 <li key={workspace.id}>
                   <Link
                     href={`/${workspace.handle}/today`}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors duration-120 hover:bg-accent focus-visible:-outline-offset-2 focus-visible:bg-accent md:px-5"
+                    className="group flex items-center gap-3 px-4 py-3.5 transition-colors duration-120 hover:bg-accent focus-visible:-outline-offset-2 focus-visible:bg-accent md:px-5"
                   >
                     <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-primary-soft text-small font-bold text-primary-strong">
                       {initials(workspace.name).slice(0, 1)}
@@ -70,7 +70,10 @@ async function YourWorkspaces() {
                     <span className="min-w-0 flex-1 truncate font-semibold text-foreground" title={workspace.name}>
                       {workspace.name}
                     </span>
-                    <ArrowRight className="size-4 text-subtle-foreground" aria-hidden="true" />
+                    <ArrowRight
+                      className="size-4 text-subtle-foreground transition-[translate,color] duration-120 ease-out group-hover:text-foreground group-focus-visible:text-foreground motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5"
+                      aria-hidden="true"
+                    />
                   </Link>
                 </li>
               ))}

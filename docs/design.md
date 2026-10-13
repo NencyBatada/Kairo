@@ -297,10 +297,10 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Logo | The mark plus the serif wordmark, at one size everywhere, optionally as a link |
 | AppShell | The sidebar from `lg`, and the top bar plus left sheet below it. The sheet closes when a page is chosen. |
 | NavMenu | The seven areas with icons. The current area gets `aria-current="page"`, a `primary-soft` fill and a terracotta icon. |
-| WorkspaceSwitcher | A trigger showing the workspace initial and name. The menu links to each workspace, ticks the current one, and ends with "Invitations (n) and new workspaces" or "Create a workspace". |
-| UserMenu | A trigger with the avatar, name and email. The menu shows who is signed in and offers Sign out. |
+| WorkspaceSwitcher | A trigger showing the workspace initial and name. The menu links to each workspace, ticks the current one, and ends with "Invitations (n) and new workspaces" or "Create a workspace". The trigger keeps its `accent` fill while the menu is open. |
+| UserMenu | A trigger with the avatar, name and email. The menu shows who is signed in and offers Sign out. The trigger keeps its `accent` fill while the menu is open. |
 | PageHeader | Eyebrow, title, description and actions (section 7.2) |
-| LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
+| LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline; hovering another tab previews its underline in `border-strong`. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
 | EmptyState | An icon tile, a serif title, one line of explanation and optional actions. It never offers an action that doesn't work yet. |
 | FormStatus | The result of a form, next to its main action: a tick and `success-strong` text with `role="status"`, or an alert icon and `destructive-strong` text with `role="alert"` |
 
@@ -410,6 +410,11 @@ Every list and page has all three.
 
 - Ad previews and asset review sit on `lightbox`, with a `border` hairline, at the true aspect ratio of each placement.
 - Previews imitate the surface they will appear on (a Search ad, a Shopping card, a Shorts frame), not Kairo's styling.
+
+### 9.12 Lists and rows
+
+- Lists of people, invitations and workspaces sit in one card with hairlines between rows (`divide-y`), not a card per row.
+- **A row that opens a page** is one link. It fills with `accent` on hover and focus, and ends with an arrow that moves 2px right, so the row reads as a way in.
 
 ## 10. Accessibility
 

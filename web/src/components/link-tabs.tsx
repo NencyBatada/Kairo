@@ -26,7 +26,7 @@ export function LinkTabs({ label, tabs, className }: { label: string; tabs: Link
             <Link
               href={tab.href}
               aria-current={isCurrentPath(pathname, tab.href, tab.exact) ? "page" : undefined}
-              className="-mb-px inline-flex h-11 items-center border-b-2 border-transparent text-sm font-medium text-muted-foreground transition-colors duration-120 hover:text-foreground aria-[current=page]:border-primary aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+              className="-mb-px inline-flex h-11 items-center border-b-2 border-transparent text-sm font-medium text-muted-foreground transition-colors duration-120 hover:text-foreground hover:not-aria-[current=page]:border-border-strong aria-[current=page]:border-primary aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
             >
               {tab.label}
             </Link>

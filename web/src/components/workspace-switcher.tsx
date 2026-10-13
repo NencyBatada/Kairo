@@ -28,7 +28,7 @@ export function WorkspaceSwitcher({ current, workspaces, pendingInvitations }: W
       <DropdownMenuTrigger
         title={current.name}
         aria-label={`Workspace: ${current.name}`}
-        className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border-strong bg-card px-2.5 text-left text-sm font-semibold text-foreground transition-colors duration-120 hover:bg-accent pointer-coarse:h-11"
+        className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border-strong bg-card px-2.5 text-left text-sm font-semibold text-foreground transition-colors duration-120 hover:bg-accent data-popup-open:bg-accent pointer-coarse:h-11"
       >
         <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-md bg-primary-soft text-xs font-bold text-primary-strong">
           {initials(current.name).slice(0, 1)}
