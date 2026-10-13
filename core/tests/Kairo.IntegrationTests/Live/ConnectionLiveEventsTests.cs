@@ -62,9 +62,10 @@ public sealed class ConnectionLiveEventsTests(SqlServer sqlServer) : IAsyncDispo
         (await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/members/{other.UserId}/roles", new { roles = new[] { "marketer" } }, Token))
             .EnsureSuccessStatusCode();
 
-        var types = new[] { await listener.NextAsync(), await listener.NextAsync() };
+        var types = new[] { await listener.NextAsync(), await listener.NextAsync(), await listener.NextAsync() };
         Assert.Contains(types, message => message.Type == "team.changed");
         Assert.Contains(types, message => message.Type == "connection.changed" && message.Data.GetProperty("product").GetString() == "ga4");
+        Assert.Contains(types, message => message.Type == "notification.created" && message.Data.GetProperty("kind").GetString() == "connection.problem");
     }
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
