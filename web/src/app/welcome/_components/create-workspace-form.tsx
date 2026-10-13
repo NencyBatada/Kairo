@@ -51,7 +51,13 @@ export function CreateWorkspaceForm({ action, timeZones, currencies }: CreateWor
       <div className="grid gap-5 md:grid-cols-2">
         <Field>
           <Label htmlFor="timeZone">Time zone</Label>
-          <NativeSelect id="timeZone" name="timeZone" defaultValue={DEFAULT_TIME_ZONE} aria-describedby="timeZone-error">
+          <NativeSelect
+            id="timeZone"
+            name="timeZone"
+            defaultValue={DEFAULT_TIME_ZONE}
+            aria-describedby="timeZone-error"
+            aria-invalid={errors.timeZone ? true : undefined}
+          >
             {timeZones.map((zone) => (
               <option key={zone} value={zone}>
                 {zone}
@@ -62,7 +68,13 @@ export function CreateWorkspaceForm({ action, timeZones, currencies }: CreateWor
         </Field>
         <Field>
           <Label htmlFor="currency">Currency</Label>
-          <NativeSelect id="currency" name="currency" defaultValue="INR" aria-describedby="currency-help currency-error">
+          <NativeSelect
+            id="currency"
+            name="currency"
+            defaultValue="INR"
+            aria-describedby="currency-help currency-error"
+            aria-invalid={errors.currency ? true : undefined}
+          >
             {currencies.map((currency) => (
               <option key={currency} value={currency}>
                 {currency}

@@ -279,7 +279,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | NativeSelect | The same as Input, with a chevron | Uses the platform picker on phones |
 | Checkbox | Unchecked, checked, focus, disabled | Native, styled: a 16px box with an `input` border; checked fills with `primary`. In forced-colours mode it falls back to the system checkbox. |
 | ChoiceChip | Unchecked, checked | A label-wrapped native checkbox shaped as a pill, for picking several short options such as roles |
-| Field | Label, control, description, error | A layout wrapper for those four. Forms wire `htmlFor`, `aria-describedby` and `aria-invalid` themselves, and the error sits under the control. |
+| Field | Label, control, description, error | A layout wrapper for those four. Forms wire `htmlFor`, `aria-describedby` and `aria-invalid` themselves, on selects as well as inputs, and the error sits under the control. |
 | Card | Header (title and description), content, footer | `card` surface, `border`, `rounded-lg` |
 | Badge | `neutral`, `gate`, `success`, `warning`, `destructive`, `info` | A pill in `text-xs` 500. Status variants include their icon. |
 | Alert | `neutral`, `info`, `success`, `warning`, `destructive` | A soft background with an icon, a title and a description, for messages that stay on screen |
@@ -434,7 +434,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 | Keyboard | Everything works without a mouse. Menus use arrow keys, Escape closes overlays, and focus returns to the trigger. |
 | Targets | At least 24 × 24px everywhere, and 44 × 44px on touch screens. That includes the label rows of checkbox lists, which grow with `pointer-coarse:min-h-11`. |
 | Names | Every control has a visible label. Icon-only buttons have an `aria-label`. |
-| Structure | One `h1` per page and headings in order. Landmarks: `nav` "Main", `main`, and named sub-navigation such as "Settings". |
+| Structure | One `h1` per page and headings in order. Landmarks: a `header` (the phone top bar, or the logo bar on pages outside a workspace), `nav` "Main", `main`, and named sub-navigation such as "Settings". A skip link to `main` comes first. |
 | Announcements | Form results use `role="status"` or `role="alert"`. Live counts announce in words, such as "3 approvals waiting". |
 | Colour | Never the only signal. Status always pairs an icon with words. |
 | Motion | Respects `prefers-reduced-motion` |

@@ -24,6 +24,12 @@ test("shows the workspace on the top bar and opens the navigation in a drawer", 
   expect(within(drawer).getByRole("navigation", { name: "Main" })).toBeTruthy();
 });
 
+test("is a banner landmark holding the menu button", () => {
+  const button = renderNav();
+
+  expect(within(screen.getByRole("banner")).getByRole("button", { name: "Open navigation" })).toBe(button);
+});
+
 test("closes once a page is chosen", async () => {
   fireEvent.click(renderNav());
   const drawer = await screen.findByRole("dialog", { name: "Navigation" });

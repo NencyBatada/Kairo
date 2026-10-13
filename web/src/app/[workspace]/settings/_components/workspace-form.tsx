@@ -49,7 +49,13 @@ export function WorkspaceForm({ action, workspace, timeZones, canEdit }: Workspa
             </Field>
             <Field>
               <Label htmlFor="timeZone">Time zone</Label>
-              <NativeSelect id="timeZone" name="timeZone" defaultValue={workspace.timeZone} aria-describedby="timeZone-error">
+              <NativeSelect
+                id="timeZone"
+                name="timeZone"
+                defaultValue={workspace.timeZone}
+                aria-describedby="timeZone-error"
+                aria-invalid={errors.timeZone ? true : undefined}
+              >
                 {zones.map((zone) => (
                   <option key={zone} value={zone}>
                     {zone}

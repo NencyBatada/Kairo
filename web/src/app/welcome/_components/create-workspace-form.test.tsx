@@ -31,6 +31,19 @@ test("shows field errors from the core next to their fields", async () => {
   expect(await screen.findByText("That handle is taken.")).toBeTruthy();
 });
 
+test("marks a select invalid when the core rejects its value", async () => {
+  const action = vi.fn(async (): Promise<FormState> => ({ status: "error", fieldErrors: { currency: ["Kairo doesn't support that currency yet."] } }));
+  render(<CreateWorkspaceForm action={action} timeZones={["Asia/Kolkata"]} currencies={["INR"]} />);
+
+  fireEvent.change(screen.getByLabelText("Brand name"), { target: { value: "Acme Shoes" } });
+  fireEvent.change(screen.getByLabelText("Handle"), { target: { value: "acme" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+
+  await screen.findByText("Kairo doesn't support that currency yet.");
+  expect(screen.getByLabelText("Currency").getAttribute("aria-invalid")).toBe("true");
+  expect(screen.getByLabelText("Time zone").getAttribute("aria-invalid")).toBeNull();
+});
+
 function description(element: HTMLElement) {
   return (element.getAttribute("aria-describedby") ?? "")
     .split(" ")

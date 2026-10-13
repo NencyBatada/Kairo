@@ -16,7 +16,7 @@ export function MobileNav({ context, children }: { context?: ReactNode; children
   }
 
   return (
-    <div className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-sidebar px-2 lg:hidden">
+    <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-sidebar px-2 lg:hidden">
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger
           aria-label="Open navigation"
@@ -33,6 +33,6 @@ export function MobileNav({ context, children }: { context?: ReactNode; children
       </Sheet>
       <Logo href="/" />
       {context && <div className="ml-auto min-w-0 truncate pr-2 text-small font-semibold text-muted-foreground">{context}</div>}
-    </div>
+    </header>
   );
 }

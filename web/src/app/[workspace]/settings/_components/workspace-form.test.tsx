@@ -41,6 +41,16 @@ test("keeps the saved time zone selected even when it is not in the offered list
   expect((screen.getByLabelText("Time zone") as HTMLSelectElement).value).toBe("Asia/Kolkata");
 });
 
+test("marks the time zone invalid when the core rejects it", async () => {
+  const action = vi.fn(async (): Promise<FormState> => ({ status: "error", fieldErrors: { timeZone: ["Pick a time zone from the list."] } }));
+  render(<WorkspaceForm action={action} workspace={workspace} timeZones={["Asia/Kolkata"]} canEdit />);
+
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+  await screen.findByText("Pick a time zone from the list.");
+  expect(screen.getByLabelText("Time zone").getAttribute("aria-invalid")).toBe("true");
+});
+
 test("explains that the handle and currency can't be changed", () => {
   render(<WorkspaceForm action={vi.fn()} workspace={workspace} timeZones={["Asia/Kolkata"]} canEdit />);
 
