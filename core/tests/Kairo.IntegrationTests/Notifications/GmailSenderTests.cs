@@ -105,6 +105,25 @@ public sealed class GmailSenderTests(SqlServer sqlServer) : IAsyncDisposable
         Assert.Single(_api.GoogleApis.Requests, request => request == "POST gmail.googleapis.com/gmail/v1/users/me/messages/send");
     }
 
+    [Theory]
+    [InlineData("rateLimitExceeded", true)]
+    [InlineData("userRateLimitExceeded", true)]
+    [InlineData("dailyLimitExceeded", true)]
+    [InlineData("quotaExceeded", true)]
+    [InlineData("insufficientPermissions", false)]
+    [InlineData(null, false)]
+    public async Task A_forbidden_answer_may_pass_only_when_it_is_a_rate_or_quota_limit(string? reason, bool mayPass)
+    {
+        _api.GoogleApis.AllowRefreshToken(SenderRefreshToken);
+        _api.GoogleApis.GmailSend = HttpStatusCode.Forbidden;
+        _api.GoogleApis.GmailSendReason = reason;
+
+        var failure = await Assert.ThrowsAsync<EmailSendException>(() => SendAsync(Message()));
+
+        Assert.Equal(mayPass, failure.MayPass);
+        Assert.Equal("Gmail answered 403.", failure.Message);
+    }
+
     [Fact]
     public async Task A_refused_access_token_is_dropped_and_may_pass()
     {

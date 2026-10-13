@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using MimeKit;
 
 namespace Kairo.Modules.Notifications.Delivery;
@@ -8,6 +9,8 @@ namespace Kairo.Modules.Notifications.Delivery;
 internal sealed class GmailSender(IHttpClientFactory http, SenderToken token, IConfiguration configuration) : IEmailSender
 {
     private const string SendEndpoint = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
+
+    private static readonly string[] LimitReasons = ["rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded", "quotaExceeded"];
 
     public async Task<SendResult> SendAsync(EmailMessage message, CancellationToken cancellationToken)
     {
@@ -28,7 +31,26 @@ internal sealed class GmailSender(IHttpClientFactory http, SenderToken token, IC
         }
 
         var status = (int)response.StatusCode;
-        throw new EmailSendException($"Gmail answered {status}.", mayPass: response.StatusCode == HttpStatusCode.TooManyRequests || status >= 500);
+        var limited = response.StatusCode == HttpStatusCode.TooManyRequests
+            || (response.StatusCode == HttpStatusCode.Forbidden && await IsLimitAsync(response, cancellationToken));
+        throw new EmailSendException($"Gmail answered {status}.", mayPass: limited || status >= 500);
+    }
+
+    private static async Task<bool> IsLimitAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var body = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+            return body.RootElement.TryGetProperty("error", out var error)
+                && error.TryGetProperty("errors", out var errors)
+                && errors.ValueKind == JsonValueKind.Array
+                && errors.EnumerateArray().Any(item =>
+                    item.TryGetProperty("reason", out var reason) && LimitReasons.Contains(reason.GetString()));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     public static string Build(EmailMessage message, string sender)

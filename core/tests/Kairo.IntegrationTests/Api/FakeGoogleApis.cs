@@ -39,6 +39,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HttpStatusCode GmailSend { get; set; } = HttpStatusCode.OK;
 
+    public string? GmailSendReason { get; set; }
+
     public ConcurrentQueue<string> GmailMessages { get; } = new();
 
     public IReadOnlyList<MimeMessage> SentMail =>
@@ -174,7 +176,15 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     {
         if (GmailSend != HttpStatusCode.OK)
         {
-            return Json(GmailSend, new { error = new { code = (int)GmailSend, message = "Refused by the fake." } });
+            return Json(GmailSend, new
+            {
+                error = new
+                {
+                    code = (int)GmailSend,
+                    message = "Refused by the fake.",
+                    errors = GmailSendReason is null ? [] : new[] { new { domain = "usageLimits", reason = GmailSendReason } },
+                },
+            });
         }
 
         using var request = JsonDocument.Parse(body);
