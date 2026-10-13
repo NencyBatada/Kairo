@@ -53,6 +53,47 @@ public sealed class ConnectionAccessTests(SqlServer sqlServer) : IAsyncDisposabl
         Assert.Equal(ConnectionState.NeedsReconnect, status.State);
     }
 
+    [Fact]
+    public async Task A_rejected_token_stays_rejected_when_the_callers_transaction_rolls_back()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var issued = await Connections.ConnectAsync(_api, admin, brandId, "google-ads");
+        _api.GoogleApis.Reject(issued.RefreshToken);
+        _api.Clock.Advance(TimeSpan.FromHours(2));
+
+        await using (var scope = _api.Services.CreateAsyncScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
+            await database.UseBrandAsync(brandId, Token);
+            await database.BeginTransactionAsync(Token);
+            await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+                scope.ServiceProvider.GetRequiredService<IConnections>().GetAccessAsync(ConnectedProduct.GoogleAds, Token));
+            await database.RollbackAsync(Token);
+        }
+
+        var status = await InBrandAsync(brandId, connections => connections.GetStatusAsync(ConnectedProduct.GoogleAds, Token));
+        Assert.Equal(ConnectionState.NeedsReconnect, status.State);
+        Assert.Contains("connection.needs_reconnect", await Workspaces.AuditActionsAsync(admin, brandId));
+    }
+
+    [Fact]
+    public async Task A_token_sealed_with_another_key_is_kept_rather_than_erased()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Connections.ConnectAsync(_api, admin, brandId, "google-ads");
+        await Connections.SetKeyVersionAsync(
+            sqlServer.KairoConnectionString, brandId, "google-ads",
+            "projects/kairo2/locations/asia-south1/keyRings/kairo/cryptoKeys/connection-tokens/cryptoKeyVersions/1");
+        _api.Clock.Advance(TimeSpan.FromHours(2));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            InBrandAsync(brandId, connections => connections.GetAccessAsync(ConnectedProduct.GoogleAds, Token)));
+
+        Assert.NotNull(await Connections.StoredTokenAsync(sqlServer.KairoConnectionString, brandId, "google-ads"));
+        var status = await InBrandAsync(brandId, connections => connections.GetStatusAsync(ConnectedProduct.GoogleAds, Token));
+        Assert.Equal(ConnectionState.Connected, status.State);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private async Task<(HttpClient Admin, Guid BrandId)> WorkspaceAsync()

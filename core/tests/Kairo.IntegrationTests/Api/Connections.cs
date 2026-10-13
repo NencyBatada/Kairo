@@ -101,4 +101,19 @@ internal static class Connections
         command.Parameters.AddWithValue("@product", StoredProducts[product]);
         Assert.Equal(1, await command.ExecuteNonQueryAsync());
     }
+
+    public static async Task SetKeyVersionAsync(string connectionString, Guid brandId, string product, string keyVersion)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            UPDATE brands.Connections SET KeyVersion = @version WHERE BrandId = @brand AND Product = @product;
+            """;
+        command.Parameters.AddWithValue("@version", keyVersion);
+        command.Parameters.AddWithValue("@brand", brandId);
+        command.Parameters.AddWithValue("@product", StoredProducts[product]);
+        Assert.Equal(1, await command.ExecuteNonQueryAsync());
+    }
 }

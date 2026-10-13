@@ -23,6 +23,8 @@ internal sealed class KmsTokenCipher(string keyName) : ITokenCipher
         return new SealedToken(response.Ciphertext.ToByteArray(), response.Name);
     }
 
+    public bool CanOpen(string? keyVersion) => keyVersion?.StartsWith($"{keyName}/cryptoKeyVersions/", StringComparison.Ordinal) == true;
+
     public async Task<string> OpenAsync(byte[] ciphertext, string context, CancellationToken cancellationToken)
     {
         var client = await _client.Value;
