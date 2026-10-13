@@ -22,10 +22,14 @@ public sealed class NotificationsModule : IModule
             NotificationSettings.HasSender(provider.GetRequiredService<IConfiguration>())
                 ? provider.GetRequiredService<GmailSender>()
                 : provider.GetRequiredService<LogEmailSender>());
+        services.AddScoped<EmailDispatcher>();
+        services.AddSingleton<EmailDeliverySwitch>();
+        services.AddHostedService<EmailDelivery>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.ServiceProvider.GetRequiredService<EmailDeliverySwitch>().TurnOn();
         api.MapInbox();
         api.MapEmailSettings();
     }

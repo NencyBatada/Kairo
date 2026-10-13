@@ -76,6 +76,7 @@ public sealed class KairoApiFactory(
         builder.UseSetting("Authentication:Google:ClientSecret", FakeGoogleApis.ClientSecret);
         builder.UseSetting("Kairo:PublicOrigin", PublicOrigin);
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
+        builder.UseSetting("Kairo:Notifications:DeliveryLoop", "off");
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
         {
             builder.UseSetting(key, value);
