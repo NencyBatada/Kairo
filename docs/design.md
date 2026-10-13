@@ -284,7 +284,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Badge | `neutral`, `gate`, `success`, `warning`, `destructive`, `info` | A pill in `text-xs` 500. Status variants include their icon. |
 | Alert | `neutral`, `info`, `success`, `warning`, `destructive` | A soft background with an icon, a title and a description, for messages that stay on screen |
 | Avatar | Image, initials fallback | The Google photo when available, otherwise initials on `accent` (`primary-soft` for you) |
-| Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground`; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
+| Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground` on a `muted` band; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
 | DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`. The highlighted item gets an `accent` fill and a 3px terracotta bar on its left, so keyboard focus clears 3:1. Arrow keys move, Escape closes and focus returns to the trigger. |
 | Sheet | Left (navigation), right (Ask Kairo) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim |
 | AlertDialog | Title, description, Cancel, confirm | For destructive or irreversible actions (section 9.4). On a very short screen it scrolls inside instead of running off the screen. |
