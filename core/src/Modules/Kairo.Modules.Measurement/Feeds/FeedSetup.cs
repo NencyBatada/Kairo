@@ -10,4 +10,14 @@ internal static class FeedSetup
         services.AddSingleton<BigQueryClient>();
         services.AddSingleton<BigQueryTables>();
     }
+
+    public static void MapFeeds(this IEndpointRouteBuilder api)
+    {
+        var analytics = api.MapBrandApi().MapGroup("/analytics");
+        var sales = analytics.MapGroup("/sales");
+        sales.MapPost("/uploads", SalesEndpoints.UploadAsync)
+            .RequireBrandRole(BrandRoles.Admin | BrandRoles.Marketer)
+            .DisableAntiforgery();
+        sales.MapGet("/uploads", SalesEndpoints.ListUploadsAsync);
+    }
 }

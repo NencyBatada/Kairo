@@ -14,6 +14,7 @@ public sealed class MeasurementModule : IModule
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.MapFeeds();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
