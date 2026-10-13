@@ -51,6 +51,8 @@ function Invoke-KairoDeploy {
             "--set-secrets=$($apiSecrets -join ',')"
         ))
 
+    $apiAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-api'
+
     Publish-KairoService -Environment $Environment -Service 'kairo-worker' -Image (Get-KairoImage -Environment $Environment -Name 'worker' -Tag $tag) `
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @("--set-secrets=$sqlSecret"))
 
@@ -58,7 +60,7 @@ function Invoke-KairoDeploy {
         -Settings @(
             '--no-invoker-iam-check',
             "--min-instances=$($Environment.MinInstances.web)",
-            "--set-env-vars=KAIRO_API_URL=$($urls['kairo-api']),KAIRO_API_AUDIENCE=$($urls['kairo-api'])"
+            "--set-env-vars=KAIRO_API_URL=$($urls['kairo-api']),KAIRO_API_AUDIENCE=$apiAudience"
         )
 
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-api' -Caller 'kairo-web'
@@ -161,6 +163,17 @@ function Publish-KairoService {
             '--region', $Environment.Region,
             '--project', $Environment.Project
         ) + $Settings)
+}
+
+function Get-KairoServiceAudience {
+    param([Parameter(Mandatory)][hashtable]$Environment, [Parameter(Mandatory)][string]$Service)
+
+    ((Invoke-Gcloud -ArgumentList @(
+                'run', 'services', 'describe', $Service,
+                '--region', $Environment.Region,
+                '--project', $Environment.Project,
+                '--format=value(status.url)'
+            ) -Capture) | Select-Object -First 1).Trim()
 }
 
 function Grant-KairoInvoker {

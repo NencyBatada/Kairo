@@ -17,7 +17,11 @@ Describe 'Invoke-KairoDeploy' {
         Mock -ModuleName Kairo.Deploy Invoke-KairoTests { $script:calls.Add('tests') }
         Mock -ModuleName Kairo.Deploy Get-KairoProjectNumber { '123' }
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $script:googleConfigured }
-        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:calls.Add($ArgumentList -join ' ') }
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud {
+            $line = $ArgumentList -join ' '
+            $script:calls.Add($line)
+            if ($line -like 'run services describe kairo-api *') { 'https://kairo-api-abc123-el.a.run.app' }
+        }
     }
 
     It 'tests, builds, migrates, then deploys the services' {
@@ -130,7 +134,13 @@ Describe 'Invoke-KairoDeploy' {
         $web = $calls | Where-Object { $_ -like 'run deploy kairo-web *' }
         $web | Should -BeLike '*--no-invoker-iam-check*'
         $web | Should -BeLike '*--min-instances=0*'
-        $web | Should -BeLike '*--set-env-vars=KAIRO_API_URL=https://kairo-api-123.asia-south1.run.app,KAIRO_API_AUDIENCE=https://kairo-api-123.asia-south1.run.app*'
+        $web | Should -BeLike '*--set-env-vars=KAIRO_API_URL=https://kairo-api-123.asia-south1.run.app,KAIRO_API_AUDIENCE=https://kairo-api-abc123-el.a.run.app*'
+    }
+
+    It 'signs the web app''s calls for the address Cloud Run accepts as the API''s audience' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $calls | Should -Contain 'run services describe kairo-api --region asia-south1 --project kairo-test --format=value(status.url)'
     }
 
     It 'lets only the right callers invoke the private services' {

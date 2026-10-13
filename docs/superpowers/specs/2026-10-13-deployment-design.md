@@ -92,7 +92,7 @@ Cloud Run invoker grants are made by `deploy.ps1`, because a service must exist 
    | `kairo-agents` | Requires authentication. Request timeout 3600 s. |
    | `kairo-api` | Requires authentication. Direct VPC egress (private ranges). Session affinity. `ConnectionStrings__kairo`, `Authentication__Google__ClientId` and `Authentication__Google__ClientSecret` from secrets. `Kairo__PublicOrigin` is the web app's URL. |
    | `kairo-worker` | Requires authentication. Direct VPC egress (private ranges). Connection string from its secret. |
-   | `kairo-web` | Public. `KAIRO_API_URL` is the API's URL. |
+   | `kairo-web` | Public. `KAIRO_API_URL` is the API's URL. `KAIRO_API_AUDIENCE` is the URL Cloud Run reports for the API after it deploys, because Cloud Run accepts only that URL, not the project-number URL, as a token audience. |
 
    Minimum instances come from the environment file. Every service scales to zero in development.
 
