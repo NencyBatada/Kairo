@@ -23,6 +23,8 @@ public sealed class KairoApiFactory(string connectionString, Action<IServiceColl
 
     public FakeGoogle Google { get; } = new();
 
+    public FakeGoogleApis GoogleApis { get; } = new();
+
     public HttpClient CreateBrowser(bool withRequestHeader = true)
     {
         var cookies = new CookieContainer();
@@ -68,13 +70,14 @@ public sealed class KairoApiFactory(string connectionString, Action<IServiceColl
         builder.UseSetting("ConnectionStrings:kairo", connectionString);
         builder.UseSetting("ConnectionStrings:redis", "127.0.0.1:1,abortConnect=false,connectRetry=0,connectTimeout=1000");
         builder.UseSetting("Authentication:Google:ClientId", FakeGoogle.ClientId);
-        builder.UseSetting("Authentication:Google:ClientSecret", "kairo-test-secret");
+        builder.UseSetting("Authentication:Google:ClientSecret", FakeGoogleApis.ClientSecret);
         builder.UseSetting("Kairo:PublicOrigin", PublicOrigin);
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Clock);
             services.PostConfigureAll<OpenIdConnectOptions>(Google.Configure);
+            services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             configureServices?.Invoke(services);
         });
     }
