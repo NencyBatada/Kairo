@@ -23,7 +23,7 @@ function AlertDialogContent({ className, ...props }: WithClassName<AlertDialogPr
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-5 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-overlay outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:duration-240 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:duration-160",
+          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-md grid-cols-1 -translate-x-1/2 -translate-y-1/2 gap-5 rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-overlay outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-open:duration-240 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:duration-160",
           className,
         )}
         {...props}
@@ -33,7 +33,7 @@ function AlertDialogContent({ className, ...props }: WithClassName<AlertDialogPr
 }
 
 function AlertDialogHeader({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="alert-dialog-header" className={cn("grid gap-2", className)} {...props} />;
+  return <div data-slot="alert-dialog-header" className={cn("grid grid-cols-1 gap-2", className)} {...props} />;
 }
 
 function AlertDialogFooter({ className, ...props }: ComponentProps<"div">) {
@@ -44,7 +44,7 @@ function AlertDialogFooter({ className, ...props }: ComponentProps<"div">) {
 
 function AlertDialogTitle({ className, ...props }: WithClassName<AlertDialogPrimitive.Title.Props>) {
   return (
-    <AlertDialogPrimitive.Title data-slot="alert-dialog-title" className={cn("text-base font-semibold text-foreground", className)} {...props} />
+    <AlertDialogPrimitive.Title data-slot="alert-dialog-title" className={cn("text-base font-semibold wrap-anywhere text-foreground", className)} {...props} />
   );
 }
 
@@ -52,7 +52,7 @@ function AlertDialogDescription({ className, ...props }: WithClassName<AlertDial
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-sm wrap-anywhere text-muted-foreground", className)}
       {...props}
     />
   );

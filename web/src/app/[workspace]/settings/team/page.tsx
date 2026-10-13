@@ -49,7 +49,7 @@ export default async function TeamPage({ params }: PageProps<"/[workspace]/setti
         </Card>
       </section>
       {isAdmin && (
-        <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Invite someone</CardTitle>
