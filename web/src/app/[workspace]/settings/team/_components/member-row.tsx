@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useId } from "react";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { FormStatus } from "@/components/form-status";
@@ -22,11 +22,12 @@ type MemberRowProps = {
 export function MemberRow({ member, isSelf, canManage, changeRoles, remove }: MemberRowProps) {
   const [rolesState, rolesAction, savingRoles] = useActionState(changeRoles, idle);
   const [removeState, removeAction, removing] = useActionState(remove, idle);
+  const rolesForm = useId();
 
   return (
     <li className="flex flex-col gap-3 px-4 py-4 md:px-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div className="flex min-w-0 items-center gap-3 lg:w-72 lg:shrink-0">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[18rem_auto_auto_minmax(0,1fr)] xl:items-center xl:gap-x-4">
+        <div className="flex min-w-0 items-center gap-3">
           <UserAvatar name={member.name} pictureUrl={member.pictureUrl} isYou={isSelf} />
           <div className="min-w-0">
             <p className="flex min-w-0 gap-1 font-semibold text-foreground">
@@ -41,35 +42,39 @@ export function MemberRow({ member, isSelf, canManage, changeRoles, remove }: Me
           </div>
         </div>
         {canManage ? (
-          <form action={rolesAction} className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <form id={rolesForm} action={rolesAction} className="min-w-0">
             <RoleCheckboxes legend={`Roles for ${member.name}`} defaultValue={member.roles} />
-            <Button type="submit" variant="secondary" size="sm" pending={savingRoles}>
-              Save roles
-            </Button>
           </form>
         ) : (
-          <div className="flex flex-1 flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {member.roles.map((role) => (
               <Badge key={role}>{roleLabels[role]}</Badge>
             ))}
           </div>
         )}
         {(canManage || isSelf) && (
-          <ConfirmDialog
-            trigger={
-              <Button variant="destructive" size="sm" pending={removing} className="self-start lg:self-auto">
-                {isSelf ? "Leave workspace" : "Remove"}
+          <div className="flex items-center justify-between gap-2 xl:contents">
+            {canManage && (
+              <Button type="submit" form={rolesForm} variant="secondary" size="sm" pending={savingRoles}>
+                Save roles
               </Button>
-            }
-            title={isSelf ? "Leave this workspace?" : `Remove ${member.name}?`}
-            description={
-              isSelf
-                ? "You lose access to this workspace straight away. An admin can invite you again."
-                : `${member.name} loses access to this workspace straight away. You can invite them again later.`
-            }
-            confirmLabel={isSelf ? "Leave workspace" : "Remove"}
-            action={removeAction}
-          />
+            )}
+            <ConfirmDialog
+              trigger={
+                <Button variant="destructive" size="sm" pending={removing} className="xl:col-start-4 xl:justify-self-end">
+                  {isSelf ? "Leave workspace" : "Remove"}
+                </Button>
+              }
+              title={isSelf ? "Leave this workspace?" : `Remove ${member.name}?`}
+              description={
+                isSelf
+                  ? "You lose access to this workspace straight away. An admin can invite you again."
+                  : `${member.name} loses access to this workspace straight away. You can invite them again later.`
+              }
+              confirmLabel={isSelf ? "Leave workspace" : "Remove"}
+              action={removeAction}
+            />
+          </div>
         )}
       </div>
       <FormStatus state={rolesState} />

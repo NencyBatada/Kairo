@@ -415,6 +415,10 @@ Every list and page has all three.
 
 - Lists of people, invitations and workspaces sit in one card with hairlines between rows (`divide-y`), not a card per row.
 - **A row that opens a page** is one link. It fills with `accent` on hover and focus, and ends with an arrow that moves 2px right, so the row reads as a way in.
+- **A row with controls and actions**, such as a member with role chips, Save roles and Remove:
+  - below `xl` it stacks: who or what the row is, then its controls, then its actions on one line, with the main action on the left and the destructive one on the right
+  - from `xl` it is a single line, with the destructive action at the far right
+  - an action button that sits outside its form joins it with the `form` attribute, so the layout never forces a form around the whole row
 
 ## 10. Accessibility
 
