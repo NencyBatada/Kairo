@@ -14,7 +14,7 @@ public sealed class NotificationsModule : IModule
         services.AddDbContext<NotificationsDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, NotificationsDbContext.SchemaName));
         services.AddScoped<INotifications, Notifier>();
-        services.AddHttpClient(SenderToken.ClientName).RemoveAllResilienceHandlers();
+        services.AddHttpClient(SenderToken.ClientName, client => client.Timeout = EmailDispatcher.SendTimeout).RemoveAllResilienceHandlers();
         services.AddSingleton<SenderToken>();
         services.AddSingleton<GmailSender>();
         services.AddSingleton<LogEmailSender>();

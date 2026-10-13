@@ -20,35 +20,51 @@ internal sealed class EmailDispatcher(
 
     public static readonly TimeSpan Lease = TimeSpan.FromMinutes(2);
 
+    public static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(20);
+
     public async Task<int> SendDueAsync(CancellationToken cancellationToken)
     {
         await using (await database.EnterSystemScopeAsync(cancellationToken))
         {
-            var claimed = await ClaimAsync(cancellationToken);
+            var lease = time.GetUtcNow() + Lease;
+            var claimed = await ClaimAsync(lease, cancellationToken);
             foreach (var id in claimed)
             {
-                await SendAsync(id, cancellationToken);
+                await SendAsync(id, lease, cancellationToken);
             }
 
             return claimed.Count;
         }
     }
 
-    private Task<List<long>> ClaimAsync(CancellationToken cancellationToken)
+    private Task<List<long>> ClaimAsync(DateTimeOffset lease, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
-        var leaseEnd = now + Lease;
         return db.Database.SqlQuery<long>($"""
             UPDATE TOP (10) notifications.OutboundEmails WITH (READPAST, UPDLOCK, ROWLOCK)
-            SET ClaimedUntil = {leaseEnd}, Attempts = Attempts + 1
+            SET ClaimedUntil = {lease}, Attempts = Attempts + 1
             OUTPUT inserted.Id AS Value
             WHERE Status = N'Pending' AND NextAttemptAt <= {now} AND (ClaimedUntil IS NULL OR ClaimedUntil < {now})
             """).ToListAsync(cancellationToken);
     }
 
-    private async Task SendAsync(long id, CancellationToken cancellationToken)
+    private async Task SendAsync(long id, DateTimeOffset lease, CancellationToken cancellationToken)
     {
-        var email = await db.OutboundEmails.Include(row => row.Notification).SingleAsync(row => row.Id == id, cancellationToken);
+        if (time.GetUtcNow() + (SendTimeout * 2) > lease)
+        {
+            await Ours(id, lease)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(row => row.ClaimedUntil, (DateTimeOffset?)null)
+                    .SetProperty(row => row.Attempts, row => row.Attempts - 1), cancellationToken);
+            return;
+        }
+
+        var email = await db.OutboundEmails.AsNoTracking().Include(row => row.Notification).SingleAsync(row => row.Id == id, cancellationToken);
+        if (email.ClaimedUntil != lease)
+        {
+            return;
+        }
+
         var notification = email.Notification!;
         var kind = NotificationKinds.Find(notification.Kind);
         var member = await members.FindAsync(email.BrandId, email.UserId, cancellationToken);
@@ -74,9 +90,21 @@ internal sealed class EmailDispatcher(
             }
         }
 
-        email.ClaimedUntil = null;
-        await db.SaveChangesAsync(cancellationToken);
+        var recorded = await Ours(id, lease)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(row => row.Status, email.Status)
+                .SetProperty(row => row.SentAt, email.SentAt)
+                .SetProperty(row => row.LastError, email.LastError)
+                .SetProperty(row => row.NextAttemptAt, email.NextAttemptAt)
+                .SetProperty(row => row.ClaimedUntil, (DateTimeOffset?)null), email.SentAt is null ? cancellationToken : CancellationToken.None);
+        if (recorded == 0)
+        {
+            logger.LogWarning("Notification email {EmailId} was claimed by another sender before its result was recorded.", id);
+        }
     }
+
+    private IQueryable<OutboundEmail> Ours(long id, DateTimeOffset lease) =>
+        db.OutboundEmails.Where(row => row.Id == id && row.ClaimedUntil == lease);
 
     private void Fail(OutboundEmail email, Exception exception)
     {
