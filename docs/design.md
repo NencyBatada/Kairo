@@ -60,8 +60,8 @@ Kairo's look is **Warm Editorial**: warm paper and ink, with **terracotta** for 
 | `background` | `#F7F3ED` | `#15130F` | The page: warm paper, or espresso in dark mode |
 | `sidebar` | `#F0EADF` | `#1A1713` | The sidebar, the phone top bar and the navigation drawer |
 | `card` | `#FFFDF9` | `#1E1B17` | Cards, inputs, menus, dialogs and sheets. `popover` uses the same values. |
-| `muted` | `#F3EDE4` | `#25211C` | Sunken areas: Why blocks, table header rows, skeletons. `secondary` uses the same values. |
-| `accent` | `#EBE3D7` | `#2D2822` | Hover and pressed fill on neutral items. This is shadcn's name; the brand colour is `primary`. |
+| `muted` | `#F3EDE4` | `#25211C` | Sunken areas: Why blocks, table header rows, disabled fields. `secondary` uses the same values. |
+| `accent` | `#EBE3D7` | `#2D2822` | Hover and pressed fill on neutral items, and skeletons. This is shadcn's name; the brand colour is `primary`. |
 | `border` | `#E6DDD0` | `#322C25` | Hairlines around cards and between rows |
 | `border-strong` | `#D8CDBC` | `#40382F` | Secondary buttons, chips and stronger dividers |
 | `input` | `#887B6B` | `#7D7264` | Borders of inputs, selects and checkboxes, at 3:1 or better on every fill |
@@ -102,7 +102,7 @@ Each status has three tokens: the base colour for icons, dots, borders and marks
 - **Destructive actions** use destructive text on a ghost button and always name the object: "Remove", "Revoke", "Leave workspace". Only the confirm button inside a confirmation dialog is filled.
 - **Links** in running text use `primary` and underline on hover. Navigation links don't underline.
 - **Neutral hover** uses `accent`. The main action darkens to `primary-hover`.
-- **Contrast** (WCAG 2.2 AA): text 4.5:1, large text (24px, or 19px bold) 3:1, and control borders, icons and focus rings 3:1. The weakest verified pairs are `subtle-foreground` on `accent` at 4.76:1 and `input` on `accent` at 3.24:1, both in light mode.
+- **Contrast** (WCAG 2.2 AA): text 4.5:1, large text (24px, or 19px bold) 3:1, and control borders, icons and focus rings 3:1. The weakest verified pairs are `subtle-foreground` on `accent` at 4.76:1 in light mode, and `input` on `primary-soft` at 3.06:1 in dark mode.
 
 ### 3.6 Chart colours
 
@@ -195,7 +195,7 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 - A 4px grid, using Tailwind's spacing scale.
 - Page gutters: 16px on phones, 24px from `md`, 40px from `lg`. Vertical padding: 24px, 32px, 40px.
 - Between page sections: 32px. Between a heading and its content: 12px. Card padding: 16px on phones, 20px from `md`.
-- Field stacks: 16px between fields, 6px between a label and its control.
+- Field stacks: 20px between fields, 6px between a label and its control.
 
 ### 5.3 Widths
 
@@ -237,7 +237,7 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 
 - Lucide (`lucide-react`) at 16px (`size-4`) with a 1.75 stroke. Use 20px in the phone top bar and 24px inside empty-state tiles.
 - **The seven areas:** Today is Sun, Opportunities is TrendingUp, Campaigns is Megaphone, Triggers is Zap, Impact Lab is FlaskConical, Brand Kit is Palette and Settings is Settings. Ask Kairo is Sparkles.
-- **Status:** CircleCheck for success, TriangleAlert for warning, CircleX for errors and Info for information.
+- **Status:** CircleCheck for success, TriangleAlert for warning, CircleX in error badges, CircleAlert in error messages and alerts, and Info for information.
 - Decorative icons are hidden from screen readers. An icon-only button always has an `aria-label`. Never use emoji as icons.
 
 ### 7.2 Page templates
@@ -248,7 +248,7 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 | Onboarding | Welcome | A logo bar with Sign out, then one centred column (`max-w-2xl`) of cards |
 | Workspace page | The seven areas | The shell, then a PageHeader, then the content sections |
 | Workspace page with tabs | Settings, the campaign room | The shell, then a PageHeader, then LinkTabs, then the tab's content |
-| Detail | Opportunity detail | The shell, then a PageHeader with a back link, then the content |
+| Detail | Opportunity detail | The shell, then a PageHeader whose eyebrow names the parent area, then the content |
 
 **The shell.**
 
@@ -274,25 +274,24 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Button | `default` (terracotta), `secondary` (outlined card), `ghost`, `destructive` (destructive text), `destructive-solid` (confirm dialogs only), `link`; sizes `sm` 32px, `default` 36px, `lg` 40px, `icon` 36px | Grows to 44px on touch screens (`pointer-coarse:`). While pending it's disabled, shows a spinner and keeps its label. |
 | Input | Default, focus, invalid (`aria-invalid`), disabled | 36px tall, 44px on touch screens; `input` border; 16px text on phones |
 | NativeSelect | The same as Input, with a chevron | Uses the platform picker on phones |
-| Checkbox | Unchecked, checked, focus, disabled | Native, styled: a 16px box with an `input` border; checked fills with `primary` |
+| Checkbox | Unchecked, checked, focus, disabled | Native, styled: a 16px box with an `input` border; checked fills with `primary`. In forced-colours mode it falls back to the system checkbox. |
 | ChoiceChip | Unchecked, checked | A label-wrapped native checkbox shaped as a pill, for picking several short options such as roles |
-| Field | Label, control, description, error | Wires `htmlFor`, `aria-describedby` and `aria-invalid`. The error sits under the control. |
+| Field | Label, control, description, error | A layout wrapper for those four. Forms wire `htmlFor`, `aria-describedby` and `aria-invalid` themselves, and the error sits under the control. |
 | Card | Header (title and description), content, footer | `card` surface, `border`, `rounded-lg` |
 | Badge | `neutral`, `gate`, `success`, `warning`, `destructive`, `info` | A pill in `text-xs` 500. Status variants include their icon. |
 | Alert | `neutral`, `info`, `success`, `warning`, `destructive` | A soft background with an icon, a title and a description, for messages that stay on screen |
 | Avatar | Image, initials fallback | The Google photo when available, otherwise initials on `accent` (`primary-soft` for you) |
 | Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground`; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
-| DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`, items highlighted with `accent`, arrow-key navigation, Escape closes and focus returns to the trigger |
+| DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`. The highlighted item gets an `accent` fill and a 3px terracotta bar on its left, so keyboard focus clears 3:1. Arrow keys move, Escape closes and focus returns to the trigger. |
 | Sheet | Left (navigation), right (Ask Kairo) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim |
 | AlertDialog | Title, description, Cancel, confirm | For destructive or irreversible actions (section 9.4) |
-| Skeleton | Text line, block | `muted` fill with a slow pulse that stops under reduced motion |
-| Separator | Horizontal, vertical | `border` colour |
+| Skeleton | Text line, block | `accent` fill with a slow pulse that stops under reduced motion |
 
 ### 8.2 Kairo composites
 
 | Component | What it does |
 | --- | --- |
-| Logo | The mark plus the serif wordmark, in `sm` (top bar) and `md` (sidebar) sizes |
+| Logo | The mark plus the serif wordmark, at one size everywhere, optionally as a link |
 | AppShell | The sidebar from `lg`, and the top bar plus left sheet below it. The sheet closes when a page is chosen. |
 | NavMenu | The seven areas with icons. The current area gets `aria-current="page"`, a `primary-soft` fill and a terracotta icon. |
 | WorkspaceSwitcher | A trigger showing the workspace initial and name. The menu links to each workspace, ticks the current one, and ends with "Invitations (n) and new workspaces" or "Create a workspace". |
@@ -300,7 +299,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | PageHeader | Eyebrow, title, description and actions (section 7.2) |
 | LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
 | EmptyState | An icon tile, a serif title, one line of explanation and optional actions. It never offers an action that doesn't work yet. |
-| FormStatus | The result of a form, under its button: a tick and `success-strong` text with `role="status"`, or an alert icon and `destructive-strong` text with `role="alert"` |
+| FormStatus | The result of a form, next to its main action: a tick and `success-strong` text with `role="status"`, or an alert icon and `destructive-strong` text with `role="alert"` |
 
 ## 9. Patterns
 
@@ -416,7 +415,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 | Area | Rule |
 | --- | --- |
 | Contrast | The token pairs in section 3 are enforced by `theme.test.ts` |
-| Focus | Every interactive element shows a 2px `ring` with a 2px offset on keyboard focus (`focus-visible`). Sticky bars never cover the focused element. |
+| Focus | Every interactive element shows a 2px `ring` with a 2px offset on keyboard focus (`focus-visible`). Where a container clips (rows inside cards with hidden overflow), the ring is drawn inset instead, and scrolling containers leave 4px of room around it. Sticky bars never cover the focused element: below `lg`, the page reserves `scroll-padding-top` for the phone top bar. |
 | Keyboard | Everything works without a mouse. Menus use arrow keys, Escape closes overlays, and focus returns to the trigger. |
 | Targets | At least 24 × 24px everywhere, and 44 × 44px on touch screens |
 | Names | Every control has a visible label. Icon-only buttons have an `aria-label`. |
