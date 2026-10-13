@@ -1,3 +1,4 @@
+using Kairo.Contracts.Connections;
 using Kairo.Modules.Brands.Connections.Accounts;
 
 namespace Kairo.Modules.Brands.Connections;
@@ -19,6 +20,7 @@ internal static class ConnectionSetup
         services.AddSingleton<ProductCatalog>();
         services.AddScoped<ConnectionTokens>();
         services.AddScoped<GoogleRevocations>();
+        services.AddScoped<IConnections, BrandConnections>();
     }
 
     public static void MapConnections(this IEndpointRouteBuilder api)

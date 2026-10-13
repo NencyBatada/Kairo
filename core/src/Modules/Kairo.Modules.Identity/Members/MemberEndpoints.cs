@@ -1,4 +1,5 @@
 using Kairo.Contracts.Audit;
+using Kairo.Contracts.Connections;
 using Kairo.Modules.Identity.Data;
 
 namespace Kairo.Modules.Identity.Members;
@@ -40,6 +41,7 @@ internal static class MemberEndpoints
         KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
+        IConnections connections,
         CancellationToken cancellationToken)
     {
         if (request.Roles is not { Length: > 0 })
@@ -75,6 +77,11 @@ internal static class MemberEndpoints
 
         membership.Roles = after;
         await db.SaveChangesAsync(cancellationToken);
+        if (before.HasFlag(BrandRoles.Admin) && !after.HasFlag(BrandRoles.Admin))
+        {
+            await connections.ReleaseAsync(userId, cancellationToken);
+        }
+
         await audit.RecordAsync(
             new AuditRecord("member.roles_changed", "member", userId.ToString(), new { Roles = before.ToList() }, new { Roles = after.ToList() }),
             cancellationToken);
@@ -89,6 +96,7 @@ internal static class MemberEndpoints
         KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
+        IConnections connections,
         CancellationToken cancellationToken)
     {
         var leaving = userId == member.UserId;
@@ -118,6 +126,7 @@ internal static class MemberEndpoints
         db.DutyAssignments.RemoveRange(await db.DutyAssignments.Where(a => a.UserId == userId).ToListAsync(cancellationToken));
         db.Memberships.Remove(membership);
         await db.SaveChangesAsync(cancellationToken);
+        await connections.ReleaseAsync(userId, cancellationToken);
         await audit.RecordAsync(
             new AuditRecord(leaving ? "member.left" : "member.removed", "member", userId.ToString(), new { Roles = membership.Roles.ToList() }),
             cancellationToken);
