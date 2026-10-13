@@ -14,6 +14,7 @@ public sealed class AuditModule : IModule
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.MapAuditLog();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)

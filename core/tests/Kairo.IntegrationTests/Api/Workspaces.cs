@@ -28,4 +28,16 @@ internal static class Workspaces
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
     }
+
+    public static async Task<string[]> AuditActionsAsync(HttpClient admin, Guid brandId)
+    {
+        var page = await admin.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/audit-log?limit=200");
+        return page.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString()!).ToArray();
+    }
+
+    public static async Task<JsonElement> LatestAuditEntryAsync(HttpClient admin, Guid brandId)
+    {
+        var page = await admin.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/audit-log?limit=1");
+        return page.GetProperty("entries")[0];
+    }
 }
