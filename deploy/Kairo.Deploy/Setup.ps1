@@ -62,7 +62,8 @@ function Initialize-KairoDatabase {
 
     $scope = @('--project', $Environment.Project)
     $hasInstance = Test-Gcloud -ArgumentList (@('sql', 'instances', 'describe', $script:SqlInstance) + $scope)
-    $hasSecret = Test-Gcloud -ArgumentList (@('secrets', 'describe', $script:SqlSecret) + $scope)
+    $hasSecret = (Test-Gcloud -ArgumentList (@('secrets', 'describe', $script:SqlSecret) + $scope)) -and
+        (Test-KairoSecretHasValue -Environment $Environment -Name $script:SqlSecret)
 
     $password = $null
     if (-not $hasInstance) {

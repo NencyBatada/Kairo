@@ -18,6 +18,7 @@ Describe 'Initialize-KairoProject' {
             $script:calls.Add($line)
             if ($line -like 'sql instances describe*') { $script:instanceJson }
             if ($line -like 'services vpc-peerings list*' -and $script:exists) { 'servicenetworking-googleapis-com' }
+            if ($line -like 'secrets versions list*' -and $script:exists) { 'projects/1/secrets/kairo-sql-connection/versions/1' }
         }
         Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
         Mock -ModuleName Kairo.Deploy Start-Sleep { }
@@ -113,6 +114,18 @@ Describe 'Initialize-KairoProject' {
             $reset = $calls | Where-Object { $_ -like 'sql users set-password sqlserver --instance kairo-sql *' }
             $reset | Should -Match '--password=[A-Za-z0-9]{32}( |$)'
             ($calls | Where-Object { $_ -like 'sql instances create*' }) | Should -BeNullOrEmpty
+            Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 1 -ParameterFilter { $Name -eq 'kairo-sql-connection' }
+        }
+    }
+
+    Context 'when the connection secret exists but never got a value' {
+        BeforeEach {
+            Mock -ModuleName Kairo.Deploy Test-Gcloud { $true }
+            Initialize-KairoProject -Environment $environment
+        }
+
+        It 'resets the password and stores a new connection string' {
+            ($calls | Where-Object { $_ -like 'sql users set-password sqlserver --instance kairo-sql *' }) | Should -Not -BeNullOrEmpty
             Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 1 -ParameterFilter { $Name -eq 'kairo-sql-connection' }
         }
     }
