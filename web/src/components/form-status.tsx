@@ -1,17 +1,23 @@
+import { CircleAlert, CircleCheck } from "lucide-react";
+
 import type { FormState } from "@/lib/forms";
+import { cn } from "@/lib/utils";
 
 export function FormStatus({ state }: { state: FormState }) {
   if (!state.message) {
     return null;
   }
 
-  return state.status === "error" ? (
-    <p role="alert" className="text-sm text-red-700 dark:text-red-300">
-      {state.message}
-    </p>
-  ) : (
-    <p role="status" className="text-sm text-green-700 dark:text-green-300">
-      {state.message}
+  const failed = state.status === "error";
+  const Icon = failed ? CircleAlert : CircleCheck;
+
+  return (
+    <p
+      role={failed ? "alert" : "status"}
+      className={cn("flex items-start gap-2 text-small", failed ? "text-destructive-strong" : "text-success-strong")}
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>{state.message}</span>
     </p>
   );
 }
