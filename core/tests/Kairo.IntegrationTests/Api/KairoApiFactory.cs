@@ -12,7 +12,10 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Kairo.IntegrationTests.Api;
 
-public sealed class KairoApiFactory(string connectionString, Action<IServiceCollection>? configureServices = null)
+public sealed class KairoApiFactory(
+    string connectionString,
+    Action<IServiceCollection>? configureServices = null,
+    IReadOnlyDictionary<string, string>? settings = null)
     : WebApplicationFactory<Program>
 {
     public const string PublicOrigin = "https://kairo.test";
@@ -73,11 +76,16 @@ public sealed class KairoApiFactory(string connectionString, Action<IServiceColl
         builder.UseSetting("Authentication:Google:ClientSecret", FakeGoogleApis.ClientSecret);
         builder.UseSetting("Kairo:PublicOrigin", PublicOrigin);
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
+        foreach (var (key, value) in settings ?? new Dictionary<string, string>())
+        {
+            builder.UseSetting(key, value);
+        }
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Clock);
             services.PostConfigureAll<OpenIdConnectOptions>(Google.Configure);
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddHttpClient("kairo-gmail").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             configureServices?.Invoke(services);
         });
     }

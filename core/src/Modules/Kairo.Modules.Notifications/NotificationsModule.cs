@@ -1,5 +1,6 @@
 using Kairo.Contracts.Notifications;
 using Kairo.Modules.Notifications.Data;
+using Kairo.Modules.Notifications.Delivery;
 using Kairo.Modules.Notifications.EmailSettings;
 using Kairo.Modules.Notifications.Inbox;
 using Kairo.Modules.Notifications.Publishing;
@@ -13,6 +14,14 @@ public sealed class NotificationsModule : IModule
         services.AddDbContext<NotificationsDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, NotificationsDbContext.SchemaName));
         services.AddScoped<INotifications, Notifier>();
+        services.AddHttpClient(SenderToken.ClientName).RemoveAllResilienceHandlers();
+        services.AddSingleton<SenderToken>();
+        services.AddSingleton<GmailSender>();
+        services.AddSingleton<LogEmailSender>();
+        services.AddSingleton<IEmailSender>(provider =>
+            NotificationSettings.HasSender(provider.GetRequiredService<IConfiguration>())
+                ? provider.GetRequiredService<GmailSender>()
+                : provider.GetRequiredService<LogEmailSender>());
     }
 
     public void MapApi(IEndpointRouteBuilder api)

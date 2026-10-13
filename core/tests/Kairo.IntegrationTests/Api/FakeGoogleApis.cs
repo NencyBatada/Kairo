@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.WebUtilities;
+using MimeKit;
 
 namespace Kairo.IntegrationTests.Api;
 
@@ -36,6 +37,13 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HttpStatusCode BigQueryJobs { get; set; } = HttpStatusCode.OK;
 
+    public HttpStatusCode GmailSend { get; set; } = HttpStatusCode.OK;
+
+    public ConcurrentQueue<string> GmailMessages { get; } = new();
+
+    public IReadOnlyList<MimeMessage> SentMail =>
+        GmailMessages.Select(raw => MimeMessage.Load(new MemoryStream(Convert.FromBase64String(raw.Replace('-', '+').Replace('_', '/'))))).ToList();
+
     public int Refreshes => Requests.Count(request => request == "refresh_token");
 
     public IssuedCode IssueCode(string challenge, string redirectUri, IEnumerable<string> scopes, string subject)
@@ -46,6 +54,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     }
 
     public void Reject(string refreshToken) => _refreshTokens.TryRemove(refreshToken, out _);
+
+    public void AllowRefreshToken(string refreshToken) => _refreshTokens[refreshToken] = "sender";
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -155,8 +165,21 @@ public sealed class FakeGoogleApis : HttpMessageHandler
                 Json(HttpStatusCode.OK, new { projects = new[] { new { id = "acme-data", friendlyName = "Acme data" } } }),
             ("bigquery.googleapis.com", "/bigquery/v2/projects/acme-data/datasets") => Json(BigQueryRead, new { datasets = Array.Empty<object>() }),
             ("bigquery.googleapis.com", "/bigquery/v2/projects/acme-data/jobs") => Json(BigQueryJobs, new { }),
+            ("gmail.googleapis.com", "/gmail/v1/users/me/messages/send") => SendMail(body),
             _ => new HttpResponseMessage(HttpStatusCode.NotFound),
         };
+    }
+
+    private HttpResponseMessage SendMail(string body)
+    {
+        if (GmailSend != HttpStatusCode.OK)
+        {
+            return Json(GmailSend, new { error = new { code = (int)GmailSend, message = "Refused by the fake." } });
+        }
+
+        using var request = JsonDocument.Parse(body);
+        GmailMessages.Enqueue(request.RootElement.GetProperty("raw").GetString()!);
+        return Json(HttpStatusCode.OK, new { id = $"message-{GmailMessages.Count}", threadId = "thread" });
     }
 
     private static bool AdsReachable(string path, string? login) =>
