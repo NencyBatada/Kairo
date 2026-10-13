@@ -22,7 +22,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddSqlServerClient("kairo");
-builder.AddRedisClient("redis");
+if (!string.IsNullOrEmpty(builder.Configuration.GetConnectionString("redis")))
+{
+    builder.AddRedisClient("redis");
+}
 builder.Services.AddKairoCore();
 builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>
