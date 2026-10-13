@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
+
 import { NotFoundState } from "@/components/not-found-state";
 import { SiteHeader } from "@/components/site-header";
+
+export const metadata: Metadata = { title: "Page not found" };
 
 export default function NotFound() {
   return (

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 
 import { RoomTabs } from "./_components/room-tabs";
+
+export const metadata: Metadata = { title: "Campaign room" };
 
 export default function CampaignRoomLayout({ children, params }: LayoutProps<"/[workspace]/campaigns/[id]">) {
   return (
