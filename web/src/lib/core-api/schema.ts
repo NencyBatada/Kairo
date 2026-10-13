@@ -957,6 +957,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/analytics/feeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FeedsView"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/sales/uploads": {
         parameters: {
             query?: never;
@@ -1451,6 +1487,18 @@ export interface components {
         };
         EmailSettings: {
             kinds: components["schemas"]["EmailSetting"][];
+        };
+        FeedStatusView: {
+            feed: string;
+            state: string;
+            lastRunAt: null | string;
+            lastSuccessAt: null | string;
+            coveredThrough: null | string;
+            lastError: null | string;
+        };
+        FeedsView: {
+            dataset: string;
+            feeds: components["schemas"]["FeedStatusView"][];
         };
         HttpValidationProblemDetails: {
             type?: null | string;

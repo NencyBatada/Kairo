@@ -868,6 +868,35 @@
         }
       }
     },
+    "/api/brands/{brandId}/analytics/feeds": {
+      "get": {
+        "tags": [
+          "FeedEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedsView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/sales/uploads": {
       "post": {
         "tags": [
@@ -1693,6 +1722,70 @@
           }
         }
       },
+      "FeedStatusView": {
+        "required": [
+          "feed",
+          "state",
+          "lastRunAt",
+          "lastSuccessAt",
+          "coveredThrough",
+          "lastError"
+        ],
+        "type": "object",
+        "properties": {
+          "feed": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "lastRunAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastSuccessAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "coveredThrough": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "lastError": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "FeedsView": {
+        "required": [
+          "dataset",
+          "feeds"
+        ],
+        "type": "object",
+        "properties": {
+          "dataset": {
+            "type": "string"
+          },
+          "feeds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeedStatusView"
+            }
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -2388,6 +2481,9 @@
     },
     {
       "name": "AccountEndpoints"
+    },
+    {
+      "name": "FeedEndpoints"
     },
     {
       "name": "SalesEndpoints"
