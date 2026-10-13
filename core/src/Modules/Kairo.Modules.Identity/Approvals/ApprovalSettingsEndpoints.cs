@@ -1,4 +1,5 @@
 using Kairo.Contracts.Audit;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Members;
 
@@ -24,6 +25,7 @@ internal static class ApprovalSettingsEndpoints
         KairoDatabase database,
         IdentityDbContext db,
         IAuditLog audit,
+        ILiveUpdates live,
         CancellationToken cancellationToken)
     {
         (string Field, ApprovalDuty Duty, Guid[]? People)[] duties =
@@ -84,6 +86,7 @@ internal static class ApprovalSettingsEndpoints
         await audit.RecordAsync(
             new AuditRecord("approval_settings.changed", "brand", member.BrandId.ToString(), before, after),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.ApprovalSettingsChanged(), cancellationToken);
         return TypedResults.Ok(after);
     }
 

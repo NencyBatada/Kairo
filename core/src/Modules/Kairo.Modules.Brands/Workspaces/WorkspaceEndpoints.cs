@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Brands;
 using Kairo.Contracts.Identity;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Data;
 using Microsoft.Data.SqlClient;
 
@@ -104,6 +105,7 @@ internal static class WorkspaceEndpoints
         BrandsDbContext db,
         CurrentMember member,
         IAuditLog audit,
+        ILiveUpdates live,
         CancellationToken cancellationToken)
     {
         var errors = WorkspaceRules.Errors(
@@ -127,6 +129,7 @@ internal static class WorkspaceEndpoints
         await audit.RecordAsync(
             new AuditRecord("brand.updated", "brand", brand.Id.ToString(), before, Snapshot(brand)),
             cancellationToken);
+        await live.PublishAsync(new LiveEvent("workspace.changed", new { }, LiveAudience.Everyone), cancellationToken);
         return TypedResults.Ok(Details(brand, member));
     }
 

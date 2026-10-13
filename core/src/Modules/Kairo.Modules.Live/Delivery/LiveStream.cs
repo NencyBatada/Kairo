@@ -1,5 +1,6 @@
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Kairo.Contracts.Identity;
 using Kairo.Modules.Live.Data;
 
@@ -75,12 +76,35 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, IBrandAccess a
                 continue;
             }
 
+            if (ConcernsViewer(row, viewer))
+            {
+                if (!await StillAllowedAsync(viewer, cancellationToken))
+                {
+                    yield break;
+                }
+
+                lastCheck = time.GetUtcNow();
+            }
+
             if (viewer.CanSee(row) && sent.Add(row.Id))
             {
                 yield return LiveItems.From(row);
                 lastWrite = time.GetUtcNow();
             }
         }
+    }
+
+    private static bool ConcernsViewer(OutboxEvent row, Viewer viewer)
+    {
+        if (row.Type != "team.changed")
+        {
+            return false;
+        }
+
+        using var payload = JsonDocument.Parse(row.Payload);
+        return payload.RootElement.TryGetProperty("userId", out var userId)
+            && userId.TryGetGuid(out var id)
+            && id == viewer.UserId;
     }
 
     private async Task<bool> StillAllowedAsync(Viewer viewer, CancellationToken cancellationToken)

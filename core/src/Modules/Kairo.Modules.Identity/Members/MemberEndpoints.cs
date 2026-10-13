@@ -1,5 +1,6 @@
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Identity.Data;
 
 namespace Kairo.Modules.Identity.Members;
@@ -42,6 +43,7 @@ internal static class MemberEndpoints
         IdentityDbContext db,
         IAuditLog audit,
         IConnections connections,
+        ILiveUpdates live,
         CancellationToken cancellationToken)
     {
         if (request.Roles is not { Length: > 0 })
@@ -85,6 +87,7 @@ internal static class MemberEndpoints
         await audit.RecordAsync(
             new AuditRecord("member.roles_changed", "member", userId.ToString(), new { Roles = before.ToList() }, new { Roles = after.ToList() }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.TeamChanged(userId, removed: false), cancellationToken);
 
         var user = await db.Users.SingleAsync(u => u.Id == userId, cancellationToken);
         return TypedResults.Ok(new MemberResponse(user.Id, user.Name, user.Email, user.PictureUrl, after.ToList(), membership.JoinedAt));
@@ -97,6 +100,7 @@ internal static class MemberEndpoints
         IdentityDbContext db,
         IAuditLog audit,
         IConnections connections,
+        ILiveUpdates live,
         CancellationToken cancellationToken)
     {
         var leaving = userId == member.UserId;
@@ -130,6 +134,7 @@ internal static class MemberEndpoints
         await audit.RecordAsync(
             new AuditRecord(leaving ? "member.left" : "member.removed", "member", userId.ToString(), new { Roles = membership.Roles.ToList() }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.TeamChanged(userId, removed: true), cancellationToken);
         return TypedResults.NoContent();
     }
 

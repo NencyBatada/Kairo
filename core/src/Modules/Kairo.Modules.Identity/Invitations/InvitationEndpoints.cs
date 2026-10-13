@@ -2,6 +2,7 @@ using System.Net.Mail;
 using System.Security.Claims;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Brands;
+using Kairo.Contracts.Live;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Members;
 
@@ -54,6 +55,7 @@ internal static class InvitationEndpoints
         CurrentMember member,
         IdentityDbContext db,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -100,6 +102,7 @@ internal static class InvitationEndpoints
         await audit.RecordAsync(
             new AuditRecord("invitation.sent", "invitation", invitation.Id.ToString(), After: new { invitation.Email, Roles = invitation.Roles.ToList() }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.InvitationsChanged(), cancellationToken);
 
         var inviter = await db.Users.Where(user => user.Id == member.UserId).Select(user => user.Name).SingleAsync(cancellationToken);
         return TypedResults.Created(
@@ -111,6 +114,7 @@ internal static class InvitationEndpoints
         Guid invitationId,
         IdentityDbContext db,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -128,6 +132,7 @@ internal static class InvitationEndpoints
         await audit.RecordAsync(
             new AuditRecord("invitation.revoked", "invitation", invitation.Id.ToString(), Before: new { invitation.Email }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.InvitationsChanged(), cancellationToken);
         return TypedResults.NoContent();
     }
 
@@ -171,6 +176,7 @@ internal static class InvitationEndpoints
         KairoDatabase database,
         IBrandDirectory brands,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -200,6 +206,8 @@ internal static class InvitationEndpoints
         await audit.RecordAsync(
             new AuditRecord("invitation.accepted", "invitation", invitation.Id.ToString(), After: new { invitation.Email, Roles = invitation.Roles.ToList() }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.TeamChanged(userId, removed: false), cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.InvitationsChanged(), cancellationToken);
 
         var workspace = (await brands.GetAsync([invitation.BrandId], cancellationToken)).Single();
         return TypedResults.Ok(new JoinedWorkspace(workspace.Id, workspace.Handle));
@@ -211,6 +219,7 @@ internal static class InvitationEndpoints
         IdentityDbContext db,
         KairoDatabase database,
         IAuditLog audit,
+        ILiveUpdates live,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -227,6 +236,7 @@ internal static class InvitationEndpoints
         await audit.RecordAsync(
             new AuditRecord("invitation.declined", "invitation", invitation.Id.ToString(), Before: new { invitation.Email }),
             cancellationToken);
+        await live.PublishAsync(IdentityLiveEvents.InvitationsChanged(), cancellationToken);
         return TypedResults.NoContent();
     }
 
