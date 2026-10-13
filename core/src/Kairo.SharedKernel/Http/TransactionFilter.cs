@@ -36,6 +36,10 @@ internal sealed class TransactionFilter(KairoDatabase database) : IEndpointFilte
         }
     }
 
-    private static bool IsSuccess(object? result) =>
-        result is not IStatusCodeHttpResult { StatusCode: >= 400 };
+    private static bool IsSuccess(object? result) => result switch
+    {
+        INestedHttpResult nested => IsSuccess(nested.Result),
+        IStatusCodeHttpResult { StatusCode: >= 400 } => false,
+        _ => true,
+    };
 }

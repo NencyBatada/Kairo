@@ -61,6 +61,15 @@ public sealed class PipelineTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_change_that_ends_in_an_error_inside_a_result_union_is_rolled_back()
+    {
+        var refused = await _app.SendAsync(HttpMethod.Post, $"{Notes(_brand)}/then-refuse-in-union", _admin, new { text = "discarded" });
+
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Empty(await NotesAsync(_brand));
+    }
+
+    [Fact]
     public async Task A_change_that_throws_is_rolled_back()
     {
         var failed = await _app.SendAsync(HttpMethod.Post, $"{Notes(_brand)}/then-throw", _admin, new { text = "discarded" });

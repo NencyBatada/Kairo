@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +58,12 @@ internal sealed class PipelineApp(WebApplication app) : IAsyncDisposable
             return TypedResults.Ok();
         });
         brand.MapPost("/notes/then-refuse", async (NoteRequest request, NotesDbContext db) =>
+        {
+            db.Notes.Add(new Note { Text = request.Text });
+            await db.SaveChangesAsync();
+            return TypedResults.Conflict();
+        });
+        brand.MapPost("/notes/then-refuse-in-union", async Task<Results<Ok, Conflict>> (NoteRequest request, NotesDbContext db) =>
         {
             db.Notes.Add(new Note { Text = request.Text });
             await db.SaveChangesAsync();
