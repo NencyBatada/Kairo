@@ -692,6 +692,109 @@
         }
       }
     },
+    "/api/brands/{brandId}/connections/{product}/accounts": {
+      "get": {
+        "tags": [
+          "AccountEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductAccount"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/connections/{product}/account": {
+      "post": {
+        "tags": [
+          "AccountEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/audit-log": {
       "get": {
         "tags": [
@@ -910,6 +1013,20 @@
             "items": {
               "$ref": "#/components/schemas/BrandRole"
             }
+          }
+        }
+      },
+      "ChooseAccountRequest": {
+        "required": [
+          "externalId"
+        ],
+        "type": "object",
+        "properties": {
+          "externalId": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -1252,6 +1369,21 @@
           }
         }
       },
+      "ProductAccount": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "SaveApprovalSettingsRequest": {
         "required": [
           "briefApprovers",
@@ -1407,6 +1539,9 @@
     },
     {
       "name": "ConnectionEndpoints"
+    },
+    {
+      "name": "AccountEndpoints"
     },
     {
       "name": "AuditLogEndpoints"
