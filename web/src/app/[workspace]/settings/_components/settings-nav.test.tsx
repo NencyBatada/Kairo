@@ -1,0 +1,16 @@
+import { render, screen, within } from "@testing-library/react";
+import { expect, test } from "vitest";
+
+import { SettingsNav } from "./settings-nav";
+
+test("links to the four settings pages of the workspace", () => {
+  render(<SettingsNav workspace="acme" />);
+
+  const nav = screen.getByRole("navigation", { name: "Settings" });
+  expect(within(nav).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    ["Workspace", "/acme/settings"],
+    ["Team", "/acme/settings/team"],
+    ["Approvals", "/acme/settings/approvals"],
+    ["Audit log", "/acme/settings/audit-log"],
+  ]);
+});

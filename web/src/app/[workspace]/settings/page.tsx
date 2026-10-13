@@ -1,10 +1,22 @@
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { coreApi, unwrap } from "@/lib/core-api/client";
+import { getWorkspace } from "@/lib/core-api/queries";
 
-export default function SettingsPage() {
+import { updateWorkspace } from "./actions";
+import { WorkspaceForm } from "./_components/workspace-form";
+
+export default async function WorkspaceSettingsPage({ params }: PageProps<"/[workspace]/settings">) {
+  const { workspace: handle } = await params;
+  const workspace = await getWorkspace(handle);
+  const details = await unwrap(
+    await (await coreApi()).GET("/api/brands/{brandId}", { params: { path: { brandId: workspace.id } } }),
+  );
+
   return (
-    <PagePlaceholder
-      title="Settings"
-      description="Connections, users and roles, approvers per gate, budget limit and notification preferences."
+    <WorkspaceForm
+      action={updateWorkspace.bind(null, workspace.id)}
+      workspace={details}
+      timeZones={Intl.supportedValuesOf("timeZone")}
+      canEdit={workspace.roles.includes("admin")}
     />
   );
 }
