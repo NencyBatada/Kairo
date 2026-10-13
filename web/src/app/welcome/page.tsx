@@ -62,7 +62,7 @@ async function YourWorkspaces() {
                 <li key={workspace.id}>
                   <Link
                     href={`/${workspace.handle}/today`}
-                    className="flex items-center gap-3 px-4 py-3.5 transition-colors duration-120 hover:bg-accent md:px-5"
+                    className="flex items-center gap-3 px-4 py-3.5 transition-colors duration-120 hover:bg-accent focus-visible:-outline-offset-2 focus-visible:bg-accent md:px-5"
                   >
                     <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-md bg-primary-soft text-small font-bold text-primary-strong">
                       {initials(workspace.name).slice(0, 1)}

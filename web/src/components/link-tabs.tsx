@@ -19,7 +19,7 @@ export function LinkTabs({ label, tabs, className }: { label: string; tabs: Link
   const pathname = usePathname();
 
   return (
-    <nav aria-label={label} className={cn("no-scrollbar -mx-4 overflow-x-auto px-4 md:mx-0 md:px-0", className)}>
+    <nav aria-label={label} className={cn("no-scrollbar -mx-4 -my-1 overflow-x-auto px-4 py-1 md:-mx-1 md:px-1", className)}>
       <ul className="flex min-w-max gap-6 border-b border-border">
         {tabs.map((tab) => (
           <li key={tab.href}>
