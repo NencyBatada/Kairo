@@ -6,6 +6,7 @@ $script:Database = 'kairo'
 $script:SqlSecret = 'kairo-sql-connection'
 $script:KeyRing = 'kairo'
 $script:TokenKey = 'connection-tokens'
+$script:MailSecret = 'mail-sender-refresh-token'
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'
     'Authentication__Google__ClientSecret' = 'google-client-secret'

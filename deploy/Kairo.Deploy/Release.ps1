@@ -40,6 +40,13 @@ function Invoke-KairoDeploy {
             $apiSecrets += "$($entry.Key)=$($entry.Value):latest"
         }
     }
+    $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName"
+    $mailSender = "$($Environment.MailSender)".Trim()
+    $mailConfigured = $googleConfigured -and $mailSender -and (Test-KairoSecretHasValue -Environment $Environment -Name $script:MailSecret)
+    if ($mailConfigured) {
+        $apiSettings += ",Kairo__Notifications__Sender=$mailSender"
+        $apiSecrets += "Kairo__Notifications__SenderRefreshToken=$($script:MailSecret):latest"
+    }
 
     Publish-KairoService -Environment $Environment -Service 'kairo-agents' -Image (Get-KairoImage -Environment $Environment -Name 'agents' -Tag $tag) `
         -Settings @('--no-allow-unauthenticated', '--timeout', '3600')
@@ -50,7 +57,7 @@ function Invoke-KairoDeploy {
             '--timeout', '3600',
             '--concurrency', '500',
             "--min-instances=$($Environment.MinInstances.api)",
-            "--set-env-vars=Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName",
+            "--set-env-vars=$apiSettings",
             "--set-secrets=$($apiSecrets -join ',')"
         ))
 
@@ -78,6 +85,9 @@ function Invoke-KairoDeploy {
     Write-Host "Google account connections redirect URI: $($urls['kairo-web'])/api/connections/callback/google"
     if (-not $googleConfigured) {
         Write-Warning 'Google sign-in is off until google-client-id and google-client-secret have a value. See "Deploy" in README.md.'
+    }
+    if (-not $mailConfigured) {
+        Write-Warning 'Notification emails are only logged until deploy/set-mail-sender.ps1 has been run. See "Set up notification emails" in README.md.'
     }
 
     $urls

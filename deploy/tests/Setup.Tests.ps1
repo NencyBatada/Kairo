@@ -32,7 +32,7 @@ Describe 'Initialize-KairoProject' {
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
-                'bigquery.googleapis.com --project kairo-test')
+                'bigquery.googleapis.com gmail.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {
@@ -68,6 +68,7 @@ Describe 'Initialize-KairoProject' {
         It 'creates the Google secrets without a value' {
             $calls | Should -Contain 'secrets create google-client-id --replication-policy automatic --project kairo-test'
             $calls | Should -Contain 'secrets create google-client-secret --replication-policy automatic --project kairo-test'
+            $calls | Should -Contain 'secrets create mail-sender-refresh-token --replication-policy automatic --project kairo-test'
         }
 
         It 'creates one service account per service' {
@@ -84,6 +85,11 @@ Describe 'Initialize-KairoProject' {
                 $calls | Should -Contain "secrets add-iam-policy-binding $secret --member serviceAccount:kairo-api@kairo-test.iam.gserviceaccount.com --role roles/secretmanager.secretAccessor --project kairo-test"
             }
             ($calls | Where-Object { $_ -like 'secrets add-iam-policy-binding google-*kairo-web@*' }) | Should -BeNullOrEmpty
+        }
+
+        It 'lets only the API read the sender mailbox token' {
+            $calls | Should -Contain 'secrets add-iam-policy-binding mail-sender-refresh-token --member serviceAccount:kairo-api@kairo-test.iam.gserviceaccount.com --role roles/secretmanager.secretAccessor --project kairo-test'
+            ($calls | Where-Object { $_ -like 'secrets add-iam-policy-binding mail-sender-refresh-token *' }) | Should -HaveCount 1
         }
 
         It 'lets Cloud Build read the source, push images and write logs' {
@@ -254,5 +260,120 @@ Describe 'Set-KairoGoogleSignIn' {
 
         Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -ParameterFilter { $Name -eq 'google-client-id' -and $Value -ceq 'id' }
         Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -ParameterFilter { $Name -eq 'google-client-secret' -and $Value -ceq 'secret' }
+    }
+}
+
+Describe 'Get-KairoSecretValue' {
+    It 'reads the latest version without a trailing newline' {
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:read = $ArgumentList -join ' '; "client-id.apps.googleusercontent.com`r`n" }
+
+        Get-KairoSecretValue -Environment $environment -Name 'google-client-id' | Should -BeExactly 'client-id.apps.googleusercontent.com'
+        $read | Should -Be 'secrets versions access latest --secret=google-client-id --project kairo-test'
+    }
+}
+
+Describe 'Set-KairoMailSender' {
+    BeforeAll {
+        function New-TestIdToken([string]$Email, [bool]$Verified) {
+            $json = [Text.Encoding]::UTF8.GetBytes((@{ email = $Email; email_verified = $Verified; sub = '123' } | ConvertTo-Json -Compress))
+            "header.$([Convert]::ToBase64String($json).TrimEnd('=').Replace('+', '-').Replace('/', '_')).signature"
+        }
+    }
+
+    BeforeEach {
+        $script:sender = $environment.Clone()
+        $script:sender.MailSender = 'Kairo-Alerts@acme.example'
+        $script:consentUrl = $null
+        $script:tokenRequest = $null
+        $script:returnedState = $null
+        $script:grant = [pscustomobject]@{
+            refresh_token = 'sender-refresh-1'
+            scope         = 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.send'
+            id_token      = New-TestIdToken 'kairo-alerts@acme.example' $true
+        }
+        Mock -ModuleName Kairo.Deploy Get-KairoSecretValue {
+            if ($Name -eq 'google-client-id') { 'client-id' } else { 'client-secret' }
+        }
+        Mock -ModuleName Kairo.Deploy Wait-KairoOAuthRedirect {
+            $script:consentUrl = $Url
+            $state = [Uri]::UnescapeDataString([regex]::Match($Url, '[?&]state=([^&]+)').Groups[1].Value)
+            @{ code = 'the-code'; state = $(if ($script:returnedState) { $script:returnedState } else { $state }); error = $null }
+        }
+        Mock -ModuleName Kairo.Deploy Invoke-RestMethod { $script:tokenRequest = $Body; $script:grant }
+        Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
+    }
+
+    It 'refuses to start until the environment names a sender' {
+        { Set-KairoMailSender -Environment $environment } | Should -Throw '*MailSender*'
+        Should -Invoke -ModuleName Kairo.Deploy Wait-KairoOAuthRedirect -Times 0
+    }
+
+    It 'asks the sender to let Kairo send email, offline, with PKCE' {
+        Set-KairoMailSender -Environment $sender
+
+        $consentUrl | Should -BeLike 'https://accounts.google.com/o/oauth2/v2/auth?*'
+        $consentUrl | Should -BeLike '*client_id=client-id*'
+        $consentUrl | Should -BeLike '*redirect_uri=http%3A%2F%2Flocalhost%3A8765%2F*'
+        $consentUrl | Should -BeLike '*scope=openid%20email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fgmail.send*'
+        $consentUrl | Should -BeLike '*access_type=offline*'
+        $consentUrl | Should -BeLike '*prompt=consent*'
+        $consentUrl | Should -BeLike '*login_hint=Kairo-Alerts%40acme.example*'
+        $consentUrl | Should -BeLike '*code_challenge_method=S256*'
+        $sha = [Security.Cryptography.SHA256]::Create()
+        $challenge = [Convert]::ToBase64String($sha.ComputeHash([Text.Encoding]::ASCII.GetBytes($tokenRequest.code_verifier))).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+        $consentUrl | Should -BeLike "*code_challenge=$challenge*"
+    }
+
+    It 'exchanges the code with the client secret and the same redirect address' {
+        Set-KairoMailSender -Environment $sender
+
+        $tokenRequest.grant_type | Should -Be 'authorization_code'
+        $tokenRequest.code | Should -Be 'the-code'
+        $tokenRequest.client_id | Should -Be 'client-id'
+        $tokenRequest.client_secret | Should -Be 'client-secret'
+        $tokenRequest.redirect_uri | Should -Be 'http://localhost:8765/'
+    }
+
+    It 'stores the refresh token in its secret' {
+        Set-KairoMailSender -Environment $sender
+
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 1 -Exactly -ParameterFilter {
+            $Name -eq 'mail-sender-refresh-token' -and $Value -eq 'sender-refresh-1'
+        }
+    }
+
+    It 'refuses a response meant for another sign-in' {
+        $script:returnedState = 'someone-elses-state'
+
+        { Set-KairoMailSender -Environment $sender } | Should -Throw '*did not match*'
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
+    }
+
+    It 'refuses a sign-in that did not allow sending email' {
+        $script:grant.scope = 'openid https://www.googleapis.com/auth/userinfo.email'
+
+        { Set-KairoMailSender -Environment $sender } | Should -Throw '*send email*'
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
+    }
+
+    It 'refuses a different account' {
+        $script:grant.id_token = New-TestIdToken 'someone@acme.example' $true
+
+        { Set-KairoMailSender -Environment $sender } | Should -Throw '*signed in as someone@acme.example*'
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
+    }
+
+    It 'refuses an address Google has not verified' {
+        $script:grant.id_token = New-TestIdToken 'kairo-alerts@acme.example' $false
+
+        { Set-KairoMailSender -Environment $sender } | Should -Throw '*verified*'
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
+    }
+
+    It 'refuses a grant without a refresh token' {
+        $script:grant.refresh_token = $null
+
+        { Set-KairoMailSender -Environment $sender } | Should -Throw '*no refresh token*'
+        Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
     }
 }

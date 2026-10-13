@@ -3,10 +3,12 @@ $script:Apis = @(
     'artifactregistry.googleapis.com', 'cloudbuild.googleapis.com', 'secretmanager.googleapis.com',
     'iam.googleapis.com', 'storage.googleapis.com', 'cloudkms.googleapis.com',
     'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
-    'bigquery.googleapis.com'
+    'bigquery.googleapis.com', 'gmail.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build')
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+$script:MailRedirectUri = 'http://localhost:8765/'
+$script:GmailSendScope = 'https://www.googleapis.com/auth/gmail.send'
 
 function Initialize-KairoProject {
     param([Parameter(Mandatory)][hashtable]$Environment)
@@ -124,7 +126,7 @@ function Get-KairoSqlAddress {
 function Initialize-KairoSecrets {
     param([Parameter(Mandatory)][hashtable]$Environment)
 
-    foreach ($secret in $script:GoogleSecrets.Values) {
+    foreach ($secret in @($script:GoogleSecrets.Values) + $script:MailSecret) {
         New-KairoSecret -Environment $Environment -Name $secret
     }
 }
@@ -163,6 +165,12 @@ function Test-KairoSecretHasValue {
     [bool]($versions | Where-Object { $_ })
 }
 
+function Get-KairoSecretValue {
+    param([Parameter(Mandatory)][hashtable]$Environment, [Parameter(Mandatory)][string]$Name)
+
+    ((Invoke-Gcloud -ArgumentList @('secrets', 'versions', 'access', 'latest', "--secret=$Name", '--project', $Environment.Project) -Capture) -join "`n").Trim()
+}
+
 function Initialize-KairoServiceAccounts {
     param([Parameter(Mandatory)][hashtable]$Environment)
 
@@ -180,6 +188,7 @@ function Initialize-KairoServiceAccounts {
     foreach ($secret in $script:GoogleSecrets.Values) {
         Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $secret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-api')") + $accessor + $scope)
     }
+    Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $script:MailSecret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-api')") + $accessor + $scope)
 
     $build = "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-build')"
     Add-KairoBinding -ArgumentList (@('artifacts', 'repositories', 'add-iam-policy-binding', $script:Registry, '--location', $Environment.Region, '--member', $build, '--role', 'roles/artifactregistry.writer') + $scope)
@@ -259,4 +268,142 @@ function Set-KairoGoogleSignIn {
 
     Set-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientId'] -Value $ClientId.Trim()
     Set-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientSecret'] -Value $ClientSecret.Trim()
+}
+
+function Set-KairoMailSender {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $sender = "$($Environment.MailSender)".Trim()
+    if (-not $sender) {
+        throw "Set MailSender for the $($Environment.Name) environment in deploy/environments.psd1 first."
+    }
+
+    $clientId = Get-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientId']
+    $clientSecret = Get-KairoSecretValue -Environment $Environment -Name $script:GoogleSecrets['Authentication__Google__ClientSecret']
+    $verifier = New-KairoOAuthVerifier
+    $state = New-KairoOAuthVerifier
+    $url = New-KairoMailConsentUrl -ClientId $clientId -Sender $sender -Verifier $verifier -State $state
+    $response = Wait-KairoOAuthRedirect -Url $url -RedirectUri $script:MailRedirectUri
+    if ($response.state -ne $state) {
+        throw 'The sign-in response did not match this request. Run the script again.'
+    }
+
+    if ($response.error) {
+        throw "Google sign-in failed: $($response.error)."
+    }
+
+    $grant = Invoke-RestMethod -Method Post -Uri 'https://oauth2.googleapis.com/token' -Body @{
+        grant_type    = 'authorization_code'
+        code          = $response.code
+        code_verifier = $verifier
+        redirect_uri  = $script:MailRedirectUri
+        client_id     = $clientId
+        client_secret = $clientSecret
+    }
+    if (-not $grant.refresh_token) {
+        throw 'Google returned no refresh token. Remove Kairo from the account''s third-party access, then run the script again.'
+    }
+
+    if (-not (("$($grant.scope)" -split ' ') -contains $script:GmailSendScope)) {
+        throw 'Google did not grant permission to send email. Run the script again and allow Kairo to send email.'
+    }
+
+    $email = Get-KairoIdTokenEmail -IdToken $grant.id_token
+    if ($email -ne $sender.ToLowerInvariant()) {
+        throw "You signed in as $email, but MailSender is $sender. Run the script again and choose $sender."
+    }
+
+    Set-KairoSecretValue -Environment $Environment -Name $script:MailSecret -Value $grant.refresh_token
+}
+
+function New-KairoOAuthVerifier {
+    $bytes = New-Object byte[] 32
+    $random = [Security.Cryptography.RandomNumberGenerator]::Create()
+    try {
+        $random.GetBytes($bytes)
+    }
+    finally {
+        $random.Dispose()
+    }
+
+    ConvertTo-KairoBase64Url -Bytes $bytes
+}
+
+function ConvertTo-KairoBase64Url {
+    param([Parameter(Mandatory)][byte[]]$Bytes)
+
+    [Convert]::ToBase64String($Bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+}
+
+function New-KairoMailConsentUrl {
+    param(
+        [Parameter(Mandatory)][string]$ClientId,
+        [Parameter(Mandatory)][string]$Sender,
+        [Parameter(Mandatory)][string]$Verifier,
+        [Parameter(Mandatory)][string]$State
+    )
+
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try {
+        $challenge = ConvertTo-KairoBase64Url -Bytes $sha.ComputeHash([Text.Encoding]::ASCII.GetBytes($Verifier))
+    }
+    finally {
+        $sha.Dispose()
+    }
+
+    $query = [ordered]@{
+        client_id             = $ClientId
+        redirect_uri          = $script:MailRedirectUri
+        response_type         = 'code'
+        scope                 = "openid email $script:GmailSendScope"
+        access_type           = 'offline'
+        prompt                = 'consent'
+        login_hint            = $Sender
+        code_challenge        = $challenge
+        code_challenge_method = 'S256'
+        state                 = $State
+    }
+    'https://accounts.google.com/o/oauth2/v2/auth?' + (($query.GetEnumerator() | ForEach-Object { "$($_.Key)=$([Uri]::EscapeDataString($_.Value))" }) -join '&')
+}
+
+function Get-KairoIdTokenEmail {
+    param([Parameter(Mandatory)][string]$IdToken)
+
+    $parts = $IdToken.Split('.')
+    if ($parts.Length -ne 3) {
+        throw 'Google returned an ID token Kairo cannot read.'
+    }
+
+    $payload = $parts[1].Replace('-', '+').Replace('_', '/')
+    $payload += '=' * ((4 - $payload.Length % 4) % 4)
+    $claims = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload)) | ConvertFrom-Json
+    if (-not $claims.email_verified) {
+        throw "Google has not verified the address $($claims.email)."
+    }
+
+    "$($claims.email)".ToLowerInvariant()
+}
+
+function Wait-KairoOAuthRedirect {
+    param([Parameter(Mandatory)][string]$Url, [Parameter(Mandatory)][string]$RedirectUri)
+
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add($RedirectUri)
+    $listener.Start()
+    try {
+        Write-Host "Opening your browser to sign in the sender mailbox. If it does not open, go to:`n$Url"
+        Start-Process $Url
+        $context = $listener.GetContext()
+        $query = $context.Request.QueryString
+        $result = @{ code = $query['code']; state = $query['state']; error = $query['error'] }
+        $page = [Text.Encoding]::UTF8.GetBytes('<!DOCTYPE html><html><body style="font-family:sans-serif"><p>Kairo has what it needs. You can close this tab.</p></body></html>')
+        $context.Response.ContentType = 'text/html; charset=utf-8'
+        $context.Response.OutputStream.Write($page, 0, $page.Length)
+        $context.Response.Close()
+        $result
+    }
+    finally {
+        $listener.Stop()
+        $listener.Close()
+    }
 }

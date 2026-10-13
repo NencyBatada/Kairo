@@ -11,6 +11,7 @@ Describe 'Get-KairoEnvironment' {
         $environment.Name | Should -Be 'development'
         $environment.Project | Should -Be 'kairo2'
         $environment.Region | Should -Be 'asia-south1'
+        $environment.ContainsKey('MailSender') | Should -BeTrue
     }
 
     It 'refuses an unknown environment' {

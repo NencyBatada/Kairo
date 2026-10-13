@@ -129,6 +129,46 @@ Describe 'Invoke-KairoDeploy' {
         ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike "*--set-env-vars=$key*"
     }
 
+    It 'passes the sender mailbox to the API once it is signed in' {
+        $withSender = $environment.Clone()
+        $withSender.MailSender = 'kairo-alerts@acme.example'
+
+        Invoke-KairoDeploy -Environment $withSender -Root $root | Out-Null
+
+        $api = $calls | Where-Object { $_ -like 'run deploy kairo-api *' }
+        $api | Should -BeLike '*,Kairo__Notifications__Sender=kairo-alerts@acme.example*'
+        $api | Should -BeLike '*--set-secrets=*,Kairo__Notifications__SenderRefreshToken=mail-sender-refresh-token:latest*'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -Not -BeLike '*Notifications*'
+    }
+
+    It 'only logs notification emails until the sender is signed in' {
+        $withSender = $environment.Clone()
+        $withSender.MailSender = 'kairo-alerts@acme.example'
+        Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -ne 'mail-sender-refresh-token' }
+
+        Invoke-KairoDeploy -Environment $withSender -Root $root -WarningAction SilentlyContinue -WarningVariable warnings | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -Not -BeLike '*Notifications*'
+        ($warnings -join ' ') | Should -BeLike '*set-mail-sender.ps1*'
+    }
+
+    It 'only logs notification emails while the environment names no sender' {
+        Invoke-KairoDeploy -Environment $environment -Root $root -WarningAction SilentlyContinue -WarningVariable warnings | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -Not -BeLike '*Notifications*'
+        ($warnings -join ' ') | Should -BeLike '*set-mail-sender.ps1*'
+    }
+
+    It 'leaves the sender out while Google sign-in is off, since sending needs the OAuth client' {
+        $withSender = $environment.Clone()
+        $withSender.MailSender = 'kairo-alerts@acme.example'
+        Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -eq 'mail-sender-refresh-token' }
+
+        Invoke-KairoDeploy -Environment $withSender -Root $root 3>$null | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -Not -BeLike '*Notifications*'
+    }
+
     It 'deploys the agent service privately with a long timeout' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
