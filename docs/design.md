@@ -224,9 +224,10 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 | Use | Duration | Easing |
 | --- | --- | --- |
 | Hover, press, colour changes | 120ms | `ease-out` |
-| Menus, popovers, tooltips | 180ms in, 120ms out | Enter `cubic-bezier(0.2, 0, 0, 1)`, exit `cubic-bezier(0.4, 0, 1, 1)` |
+| Menus, popovers, tooltips | 180ms in, 120ms out | Enter `ease-enter` (`cubic-bezier(0.2, 0, 0, 1)`), exit `ease-exit` (`cubic-bezier(0.4, 0, 1, 1)`) |
 | Sheets and dialogs | 240ms in, 160ms out | The same |
 
+- The two curves are the `--ease-enter` and `--ease-exit` tokens in `globals.css`. Enter and exit animations need them spelled out (`data-open:ease-enter data-closed:ease-exit`), or they fall back to the browser's `ease`.
 - Animate only `opacity` and `transform`. Never animate width, height or layout.
 - Exits are faster than entrances.
 - Under `prefers-reduced-motion`, transforms are off and fades are instant (`motion-reduce:`). Skeletons stop pulsing.
