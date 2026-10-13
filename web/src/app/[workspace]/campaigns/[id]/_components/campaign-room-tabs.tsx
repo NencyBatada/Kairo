@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LinkTabs } from "@/components/link-tabs";
 
 const tabs = [
   { segment: "evidence", label: "Evidence" },
@@ -12,17 +12,5 @@ const tabs = [
 export function CampaignRoomTabs({ workspace, roomId }: { workspace: string; roomId: string }) {
   const base = `/${workspace}/campaigns/${encodeURIComponent(roomId)}`;
 
-  return (
-    <nav aria-label="Campaign room">
-      <ul className="flex gap-6 border-b border-black/10 text-sm dark:border-white/15">
-        {tabs.map((tab) => (
-          <li key={tab.segment}>
-            <Link href={`${base}/${tab.segment}`} className="block pb-2 hover:underline">
-              {tab.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
+  return <LinkTabs label="Campaign room" className="mt-6" tabs={tabs.map((tab) => ({ href: `${base}/${tab.segment}`, label: tab.label }))} />;
 }

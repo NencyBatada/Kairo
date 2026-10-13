@@ -1,7 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import { RoomTabs } from "./room-tabs";
+
+vi.mock("next/navigation", () => ({ usePathname: () => null }));
 
 async function evidenceHref(id: string) {
   render(await RoomTabs({ params: Promise.resolve({ workspace: "acme", id }) }));

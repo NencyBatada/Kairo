@@ -1,4 +1,18 @@
+"use client";
+
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import Link from "next/link";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuLinkItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { initials } from "@/lib/initials";
 
 type WorkspaceLink = { id: string; handle: string; name: string };
 
@@ -10,28 +24,39 @@ type WorkspaceSwitcherProps = {
 
 export function WorkspaceSwitcher({ current, workspaces, pendingInvitations }: WorkspaceSwitcherProps) {
   return (
-    <details className="rounded-md border border-black/10 dark:border-white/15">
-      <summary className="cursor-pointer px-3 py-2 text-sm font-medium">{current.name}</summary>
-      <nav aria-label="Workspaces" className="border-t border-black/10 p-1 dark:border-white/15">
-        <ul className="space-y-1">
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        title={current.name}
+        aria-label={`Workspace: ${current.name}`}
+        className="flex h-10 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border-strong bg-card px-2.5 text-left text-sm font-semibold text-foreground transition-colors duration-120 hover:bg-accent pointer-coarse:h-11"
+      >
+        <span aria-hidden="true" className="grid size-6 shrink-0 place-items-center rounded-md bg-primary-soft text-xs font-bold text-primary-strong">
+          {initials(current.name).slice(0, 1)}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{current.name}</span>
+        <ChevronsUpDown className="size-4 shrink-0 text-subtle-foreground" aria-hidden="true" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent aria-label="Workspaces" className="w-(--anchor-width) min-w-60">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
           {workspaces.map((workspace) => (
-            <li key={workspace.id}>
-              <Link
-                href={`/${workspace.handle}/today`}
-                aria-current={workspace.id === current.id ? "page" : undefined}
-                className="block rounded-md px-2 py-1 text-sm hover:bg-black/5 aria-[current=page]:font-semibold dark:hover:bg-white/10"
-              >
-                {workspace.name}
-              </Link>
-            </li>
+            <DropdownMenuLinkItem
+              key={workspace.id}
+              render={<Link href={`/${workspace.handle}/today`} />}
+              aria-current={workspace.id === current.id ? "page" : undefined}
+              title={workspace.name}
+            >
+              <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
+              {workspace.id === current.id && <Check aria-hidden="true" />}
+            </DropdownMenuLinkItem>
           ))}
-        </ul>
-        <Link href="/welcome" className="mt-1 block rounded-md px-2 py-1 text-sm hover:bg-black/5 dark:hover:bg-white/10">
-          {pendingInvitations > 0
-            ? `Invitations (${pendingInvitations}) and new workspaces`
-            : "Create a workspace"}
-        </Link>
-      </nav>
-    </details>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLinkItem render={<Link href="/welcome" />}>
+          <Plus aria-hidden="true" />
+          {pendingInvitations > 0 ? `Invitations (${pendingInvitations}) and new workspaces` : "Create a workspace"}
+        </DropdownMenuLinkItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

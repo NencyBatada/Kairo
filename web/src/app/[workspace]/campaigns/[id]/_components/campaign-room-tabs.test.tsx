@@ -1,7 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import { CampaignRoomTabs } from "./campaign-room-tabs";
+
+vi.mock("next/navigation", () => ({ usePathname: () => null }));
 
 function tabLinks() {
   const nav = screen.getByRole("navigation", { name: "Campaign room" });

@@ -1,7 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import { SettingsNav } from "./settings-nav";
+
+vi.mock("next/navigation", () => ({ usePathname: () => null }));
 
 test("links to the four settings pages of the workspace", () => {
   render(<SettingsNav workspace="acme" />);

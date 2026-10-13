@@ -1,29 +1,43 @@
-import Link from "next/link";
+"use client";
 
-const areas = [
-  { segment: "today", label: "Today" },
-  { segment: "opportunities", label: "Opportunities" },
-  { segment: "campaigns", label: "Campaigns" },
-  { segment: "triggers", label: "Triggers" },
-  { segment: "impact-lab", label: "Impact Lab" },
-  { segment: "brand-kit", label: "Brand Kit" },
-  { segment: "settings", label: "Settings" },
+import { FlaskConical, Megaphone, Palette, Settings, Sun, TrendingUp, Zap, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import { isCurrentPath } from "@/components/link-tabs";
+
+const areas: { segment: string; label: string; icon: LucideIcon }[] = [
+  { segment: "today", label: "Today", icon: Sun },
+  { segment: "opportunities", label: "Opportunities", icon: TrendingUp },
+  { segment: "campaigns", label: "Campaigns", icon: Megaphone },
+  { segment: "triggers", label: "Triggers", icon: Zap },
+  { segment: "impact-lab", label: "Impact Lab", icon: FlaskConical },
+  { segment: "brand-kit", label: "Brand Kit", icon: Palette },
+  { segment: "settings", label: "Settings", icon: Settings },
 ];
 
 export function NavMenu({ workspace }: { workspace: string }) {
+  const pathname = usePathname();
+
   return (
     <nav aria-label="Main">
-      <ul className="space-y-1">
-        {areas.map((area) => (
-          <li key={area.segment}>
-            <Link
-              href={`/${workspace}/${area.segment}`}
-              className="block rounded-md px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              {area.label}
-            </Link>
-          </li>
-        ))}
+      <ul className="flex flex-col gap-0.5">
+        {areas.map(({ segment, label, icon: Icon }) => {
+          const href = `/${workspace}/${segment}`;
+
+          return (
+            <li key={segment}>
+              <Link
+                href={href}
+                aria-current={isCurrentPath(pathname, href) ? "page" : undefined}
+                className="group flex h-9 items-center gap-3 rounded-md px-2.5 text-sm font-medium text-muted-foreground transition-colors duration-120 hover:bg-accent hover:text-foreground aria-[current=page]:bg-primary-soft aria-[current=page]:font-semibold aria-[current=page]:text-foreground pointer-coarse:h-11"
+              >
+                <Icon className="size-4 text-subtle-foreground group-aria-[current=page]:text-primary" aria-hidden="true" />
+                {label}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
