@@ -12,19 +12,21 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, IBrandAccess a
 
     public async IAsyncEnumerable<SseItem<string>> ReadAsync(
         Viewer viewer,
-        long? lastEventId,
+        LivePosition? position,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var opened = time.GetUtcNow();
         using var subscription = await feed.SubscribeAsync(viewer.BrandId, cancellationToken);
-        yield return LiveItems.Heartbeat();
+        yield return LiveItems.Heartbeat(time.GetUtcNow());
         var sent = new HashSet<long>();
-        if (lastEventId is { } after)
+        if (position is not null)
         {
-            var missed = await ReplayAsync(after, cancellationToken);
+            var missed = position.AfterId is { } after
+                ? await ReplayAsync(after, cancellationToken)
+                : await ReplaySinceAsync(position.Since!.Value, cancellationToken);
             if (missed is null)
             {
-                yield return LiveItems.Reset();
+                yield return LiveItems.Reset(time.GetUtcNow());
             }
             else
             {
@@ -60,7 +62,7 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, IBrandAccess a
 
             if (now - lastWrite >= LiveTimings.HeartbeatInterval)
             {
-                yield return LiveItems.Heartbeat();
+                yield return LiveItems.Heartbeat(now);
                 lastWrite = now;
             }
 
@@ -121,6 +123,22 @@ internal sealed class LiveStream(LiveFeed feed, LiveDbContext db, IBrandAccess a
 
         viewer.Roles = roles;
         return true;
+    }
+
+    private async Task<List<OutboxEvent>?> ReplaySinceAsync(DateTimeOffset since, CancellationToken cancellationToken)
+    {
+        if (since < time.GetUtcNow() - LiveTimings.Retention)
+        {
+            return null;
+        }
+
+        var from = since - LiveTimings.GapPatience;
+        var missed = await db.Unlocked()
+            .Where(row => row.CreatedAt >= from)
+            .OrderBy(row => row.Id)
+            .Take(ReplayLimit + 1)
+            .ToListAsync(cancellationToken);
+        return missed.Count > ReplayLimit ? null : missed;
     }
 
     private async Task<List<OutboxEvent>?> ReplayAsync(long after, CancellationToken cancellationToken)

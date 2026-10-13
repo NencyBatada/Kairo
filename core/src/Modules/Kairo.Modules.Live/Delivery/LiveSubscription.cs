@@ -5,11 +5,19 @@ namespace Kairo.Modules.Live.Delivery;
 
 internal sealed class LiveSubscription(Guid brandId, TimeProvider time, LiveFeed feed) : IDisposable
 {
+    private readonly DateTimeOffset _oldestWanted = time.GetUtcNow() - LiveTimings.GapPatience;
+
     private readonly Channel<OutboxEvent> _events = Channel.CreateUnbounded<OutboxEvent>(new UnboundedChannelOptions { SingleReader = true });
 
     public Guid BrandId => brandId;
 
-    public void Offer(OutboxEvent row) => _events.Writer.TryWrite(row);
+    public void Offer(OutboxEvent row)
+    {
+        if (row.CreatedAt >= _oldestWanted)
+        {
+            _events.Writer.TryWrite(row);
+        }
+    }
 
     public async Task<OutboxEvent?> NextAsync(TimeSpan wait, CancellationToken cancellationToken)
     {

@@ -89,6 +89,78 @@ public sealed class LiveResumeTests(SqlServer sqlServer) : IAsyncDisposable
         Assert.Equal("reset", (await listener.NextAsync()).Type);
     }
 
+    [Fact]
+    public async Task A_stream_that_saw_no_events_resumes_from_its_opening_heartbeat()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        string resumeFrom;
+        await using (var quiet = await LiveListener.OpenAsync(_api, owner.Browser, brandId))
+        {
+            resumeFrom = (await quiet.OpeningHeartbeatAsync()).Id!;
+        }
+
+        Assert.StartsWith("t", resumeFrom);
+        await SeeOneEventAsync(owner.Browser, brandId, "test.while_away");
+        await using var fresh = await LiveListener.OpenAsync(_api, owner.Browser, brandId);
+        await using var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId, resumeFrom);
+
+        Assert.Equal("test.while_away", (await listener.NextAsync()).Type);
+        await LivePublishing.PublishAsync(_api, brandId, "test.later");
+        Assert.Equal("test.later", (await fresh.NextAsync()).Type);
+    }
+
+    [Fact]
+    public async Task A_reset_tells_the_browser_where_to_resume()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        string resumeFrom;
+        await using (var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId, long.MaxValue.ToString()))
+        {
+            var reset = await listener.NextAsync();
+            Assert.Equal("reset", reset.Type);
+            resumeFrom = reset.Id!;
+        }
+
+        Assert.StartsWith("t", resumeFrom);
+        await SeeOneEventAsync(owner.Browser, brandId, "test.after_reset");
+        await using var resumed = await LiveListener.OpenAsync(_api, owner.Browser, brandId, resumeFrom);
+
+        Assert.Equal("test.after_reset", (await resumed.NextAsync()).Type);
+    }
+
+    [Fact]
+    public async Task A_resume_point_older_than_a_day_gets_a_reset()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        string resumeFrom;
+        await using (var quiet = await LiveListener.OpenAsync(_api, owner.Browser, brandId))
+        {
+            resumeFrom = (await quiet.OpeningHeartbeatAsync()).Id!;
+        }
+
+        _api.Clock.Advance(TimeSpan.FromHours(25));
+        await using var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId, resumeFrom);
+
+        Assert.Equal("reset", (await listener.NextAsync()).Type);
+    }
+
+    [Fact]
+    public async Task A_new_stream_is_not_sent_old_events_the_feed_has_not_read_yet()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        await SeeOneEventAsync(owner.Browser, brandId, "test.start");
+
+        await OutboxRows.InsertAsync(sqlServer.KairoConnectionString, brandId, "test.stale", 3, _api.Clock.GetUtcNow() - TimeSpan.FromHours(2));
+        await using var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId);
+        await LivePublishing.PublishAsync(_api, brandId, "test.fresh");
+
+        Assert.Equal("test.fresh", (await listener.NextAsync()).Type);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private async Task<string> SeeOneEventAsync(HttpClient browser, Guid brandId, string type)

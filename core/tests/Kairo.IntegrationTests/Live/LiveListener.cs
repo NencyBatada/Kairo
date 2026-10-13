@@ -27,6 +27,10 @@ internal sealed class LiveListener : IAsyncDisposable
 
     public string? ContentType => _response.Content.Headers.ContentType?.MediaType;
 
+    public HttpResponseMessage Response => _response;
+
+    public string? LastEventId { get; private set; }
+
     public static async Task<LiveListener> OpenAsync(KairoApiFactory api, HttpClient browser, Guid brandId, string? lastEventId = null)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/brands/{brandId}/live");
@@ -43,6 +47,15 @@ internal sealed class LiveListener : IAsyncDisposable
         return new LiveListener(api, response, reader);
     }
 
+    public async Task<LiveMessage> OpeningHeartbeatAsync()
+    {
+        var message = await (_pending ?? ReadMessageAsync()) ?? throw new InvalidOperationException("The stream ended.");
+        _pending = null;
+        Assert.Equal("heartbeat", message.Type);
+        LastEventId = message.Id ?? LastEventId;
+        return message;
+    }
+
     public async Task<LiveMessage> NextAsync(int maxSteps = 100) =>
         await NextOrEndAsync(TimeSpan.FromSeconds(1), maxSteps) ?? throw new InvalidOperationException("The stream ended.");
 
@@ -56,6 +69,11 @@ internal sealed class LiveListener : IAsyncDisposable
             {
                 var message = await _pending;
                 _pending = null;
+                if (message?.Id is { } id)
+                {
+                    LastEventId = id;
+                }
+
                 if (message is { Type: "heartbeat" })
                 {
                     continue;
