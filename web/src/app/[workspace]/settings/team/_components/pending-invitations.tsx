@@ -1,3 +1,5 @@
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Button } from "@/components/ui/button";
 import { roleLabels, type PendingInvitation } from "@/lib/core-api/types";
 
 type PendingInvitationsProps = {
@@ -7,24 +9,32 @@ type PendingInvitationsProps = {
 
 export function PendingInvitations({ invitations, revoke }: PendingInvitationsProps) {
   if (invitations.length === 0) {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-400">No invitations are waiting.</p>;
+    return <p className="text-small text-subtle-foreground">No invitations are waiting.</p>;
   }
 
   return (
-    <ul className="divide-y divide-black/10 dark:divide-white/15">
+    <ul className="divide-y divide-border">
       {invitations.map((invitation) => (
-        <li key={invitation.id} className="flex items-center justify-between gap-4 py-3">
-          <div>
-            <p className="font-medium">{invitation.email}</p>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <li key={invitation.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-foreground" title={invitation.email}>
+              {invitation.email}
+            </p>
+            <p className="text-small text-subtle-foreground">
               {invitation.roles.map((role) => roleLabels[role]).join(", ")} · invited by {invitation.invitedBy}
             </p>
           </div>
-          <form action={revoke.bind(null, invitation.id)}>
-            <button type="submit" className="text-sm text-red-700 hover:underline dark:text-red-300">
-              Revoke
-            </button>
-          </form>
+          <ConfirmDialog
+            trigger={
+              <Button variant="destructive" size="sm">
+                Revoke
+              </Button>
+            }
+            title={`Revoke the invitation to ${invitation.email}?`}
+            description="They won't be able to join with it. You can invite them again later."
+            confirmLabel="Revoke"
+            action={revoke.bind(null, invitation.id)}
+          />
         </li>
       ))}
     </ul>

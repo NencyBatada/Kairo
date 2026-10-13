@@ -1,13 +1,18 @@
+import type { Metadata } from "next";
+
+import { Alert } from "@/components/ui/alert";
 import { coreApi, unwrap } from "@/lib/core-api/client";
 import { getWorkspace } from "@/lib/core-api/queries";
 
 import { AuditLogTable } from "./_components/audit-log-table";
 
+export const metadata: Metadata = { title: "Audit log" };
+
 export default async function AuditLogPage({ params, searchParams }: PageProps<"/[workspace]/settings/audit-log">) {
   const [{ workspace: handle }, { before }] = await Promise.all([params, searchParams]);
   const workspace = await getWorkspace(handle);
   if (!workspace.roles.includes("admin")) {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-400">Only admins can see the audit log.</p>;
+    return <Alert className="max-w-160">Only admins can see the audit log.</Alert>;
   }
 
   const api = await coreApi();

@@ -1,6 +1,12 @@
+import { ScrollText } from "lucide-react";
 import Link from "next/link";
 
+import { EmptyState } from "@/components/empty-state";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AuditLogPage } from "@/lib/core-api/types";
+import { cn } from "@/lib/utils";
 
 const actions: Record<string, string> = {
   "brand.created": "Created the workspace",
@@ -25,31 +31,40 @@ export function AuditLogTable({ page, timeZone, olderHref }: AuditLogTableProps)
   const format = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
 
   if (page.entries.length === 0) {
-    return <p className="text-sm text-zinc-600 dark:text-zinc-400">Nothing has been recorded yet.</p>;
+    return (
+      <EmptyState
+        icon={ScrollText}
+        title="Nothing recorded yet"
+        description="Changes to the workspace, the team and approvals will appear here, with who made them and when."
+      />
+    );
   }
 
   return (
-    <div className="space-y-4">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-black/10 dark:border-white/15">
-            <th className="py-2 font-medium">When</th>
-            <th className="py-2 font-medium">Who</th>
-            <th className="py-2 font-medium">What</th>
-          </tr>
-        </thead>
-        <tbody>
-          {page.entries.map((entry) => (
-            <tr key={String(entry.id)} className="border-b border-black/5 dark:border-white/10">
-              <td className="py-2">{format.format(new Date(entry.occurredAt))}</td>
-              <td className="py-2">{entry.actorName}</td>
-              <td className="py-2">{actions[entry.action] ?? entry.action}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex flex-col gap-4">
+      <Card className="gap-0 overflow-hidden py-0 md:gap-0 md:py-0">
+        <Table>
+          <TableCaption>Audit log, newest first</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-40 md:w-48">When</TableHead>
+              <TableHead className="w-36 md:w-52">Who</TableHead>
+              <TableHead>What</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {page.entries.map((entry) => (
+              <TableRow key={String(entry.id)}>
+                <TableCell className="text-small text-muted-foreground tabular-nums md:whitespace-nowrap">{format.format(new Date(entry.occurredAt))}</TableCell>
+                <TableCell className="font-medium text-foreground">{entry.actorName}</TableCell>
+                <TableCell className="text-foreground">{actions[entry.action] ?? entry.action}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
       {page.nextBefore && (
-        <Link href={olderHref(page.nextBefore)} className="text-sm underline-offset-2 hover:underline">
+        <Link href={olderHref(page.nextBefore)} className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "self-start")}>
           Older entries
         </Link>
       )}
