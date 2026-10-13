@@ -1,3 +1,4 @@
+using Kairo.Modules.Identity.Members;
 using Kairo.Modules.Identity.Sessions;
 using Kairo.Modules.Identity.Users;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -14,6 +15,12 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
     public DbSet<Session> Sessions => Set<Session>();
 
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
+    public DbSet<Membership> Memberships => Set<Membership>();
+
+    public DbSet<DutyAssignment> DutyAssignments => Set<DutyAssignment>();
+
+    public DbSet<BudgetLimit> BudgetLimits => Set<BudgetLimit>();
 
     protected override string Schema => SchemaName;
 
@@ -40,5 +47,31 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
         });
 
         modelBuilder.Entity<DataProtectionKey>().ToTable("DataProtectionKeys");
+
+        modelBuilder.Entity<Membership>(membership =>
+        {
+            membership.ToTable("Memberships");
+            membership.HasKey(m => new { m.BrandId, m.UserId });
+            membership.HasIndex(m => m.UserId);
+            membership.HasOne<User>().WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DutyAssignment>(assignment =>
+        {
+            assignment.ToTable("ApprovalDuties");
+            assignment.HasKey(a => new { a.BrandId, a.Duty, a.UserId });
+            assignment.Property(a => a.Duty).HasConversion<string>().HasMaxLength(20);
+            assignment.HasOne<Membership>().WithMany()
+                .HasForeignKey(a => new { a.BrandId, a.UserId })
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BudgetLimit>(limit =>
+        {
+            limit.ToTable("BudgetLimits");
+            limit.HasKey(l => l.BrandId);
+            limit.Property(l => l.Amount).HasPrecision(19, 4);
+            limit.Property(l => l.Currency).HasMaxLength(3).IsFixedLength();
+        });
     }
 }

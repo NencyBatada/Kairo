@@ -22,6 +22,67 @@ namespace Kairo.Modules.Identity.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kairo.Modules.Identity.Members.BudgetLimit", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nchar(3)")
+                        .IsFixedLength();
+
+                    b.HasKey("BrandId");
+
+                    b.ToTable("BudgetLimits", "identity");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Identity.Members.DutyAssignment", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Duty")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("BrandId", "Duty", "UserId");
+
+                    b.HasIndex("BrandId", "UserId");
+
+                    b.ToTable("ApprovalDuties", "identity");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Identity.Members.Membership", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("JoinedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Roles")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Memberships", "identity");
+                });
+
             modelBuilder.Entity("Kairo.Modules.Identity.Sessions.Session", b =>
                 {
                     b.Property<string>("Key")
@@ -109,6 +170,24 @@ namespace Kairo.Modules.Identity.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DataProtectionKeys", "identity");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Identity.Members.DutyAssignment", b =>
+                {
+                    b.HasOne("Kairo.Modules.Identity.Members.Membership", null)
+                        .WithMany()
+                        .HasForeignKey("BrandId", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Identity.Members.Membership", b =>
+                {
+                    b.HasOne("Kairo.Modules.Identity.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Kairo.Modules.Identity.Sessions.Session", b =>

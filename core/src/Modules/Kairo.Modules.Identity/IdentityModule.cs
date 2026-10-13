@@ -1,4 +1,6 @@
+using Kairo.Contracts.Identity;
 using Kairo.Modules.Identity.Data;
+using Kairo.Modules.Identity.Members;
 using Kairo.Modules.Identity.SignIn;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -14,6 +16,9 @@ public sealed class IdentityModule : IModule
             .SetApplicationName("Kairo")
             .PersistKeysToDbContext<IdentityDbContext>();
         services.AddKairoSignIn(configuration);
+        services.AddScoped<IBrandAccess, BrandAccess>();
+        services.AddScoped<IMembershipDirectory, MembershipDirectory>();
+        services.AddScoped<IWorkspaceFounding, WorkspaceFounding>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
