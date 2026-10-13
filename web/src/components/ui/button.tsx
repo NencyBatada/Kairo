@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-sm font-semibold whitespace-nowrap transition-colors duration-120 select-none disabled:pointer-events-none disabled:opacity-55 aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-transparent text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,scale] duration-120 ease-out select-none disabled:pointer-events-none disabled:opacity-55 aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -23,7 +23,10 @@ const buttonVariants = cva(
         icon: "size-9 pointer-coarse:size-11",
       },
     },
-    compoundVariants: [{ variant: "link", class: "h-auto px-0 pointer-coarse:h-auto" }],
+    compoundVariants: [
+      { variant: "link", class: "h-auto px-0 pointer-coarse:h-auto" },
+      { variant: ["default", "secondary", "ghost", "destructive", "destructive-solid"], class: "motion-safe:active:scale-[0.98]" },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",

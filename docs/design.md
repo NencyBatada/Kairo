@@ -230,6 +230,7 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 - The two curves are the `--ease-enter` and `--ease-exit` tokens in `globals.css`. Enter and exit animations need them spelled out (`data-open:ease-enter data-closed:ease-exit`), or they fall back to the browser's `ease`.
 - Animate only `opacity` and `transform`. Never animate width, height or layout.
 - Exits are faster than entrances.
+- Buttons press in to 98% while held (`motion-safe:active:scale-[0.98]`), so a click feels physical. Link buttons don't.
 - Under `prefers-reduced-motion`, transforms are off and fades are instant (`motion-reduce:`). Skeletons stop pulsing.
 - Motion explains what happened, such as where a sheet came from. It never decorates.
 
@@ -273,7 +274,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 
 | Component | Variants and states | Notes |
 | --- | --- | --- |
-| Button | `default` (terracotta), `secondary` (outlined card), `ghost`, `destructive` (destructive text), `destructive-solid` (confirm dialogs only), `link`; sizes `sm` 32px, `default` 36px, `lg` 40px, `icon` 36px | Grows to 44px on touch screens (`pointer-coarse:`). While pending it's disabled, shows a spinner and keeps its label. |
+| Button | `default` (terracotta), `secondary` (outlined card), `ghost`, `destructive` (destructive text), `destructive-solid` (confirm dialogs only), `link`; sizes `sm` 32px, `default` 36px, `lg` 40px, `icon` 36px | Grows to 44px on touch screens (`pointer-coarse:`). Presses in to 98%, except `link`. While pending it's disabled, shows a spinner and keeps its label. |
 | Input | Default, focus, invalid (`aria-invalid`), disabled | 36px tall, 44px on touch screens; `input` border; 16px text on phones |
 | NativeSelect | The same as Input, with a chevron | Uses the platform picker on phones |
 | Checkbox | Unchecked, checked, focus, disabled | Native, styled: a 16px box with an `input` border; checked fills with `primary`. In forced-colours mode it falls back to the system checkbox. |
