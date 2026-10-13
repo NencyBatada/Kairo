@@ -114,15 +114,19 @@ internal sealed class ConnectionTokens(
         cache.Forget(connection.Id);
         await using (var scope = scopes.CreateAsyncScope())
         {
-            await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(connection.BrandId, cancellationToken);
+            var ownDatabase = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
+            await ownDatabase.UseBrandAsync(connection.BrandId, cancellationToken);
+            await ownDatabase.BeginTransactionAsync(cancellationToken);
             var own = scope.ServiceProvider.GetRequiredService<BrandsDbContext>();
-            var current = await own.Connections.SingleOrDefaultAsync(
-                row => row.Id == connection.Id && row.ConnectedAt == connection.ConnectedAt && row.RefreshToken != null,
-                cancellationToken);
+            var current = await own.Connections
+                .FromSql($"SELECT * FROM [brands].[Connections] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {connection.Id}")
+                .SingleOrDefaultAsync(row => row.ConnectedAt == connection.ConnectedAt && row.RefreshToken != null, cancellationToken);
             if (current is not null)
             {
                 await scope.ServiceProvider.GetRequiredService<ConnectionTokens>().LoseAsync(current, reason, cancellationToken);
             }
+
+            await ownDatabase.CommitAsync(cancellationToken);
         }
 
         await db.Entry(connection).ReloadAsync(cancellationToken);

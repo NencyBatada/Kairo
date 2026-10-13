@@ -1,5 +1,8 @@
 using System.Net.Http.Json;
+using Kairo.Contracts.Connections;
 using Kairo.IntegrationTests.Api;
+using Kairo.SharedKernel.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kairo.IntegrationTests.Notifications;
 
@@ -91,6 +94,28 @@ public sealed class ConnectionNotificationTests(SqlServer sqlServer) : IAsyncDis
         (await owner.Browser.DeleteAsync($"/api/brands/{brandId}/connections/merchant-center", Token)).EnsureSuccessStatusCode();
 
         Assert.Empty(await NotificationRows.NotificationsAsync(sqlServer.KairoConnectionString, brandId));
+    }
+
+    [Fact]
+    public async Task Requests_that_find_a_revoked_token_at_the_same_time_notify_each_admin_once()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        var admin = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "admin");
+        var issued = await Connections.ConnectAsync(_api, owner.Browser, brandId, "google-ads");
+        _api.GoogleApis.Reject(issued.RefreshToken);
+        _api.Clock.Advance(TimeSpan.FromHours(2));
+
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Task.Run(async () =>
+        {
+            await using var scope = _api.Services.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(brandId, Token);
+            await Assert.ThrowsAsync<ConnectionUnavailableException>(() =>
+                scope.ServiceProvider.GetRequiredService<IConnections>().GetAccessAsync(ConnectedProduct.GoogleAds, Token));
+        }, Token)));
+
+        var notifications = await NotificationRows.NotificationsAsync(sqlServer.KairoConnectionString, brandId);
+        Assert.Equal(new[] { owner.UserId, admin.UserId }.Order(), notifications.Select(row => row.UserId).Order());
     }
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
