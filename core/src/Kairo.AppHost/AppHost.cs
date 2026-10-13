@@ -28,6 +28,14 @@ var api = builder.AddProject<Projects.Kairo_Api>("api")
     .WithEnvironment("Kairo__PublicOrigin", "http://localhost:8000")
     .WithHttpHealthCheck("/health");
 
+var mailSender = builder.Configuration["Kairo:MailSender"];
+var mailSenderRefreshToken = builder.Configuration["Kairo:MailSenderRefreshToken"];
+if (!string.IsNullOrWhiteSpace(mailSender) && !string.IsNullOrWhiteSpace(mailSenderRefreshToken))
+{
+    api.WithEnvironment("Kairo__Notifications__Sender", mailSender)
+        .WithEnvironment("Kairo__Notifications__SenderRefreshToken", mailSenderRefreshToken);
+}
+
 builder.AddProject<Projects.Kairo_Worker>("worker")
     .WithReference(sql).WaitFor(sql)
     .WithReference(agents)

@@ -63,6 +63,26 @@ Do this once in the Cloud Console for `kairo2`:
 
 Locally, refresh tokens are encrypted with ASP.NET Data Protection. In Google Cloud, `deploy.bat` points the API and worker at the Cloud KMS key `connection-tokens`.
 
+## Set up notification emails
+
+Kairo sends notification emails through the Gmail API as one sender mailbox. It can be a Google Workspace or a plain Gmail address. Gmail allows about 500 messages a day from a Gmail account and about 2,000 from a Workspace account.
+
+Do this once for each environment:
+
+1. **Publishing status.** In Google Auth Platform → Audience, make sure the app is **In production**. While it is in Testing, Google ends every refresh token after 7 days, which would stop the sender and every brand connection each week. An unverified app in production works for up to 100 users.
+2. **Data access.** In Google Auth Platform → Data Access, add `https://www.googleapis.com/auth/gmail.send`.
+3. **Redirect URI.** Add `http://localhost:8765/` to the web OAuth client's authorized redirect URIs.
+4. **Sender address.** Put the mailbox's address in `MailSender` for the environment in `deploy/environments.psd1`, and commit it.
+5. **Sign in.** Run `powershell -ExecutionPolicy Bypass -File deploy/set-mail-sender.ps1 development`. Your browser opens; sign in as the sender mailbox and allow Kairo to send email. The script checks the account and the permission, then stores the refresh token in the secret `mail-sender-refresh-token`.
+6. **Deploy.** Run `deploy.bat development`. Until the sender is signed in, the API only logs each email.
+
+Locally, emails are logged unless you give the AppHost a sender, for example the refresh token that `set-mail-sender.ps1` stored for development:
+
+```bash
+dotnet user-secrets set "Kairo:MailSender" "<sender address>" --project core/src/Kairo.AppHost
+dotnet user-secrets set "Kairo:MailSenderRefreshToken" "<refresh token>" --project core/src/Kairo.AppHost
+```
+
 ## Run everything locally
 
 From the repository root:

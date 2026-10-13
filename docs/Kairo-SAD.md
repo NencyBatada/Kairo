@@ -54,7 +54,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
-| Email | Gmail API with a Google Workspace sender | Notification emails |
+| Email | Gmail API, sending as one sender mailbox | Notification emails, sent from an outbox in SQL Server |
 | Hosting | Cloud Run | Web app, core API, core worker and agent service |
 | Delivery | deploy.bat script with the gcloud CLI, Cloud Build, Artifact Registry | Test, build and deploy each service to Cloud Run |
 | Monitoring | Cloud Logging, Cloud Monitoring, Cloud Trace, Error Reporting, OpenTelemetry | Logs, metrics, alerts and end-to-end traces |
@@ -158,7 +158,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Approvals and launch | Approval, LaunchRecord, ProductAdMap | Approval holds the plan hash; ProductAdMap links products to ads for stock pauses |
 | Care and results | Recommendation, ImpactReport, ImpactLabAnalysis | Results and model diagnostics stored as JSON |
 | Memory and chat | MemoryEntry, MemoryUse, Conversation, Message | MemoryUse records which entries shaped which output |
-| Operations | Notification, AuditLog, LiveOutbox | AuditLog is append-only; LiveOutbox keeps live updates for 24 hours |
+| Operations | Notification, EmailOptOut, OutboundEmail, AuditLog, LiveOutbox | AuditLog is append-only; LiveOutbox keeps live updates for 24 hours; OutboundEmail is the email outbox, retried on a fixed schedule |
 
 ### BigQuery
 
@@ -191,7 +191,7 @@ The core connects to every Google service that holds the brand's ads or data; th
 | Gemini Enterprise Agent Platform | Gemini, Imagen, Veo and Google Search grounding | Google Gen AI SDK in the agent service | Per-model quotas; Veo and Imagen run in fewer regions than Gemini |
 | Cloud Text-to-Speech | Voiceover in each language | Client library in the agent service | Voice choice varies by language |
 | Model Armor | Screening untrusted text | API from the agent service | Adds a short delay to each screened call |
-| Gmail API | Notification emails | A Google Workspace sender account, from the core | The Workspace account's daily sending limit |
+| Gmail API | Notification emails | One sender mailbox, a Workspace or Gmail address, signed in once with the gmail.send scope through Kairo's OAuth client. Its refresh token sits in Secret Manager, and the core API sends from an email outbox in SQL Server. | About 500 messages a day from a Gmail account, or 2,000 from a Workspace account |
 | Brand website and catalogue feed | Brand Kit and products | HTTPS fetch, or file upload to Cloud Storage | Untrusted content, screened before use |
 
 ## 8. Security
@@ -221,7 +221,7 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | Core worker | Cloud Run service | Scales to zero; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
 | Agent service | Cloud Run service | Internal access only; long request timeout for video jobs |
 | Database | Cloud SQL for SQL Server | Express edition for the prototype; Standard with high availability in production; automated backups and point-in-time recovery |
-| Queues | Cloud Tasks | Separate queues for agent runs, Google Ads changes and notifications, each with its own rate limit |
+| Queues | Cloud Tasks | Separate queues for agent runs and Google Ads changes, each with its own rate limit. Notification emails go through an outbox in SQL Server, sent by the core API, so they need no queue. |
 
 - **Region.** The app and its data run in asia-south1 (Mumbai), close to Indian brands. Gemini calls can use the global endpoint, while Veo and Imagen run in the nearest region that offers them.
 - **Delivery.** `deploy.bat` deploys Kairo with the gcloud CLI, taking the target environment (development, staging or production) as an argument; `deploy/environments.psd1` maps each to its project. It runs the tests, builds each service's container image with Cloud Build into Artifact Registry, runs the Migrator as a Cloud Run job inside the VPC to apply EF Core migrations, then deploys the services to Cloud Run. Shared resources such as the network, database, secrets and service accounts are created once per project by `deploy/setup.ps1`. The development project has no load balancer: the web app forwards `/api/*` to the core with a Google identity token.
@@ -283,6 +283,6 @@ The biggest technical risk is Google's review of Kairo's OAuth app: connecting b
 
 - [ ] Must brand data and model processing stay in India? That would rule out the global Gemini endpoint and possibly some models.
 - [ ] Who completes OAuth verification for `kairo2`'s sensitive scopes?
-- [ ] Which Google Workspace account sends notification emails?
+- [x] Which Google Workspace account sends notification emails? One dedicated sender mailbox, a Workspace or Gmail address, that signs in once to gmail.send with deploy/set-mail-sender.ps1.
 - [ ] Can each brand's stock feed update hourly (a BRD open question)? It sets how often the worker polls.
 - [ ] Should Kairo push shopping titles through the Merchant API or export them (a BRD open question)?
