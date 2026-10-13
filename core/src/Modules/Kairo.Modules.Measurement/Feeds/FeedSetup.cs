@@ -9,6 +9,7 @@ internal static class FeedSetup
         services.AddSingleton<IServiceAccessToken, ApplicationDefaultAccessToken>();
         services.AddSingleton<BigQueryClient>();
         services.AddSingleton<BigQueryTables>();
+        services.AddSingleton<BigQueryTableCheck>();
     }
 
     public static void MapFeeds(this IEndpointRouteBuilder api)
@@ -19,5 +20,9 @@ internal static class FeedSetup
             .RequireBrandRole(BrandRoles.Admin | BrandRoles.Marketer)
             .DisableAntiforgery();
         sales.MapGet("/uploads", SalesEndpoints.ListUploadsAsync);
+        var source = sales.MapGroup("/source");
+        source.MapGet("", SalesEndpoints.GetSourceAsync);
+        source.MapPut("", SalesEndpoints.SetSourceAsync).RequireBrandRole(BrandRoles.Admin);
+        source.MapDelete("", SalesEndpoints.RemoveSourceAsync).RequireBrandRole(BrandRoles.Admin);
     }
 }
