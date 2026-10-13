@@ -957,6 +957,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/live": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": components["schemas"]["SseItemOfstring"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/audit-log": {
         parameters: {
             query?: never;
@@ -1118,6 +1154,12 @@ export interface components {
             launchApprovers: string[];
             budgetOwners: string[];
             budgetLimit: null | number | string;
+        };
+        SseItemOfstring: {
+            data?: null | string;
+            eventType?: null | string;
+            eventId?: null | string;
+            reconnectionInterval?: null | string;
         };
         UpdateWorkspaceRequest: {
             name: null | string;
