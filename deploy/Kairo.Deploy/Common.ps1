@@ -97,10 +97,20 @@ function Invoke-Gcloud {
     Invoke-Native -FilePath 'gcloud' -ArgumentList ($ArgumentList + '--quiet') -Capture:$Capture
 }
 
+function Test-Native {
+    param([Parameter(Mandatory)][string]$FilePath, [string[]]$ArgumentList = @())
+
+    $ErrorActionPreference = 'Continue'
+    if (-not (Get-Command -Name $FilePath -ErrorAction SilentlyContinue)) {
+        return $false
+    }
+
+    & $FilePath @ArgumentList 2>&1 | Out-Null
+    $LASTEXITCODE -eq 0
+}
+
 function Test-Gcloud {
     param([Parameter(Mandatory)][string[]]$ArgumentList)
 
-    $ErrorActionPreference = 'Continue'
-    & gcloud @($ArgumentList + '--quiet') 2>&1 | Out-Null
-    $LASTEXITCODE -eq 0
+    Test-Native -FilePath 'gcloud' -ArgumentList ($ArgumentList + '--quiet')
 }

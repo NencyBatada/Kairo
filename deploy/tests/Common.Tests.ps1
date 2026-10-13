@@ -95,3 +95,44 @@ Describe 'Invoke-Gcloud' {
         }
     }
 }
+
+Describe 'Test-Native' {
+    BeforeAll {
+        $script:countArguments = Join-Path ([IO.Path]::GetTempPath()) 'kairo-count-arguments.ps1'
+        Set-Content -LiteralPath $countArguments -Value 'if ($args.Count -eq 3) { exit 0 } else { exit 1 }'
+    }
+
+    AfterAll {
+        Remove-Item -LiteralPath $countArguments -Force
+    }
+
+    It 'passes each argument separately to a PowerShell script, as gcloud is on Windows' {
+        Test-Native -FilePath $countArguments -ArgumentList @('artifacts', 'repositories', 'describe') | Should -BeTrue
+    }
+
+    It 'is false when the program fails' {
+        Test-Native -FilePath $countArguments -ArgumentList @('only-one') | Should -BeFalse
+    }
+
+    It 'passes each argument separately when running a program' {
+        { Invoke-Native -FilePath $countArguments -ArgumentList @('artifacts', 'repositories', 'describe') } | Should -Not -Throw
+    }
+}
+
+Describe 'Test-Gcloud' {
+    It 'adds --quiet' {
+        Mock -ModuleName Kairo.Deploy Test-Native { $true }
+
+        Test-Gcloud -ArgumentList @('secrets', 'describe', 'x') | Should -BeTrue
+
+        Should -Invoke -ModuleName Kairo.Deploy Test-Native -ParameterFilter {
+            $FilePath -eq 'gcloud' -and ($ArgumentList -join ' ') -eq 'secrets describe x --quiet'
+        }
+    }
+}
+
+Describe 'Test-Native when the program is missing' {
+    It 'is false' {
+        Test-Native -FilePath 'kairo-no-such-tool' -ArgumentList @('describe') | Should -BeFalse
+    }
+}
