@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using Kairo.Modules.Live.Data;
 using Microsoft.Extensions.Logging;
 
@@ -68,11 +69,16 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
         await using (await database.EnterSystemScopeAsync(cancellationToken))
         {
             var highest = await db.Unlocked().MaxAsync(row => (long?)row.Id, cancellationToken) ?? 0;
-            var recent = await db.Unlocked()
+            var oldestRecent = await db.Unlocked()
                 .Where(row => row.CreatedAt >= since)
-                .Select(row => row.Id)
-                .OrderBy(id => id)
-                .ToListAsync(cancellationToken);
+                .MinAsync(row => (long?)row.Id, cancellationToken);
+            List<long> recent = oldestRecent is { } from
+                ? await db.Unlocked()
+                    .Where(row => row.Id >= from)
+                    .Select(row => row.Id)
+                    .OrderBy(id => id)
+                    .ToListAsync(cancellationToken)
+                : [];
             return OutboxCursor.Start(highest, recent, now);
         }
     }
@@ -115,7 +121,8 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
     private async Task PollAsync(CancellationToken cancellationToken)
     {
         var cursor = _cursor!;
-        var floor = cursor.Floor;
+        var highest = cursor.Highest;
+        var gaps = cursor.Gaps;
         List<OutboxEvent> rows;
         await using (var scope = scopes.CreateAsyncScope())
         {
@@ -124,21 +131,41 @@ internal sealed class LiveFeed(IServiceScopeFactory scopes, TimeProvider time, I
             await using (await database.EnterSystemScopeAsync(cancellationToken))
             {
                 rows = await db.Unlocked()
-                    .Where(row => row.Id > floor)
+                    .Where(row => row.Id > highest)
                     .OrderBy(row => row.Id)
                     .Take(BatchSize)
                     .ToListAsync(cancellationToken);
+                if (gaps.Count > 0)
+                {
+                    rows.AddRange(await db.Unlocked()
+                        .Where(InGaps(gaps))
+                        .OrderBy(row => row.Id)
+                        .Take(BatchSize)
+                        .ToListAsync(cancellationToken));
+                }
             }
         }
 
         var fresh = cursor.Advance(rows.Select(row => row.Id).ToList(), time.GetUtcNow()).ToHashSet();
-        foreach (var row in rows.Where(row => fresh.Contains(row.Id)))
+        foreach (var row in rows.Where(row => fresh.Contains(row.Id)).OrderBy(row => row.Id))
         {
             foreach (var subscription in _subscriptions.Keys.Where(subscription => subscription.BrandId == row.BrandId))
             {
                 subscription.Offer(row);
             }
         }
+    }
+
+    private static Expression<Func<OutboxEvent, bool>> InGaps(IReadOnlyList<(long From, long To)> gaps)
+    {
+        var row = Expression.Parameter(typeof(OutboxEvent), "row");
+        var id = Expression.Property(row, nameof(OutboxEvent.Id));
+        var body = gaps
+            .Select(gap => (Expression)Expression.AndAlso(
+                Expression.GreaterThanOrEqual(id, Expression.Constant(gap.From)),
+                Expression.LessThanOrEqual(id, Expression.Constant(gap.To))))
+            .Aggregate(Expression.OrElse);
+        return Expression.Lambda<Func<OutboxEvent, bool>>(body, row);
     }
 
     private async Task CleanUpAsync(CancellationToken cancellationToken)

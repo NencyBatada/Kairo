@@ -9,6 +9,10 @@ internal sealed class OutboxCursor
 
     public long Floor => _gaps.Count == 0 ? _highest : _gaps.Min(gap => gap.From) - 1;
 
+    public long Highest => _highest;
+
+    public IReadOnlyList<(long From, long To)> Gaps => _gaps.Select(gap => (gap.From, gap.To)).ToList();
+
     public static OutboxCursor Start(long highest, IReadOnlyList<long> recent, DateTimeOffset now)
     {
         var cursor = new OutboxCursor(recent.Count == 0 ? highest : recent.Min() - 1);
