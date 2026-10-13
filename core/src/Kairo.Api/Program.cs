@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Kairo.Api;
 using Kairo.Modules.Approvals;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
@@ -26,6 +27,7 @@ builder.Services.AddKairoCore();
 builder.Services.AddProblemDetails();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+builder.Services.AddKairoOpenApi();
 
 IModule[] modules =
 [
@@ -58,6 +60,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapDefaultEndpoints();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+}
 
 var api = app.MapKairoApi();
 foreach (var module in modules)

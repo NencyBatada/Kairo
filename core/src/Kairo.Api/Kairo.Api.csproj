@@ -3,6 +3,11 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Microsoft.Data.SqlClient" />
     <PackageReference Include="Aspire.StackExchange.Redis" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="openapi.json" />
   </ItemGroup>
 
   <ItemGroup>
