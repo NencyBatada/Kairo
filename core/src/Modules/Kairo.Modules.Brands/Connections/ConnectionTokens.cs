@@ -102,6 +102,11 @@ internal sealed class ConnectionTokens(
         connection.ReconnectReason = reason;
         cache.Forget(connection.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await RecordLossAsync(connection, before, reason, cancellationToken);
+    }
+
+    private async Task RecordLossAsync(Connection connection, object before, string reason, CancellationToken cancellationToken)
+    {
         await audit.RecordAsync(
             new AuditRecord("connection.needs_reconnect", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
             cancellationToken);
@@ -114,19 +119,27 @@ internal sealed class ConnectionTokens(
         cache.Forget(connection.Id);
         await using (var scope = scopes.CreateAsyncScope())
         {
-            var ownDatabase = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
-            await ownDatabase.UseBrandAsync(connection.BrandId, cancellationToken);
-            await ownDatabase.BeginTransactionAsync(cancellationToken);
+            await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(connection.BrandId, cancellationToken);
             var own = scope.ServiceProvider.GetRequiredService<BrandsDbContext>();
-            var current = await own.Connections
-                .FromSql($"SELECT * FROM [brands].[Connections] WITH (UPDLOCK, ROWLOCK) WHERE [Id] = {connection.Id}")
-                .SingleOrDefaultAsync(row => row.ConnectedAt == connection.ConnectedAt && row.RefreshToken != null, cancellationToken);
+            var current = await own.Connections.SingleOrDefaultAsync(
+                row => row.Id == connection.Id && row.ConnectedAt == connection.ConnectedAt && row.RefreshToken != null,
+                cancellationToken);
             if (current is not null)
             {
-                await scope.ServiceProvider.GetRequiredService<ConnectionTokens>().LoseAsync(current, reason, cancellationToken);
+                var before = ConnectionLifecycle.Snapshot(current);
+                var lost = await own.Connections
+                    .Where(row => row.Id == current.Id && row.ConnectedAt == current.ConnectedAt && row.RefreshToken != null)
+                    .ExecuteUpdateAsync(setters => setters
+                        .SetProperty(row => row.State, ConnectionState.NeedsReconnect)
+                        .SetProperty(row => row.RefreshToken, (byte[]?)null)
+                        .SetProperty(row => row.KeyVersion, (string?)null)
+                        .SetProperty(row => row.ReconnectReason, reason), cancellationToken);
+                if (lost == 1)
+                {
+                    await own.Entry(current).ReloadAsync(cancellationToken);
+                    await scope.ServiceProvider.GetRequiredService<ConnectionTokens>().RecordLossAsync(current, before, reason, cancellationToken);
+                }
             }
-
-            await ownDatabase.CommitAsync(cancellationToken);
         }
 
         await db.Entry(connection).ReloadAsync(cancellationToken);
