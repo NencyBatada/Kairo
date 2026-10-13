@@ -31,6 +31,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
+- [/] **Design system**: docs/design.md, shared components on shadcn/Base UI, and the new look on every existing screen, phones included.
 - [/] **Sign-in and app layout**: The Google sign-in screen, the Today home, a left-hand menu for the seven areas and the Ask Kairo side panel. *Done: sign-in screen, workspace switcher, left-hand menu. Left: Today home content, Ask Kairo panel.*
 - [/] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit. *Done: invite users, assign roles, choose approvers, budget limit. Left: connect accounts.*
 - [ ] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh.
