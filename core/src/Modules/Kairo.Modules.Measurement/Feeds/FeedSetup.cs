@@ -12,7 +12,9 @@ internal static class FeedSetup
         services.AddSingleton<BigQueryTables>();
         services.AddSingleton<BigQueryTableCheck>();
         services.AddSingleton<GoogleAdsReports>();
+        services.AddSingleton<Ga4Reports>();
         services.AddScoped<IFeed, GoogleAdsFeed>();
+        services.AddScoped<IFeed, Ga4Feed>();
         services.AddScoped<BrandFeeds>();
         services.AddScoped<FeedRunner>();
     }

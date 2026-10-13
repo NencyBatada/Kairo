@@ -62,6 +62,12 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
+    public string Ga4TimeZone { get; set; } = "Asia/Kolkata";
+
+    public int Ga4PageRows { get; set; } = 100;
+
+    public ConcurrentQueue<JsonElement> Ga4Requests { get; } = new();
+
     public int Refreshes => Requests.Count(request => request == "refresh_token");
 
     public IssuedCode IssueCode(string challenge, string redirectUri, IEnumerable<string> scopes, string subject)
@@ -185,7 +191,9 @@ public sealed class FakeGoogleApis : HttpMessageHandler
                 Json(HttpStatusCode.OK, new { accessRights = MerchantAccessRights }),
             ("analyticsadmin.googleapis.com", "/v1beta/accountSummaries") =>
                 Json(HttpStatusCode.OK, new { accountSummaries = new[] { new { displayName = "Acme", propertySummaries = new[] { new { property = "properties/777", displayName = "Acme web" } } } } }),
-            ("analyticsadmin.googleapis.com", "/v1beta/properties/777") => Json(Ga4Read, new { name = "properties/777" }),
+            ("analyticsadmin.googleapis.com", "/v1beta/properties/777") =>
+                Json(Ga4Read, new { name = "properties/777", timeZone = Ga4TimeZone, currencyCode = "INR" }),
+            ("analyticsdata.googleapis.com", "/v1beta/properties/777:runReport") => Ga4Report(body),
             ("bigquery.googleapis.com", "/bigquery/v2/projects") =>
                 Json(HttpStatusCode.OK, new { projects = new[] { new { id = "acme-data", friendlyName = "Acme data" } } }),
             ("bigquery.googleapis.com", "/bigquery/v2/projects/acme-data/datasets") => Json(BigQueryRead, new { datasets = Array.Empty<object>() }),
@@ -296,6 +304,34 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             metrics,
         };
     }
+
+    private HttpResponseMessage Ga4Report(string body)
+    {
+        var request = JsonDocument.Parse(body).RootElement.Clone();
+        Ga4Requests.Enqueue(request);
+        var range = request.GetProperty("dateRanges")[0];
+        var from = DateOnly.ParseExact(range.GetProperty("startDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var to = DateOnly.ParseExact(range.GetProperty("endDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var rows = new List<object>();
+        for (var day = from; day <= to; day = day.AddDays(1))
+        {
+            var date = day.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            rows.Add(Ga4Row(date, "Maharashtra", "120", "4", "3", "5600.75"));
+            if (day == from)
+            {
+                rows.Add(Ga4Row(date, "(not set)", "7", "0", "0", "0"));
+            }
+        }
+
+        var offset = request.TryGetProperty("offset", out var start) ? start.GetInt32() : 0;
+        return Json(HttpStatusCode.OK, new { rows = rows.Skip(offset).Take(Ga4PageRows).ToArray(), rowCount = rows.Count });
+    }
+
+    private static object Ga4Row(string date, string region, params string[] metrics) => new
+    {
+        dimensionValues = new[] { new { value = date }, new { value = "India" }, new { value = region } },
+        metricValues = metrics.Select(value => new { value }).ToArray(),
+    };
 
     private static bool AdsReachable(string path, string? login) =>
         path.Split('/') is not [_, _, _, "4444444444", ..] || login == "2222222222";
