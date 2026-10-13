@@ -1,5 +1,6 @@
 using Kairo.Contracts.Identity;
 using Kairo.Modules.Identity.Data;
+using Kairo.Modules.Identity.Invitations;
 using Kairo.Modules.Identity.Members;
 using Kairo.Modules.Identity.SignIn;
 using Microsoft.AspNetCore.DataProtection;
@@ -24,6 +25,7 @@ public sealed class IdentityModule : IModule
     public void MapApi(IEndpointRouteBuilder api)
     {
         api.MapSignIn();
+        api.MapInvitations();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)

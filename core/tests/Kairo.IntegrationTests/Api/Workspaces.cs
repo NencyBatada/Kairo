@@ -40,4 +40,19 @@ internal static class Workspaces
         var page = await admin.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/audit-log?limit=1");
         return page.GetProperty("entries")[0];
     }
+
+    public static async Task<Guid> InviteAsync(HttpClient admin, Guid brandId, string email, params string[] roles)
+    {
+        var response = await admin.PostAsJsonAsync($"/api/brands/{brandId}/invitations", new { email, roles });
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+    }
+
+    public static async Task<Member> JoinAsync(KairoApiFactory api, HttpClient admin, Guid brandId, params string[] roles)
+    {
+        var member = await SignInAsync(api, $"Member {Guid.NewGuid():N}"[..15]);
+        var invitationId = await InviteAsync(admin, brandId, member.Account.Email, roles);
+        (await member.Browser.PostAsync($"/api/me/invitations/{invitationId}/accept", null)).EnsureSuccessStatusCode();
+        return member;
+    }
 }

@@ -1,3 +1,4 @@
+using Kairo.Modules.Identity.Invitations;
 using Kairo.Modules.Identity.Members;
 using Kairo.Modules.Identity.Sessions;
 using Kairo.Modules.Identity.Users;
@@ -21,6 +22,8 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
     public DbSet<DutyAssignment> DutyAssignments => Set<DutyAssignment>();
 
     public DbSet<BudgetLimit> BudgetLimits => Set<BudgetLimit>();
+
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     protected override string Schema => SchemaName;
 
@@ -72,6 +75,18 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
             limit.HasKey(l => l.BrandId);
             limit.Property(l => l.Amount).HasPrecision(19, 4);
             limit.Property(l => l.Currency).HasMaxLength(3).IsFixedLength();
+        });
+
+        modelBuilder.Entity<Invitation>(invitation =>
+        {
+            invitation.ToTable("Invitations");
+            invitation.Property(i => i.Email).HasMaxLength(320);
+            invitation.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
+            invitation.HasIndex(i => new { i.BrandId, i.Email })
+                .IsUnique()
+                .HasFilter("[Status] = N'Pending'");
+            invitation.HasIndex(i => i.Email);
+            invitation.HasOne<User>().WithMany().HasForeignKey(i => i.InvitedBy).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

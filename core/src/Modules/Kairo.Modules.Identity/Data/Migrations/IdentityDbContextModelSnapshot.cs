@@ -22,6 +22,53 @@ namespace Kairo.Modules.Identity.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kairo.Modules.Identity.Invitations.Invitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("InvitedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("RespondedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Roles")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email");
+
+                    b.HasIndex("InvitedBy");
+
+                    b.HasIndex("BrandId", "Email")
+                        .IsUnique()
+                        .HasFilter("[Status] = N'Pending'");
+
+                    b.ToTable("Invitations", "identity");
+                });
+
             modelBuilder.Entity("Kairo.Modules.Identity.Members.BudgetLimit", b =>
                 {
                     b.Property<Guid>("BrandId")
@@ -170,6 +217,15 @@ namespace Kairo.Modules.Identity.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DataProtectionKeys", "identity");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Identity.Invitations.Invitation", b =>
+                {
+                    b.HasOne("Kairo.Modules.Identity.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Kairo.Modules.Identity.Members.DutyAssignment", b =>
