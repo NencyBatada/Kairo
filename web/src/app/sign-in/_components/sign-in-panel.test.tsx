@@ -10,7 +10,7 @@ async function renderPanel(searchParams: Record<string, string>) {
 test("sends the user to Google with the page they asked for", async () => {
   await renderPanel({ returnUrl: "/acme/today?tab=open" });
 
-  expect(screen.getByRole("link", { name: "Sign in with Google" }).getAttribute("href")).toBe(
+  expect(screen.getByRole("link", { name: "Continue with Google" }).getAttribute("href")).toBe(
     "/api/auth/sign-in?returnUrl=%2Facme%2Ftoday%3Ftab%3Dopen",
   );
   expect(screen.queryByRole("alert")).toBeNull();
