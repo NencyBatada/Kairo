@@ -9,6 +9,7 @@ public sealed class BrandKitTableTests(SqlServer sqlServer)
     [Theory]
     [InlineData("KitVersions")]
     [InlineData("KitFiles")]
+    [InlineData("DraftRuns")]
     public async Task The_table_is_covered_by_the_brand_kit_security_policy(string table)
     {
         var predicates = await ScalarAsync(
@@ -60,6 +61,45 @@ public sealed class BrandKitTableTests(SqlServer sqlServer)
 
         Assert.Equal(2601, duplicate.Number);
     }
+
+    [Fact]
+    public async Task A_workspace_has_at_most_one_drafting_run_in_progress()
+    {
+        var brandId = Guid.NewGuid();
+        await InsertRunAsync(brandId, "Pending");
+
+        var duplicate = await Assert.ThrowsAsync<SqlException>(() => InsertRunAsync(brandId, "Running"));
+
+        Assert.Equal(2601, duplicate.Number);
+    }
+
+    [Fact]
+    public async Task Finished_runs_can_pile_up()
+    {
+        var brandId = Guid.NewGuid();
+        await InsertRunAsync(brandId, "Succeeded");
+        await InsertRunAsync(brandId, "Failed");
+        await InsertRunAsync(brandId, "Failed");
+        await InsertRunAsync(brandId, "Pending");
+
+        var count = await ScalarAsync(
+            """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            SELECT COUNT(*) FROM brand_kit.DraftRuns WHERE BrandId = @brand;
+            """,
+            brandId);
+
+        Assert.Equal(4, count);
+    }
+
+    private Task InsertRunAsync(Guid brandId, string status) => ScalarAsync(
+        $$"""
+        EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+        INSERT INTO brand_kit.DraftRuns (Id, BrandId, WebsiteUrl, Status, Pages, Ads, Attempts, RequestedBy, RequestedAt)
+        VALUES (NEWID(), @brand, N'https://acme.example/', N'{{status}}', N'[]', N'[]', 0, NEWID(), SYSDATETIMEOFFSET());
+        SELECT 0;
+        """,
+        brandId);
 
     private Task InsertVersionAsync(Guid brandId, int number, string status) => ScalarAsync(
         $$"""
