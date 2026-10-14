@@ -2026,6 +2026,9 @@ export interface components {
             assetApprovers: string[];
             launchApprovers: string[];
             budgetOwners: string[];
+            budgetMoveApprovers: string[];
+            targetChangeApprovers: string[];
+            googleSuggestionApprovers: string[];
             budgetLimit: null | number | string;
             currency: string;
         };
@@ -2347,6 +2350,9 @@ export interface components {
             assetApprovers: string[];
             launchApprovers: string[];
             budgetOwners: string[];
+            budgetMoveApprovers: string[];
+            targetChangeApprovers: string[];
+            googleSuggestionApprovers: string[];
             budgetLimit: null | number | string;
         };
         SaveDraftRequest: {

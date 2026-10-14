@@ -67,6 +67,9 @@ export async function saveApprovalSettings(brandId: string, _: FormState, formDa
       assetApprovers: ids(formData, "assetApprovers"),
       launchApprovers: ids(formData, "launchApprovers"),
       budgetOwners: ids(formData, "budgetOwners"),
+      budgetMoveApprovers: ids(formData, "budgetMoveApprovers"),
+      targetChangeApprovers: ids(formData, "targetChangeApprovers"),
+      googleSuggestionApprovers: ids(formData, "googleSuggestionApprovers"),
       budgetLimit: limit === "" ? null : Number(limit),
     },
   });
