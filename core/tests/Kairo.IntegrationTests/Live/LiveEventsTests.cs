@@ -31,7 +31,7 @@ public sealed class LiveEventsTests(SqlServer sqlServer) : IAsyncDisposable
 
         (await owner.Browser.PutAsJsonAsync(
             $"/api/brands/{brandId}/approval-settings",
-            new { briefApprovers = duty, assetApprovers = duty, launchApprovers = duty, budgetOwners = duty, budgetLimit = 50000m },
+            new { briefApprovers = duty, assetApprovers = duty, launchApprovers = duty, budgetOwners = duty, budgetMoveApprovers = duty, targetChangeApprovers = duty, googleSuggestionApprovers = duty, budgetLimit = 50000m },
             Token)).EnsureSuccessStatusCode();
 
         Assert.Equal("approval_settings.changed", (await listener.NextAsync()).Type);

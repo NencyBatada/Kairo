@@ -111,20 +111,52 @@ public sealed class TeamTests(SqlServer sqlServer) : IAsyncDisposable
         var owner = await Workspaces.SignInAsync(_api);
         var brandId = await Workspaces.CreateAsync(owner.Browser);
         var approver = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "approver", "marketer");
-        await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/approval-settings", new
+        (await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/approval-settings", new
         {
             briefApprovers = new[] { owner.UserId, approver.UserId },
             assetApprovers = new[] { owner.UserId },
             launchApprovers = new[] { owner.UserId },
             budgetOwners = new[] { owner.UserId },
+            budgetMoveApprovers = new[] { owner.UserId },
+            targetChangeApprovers = new[] { owner.UserId, approver.UserId },
+            googleSuggestionApprovers = new[] { owner.UserId },
             budgetLimit = (decimal?)null,
-        }, Token);
+        }, Token)).EnsureSuccessStatusCode();
 
         var response = await ChangeRolesAsync(owner, brandId, approver.UserId, "marketer");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var settings = await owner.Browser.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/approval-settings", Token);
         Assert.Equal(owner.UserId, Assert.Single(settings.GetProperty("briefApprovers").EnumerateArray()).GetGuid());
+        Assert.Equal(owner.UserId, Assert.Single(settings.GetProperty("targetChangeApprovers").EnumerateArray()).GetGuid());
+    }
+
+    [Fact]
+    public async Task The_only_approver_for_a_type_of_recommendation_keeps_the_role_and_cannot_be_removed()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        var approver = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "approver", "marketer");
+        (await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/approval-settings", new
+        {
+            briefApprovers = new[] { owner.UserId },
+            assetApprovers = new[] { owner.UserId },
+            launchApprovers = new[] { owner.UserId },
+            budgetOwners = new[] { owner.UserId },
+            budgetMoveApprovers = new[] { approver.UserId },
+            targetChangeApprovers = new[] { owner.UserId },
+            googleSuggestionApprovers = new[] { owner.UserId },
+            budgetLimit = (decimal?)null,
+        }, Token)).EnsureSuccessStatusCode();
+
+        var demote = await ChangeRolesAsync(owner, brandId, approver.UserId, "marketer");
+        var remove = await owner.Browser.DeleteAsync($"/api/brands/{brandId}/members/{approver.UserId}", Token);
+
+        Assert.Equal(HttpStatusCode.Conflict, demote.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, remove.StatusCode);
+        Assert.Equal(
+            "This member is the only approver for budget moves. Give that duty to someone else first.",
+            (await demote.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("title").GetString());
     }
 
     [Fact]
@@ -133,14 +165,17 @@ public sealed class TeamTests(SqlServer sqlServer) : IAsyncDisposable
         var owner = await Workspaces.SignInAsync(_api);
         var brandId = await Workspaces.CreateAsync(owner.Browser);
         var successor = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "admin", "approver");
-        await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/approval-settings", new
+        (await owner.Browser.PutAsJsonAsync($"/api/brands/{brandId}/approval-settings", new
         {
             briefApprovers = new[] { successor.UserId },
             assetApprovers = new[] { successor.UserId },
             launchApprovers = new[] { successor.UserId },
             budgetOwners = new[] { successor.UserId },
+            budgetMoveApprovers = new[] { successor.UserId },
+            targetChangeApprovers = new[] { successor.UserId },
+            googleSuggestionApprovers = new[] { successor.UserId },
             budgetLimit = (decimal?)null,
-        }, Token);
+        }, Token)).EnsureSuccessStatusCode();
 
         var leave = await owner.Browser.DeleteAsync($"/api/brands/{brandId}/members/{owner.UserId}", Token);
 

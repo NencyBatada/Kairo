@@ -24,6 +24,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<IWorkspaceFounding, WorkspaceFounding>();
         services.AddScoped<ISessionDirectory, SessionDirectory>();
         services.AddScoped<IBrandMembers, BrandMembers>();
+        services.AddScoped<IApprovers, Approvers>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)

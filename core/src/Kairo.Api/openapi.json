@@ -2015,6 +2015,9 @@
           "assetApprovers",
           "launchApprovers",
           "budgetOwners",
+          "budgetMoveApprovers",
+          "targetChangeApprovers",
+          "googleSuggestionApprovers",
           "budgetLimit",
           "currency"
         ],
@@ -2042,6 +2045,27 @@
             }
           },
           "budgetOwners": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "budgetMoveApprovers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "targetChangeApprovers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "googleSuggestionApprovers": {
             "type": "array",
             "items": {
               "type": "string",
@@ -3602,6 +3626,9 @@
           "assetApprovers",
           "launchApprovers",
           "budgetOwners",
+          "budgetMoveApprovers",
+          "targetChangeApprovers",
+          "googleSuggestionApprovers",
           "budgetLimit"
         ],
         "type": "object",
@@ -3628,6 +3655,27 @@
             }
           },
           "budgetOwners": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "budgetMoveApprovers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "targetChangeApprovers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "googleSuggestionApprovers": {
             "type": "array",
             "items": {
               "type": "string",

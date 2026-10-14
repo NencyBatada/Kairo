@@ -1,12 +1,6 @@
-namespace Kairo.Modules.Identity.Members;
+using Kairo.Contracts.Identity;
 
-internal enum ApprovalDuty
-{
-    Brief,
-    Assets,
-    Launch,
-    BudgetOwner,
-}
+namespace Kairo.Modules.Identity.Members;
 
 internal sealed class DutyAssignment : IBrandOwned
 {
@@ -25,6 +19,9 @@ internal static class ApprovalDuties
         ApprovalDuty.Assets => "asset approver",
         ApprovalDuty.Launch => "launch approver",
         ApprovalDuty.BudgetOwner => "budget owner",
+        ApprovalDuty.BudgetMoves => "approver for budget moves",
+        ApprovalDuty.TargetChanges => "approver for target CPA and ROAS changes",
+        ApprovalDuty.GoogleSuggestions => "approver for Google Ads recommendations",
         _ => throw new ArgumentOutOfRangeException(nameof(duty), duty, null),
     };
 }

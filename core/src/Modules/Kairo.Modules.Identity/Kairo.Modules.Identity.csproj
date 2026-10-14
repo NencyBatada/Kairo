@@ -5,4 +5,8 @@
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kairo.IntegrationTests" />
+  </ItemGroup>
+
 </Project>
