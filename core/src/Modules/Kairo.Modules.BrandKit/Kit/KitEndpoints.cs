@@ -27,6 +27,12 @@ internal static class KitEndpoints
             return TypedResults.ValidationProblem(check.Errors);
         }
 
+        var fileProblems = await versions.FileProblemsAsync(check.Content, cancellationToken);
+        if (fileProblems.Count > 0)
+        {
+            return TypedResults.ValidationProblem(fileProblems);
+        }
+
         await versions.LockAsync(cancellationToken);
         var draft = await versions.DraftAsync(cancellationToken);
         if ((draft?.Revision ?? 0) != request.Revision)

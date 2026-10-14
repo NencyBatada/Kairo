@@ -1,3 +1,5 @@
+using Kairo.Modules.BrandKit.Files;
+
 namespace Kairo.Modules.BrandKit.Kit;
 
 internal static class KitSetup
@@ -21,5 +23,15 @@ internal static class KitSetup
         history.MapGet("", KitEndpoints.HistoryAsync);
         history.MapGet("/{number:int}", KitEndpoints.GetVersionAsync);
         history.MapPost("/{number:int}/restore", KitEndpoints.RestoreAsync).RequireBrandRole(BrandRoles.Admin);
+
+        var files = kit.MapGroup("/files");
+        files.MapPost("", KitFileEndpoints.UploadAsync)
+            .RequireBrandRole(BrandRoles.Admin)
+            .WithMetadata(new UploadSizeLimit(KitFileEndpoints.MaxRequestBytes))
+            .WithFormOptions(multipartBodyLengthLimit: KitFileEndpoints.MaxRequestBytes)
+            .DisableAntiforgery();
+        files.MapGet("", KitFileEndpoints.ListAsync);
+        files.MapGet("/{fileId:guid}/download", KitFileEndpoints.DownloadAsync);
+        files.MapDelete("/{fileId:guid}", KitFileEndpoints.DeleteAsync).RequireBrandRole(BrandRoles.Admin);
     }
 }

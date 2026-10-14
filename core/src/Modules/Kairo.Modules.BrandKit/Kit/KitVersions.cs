@@ -10,6 +10,8 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     public const string StaleDraft = "Someone else changed the draft. Reload it and try again.";
     public const string NoDraft = "There's no draft.";
     public const string NotRestorable = "Only an older, superseded version can be restored.";
+    public const string NotALogo = "Upload the logo to the Brand Kit first.";
+    public const string NotAGuideline = "Upload this guideline file to the Brand Kit first.";
 
     public Task<KitVersion?> DraftAsync(CancellationToken cancellationToken) =>
         db.Versions.SingleOrDefaultAsync(version => version.Status == VersionStatus.Draft, cancellationToken);
@@ -101,6 +103,27 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
             version,
             content,
             files.OrderBy(file => ids.IndexOf(file.Id)).Select(KitFileView.Of).ToArray());
+    }
+
+    public async Task<Dictionary<string, string[]>> FileProblemsAsync(KitContent content, CancellationToken cancellationToken)
+    {
+        var ids = content.FileIds();
+        var files = await db.Files.Where(file => ids.Contains(file.Id)).ToDictionaryAsync(file => file.Id, cancellationToken);
+        var errors = new Dictionary<string, string[]>();
+        if (content.Logo?.FileId is { } logo && (!files.TryGetValue(logo, out var logoFile) || logoFile.Kind != KitFileKind.Logo))
+        {
+            errors["content.logo.fileId"] = [NotALogo];
+        }
+
+        for (var i = 0; i < content.GuidelineFileIds.Count; i++)
+        {
+            if (!files.TryGetValue(content.GuidelineFileIds[i], out var guide) || guide.Kind != KitFileKind.Guideline)
+            {
+                errors[$"content.guidelineFileIds[{i}]"] = [NotAGuideline];
+            }
+        }
+
+        return errors;
     }
 
     public static string Number(KitVersion version) => version.Number.ToString(CultureInfo.InvariantCulture);
