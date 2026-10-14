@@ -5,6 +5,7 @@ import { PageSkeleton, SidebarSkeleton } from "@/components/skeletons";
 
 import { WorkspaceLiveBridge } from "./_components/workspace-live-bridge";
 import { WorkspaceName } from "./_components/workspace-name";
+import { WorkspaceNotifications } from "./_components/workspace-notifications";
 import { WorkspaceSidebar } from "./_components/workspace-sidebar";
 
 export default function WorkspaceLayout({ children, params }: LayoutProps<"/[workspace]">) {
@@ -18,6 +19,11 @@ export default function WorkspaceLayout({ children, params }: LayoutProps<"/[wor
       topBar={
         <Suspense fallback={null}>
           <WorkspaceName params={params} />
+        </Suspense>
+      }
+      topBarActions={
+        <Suspense fallback={null}>
+          <WorkspaceNotifications params={params} />
         </Suspense>
       }
     >

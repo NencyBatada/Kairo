@@ -5,15 +5,28 @@ import { refresh } from "next/cache";
 import { coreApi, signInAgain } from "@/lib/core-api/client";
 import { problemToFormState, type FormState } from "@/lib/forms";
 
-export async function markNotificationRead(brandId: string, id: number) {
-  const { response } = await (await coreApi()).POST("/api/brands/{brandId}/notifications/{id}/read", {
-    params: { path: { brandId, id } },
-  });
+export type MarkReadResult = { ok: boolean };
+
+export async function markNotificationRead(brandId: string, id: number): Promise<MarkReadResult> {
+  let response: Response;
+  try {
+    ({ response } = await (await coreApi()).POST("/api/brands/{brandId}/notifications/{id}/read", {
+      params: { path: { brandId, id } },
+    }));
+  } catch {
+    return { ok: false };
+  }
+
   if (response.status === 401) {
     return signInAgain();
   }
 
+  if (!response.ok && response.status !== 404) {
+    return { ok: false };
+  }
+
   refresh();
+  return { ok: true };
 }
 
 export async function markAllNotificationsRead(brandId: string) {

@@ -1,11 +1,12 @@
 import { Activity, Bell, ClipboardCheck, TrendingUp } from "lucide-react";
-import Link from "next/link";
-
 import { EmptyState } from "@/components/empty-state";
+import { NotificationLink } from "@/components/notification-link";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { components } from "@/lib/core-api/schema";
+
+import { markNotificationRead } from "../../settings/notifications/actions";
 
 type NotificationItem = components["schemas"]["NotificationItem"];
 
@@ -27,7 +28,16 @@ const futureSections = [
   },
 ] as const;
 
-export function TodayOverview({ items, workspace }: { items: NotificationItem[]; workspace: string }) {
+type TodayOverviewProps = {
+  items: NotificationItem[];
+  workspace: string;
+  brandId: string;
+  timeZone: string;
+};
+
+export function TodayOverview({ items, workspace, brandId, timeZone }: TodayOverviewProps) {
+  const format = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone });
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Today" description="What needs you this morning." />
@@ -48,8 +58,10 @@ export function TodayOverview({ items, workspace }: { items: NotificationItem[];
             <ul className="divide-y divide-border">
               {items.map((item) => (
                 <li key={item.id}>
-                  <Link
+                  <NotificationLink
                     href={`/${workspace}${item.link}`}
+                    unread={item.readAt === null}
+                    markRead={markNotificationRead.bind(null, brandId, Number(item.id))}
                     className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-accent md:px-5 pointer-coarse:py-5"
                   >
                     <div className="flex flex-wrap items-center gap-2">
@@ -58,11 +70,9 @@ export function TodayOverview({ items, workspace }: { items: NotificationItem[];
                     </div>
                     <p className="max-w-prose text-small text-muted-foreground">{item.body}</p>
                     <time dateTime={item.createdAt} className="text-xs text-subtle-foreground">
-                      {new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-                        new Date(item.createdAt),
-                      )}
+                      {format.format(new Date(item.createdAt))}
                     </time>
-                  </Link>
+                  </NotificationLink>
                 </li>
               ))}
             </ul>

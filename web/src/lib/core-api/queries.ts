@@ -19,3 +19,10 @@ export const getWorkspace = cache(async (handle: string) => {
 
   return workspace;
 });
+
+export const getUnreadNotificationCount = cache(async (brandId: string) => {
+  const { data } = await (await coreApi()).GET("/api/brands/{brandId}/notifications", {
+    params: { path: { brandId }, query: { limit: 1 } },
+  });
+  return data ? Number(data.unreadCount) : 0;
+});
