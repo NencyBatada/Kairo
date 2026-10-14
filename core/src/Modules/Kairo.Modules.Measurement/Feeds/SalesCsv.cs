@@ -61,7 +61,7 @@ internal static partial class SalesCsv
         {
             var values = records[index];
             var row = index + 1;
-            if (values.Count == 1 && values[0].Trim().Length == 0)
+            if (values.All(value => value.Trim().Length == 0))
             {
                 continue;
             }

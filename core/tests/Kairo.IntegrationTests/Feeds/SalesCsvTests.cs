@@ -36,6 +36,15 @@ public sealed class SalesCsvTests
             file.Rows);
     }
 
+    [Fact]
+    public void Skips_the_empty_rows_a_spreadsheet_leaves_behind()
+    {
+        var file = Parse(Header + "2026-10-01,Goa,1,1\n,,,\n , , , \n2026-10-02,Goa,2,2\n,,,\n");
+
+        Assert.True(file.IsValid, string.Join("; ", file.Errors));
+        Assert.Equal(new[] { 1L, 2L }, file.Rows.Select(row => row.Orders));
+    }
+
     [Theory]
     [InlineData("2026-13-01,Goa,1,1", "row 2: date must be YYYY-MM-DD")]
     [InlineData("01/10/2026,Goa,1,1", "row 2: date must be YYYY-MM-DD")]
