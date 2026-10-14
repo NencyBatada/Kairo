@@ -1,4 +1,5 @@
 import { Activity, Bell, ClipboardCheck, TrendingUp } from "lucide-react";
+import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
@@ -26,7 +27,7 @@ const futureSections = [
   },
 ] as const;
 
-export function TodayOverview({ items }: { items: NotificationItem[] }) {
+export function TodayOverview({ items, workspace }: { items: NotificationItem[]; workspace: string }) {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Today" description="What needs you this morning." />
@@ -46,17 +47,22 @@ export function TodayOverview({ items }: { items: NotificationItem[] }) {
           <Card className="gap-0 py-0">
             <ul className="divide-y divide-border">
               {items.map((item) => (
-                <li key={item.id} className="flex flex-col gap-2 px-4 py-4 md:px-5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{item.title}</h3>
-                    {item.readAt === null && <Badge variant="info">New</Badge>}
-                  </div>
-                  <p className="max-w-prose text-small text-muted-foreground">{item.body}</p>
-                  <time dateTime={item.createdAt} className="text-xs text-subtle-foreground">
-                    {new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
-                      new Date(item.createdAt),
-                    )}
-                  </time>
+                <li key={item.id}>
+                  <Link
+                    href={`/${workspace}${item.link}`}
+                    className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-accent md:px-5 pointer-coarse:py-5"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-foreground">{item.title}</span>
+                      {item.readAt === null && <Badge variant="info">New</Badge>}
+                    </div>
+                    <p className="max-w-prose text-small text-muted-foreground">{item.body}</p>
+                    <time dateTime={item.createdAt} className="text-xs text-subtle-foreground">
+                      {new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(
+                        new Date(item.createdAt),
+                      )}
+                    </time>
+                  </Link>
                 </li>
               ))}
             </ul>

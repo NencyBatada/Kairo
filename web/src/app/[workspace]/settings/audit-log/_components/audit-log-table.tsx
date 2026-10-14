@@ -8,34 +8,28 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import type { AuditLogPage } from "@/lib/core-api/types";
 import { cn } from "@/lib/utils";
 
-const actions: Record<string, string> = {
-  "brand.created": "Created the workspace",
-  "brand.updated": "Changed the workspace details",
-  "invitation.sent": "Sent an invitation",
-  "invitation.revoked": "Revoked an invitation",
-  "invitation.accepted": "Accepted an invitation",
-  "invitation.declined": "Declined an invitation",
-  "member.roles_changed": "Changed a member's roles",
-  "member.removed": "Removed a member",
-  "member.left": "Left the workspace",
-  "approval_settings.changed": "Changed the approval settings",
-};
+import { auditActionLabel } from "./audit-actions";
 
 type AuditLogTableProps = {
   page: AuditLogPage;
   timeZone: string;
   olderHref: (before: string) => string;
+  filtered?: boolean;
 };
 
-export function AuditLogTable({ page, timeZone, olderHref }: AuditLogTableProps) {
+export function AuditLogTable({ page, timeZone, olderHref, filtered = false }: AuditLogTableProps) {
   const format = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
 
   if (page.entries.length === 0) {
     return (
       <EmptyState
         icon={ScrollText}
-        title="Nothing recorded yet"
-        description="Changes to the workspace, the team and approvals will appear here, with who made them and when."
+        title={filtered ? "No matching entries" : "Nothing recorded yet"}
+        description={
+          filtered
+            ? "Nothing on this page matches your filters. Try clearing them or loading older entries."
+            : "Changes to the workspace, the team and approvals will appear here, with who made them and when."
+        }
       />
     );
   }
@@ -57,7 +51,7 @@ export function AuditLogTable({ page, timeZone, olderHref }: AuditLogTableProps)
               <TableRow key={String(entry.id)}>
                 <TableCell className="text-small text-muted-foreground tabular-nums md:whitespace-nowrap">{format.format(new Date(entry.occurredAt))}</TableCell>
                 <TableCell className="font-medium text-foreground">{entry.actorName}</TableCell>
-                <TableCell className="text-foreground">{actions[entry.action] ?? entry.action}</TableCell>
+                <TableCell className="text-foreground">{auditActionLabel(entry.action)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

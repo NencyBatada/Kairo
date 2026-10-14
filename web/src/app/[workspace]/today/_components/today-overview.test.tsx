@@ -14,7 +14,7 @@ const notification = {
 };
 
 test("shows real recent updates without pretending they are pending approvals", () => {
-  render(<TodayOverview items={[notification]} />);
+  render(<TodayOverview items={[notification]} workspace="acme" />);
 
   expect(screen.getByRole("heading", { level: 1, name: "Today" })).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Recent updates" })).toBeTruthy();
@@ -23,11 +23,11 @@ test("shows real recent updates without pretending they are pending approvals", 
   expect(screen.getByText("New")).toBeTruthy();
   expect(screen.getByText("14 Oct 2026").getAttribute("datetime")).toBe(notification.createdAt);
   expect(screen.queryByText(/0 approvals waiting/i)).toBeNull();
-  expect(screen.queryByRole("link", { name: /reconnect/i })).toBeNull();
+  expect(screen.getByRole("link", { name: new RegExp(notification.title) }).getAttribute("href")).toBe("/acme/settings/connections");
 });
 
 test("explains unavailable feeds and has a distinct empty updates state", () => {
-  render(<TodayOverview items={[]} />);
+  render(<TodayOverview items={[]} workspace="acme" />);
 
   for (const title of ["No recent updates", "Approvals", "Top opportunities", "Live tests"]) {
     expect(screen.getByRole("heading", { name: title })).toBeTruthy();

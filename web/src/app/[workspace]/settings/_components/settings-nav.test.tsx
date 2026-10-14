@@ -5,7 +5,7 @@ import { SettingsNav } from "./settings-nav";
 
 vi.mock("next/navigation", () => ({ usePathname: () => null }));
 
-test("links to the five settings pages of the workspace", () => {
+test("links to the settings pages of the workspace", () => {
   render(<SettingsNav workspace="acme" />);
 
   const nav = screen.getByRole("navigation", { name: "Settings" });
@@ -14,6 +14,7 @@ test("links to the five settings pages of the workspace", () => {
     ["Connections", "/acme/settings/connections"],
     ["Team", "/acme/settings/team"],
     ["Approvals", "/acme/settings/approvals"],
+    ["Notifications", "/acme/settings/notifications"],
     ["Audit log", "/acme/settings/audit-log"],
   ]);
 });

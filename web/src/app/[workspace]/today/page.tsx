@@ -17,5 +17,5 @@ export default async function TodayPage({ params }: PageProps<"/[workspace]/toda
     }),
   );
 
-  return <TodayOverview items={page.items} />;
+  return <TodayOverview items={page.items} workspace={handle} />;
 }

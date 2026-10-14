@@ -36,3 +36,9 @@ test("shows unknown actions as they are", () => {
 
   expect(screen.getByText("launch.started")).toBeTruthy();
 });
+
+test("explains when filters hide every entry on the page", () => {
+  render(<AuditLogTable page={{ entries: [], nextBefore: null }} timeZone="UTC" olderHref={() => "/"} filtered />);
+
+  expect(screen.getByRole("heading", { name: "No matching entries" })).toBeTruthy();
+});

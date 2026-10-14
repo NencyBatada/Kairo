@@ -96,8 +96,8 @@ export function ApprovalsForm({ action, settings, approvers, canEdit }: Approval
         </Card>
       </fieldset>
       {canEdit && (
-        <div className="flex flex-col gap-3">
-          <Button type="submit" pending={pending} className="self-start max-md:w-full">
+        <div className="flex flex-col gap-3 max-lg:sticky max-lg:bottom-0 max-lg:z-30 max-lg:-mx-4 max-lg:border-t max-lg:border-border max-lg:bg-card/95 max-lg:px-4 max-lg:py-4 max-lg:backdrop-blur max-lg:pb-[max(1rem,env(safe-area-inset-bottom))] md:-mx-6 md:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+          <Button type="submit" pending={pending} className="self-start max-lg:w-full lg:self-start">
             Save approval settings
           </Button>
           <FormStatus state={state} />
