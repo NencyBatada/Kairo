@@ -52,7 +52,7 @@ internal sealed class BrandConnections(
 
         foreach (var (subject, refreshToken) in revoke)
         {
-            await revocations.RevokeIfUnusedAsync(subject, refreshToken, cancellationToken);
+            await revocations.RevokeAfterCommitAsync(subject, refreshToken, cancellationToken);
         }
     }
 }

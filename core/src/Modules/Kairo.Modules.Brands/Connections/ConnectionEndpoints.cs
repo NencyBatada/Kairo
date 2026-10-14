@@ -90,7 +90,7 @@ internal static class ConnectionEndpoints
         await live.PublishAsync(ConnectionEvents.Changed(info.Product), cancellationToken);
         if (refreshToken is not null)
         {
-            await revocations.RevokeIfUnusedAsync(connection.GoogleSubject, refreshToken, cancellationToken);
+            await revocations.RevokeAfterCommitAsync(connection.GoogleSubject, refreshToken, cancellationToken);
         }
 
         return TypedResults.NoContent();

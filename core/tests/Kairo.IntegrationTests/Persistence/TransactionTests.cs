@@ -101,6 +101,69 @@ public sealed class TransactionTests(SqlServer sqlServer)
         Assert.Equal((1, 0), await CountAsync(plumbing, brandId));
     }
 
+    [Fact]
+    public async Task Work_queued_for_after_the_commit_waits_for_the_commit()
+    {
+        await using var plumbing = await PlumbingDatabase.CreateAsync(sqlServer);
+        var brandId = Guid.NewGuid();
+        var ran = new List<string>();
+
+        await using (var scope = plumbing.CreateScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
+            await database.UseBrandAsync(brandId, Token);
+            await database.BeginTransactionAsync(Token);
+            var notes = scope.ServiceProvider.GetRequiredService<NotesDbContext>();
+            notes.Notes.Add(new Note { Text = "first" });
+            await notes.SaveChangesAsync(Token);
+            await database.AfterCommitAsync(async _ =>
+            {
+                ran.Add($"notes:{(await CountAsync(plumbing, brandId)).Notes}");
+            }, Token);
+
+            Assert.Empty(ran);
+            await database.CommitAsync(Token);
+        }
+
+        Assert.Equal(["notes:1"], ran);
+    }
+
+    [Fact]
+    public async Task Work_queued_for_after_the_commit_is_dropped_on_rollback()
+    {
+        await using var plumbing = await PlumbingDatabase.CreateAsync(sqlServer);
+        var ran = 0;
+
+        await using (var scope = plumbing.CreateScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
+            await database.UseBrandAsync(Guid.NewGuid(), Token);
+            await database.BeginTransactionAsync(Token);
+            await database.AfterCommitAsync(_ => Task.FromResult(ran++), Token);
+            await database.RollbackAsync(Token);
+
+            await database.BeginTransactionAsync(Token);
+            await database.CommitAsync(Token);
+        }
+
+        Assert.Equal(0, ran);
+    }
+
+    [Fact]
+    public async Task Work_queued_outside_a_transaction_runs_at_once()
+    {
+        await using var plumbing = await PlumbingDatabase.CreateAsync(sqlServer);
+        var ran = 0;
+
+        await using (var scope = plumbing.CreateScope())
+        {
+            var database = scope.ServiceProvider.GetRequiredService<KairoDatabase>();
+            await database.AfterCommitAsync(_ => Task.FromResult(ran++), Token);
+        }
+
+        Assert.Equal(1, ran);
+    }
+
     private static async Task<(int Notes, int Tags)> CountAsync(PlumbingDatabase plumbing, Guid brandId)
     {
         await using var scope = plumbing.CreateScope();

@@ -62,6 +62,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HashSet<string> AdsFailures { get; } = [];
 
+    public Action? BeforeRevoke { get; set; }
+
     public string? AdsFailFrom { get; set; }
 
     public TimeSpan AdsReportDelay { get; set; }
@@ -233,6 +235,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             return Error(HttpStatusCode.BadRequest, "invalid_token");
         }
 
+        BeforeRevoke?.Invoke();
         var token = form.GetValueOrDefault("token") ?? "";
         Revoked.Enqueue(token);
         _refreshTokens.TryRemove(token, out _);

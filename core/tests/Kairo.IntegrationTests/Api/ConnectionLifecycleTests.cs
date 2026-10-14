@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Data.SqlClient;
 
 namespace Kairo.IntegrationTests.Api;
 
@@ -68,6 +69,21 @@ public sealed class ConnectionLifecycleTests(SqlServer sqlServer) : IAsyncDispos
         Assert.Equal("notConnected", (await Connections.GetAsync(admin, brandId, "merchant-center")).GetProperty("state").GetString());
         Assert.Contains(issued.RefreshToken, _api.GoogleApis.Revoked);
         Assert.Contains("connection.disconnected", await Workspaces.AuditActionsAsync(admin, brandId));
+    }
+
+    [Fact]
+    public async Task Disconnecting_revokes_the_token_only_after_the_removal_is_committed()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var issued = await Connections.ConnectAsync(_api, admin, brandId, "youtube");
+        int? rowsSeenAtRevocation = null;
+        _api.GoogleApis.BeforeRevoke = () => rowsSeenAtRevocation = CommittedConnections(brandId, "YouTube");
+
+        var response = await admin.DeleteAsync($"/api/brands/{brandId}/connections/youtube", Token);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        Assert.Contains(issued.RefreshToken, _api.GoogleApis.Revoked);
+        Assert.Equal(0, rowsSeenAtRevocation);
     }
 
     [Fact]
@@ -139,6 +155,28 @@ public sealed class ConnectionLifecycleTests(SqlServer sqlServer) : IAsyncDispos
     }
 
     public ValueTask DisposeAsync() => _api.DisposeAsync();
+
+    private int CommittedConnections(Guid brandId, string product)
+    {
+        using var connection = new SqlConnection(sqlServer.KairoConnectionString);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            SET LOCK_TIMEOUT 2000;
+            SELECT COUNT(*) FROM brands.Connections WITH (READCOMMITTEDLOCK) WHERE BrandId = @brand AND Product = @product;
+            """;
+        command.Parameters.AddWithValue("@brand", brandId);
+        command.Parameters.AddWithValue("@product", product);
+        try
+        {
+            return (int)command.ExecuteScalar()!;
+        }
+        catch (SqlException exception) when (exception.Number == 1222)
+        {
+            return -1;
+        }
+    }
 
     private async Task<(HttpClient Admin, Guid BrandId)> WorkspaceAsync()
     {
