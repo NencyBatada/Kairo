@@ -96,6 +96,9 @@ The agent service is a stateless Python app built with ADK, running on Cloud Run
 | Prove | Sequential: early readings, lift, then recommendations | Python statistics; Gemini Pro for explanations | BigQuery data, the proof plan and Google Ads results |
 | Learn | Single agent | Gemini Flash | Impact reports, user edits, dismiss reasons and Brand Memory |
 | Ask Kairo | Conversational agent with tools | Gemini Pro | Read tools for the current screen and room, and propose-change tools |
+| Brand Kit drafting | One structured call, not an ADK agent: the Gen AI SDK with a Pydantic response schema | Gemini Flash | None; the core reads the website and the best ads and sends them as data |
+
+**Brand Kit drafting** is one structured call, so it uses the Gen AI SDK alone, on Vertex AI's `global` location. The core reads the pages and ads through its safe web client and Google Ads, so the agent service talks only to Gemini.
 
 - **Tools.** Every tool is a typed call to the core's internal API. Read tools return data; write tools only save drafts and proposals. No tool can launch, spend, approve or change Google Ads.
 - **Structured output.** Each stage returns JSON that matches its schema, and the core validates it before saving. Format rules, such as headline length and video duration, are checked in code.
@@ -151,7 +154,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Area | Main tables | Notes |
 | --- | --- | --- |
 | Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; Connection rows live in the brands schema; OAuth refresh tokens encrypted with Cloud KMS |
-| Brand Kit | KitVersion, KitFile | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage |
+| Brand Kit | KitVersion, KitFile, DraftRun | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage; DraftRun records each drafting run's pages, ads, model and prompt version |
 | Catalogue | Product, StockEvent, FeedImport | Current stock on Product; full history in BigQuery |
 | Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
 | Triggers | TriggerRule, TriggerFiring | Conditions stored as JSON; cooldown per rule and region |

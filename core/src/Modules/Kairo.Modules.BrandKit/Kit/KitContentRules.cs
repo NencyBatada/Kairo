@@ -105,6 +105,33 @@ internal static partial class KitContentRules
         && Uri.TryCreate(value, UriKind.Absolute, out var uri)
         && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
 
+    public static KitContent Fit(KitContent content) => content with
+    {
+        Voice = content.Voice with
+        {
+            Summary = Cut(content.Voice.Summary, SummaryLength),
+            Traits = Fit(content.Voice.Traits, Traits, ShortText),
+            Dos = Fit(content.Voice.Dos, VoiceLines, ShortText),
+            Donts = Fit(content.Voice.Donts, VoiceLines, ShortText),
+            Examples = Fit(content.Voice.Examples, Examples, ShortText),
+            Sources = content.Voice.Sources.Take(SourcesPerItem).ToList(),
+        },
+        Colours = content.Colours
+            .Take(Colours)
+            .Select(colour => colour with { Name = Cut(colour.Name, ColourNameLength), Sources = colour.Sources.Take(SourcesPerItem).ToList() })
+            .ToList(),
+        KeyMessages = content.KeyMessages
+            .Select(message => message with { Text = Cut(message.Text, ShortText), Sources = message.Sources.Take(SourcesPerItem).ToList() })
+            .Where(message => message.Text.Length > 0)
+            .Take(KeyMessages)
+            .ToList(),
+        ProductCategories = content.ProductCategories
+            .Select(category => category with { Name = Cut(category.Name, NameLength), Sources = category.Sources.Take(SourcesPerItem).ToList() })
+            .Where(category => category.Name.Length > 0)
+            .Take(Categories)
+            .ToList(),
+    };
+
     private static string Text(string? value, string path, int max, Dictionary<string, string[]> errors)
     {
         var text = (value ?? "").Trim();
@@ -228,6 +255,15 @@ internal static partial class KitContentRules
 
         return ids;
     }
+
+    private static string Cut(string text, int max)
+    {
+        var trimmed = text.Trim();
+        return trimmed.Length > max ? trimmed[..max].TrimEnd() : trimmed;
+    }
+
+    private static List<string> Fit(IReadOnlyList<string> values, int max, int length) =>
+        values.Select(value => Cut(value, length)).Where(value => value.Length > 0).Take(max).ToList();
 
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex Hex();

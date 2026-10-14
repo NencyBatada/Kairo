@@ -22,6 +22,7 @@ var api = builder.AddProject<Projects.Kairo_Api>("api")
     .WithReference(sql).WaitFor(sql)
     .WithReference(redis).WaitFor(redis)
     .WithReference(agents)
+    .WithEnvironment("Kairo__Agents__Url", agents.GetEndpoint("http"))
     .WaitForCompletion(migrator)
     .WithEnvironment("Authentication__Google__ClientId", googleClientId)
     .WithEnvironment("Authentication__Google__ClientSecret", googleClientSecret)
@@ -48,6 +49,12 @@ if (builder.Configuration["Parameters:analytics-project"] is { Length: > 0 } ana
 {
     api.WithEnvironment("Kairo__Analytics__Project", analyticsProject);
     worker.WithEnvironment("Kairo__Analytics__Project", analyticsProject);
+}
+
+if (builder.Configuration["Parameters:ai-project"] is { Length: > 0 } aiProject)
+{
+    agents.WithEnvironment("GOOGLE_CLOUD_PROJECT", aiProject)
+        .WithEnvironment("GOOGLE_CLOUD_LOCATION", "global");
 }
 
 var web = builder.AddNextJsApp("web", "../../../web")

@@ -9,7 +9,7 @@ namespace Kairo.IntegrationTests.Notifications;
 
 public sealed class EmailTemplateTests
 {
-    private static readonly BrandSummary Workspace = new(Guid.NewGuid(), "acme-shoes", "Acme Shoes");
+    private static readonly BrandSummary Workspace = new(Guid.NewGuid(), "acme-shoes", "Acme Shoes", "INR");
     private static readonly BrandMember Priya = new(Guid.NewGuid(), "priya@acme.example", "Priya Shah", BrandRoles.Admin);
 
     [Fact]

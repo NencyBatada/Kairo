@@ -70,6 +70,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
+    public object[] BestAdRows { get; set; } = [];
+
     public Action? BeforeAdsReport { get; set; }
 
     public string Ga4TimeZone { get; set; } = "Asia/Kolkata";
@@ -137,6 +139,42 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;
         return Product(uri, body, login);
     }
+
+    public static object SearchAd(string id, string[] headlines, string[] descriptions) => new
+    {
+        adGroupAd = new
+        {
+            ad = new
+            {
+                id,
+                type = "RESPONSIVE_SEARCH_AD",
+                responsiveSearchAd = new
+                {
+                    headlines = headlines.Select(text => new { text }).ToArray(),
+                    descriptions = descriptions.Select(text => new { text }).ToArray(),
+                },
+            },
+        },
+        metrics = new { conversions = 3.0, clicks = "50" },
+    };
+
+    public static object DisplayAd(string id, string[] headlines, string[] descriptions) => new
+    {
+        adGroupAd = new
+        {
+            ad = new
+            {
+                id,
+                type = "RESPONSIVE_DISPLAY_AD",
+                responsiveDisplayAd = new
+                {
+                    headlines = headlines.Select(text => new { text }).ToArray(),
+                    descriptions = descriptions.Select(text => new { text }).ToArray(),
+                },
+            },
+        },
+        metrics = new { conversions = 1.0, clicks = "20" },
+    };
 
     private HttpResponseMessage Token(Dictionary<string, string> form)
     {
@@ -277,6 +315,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         else if (query.Contains("FROM geo_target_constant", StringComparison.Ordinal))
         {
             results = [new { geoTargetConstant = new { resourceName = "geoTargetConstants/21342", id = "21342", name = "Maharashtra", countryCode = "IN" } }];
+        }
+        else if (query.Contains("DURING LAST_90_DAYS", StringComparison.Ordinal))
+        {
+            results = BestAdRows;
         }
         else
         {

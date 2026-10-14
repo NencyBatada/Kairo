@@ -1,4 +1,5 @@
 using Kairo.Contracts.BrandKit;
+using Kairo.Modules.BrandKit.Drafting;
 using Kairo.Modules.BrandKit.Files;
 
 namespace Kairo.Modules.BrandKit.Kit;
@@ -35,5 +36,7 @@ internal static class KitSetup
         files.MapGet("", KitFileEndpoints.ListAsync);
         files.MapGet("/{fileId:guid}/download", KitFileEndpoints.DownloadAsync);
         files.MapDelete("/{fileId:guid}", KitFileEndpoints.DeleteAsync).RequireBrandRole(BrandRoles.Admin);
+
+        kit.MapDrafting();
     }
 }

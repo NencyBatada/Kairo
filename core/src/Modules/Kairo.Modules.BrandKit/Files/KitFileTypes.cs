@@ -14,6 +14,7 @@ internal static class KitFileTypes
     private static readonly byte[] ZipStart = [0x50, 0x4B, 0x03, 0x04];
     private static readonly byte[] Riff = "RIFF"u8.ToArray();
     private static readonly byte[] Webp = "WEBP"u8.ToArray();
+    private static readonly byte[] IcoStart = [0x00, 0x00, 0x01, 0x00];
 
     public static KitFileKind? ParseKind(string? kind) => kind?.Trim().ToLowerInvariant() switch
     {
@@ -51,6 +52,16 @@ internal static class KitFileTypes
         }
 
         return LooksLikeSvg(head) ? "image/svg+xml" : null;
+    }
+
+    public static string? DetectLogo(byte[] content)
+    {
+        if (content.AsSpan().StartsWith(IcoStart))
+        {
+            return "image/x-icon";
+        }
+
+        return Detect(content, null) is { } contentType && IsImage(contentType) ? contentType : null;
     }
 
     public static bool IsImage(string contentType) => contentType.StartsWith("image/", StringComparison.Ordinal);

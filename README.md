@@ -111,6 +111,26 @@ Locally the feeds are off until you point them at a project:
 
 Your Google account needs BigQuery Data Owner and Job User on the project. Local runs write real datasets in `kairo2`, so delete a test brand's dataset in the BigQuery console when you're done with it.
 
+## Draft a Brand Kit locally
+
+Brand Kit drafting reads the website and Google Ads in the core, then asks Gemini on Vertex AI for the draft. Locally the agent service needs a project to call Gemini in:
+
+1. Sign in for Application Default Credentials, if you haven't already:
+
+   ```bash
+   gcloud auth application-default login
+   ```
+
+2. Tell the AppHost which project to use:
+
+   ```bash
+   dotnet user-secrets set "Parameters:ai-project" "kairo2" --project core/src/Kairo.AppHost
+   ```
+
+3. Start Kairo, open Brand Kit, and draft from the brand's website.
+
+Your Google account needs Vertex AI User on the project. Without the parameter, drafting runs fail with "Kairo couldn't draft the Brand Kit this time." Set `KAIRO_BRAND_KIT_MODEL` on the agent service to try another Gemini model; the default is `gemini-3.5-flash`.
+
 ## Run everything locally
 
 From the repository root:

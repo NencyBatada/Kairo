@@ -1,4 +1,5 @@
 using Kairo.Modules.BrandKit.Data;
+using Kairo.Modules.BrandKit.Drafting;
 using Kairo.Modules.BrandKit.Kit;
 
 namespace Kairo.Modules.BrandKit;
@@ -10,10 +11,12 @@ public sealed class BrandKitModule : IModule
         services.AddDbContext<BrandKitDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, BrandKitDbContext.SchemaName));
         services.AddBrandKit();
+        services.AddDrafting();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.ServiceProvider.GetRequiredService<DraftingSwitch>().TurnOn();
         api.MapBrandKit();
     }
 

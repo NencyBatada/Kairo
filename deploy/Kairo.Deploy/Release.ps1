@@ -1,4 +1,5 @@
 $script:Vpc = @('--network', 'kairo', '--subnet', 'kairo-run', '--vpc-egress', 'private-ranges-only')
+$script:AiLocation = 'global'
 
 function Invoke-KairoDeploy {
     param(
@@ -53,7 +54,10 @@ function Invoke-KairoDeploy {
     $apiMinInstances = if ($mailConfigured) { [Math]::Max(1, [int]$Environment.MinInstances.api) } else { $Environment.MinInstances.api }
 
     Publish-KairoService -Environment $Environment -Service 'kairo-agents' -Image (Get-KairoImage -Environment $Environment -Name 'agents' -Tag $tag) `
-        -Settings @('--no-allow-unauthenticated', '--timeout', '3600')
+        -Settings @('--no-allow-unauthenticated', '--timeout', '3600', "--set-env-vars=GOOGLE_CLOUD_PROJECT=$($Environment.Project),GOOGLE_CLOUD_LOCATION=$($script:AiLocation)")
+
+    $agentsAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-agents'
+    $apiSettings += ",Kairo__Agents__Url=$($urls['kairo-agents']),Kairo__Agents__Audience=$agentsAudience"
 
     Publish-KairoService -Environment $Environment -Service 'kairo-api' -Image (Get-KairoImage -Environment $Environment -Name 'api' -Tag $tag) `
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(

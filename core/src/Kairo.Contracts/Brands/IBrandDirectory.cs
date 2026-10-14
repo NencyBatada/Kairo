@@ -7,4 +7,4 @@ public interface IBrandDirectory
     Task<IReadOnlyList<BrandSummary>> ListAllAsync(CancellationToken cancellationToken);
 }
 
-public sealed record BrandSummary(Guid Id, string Handle, string Name);
+public sealed record BrandSummary(Guid Id, string Handle, string Name, string Currency);

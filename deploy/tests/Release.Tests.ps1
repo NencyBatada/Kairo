@@ -24,6 +24,7 @@ Describe 'Invoke-KairoDeploy' {
             $script:calls.Add($line)
             if ($line -like 'run services describe kairo-api *') { 'https://kairo-api-abc123-el.a.run.app' }
             if ($line -like 'run services describe kairo-worker *') { 'https://kairo-worker-abc123-el.a.run.app' }
+            if ($line -like 'run services describe kairo-agents *') { 'https://kairo-agents-abc123-el.a.run.app' }
         }
     }
 
@@ -240,6 +241,20 @@ Describe 'Invoke-KairoDeploy' {
         Invoke-KairoDeploy -Environment $withSender -Root $root 3>$null | Out-Null
 
         ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -Not -BeLike '*Notifications*'
+    }
+
+    It 'deploys the agent service with its project and the Vertex AI location it calls Gemini in' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-agents *' }) |
+            Should -BeLike '*--set-env-vars=GOOGLE_CLOUD_PROJECT=kairo-test,GOOGLE_CLOUD_LOCATION=global*'
+    }
+
+    It 'tells the API where the agent service is and which audience its tokens need' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) |
+            Should -BeLike '*Kairo__Agents__Url=https://kairo-agents-123.asia-south1.run.app,Kairo__Agents__Audience=https://kairo-agents-abc123-el.a.run.app*'
     }
 
     It 'deploys the agent service privately with a long timeout' {

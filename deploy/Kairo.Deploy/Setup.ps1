@@ -3,7 +3,8 @@ $script:Apis = @(
     'artifactregistry.googleapis.com', 'cloudbuild.googleapis.com', 'secretmanager.googleapis.com',
     'iam.googleapis.com', 'storage.googleapis.com', 'cloudkms.googleapis.com',
     'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
-    'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com'
+    'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com',
+    'aiplatform.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
 $script:FileBuckets = @('brand-files')
@@ -198,6 +199,7 @@ function Initialize-KairoServiceAccounts {
             Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $name)", '--role', $role, '--condition', 'None')
         }
     }
+    Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-agents')", '--role', 'roles/aiplatform.user', '--condition', 'None')
     Add-KairoBinding -ArgumentList (@('secrets', 'add-iam-policy-binding', $script:MailSecret, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-api')") + $accessor + $scope)
 
     $build = "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name 'kairo-build')"

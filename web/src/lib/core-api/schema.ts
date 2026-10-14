@@ -1373,6 +1373,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/brand-kit/drafting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DraftingRequest"];
+                };
+            };
+            responses: {
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DraftRunView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/brand-kit/drafting/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DraftRunView"];
+                    };
+                };
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -1895,6 +1985,35 @@ export interface components {
             handle: string;
             timeZone: string;
             currency: string;
+        };
+        DraftingRequest: {
+            websiteUrl: null | string;
+            replaceDraft: boolean;
+        };
+        DraftRunAd: {
+            id: string;
+            headline: string;
+        };
+        DraftRunError: {
+            code: string;
+            message: string;
+        };
+        DraftRunPage: {
+            url: string;
+            title: string;
+        };
+        DraftRunStatus: "pending" | "running" | "succeeded" | "failed";
+        DraftRunView: {
+            id: string;
+            status: components["schemas"]["DraftRunStatus"];
+            websiteUrl: string;
+            pages: components["schemas"]["DraftRunPage"][];
+            ads: components["schemas"]["DraftRunAd"][];
+            error: null | components["schemas"]["DraftRunError"];
+            requestedBy: string;
+            requestedAt: string;
+            finishedAt: null | string;
+            version: null | number | string;
         };
         EmailSetting: {
             kind: string;

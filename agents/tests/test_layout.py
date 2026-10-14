@@ -2,7 +2,7 @@ import importlib
 
 import pytest
 
-AGENTS = ["sense", "plan", "create", "check", "prove", "learn", "ask"]
+AGENTS = ["sense", "plan", "create", "check", "prove", "learn", "ask", "brand_kit"]
 
 
 @pytest.mark.parametrize("name", AGENTS)
