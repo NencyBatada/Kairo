@@ -29,6 +29,9 @@ if (!string.IsNullOrEmpty(builder.Configuration.GetConnectionString("redis")))
 }
 builder.Services.AddKairoCore();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler(options =>
+    options.StatusCodeSelector = exception =>
+        exception is BadHttpRequestException badRequest ? badRequest.StatusCode : StatusCodes.Status500InternalServerError);
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 builder.Services.AddKairoOpenApi();

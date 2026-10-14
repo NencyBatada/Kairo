@@ -1,4 +1,8 @@
+using Microsoft.AspNetCore.Http.Metadata;
+
 namespace Kairo.Modules.Measurement.Feeds;
+
+internal sealed record UploadSizeLimit(long? MaxRequestBodySize) : IRequestSizeLimitMetadata;
 
 internal static class FeedSetup
 {
@@ -27,6 +31,8 @@ internal static class FeedSetup
         var sales = analytics.MapGroup("/sales");
         sales.MapPost("/uploads", SalesEndpoints.UploadAsync)
             .RequireBrandRole(BrandRoles.Admin | BrandRoles.Marketer)
+            .WithMetadata(new UploadSizeLimit(SalesEndpoints.MaxRequestBytes))
+            .WithFormOptions(multipartBodyLengthLimit: SalesEndpoints.MaxRequestBytes)
             .DisableAntiforgery();
         sales.MapGet("/uploads", SalesEndpoints.ListUploadsAsync);
 

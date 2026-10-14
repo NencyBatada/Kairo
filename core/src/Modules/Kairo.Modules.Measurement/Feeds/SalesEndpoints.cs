@@ -54,6 +54,7 @@ internal static class SalesRows
 internal static class SalesEndpoints
 {
     public const long MaxFileBytes = 10 * 1024 * 1024;
+    public const long MaxRequestBytes = MaxFileBytes + 64 * 1024;
     public const string ChooseFile = "Choose a CSV file to upload.";
     public const string TooLarge = "the file is larger than 10 MB";
     public const int ListedUploads = 50;

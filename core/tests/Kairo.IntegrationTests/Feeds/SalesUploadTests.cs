@@ -67,6 +67,20 @@ public sealed class SalesUploadTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task A_body_over_the_request_limit_is_refused_before_the_upload_runs()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var huge = OneRow + new string(' ', 12 * 1024 * 1024);
+
+        var response = await admin.Browser.PostAsync(Uploads(brandId), SalesFiles.Csv(huge), Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.DoesNotContain(SalesEndpoints.TooLarge, await response.Content.ReadAsStringAsync(Token));
+        Assert.Empty(_api.GoogleApis.BigQuery.Calls);
+        Assert.Empty((await admin.Browser.GetFromJsonAsync<JsonElement>(Uploads(brandId), Token)).EnumerateArray());
+    }
+
+    [Fact]
     public async Task An_invalid_file_lists_its_problems_and_loads_nothing()
     {
         var (admin, brandId) = await WorkspaceAsync();
