@@ -62,6 +62,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
+    public Action? BeforeAdsReport { get; set; }
+
     public string Ga4TimeZone { get; set; } = "Asia/Kolkata";
 
     public int Ga4PageRows { get; set; } = 100;
@@ -227,6 +229,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     {
         var customer = path.Split('/')[3];
         var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
+        BeforeAdsReport?.Invoke();
         AdsReports.Enqueue(new AdsReport(customer, login, query));
         if (AdsFailures.Contains(customer))
         {

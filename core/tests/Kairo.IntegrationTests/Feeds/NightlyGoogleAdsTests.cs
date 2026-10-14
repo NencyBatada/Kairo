@@ -5,6 +5,8 @@ using System.Text.Json.Nodes;
 using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.Live;
 using Kairo.Modules.Measurement.Feeds;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Kairo.IntegrationTests.Feeds;
 
@@ -230,6 +232,25 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
 
         var old = (await FeedRunRows.ListAsync(_database, brandId)).Where(stored => stored.StartedAt < Night.AddDays(-1));
         Assert.Equal(new[] { Night.AddDays(-89) }, old.Select(stored => stored.StartedAt));
+    }
+
+    [Fact]
+    public async Task An_interrupted_run_is_recorded_as_failed_rather_than_left_running()
+    {
+        var brandId = await BrandWithAdsAsync();
+        Google.BeforeAdsReport = () => _worker.Services.GetRequiredService<IHostApplicationLifetime>().StopApplication();
+
+        try
+        {
+            using var response = await _worker.RunDailyAsync();
+        }
+        catch (Exception)
+        {
+        }
+
+        var stored = Assert.Single(await FeedRunRows.ListAsync(_database, brandId), stored => stored.Feed == FeedNames.GoogleAds);
+        Assert.Equal("failed", stored.Status);
+        Assert.Equal("The run was interrupted before it finished.", stored.Error);
     }
 
     [Fact]

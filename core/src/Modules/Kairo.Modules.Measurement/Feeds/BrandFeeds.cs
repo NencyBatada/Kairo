@@ -12,6 +12,7 @@ internal sealed class BrandFeeds(
     ILogger<BrandFeeds> logger)
 {
     public const int MaxErrorLength = 1000;
+    public const string Interrupted = "The run was interrupted before it finished.";
 
     public static readonly TimeSpan RunningFor = TimeSpan.FromHours(2);
 
@@ -75,6 +76,12 @@ internal sealed class BrandFeeds(
         {
             var reason = unavailable.Reason == SkipReasons.NotConnected ? SkipReasons.NotConnected : SkipReasons.NeedsReconnect;
             return await FinishAsync(brandId, run, RunStatuses.Skipped, reason, cancellationToken);
+        }
+        catch (Exception) when (cancellationToken.IsCancellationRequested)
+        {
+            run.Error = Interrupted;
+            await FinishAsync(brandId, run, RunStatuses.Failed, null, CancellationToken.None);
+            throw;
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
