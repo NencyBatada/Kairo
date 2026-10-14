@@ -11,6 +11,8 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<OutboundEmail> OutboundEmails => Set<OutboundEmail>();
 
+    public DbSet<HeldNotification> HeldNotifications => Set<HeldNotification>();
+
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
@@ -26,6 +28,29 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
             notification.Property(n => n.Title).HasMaxLength(200);
             notification.Property(n => n.Body).HasMaxLength(1000);
             notification.Property(n => n.Link).HasMaxLength(400);
+            notification.Property(n => n.Subject).HasMaxLength(200);
+            notification.HasIndex(n => new { n.BrandId, n.Subject })
+                .HasFilter("[Subject] IS NOT NULL AND [ResolvedAt] IS NULL")
+                .HasDatabaseName("IX_Notifications_Unresolved");
+            notification.HasIndex(n => n.RemindAt)
+                .HasFilter("[RemindAt] IS NOT NULL")
+                .HasDatabaseName("IX_Notifications_Reminders");
+            notification.HasIndex(n => new { n.AwaitsDigest, n.BrandId })
+                .HasFilter("[AwaitsDigest] = 1")
+                .HasDatabaseName("IX_Notifications_AwaitingDigest");
+            notification.HasIndex(n => n.DigestEmailId)
+                .HasFilter("[DigestEmailId] IS NOT NULL");
+        });
+
+        modelBuilder.Entity<HeldNotification>(held =>
+        {
+            held.ToTable("HeldNotifications");
+            held.HasIndex(h => new { h.BrandId, h.CreatedAt });
+            held.HasIndex(h => h.CreatedAt);
+            held.Property(h => h.Kind).HasMaxLength(64);
+            held.Property(h => h.Title).HasMaxLength(200);
+            held.Property(h => h.Body).HasMaxLength(1000);
+            held.Property(h => h.Link).HasMaxLength(400);
         });
 
         modelBuilder.Entity<EmailOptOut>(optOut =>
@@ -39,6 +64,9 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
         {
             email.ToTable("OutboundEmails");
             email.HasIndex(e => new { e.Status, e.NextAttemptAt });
+            email.HasIndex(e => new { e.BrandId, e.Type, e.UserId, e.CreatedAt });
+            email.Property(e => e.Type).HasConversion<string>().HasMaxLength(20);
+            email.Property(e => e.Address).HasMaxLength(320);
             email.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
             email.Property(e => e.LastError).HasMaxLength(500);
             email.HasOne(e => e.Notification).WithMany()

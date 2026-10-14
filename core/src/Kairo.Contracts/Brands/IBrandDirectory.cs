@@ -9,4 +9,4 @@ public interface IBrandDirectory
     Task<string?> FindTimeZoneAsync(Guid brandId, CancellationToken cancellationToken);
 }
 
-public sealed record BrandSummary(Guid Id, string Handle, string Name, string Currency);
+public sealed record BrandSummary(Guid Id, string Handle, string Name, string Currency, string TimeZone);

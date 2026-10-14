@@ -4,6 +4,7 @@ using Kairo.Modules.Notifications.Delivery;
 using Kairo.Modules.Notifications.EmailSettings;
 using Kairo.Modules.Notifications.Inbox;
 using Kairo.Modules.Notifications.Publishing;
+using Kairo.Modules.Notifications.Scheduling;
 
 namespace Kairo.Modules.Notifications;
 
@@ -14,6 +15,9 @@ public sealed class NotificationsModule : IModule
         services.AddDbContext<NotificationsDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, NotificationsDbContext.SchemaName));
         services.AddScoped<INotifications, Notifier>();
+        services.AddScoped<IInvitationEmails, InvitationEmails>();
+        services.AddScoped<BrandDeliveries>();
+        services.AddScoped<DueDeliveries>();
         services.AddHttpClient(SenderToken.ClientName, client => client.Timeout = EmailDispatcher.SendTimeout).RemoveAllResilienceHandlers();
         services.AddSingleton<SenderToken>();
         services.AddSingleton<GmailSender>();
@@ -36,6 +40,7 @@ public sealed class NotificationsModule : IModule
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
+        jobs.MapDeliveryJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

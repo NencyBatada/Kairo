@@ -42,7 +42,7 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                     b.ToTable("EmailOptOuts", "notifications");
                 });
 
-            modelBuilder.Entity("Kairo.Modules.Notifications.Data.InAppNotification", b =>
+            modelBuilder.Entity("Kairo.Modules.Notifications.Data.HeldNotification", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -71,8 +71,70 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                         .HasMaxLength(400)
                         .HasColumnType("nvarchar(400)");
 
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("BrandId", "CreatedAt");
+
+                    b.ToTable("HeldNotifications", "notifications");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Notifications.Data.InAppNotification", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<bool>("AwaitsDigest")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long?>("DigestEmailId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
                     b.Property<DateTimeOffset?>("ReadAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("RemindAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -83,6 +145,21 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DigestEmailId")
+                        .HasFilter("[DigestEmailId] IS NOT NULL");
+
+                    b.HasIndex("RemindAt")
+                        .HasDatabaseName("IX_Notifications_Reminders")
+                        .HasFilter("[RemindAt] IS NOT NULL");
+
+                    b.HasIndex("AwaitsDigest", "BrandId")
+                        .HasDatabaseName("IX_Notifications_AwaitingDigest")
+                        .HasFilter("[AwaitsDigest] = 1");
+
+                    b.HasIndex("BrandId", "Subject")
+                        .HasDatabaseName("IX_Notifications_Unresolved")
+                        .HasFilter("[Subject] IS NOT NULL AND [ResolvedAt] IS NULL");
 
                     b.HasIndex("BrandId", "UserId")
                         .HasDatabaseName("IX_Notifications_Unread")
@@ -101,6 +178,10 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                         .HasColumnType("bigint");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
 
                     b.Property<int>("Attempts")
                         .HasColumnType("int");
@@ -121,8 +202,11 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                     b.Property<DateTimeOffset>("NextAttemptAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<long>("NotificationId")
+                    b.Property<long?>("NotificationId")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Payload")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("datetimeoffset");
@@ -132,7 +216,12 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -140,6 +229,8 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                     b.HasIndex("NotificationId");
 
                     b.HasIndex("Status", "NextAttemptAt");
+
+                    b.HasIndex("BrandId", "Type", "UserId", "CreatedAt");
 
                     b.ToTable("OutboundEmails", "notifications");
                 });
@@ -149,8 +240,7 @@ namespace Kairo.Modules.Notifications.Data.Migrations
                     b.HasOne("Kairo.Modules.Notifications.Data.InAppNotification", "Notification")
                         .WithMany()
                         .HasForeignKey("NotificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Notification");
                 });

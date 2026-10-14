@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Brands;
 using Kairo.Contracts.Live;
+using Kairo.Contracts.Notifications;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Members;
 
@@ -56,6 +57,7 @@ internal static class InvitationEndpoints
         IdentityDbContext db,
         IAuditLog audit,
         ILiveUpdates live,
+        IInvitationEmails invitationEmails,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -105,6 +107,7 @@ internal static class InvitationEndpoints
         await live.PublishAsync(IdentityLiveEvents.InvitationsChanged(), cancellationToken);
 
         var inviter = await db.Users.Where(user => user.Id == member.UserId).Select(user => user.Name).SingleAsync(cancellationToken);
+        await invitationEmails.SendAsync(new InvitationEmail(invitation.Email, inviter, invitation.Roles, invitation.ExpiresAt), cancellationToken);
         return TypedResults.Created(
             $"/api/brands/{member.BrandId}/invitations/{invitation.Id}",
             new PendingInvitation(invitation.Id, invitation.Email, invitation.Roles.ToList(), inviter, invitation.SentAt, invitation.ExpiresAt));

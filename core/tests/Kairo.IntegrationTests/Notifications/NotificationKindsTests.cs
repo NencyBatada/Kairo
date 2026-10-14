@@ -44,4 +44,20 @@ public sealed class NotificationKindsTests
         Assert.Equal(BrandRoles.Admin, NotificationKinds.Find("brand_kit.drafted")!.UsualRecipients);
         Assert.Null(NotificationKinds.Find("connection.unknown"));
     }
+
+    [Fact]
+    public void Only_top_opportunities_wait_for_the_daily_digest_and_only_stock_pauses_are_grouped_hourly()
+    {
+        Assert.Equal(["opportunities.ready"], NotificationKinds.All.Where(kind => kind.Delivery == NotificationDelivery.DailyDigest).Select(kind => kind.Key));
+        var grouped = Assert.Single(NotificationKinds.All, kind => kind.Delivery == NotificationDelivery.GroupedHourly);
+        Assert.Equal(("stock.pause_changed", "/campaigns"), (grouped.Key, grouped.GroupLink));
+    }
+
+    [Fact]
+    public void Only_approval_requests_are_reminded_after_four_working_hours()
+    {
+        var reminded = Assert.Single(NotificationKinds.All, kind => kind.RemindAfter is not null);
+
+        Assert.Equal(("approval.needed", (TimeSpan?)TimeSpan.FromHours(4)), (reminded.Key, reminded.RemindAfter));
+    }
 }

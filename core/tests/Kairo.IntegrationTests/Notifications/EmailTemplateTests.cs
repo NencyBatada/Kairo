@@ -3,13 +3,14 @@ using Kairo.Contracts.Identity;
 using Kairo.Modules.Notifications.Data;
 using Kairo.Modules.Notifications.Delivery;
 using Kairo.Modules.Notifications.Kinds;
+using Kairo.Modules.Notifications.Publishing;
 using Kairo.SharedKernel.Access;
 
 namespace Kairo.IntegrationTests.Notifications;
 
 public sealed class EmailTemplateTests
 {
-    private static readonly BrandSummary Workspace = new(Guid.NewGuid(), "acme-shoes", "Acme Shoes", "INR");
+    private static readonly BrandSummary Workspace = new(Guid.NewGuid(), "acme-shoes", "Acme Shoes", "INR", "Asia/Kolkata");
     private static readonly BrandMember Priya = new(Guid.NewGuid(), "priya@acme.example", "Priya Shah", BrandRoles.Admin);
 
     [Fact]
@@ -90,6 +91,70 @@ public sealed class EmailTemplateTests
         {
             Assert.Contains(colour, html);
         }
+    }
+
+    [Fact]
+    public void A_digest_lists_each_update_with_its_own_link()
+    {
+        var email = EmailTemplate.RenderDigest(
+            [
+                Notification(kind: "opportunities.ready", title: "Monsoon footwear is rising", body: "Searches grew 40%."),
+                new InAppNotification { Kind = "opportunities.ready", Title = "School <shoes>", Body = "", Link = "/opportunities/2" },
+            ],
+            Workspace,
+            Priya,
+            "https://kairo.test");
+
+        Assert.Equal((Priya.UserId, "digest", "priya@acme.example"), (email.UserId, email.Kind, email.To));
+        Assert.Equal("Your daily digest: 2 updates", email.Subject);
+        Assert.Contains("href=\"https://kairo.test/acme-shoes/settings/connections\"", email.Html);
+        Assert.Contains("href=\"https://kairo.test/acme-shoes/opportunities/2\"", email.Html);
+        Assert.Contains("School &lt;shoes&gt;", email.Html);
+        Assert.Contains("Searches grew 40%.", email.Text);
+        Assert.Contains("Open Today in Kairo: https://kairo.test/acme-shoes/today", email.Text);
+        Assert.Contains("Change email settings: https://kairo.test/acme-shoes/settings/notifications", email.Text);
+    }
+
+    [Fact]
+    public void A_one_item_digest_says_one_update()
+    {
+        var email = EmailTemplate.RenderDigest([Notification(kind: "opportunities.ready")], Workspace, Priya, "https://kairo.test");
+
+        Assert.Equal("Your daily digest: 1 update", email.Subject);
+    }
+
+    [Fact]
+    public void An_invitation_names_the_inviter_the_roles_and_the_expiry_and_links_to_join()
+    {
+        var expires = new DateTimeOffset(2030, 1, 21, 20, 0, 0, TimeSpan.Zero);
+        var email = EmailTemplate.RenderInvitation(
+            "priya@example.com",
+            new InvitationDetails("Neha <Rao>", BrandRoles.Admin, expires),
+            Workspace,
+            "https://kairo.test/");
+
+        Assert.Equal(((Guid?)null, "invitation", "priya@example.com", ""), (email.UserId, email.Kind, email.To, email.ToName));
+        Assert.Equal("Neha <Rao> invited you to Acme Shoes on Kairo", email.Subject);
+        Assert.Contains("href=\"https://kairo.test/welcome\"", email.Html);
+        Assert.Contains("Join Acme Shoes", email.Html);
+        Assert.Contains("Neha &lt;Rao&gt;", email.Html);
+        Assert.Contains("with the Admin role", email.Text);
+        Assert.Contains("Sign in to Kairo with Google as priya@example.com", email.Text);
+        Assert.Contains("expires on 22 January 2030", email.Text);
+        Assert.Contains("If you weren't expecting it, you can ignore this email.", email.Text);
+        Assert.DoesNotContain("settings/notifications", email.Html);
+    }
+
+    [Fact]
+    public void An_invitation_with_three_roles_lists_them_all()
+    {
+        var email = EmailTemplate.RenderInvitation(
+            "priya@example.com",
+            new InvitationDetails("Neha Rao", BrandRoles.All, DateTimeOffset.UnixEpoch),
+            Workspace,
+            "https://kairo.test");
+
+        Assert.Contains("with the Admin, Marketer and Approver roles", email.Text);
     }
 
     private static InAppNotification Notification(

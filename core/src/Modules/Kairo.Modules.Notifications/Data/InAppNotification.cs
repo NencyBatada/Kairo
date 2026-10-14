@@ -16,7 +16,17 @@ internal sealed class InAppNotification : IBrandOwned
 
     public string Link { get; set; } = "";
 
+    public string? Subject { get; set; }
+
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset? ReadAt { get; set; }
+
+    public DateTimeOffset? RemindAt { get; set; }
+
+    public DateTimeOffset? ResolvedAt { get; set; }
+
+    public bool AwaitsDigest { get; set; }
+
+    public long? DigestEmailId { get; set; }
 }

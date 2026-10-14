@@ -154,6 +154,35 @@ public sealed class NotifyTests(SqlServer sqlServer) : IAsyncDisposable
         { "connection.problem", "Title", "Body", "/" + new string('l', 400) },
     };
 
+    public static TheoryData<string, string?> BadSubjects => new()
+    {
+        { "approval.needed", null },
+        { "approval.needed", " " },
+        { "approval.needed", new string('s', 201) },
+        { "stock.pause_changed", "stock:1" },
+    };
+
+    [Theory]
+    [MemberData(nameof(BadSubjects))]
+    public async Task Approvals_need_a_subject_and_grouped_kinds_cannot_have_one(string kind, string? subject)
+    {
+        var (_, brandId) = await WorkspaceAsync();
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            Notifying.NotifyAsync(_api, brandId, new Notification(kind, LiveAudience.Everyone, "Title", "Body", "/campaigns", subject)));
+    }
+
+    [Fact]
+    public async Task Resolving_needs_a_workspace_and_a_subject()
+    {
+        await using var scope = _api.Services.CreateAsyncScope();
+        var notifications = scope.ServiceProvider.GetRequiredService<INotifications>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => notifications.ResolveAsync("approval:1", Token));
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(Guid.NewGuid(), Token);
+        await Assert.ThrowsAsync<ArgumentException>(() => notifications.ResolveAsync(" ", Token));
+    }
+
     [Theory]
     [MemberData(nameof(BadNotifications))]
     public async Task A_bad_kind_title_body_or_link_is_refused(string kind, string title, string body, string link)

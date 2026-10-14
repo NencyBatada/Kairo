@@ -9,17 +9,30 @@ internal enum EmailStatus
     Failed,
 }
 
+internal enum EmailType
+{
+    Notification,
+    Digest,
+    Invitation,
+}
+
 internal sealed class OutboundEmail : IBrandOwned
 {
     public long Id { get; set; }
 
     public Guid BrandId { get; set; }
 
-    public Guid UserId { get; set; }
+    public EmailType Type { get; set; }
 
-    public long NotificationId { get; set; }
+    public Guid? UserId { get; set; }
+
+    public long? NotificationId { get; set; }
 
     public InAppNotification? Notification { get; set; }
+
+    public string? Address { get; set; }
+
+    public string? Payload { get; set; }
 
     public EmailStatus Status { get; set; }
 

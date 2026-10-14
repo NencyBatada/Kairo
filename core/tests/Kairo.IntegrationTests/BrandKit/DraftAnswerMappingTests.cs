@@ -19,7 +19,7 @@ public sealed class DraftAnswerMappingTests
     [Fact]
     public void The_request_numbers_pages_and_ads_and_lists_the_candidates()
     {
-        var request = DraftAnswerMapping.Request(new BrandSummary(Guid.NewGuid(), "acme", "Acme Shoes", "INR"), Reading, Ads);
+        var request = DraftAnswerMapping.Request(new BrandSummary(Guid.NewGuid(), "acme", "Acme Shoes", "INR", "Asia/Kolkata"), Reading, Ads);
 
         Assert.Equal(new AgentBrand("Acme Shoes", "INR"), request.Brand);
         Assert.Equal(new[] { "p1", "p2" }, request.Pages.Select(page => page.Id));
