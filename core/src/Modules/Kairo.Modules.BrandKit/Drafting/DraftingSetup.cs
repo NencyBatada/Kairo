@@ -4,7 +4,9 @@ internal static class DraftingSetup
 {
     public static void AddDrafting(this IServiceCollection services)
     {
+        services.AddHttpClient(BestAds.ClientName, client => client.Timeout = BestAds.Timeout).RemoveAllResilienceHandlers();
         services.AddScoped<WebsiteReader>();
+        services.AddScoped<BestAds>();
     }
 
     public static void MapDrafting(this RouteGroupBuilder kit)
