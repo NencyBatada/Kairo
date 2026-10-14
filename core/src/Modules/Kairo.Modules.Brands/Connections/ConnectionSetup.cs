@@ -49,7 +49,7 @@ internal static class ConnectionSetup
 
     public static void MapConnections(this IEndpointRouteBuilder api)
     {
-        api.MapGet("/connections/callback/google", ConsentEndpoints.CallbackAsync);
+        api.MapGet("/connections/callback/google", ConsentEndpoints.CallbackAsync).AllowAnonymous();
 
         var connections = api.MapBrandApi().MapGroup("/connections");
         connections.MapGet("", ConnectionEndpoints.ListAsync);
