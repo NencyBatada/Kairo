@@ -25,6 +25,7 @@ internal static class NotificationKinds
         new("report.ready", "Recommendation or impact report ready", "A test window ended and its report or recommendation is ready.", BrandRoles.Marketer | BrandRoles.Approver, true, true),
         new("impact_lab.ready", "Impact Lab result ready", "An Impact Lab analysis you ran has finished.", BrandRoles.Marketer | BrandRoles.Admin, false, false),
         new("connection.problem", "Connection or data problem", "A connected account needs reconnecting, or a data feed failed.", BrandRoles.Admin, true, true),
+        new("brand_kit.drafted", "Brand Kit drafted", "Kairo finished drafting the Brand Kit, or couldn't.", BrandRoles.Admin, false, false),
     ];
 
     public static NotificationKind? Find(string key) => All.FirstOrDefault(kind => kind.Key == key);

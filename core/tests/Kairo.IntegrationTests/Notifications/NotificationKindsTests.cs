@@ -9,7 +9,7 @@ public sealed class NotificationKindsTests
     [Fact]
     public void There_is_one_kind_per_event_in_the_PRD_with_a_unique_dotted_key()
     {
-        Assert.Equal(13, NotificationKinds.All.Length);
+        Assert.Equal(14, NotificationKinds.All.Length);
         Assert.Equal(NotificationKinds.All.Length, NotificationKinds.All.Select(kind => kind.Key).Distinct().Count());
         Assert.All(NotificationKinds.All, kind => Assert.Matches(new Regex("^[a-z_]+(\\.[a-z_]+)+$"), kind.Key));
     }
@@ -23,11 +23,11 @@ public sealed class NotificationKindsTests
     }
 
     [Fact]
-    public void Stock_pauses_and_Impact_Lab_results_stay_in_the_app()
+    public void Stock_pauses_Impact_Lab_results_and_Brand_Kit_drafts_stay_in_the_app()
     {
         var inAppOnly = NotificationKinds.All.Where(kind => !kind.Email).ToList();
 
-        Assert.Equal(new[] { "impact_lab.ready", "stock.pause_changed" }, inAppOnly.Select(kind => kind.Key).Order());
+        Assert.Equal(new[] { "brand_kit.drafted", "impact_lab.ready", "stock.pause_changed" }, inAppOnly.Select(kind => kind.Key).Order());
         Assert.All(inAppOnly, kind => Assert.False(kind.CanTurnOff));
     }
 
@@ -41,6 +41,7 @@ public sealed class NotificationKindsTests
             Assert.NotEqual(BrandRoles.None, kind.UsualRecipients);
         });
         Assert.Equal(BrandRoles.Admin, NotificationKinds.Find("connection.problem")!.UsualRecipients);
+        Assert.Equal(BrandRoles.Admin, NotificationKinds.Find("brand_kit.drafted")!.UsualRecipients);
         Assert.Null(NotificationKinds.Find("connection.unknown"));
     }
 }

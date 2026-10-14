@@ -13,6 +13,10 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     public const string NotALogo = "Upload the logo to the Brand Kit first.";
     public const string NotAGuideline = "Upload this guideline file to the Brand Kit first.";
 
+    private Guid? _actor;
+
+    private Guid Actor => _actor ?? member.UserId;
+
     public Task<KitVersion?> DraftAsync(CancellationToken cancellationToken) =>
         db.Versions.SingleOrDefaultAsync(version => version.Status == VersionStatus.Draft, cancellationToken);
 
@@ -30,8 +34,20 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
             .OrderByDescending(version => version.Number)
             .ToListAsync(cancellationToken);
 
-    public Task LockAsync(CancellationToken cancellationToken) =>
-        database.LockAsync($"brand-kit:{member.BrandId:N}", cancellationToken);
+    public Task LockAsync(CancellationToken cancellationToken)
+    {
+        var brandId = database.BrandId ?? throw new InvalidOperationException("Locking the Brand Kit needs a workspace.");
+        return database.LockAsync($"brand-kit:{brandId:N}", cancellationToken);
+    }
+
+    public void ActFor(Guid userId) => _actor = userId;
+
+    public Task DraftIntoAsync(KitVersion draft, KitContent content, CancellationToken cancellationToken)
+    {
+        draft.Origin = VersionOrigin.Drafted;
+        draft.RestoredFrom = null;
+        return UpdateDraftAsync(draft, content, cancellationToken);
+    }
 
     public async Task<KitVersion> CreateDraftAsync(KitContent content, VersionOrigin origin, int? restoredFrom, CancellationToken cancellationToken)
     {
@@ -47,9 +63,9 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
             Revision = revision,
             Origin = origin,
             RestoredFrom = restoredFrom,
-            CreatedBy = member.UserId,
+            CreatedBy = Actor,
             CreatedAt = now,
-            UpdatedBy = member.UserId,
+            UpdatedBy = Actor,
             UpdatedAt = now,
         };
         db.Versions.Add(draft);
@@ -61,7 +77,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     {
         draft.Content = KitJson.Write(content);
         draft.Revision++;
-        draft.UpdatedBy = member.UserId;
+        draft.UpdatedBy = Actor;
         draft.UpdatedAt = time.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -82,7 +98,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
         }
 
         draft.Status = VersionStatus.Approved;
-        draft.ApprovedBy = member.UserId;
+        draft.ApprovedBy = Actor;
         draft.ApprovedAt = time.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -90,7 +106,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     public async Task DiscardAsync(KitVersion draft, CancellationToken cancellationToken)
     {
         draft.Status = VersionStatus.Discarded;
-        draft.UpdatedBy = member.UserId;
+        draft.UpdatedBy = Actor;
         draft.UpdatedAt = time.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
     }

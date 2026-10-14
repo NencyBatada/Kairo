@@ -16,6 +16,7 @@ public sealed class BrandKitModule : IModule
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.ServiceProvider.GetRequiredService<DraftingSwitch>().TurnOn();
         api.MapBrandKit();
     }
 

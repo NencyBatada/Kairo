@@ -1,6 +1,9 @@
 using System.Net;
 using System.Runtime.CompilerServices;
+using Kairo.IntegrationTests.Agents;
+using Kairo.IntegrationTests.Web;
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.SharedKernel.Agents;
 using Kairo.SharedKernel.Http;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Hosting;
@@ -28,6 +31,10 @@ public sealed class KairoApiFactory(
     public FakeGoogle Google { get; } = new();
 
     public FakeGoogleApis GoogleApis { get; } = new();
+
+    public FakeWebsites Websites { get; } = new();
+
+    public FakeAgents Agents { get; } = new();
 
     public string? AnalyticsProject { get; init; } = FakeBigQuery.KairoProject;
 
@@ -85,6 +92,8 @@ public sealed class KairoApiFactory(
         }
 
         builder.UseSetting("Kairo:Notifications:DeliveryLoop", "off");
+        builder.UseSetting("Kairo:BrandKit:DraftingLoop", "off");
+        builder.UseSetting(AgentClient.UrlSetting, "http://agents.test");
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
         {
             builder.UseSetting(key, value);
@@ -98,6 +107,8 @@ public sealed class KairoApiFactory(
             services.AddHttpClient("kairo-gmail").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-brand-kit-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddHttpClient(SafeWebClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Websites);
+            services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Agents);
             services.AddSingleton<IServiceAccessToken, FakeServiceToken>();
             configureServices?.Invoke(services);
         });
