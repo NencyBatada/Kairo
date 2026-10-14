@@ -16,5 +16,10 @@ internal static class KitSetup
         draft.MapPut("", KitEndpoints.SaveDraftAsync);
         draft.MapDelete("", KitEndpoints.DiscardDraftAsync);
         draft.MapPost("/approve", KitEndpoints.ApproveAsync);
+
+        var history = kit.MapGroup("/versions");
+        history.MapGet("", KitEndpoints.HistoryAsync);
+        history.MapGet("/{number:int}", KitEndpoints.GetVersionAsync);
+        history.MapPost("/{number:int}/restore", KitEndpoints.RestoreAsync).RequireBrandRole(BrandRoles.Admin);
     }
 }

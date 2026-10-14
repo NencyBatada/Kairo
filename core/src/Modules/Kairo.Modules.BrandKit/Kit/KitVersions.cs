@@ -9,6 +9,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     public const string AuditTarget = "brand_kit_version";
     public const string StaleDraft = "Someone else changed the draft. Reload it and try again.";
     public const string NoDraft = "There's no draft.";
+    public const string NotRestorable = "Only an older, superseded version can be restored.";
 
     public Task<KitVersion?> DraftAsync(CancellationToken cancellationToken) =>
         db.Versions.SingleOrDefaultAsync(version => version.Status == VersionStatus.Draft, cancellationToken);
@@ -20,6 +21,12 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
         db.Versions.SingleOrDefaultAsync(
             version => version.Number == number && version.Status != VersionStatus.Discarded,
             cancellationToken);
+
+    public Task<List<KitVersion>> HistoryAsync(CancellationToken cancellationToken) =>
+        db.Versions
+            .Where(version => version.Status != VersionStatus.Discarded)
+            .OrderByDescending(version => version.Number)
+            .ToListAsync(cancellationToken);
 
     public Task LockAsync(CancellationToken cancellationToken) =>
         database.LockAsync($"brand-kit:{member.BrandId:N}", cancellationToken);

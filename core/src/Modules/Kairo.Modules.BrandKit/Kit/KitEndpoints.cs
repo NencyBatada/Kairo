@@ -98,6 +98,65 @@ internal static class KitEndpoints
         return TypedResults.Ok(await versions.ViewAsync(draft, cancellationToken));
     }
 
+    public static async Task<Ok<KitVersionSummary[]>> HistoryAsync(KitVersions versions, CancellationToken cancellationToken) =>
+        TypedResults.Ok((await versions.HistoryAsync(cancellationToken)).Select(KitVersionSummary.Of).ToArray());
+
+    public static async Task<Results<Ok<KitVersionView>, NotFound>> GetVersionAsync(
+        int number,
+        KitVersions versions,
+        CancellationToken cancellationToken)
+    {
+        if (await versions.FindAsync(number, cancellationToken) is not { } version)
+        {
+            return TypedResults.NotFound();
+        }
+
+        return TypedResults.Ok(await versions.ViewAsync(version, cancellationToken));
+    }
+
+    public static async Task<Results<Ok<KitVersionView>, NotFound, ProblemHttpResult>> RestoreAsync(
+        int number,
+        RevisionRequest request,
+        KitVersions versions,
+        IAuditLog audit,
+        ILiveUpdates live,
+        CancellationToken cancellationToken)
+    {
+        await versions.LockAsync(cancellationToken);
+        if (await versions.FindAsync(number, cancellationToken) is not { } source)
+        {
+            return TypedResults.NotFound();
+        }
+
+        if (source.Status != VersionStatus.Superseded)
+        {
+            return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: KitVersions.NotRestorable);
+        }
+
+        var draft = await versions.DraftAsync(cancellationToken);
+        if ((draft?.Revision ?? 0) != request.Revision)
+        {
+            return Stale();
+        }
+
+        var before = draft is null ? null : KitVersions.AuditOf(draft);
+        var content = KitJson.Read(source.Content);
+        if (draft is null)
+        {
+            draft = await versions.CreateDraftAsync(content, VersionOrigin.Restored, number, cancellationToken);
+        }
+        else
+        {
+            await versions.RestoreIntoAsync(draft, content, number, cancellationToken);
+        }
+
+        await audit.RecordAsync(
+            new AuditRecord("brand_kit.restored", KitVersions.AuditTarget, KitVersions.Number(draft), before, KitVersions.AuditOf(draft)),
+            cancellationToken);
+        await live.PublishAsync(BrandKitLiveEvents.Changed(draft), cancellationToken);
+        return TypedResults.Ok(await versions.ViewAsync(draft, cancellationToken));
+    }
+
     public static ProblemHttpResult Stale() =>
         TypedResults.Problem(statusCode: StatusCodes.Status409Conflict, title: KitVersions.StaleDraft);
 
