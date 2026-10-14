@@ -20,6 +20,7 @@ public sealed class SafeWebClientTests
 
         Assert.Equal("https://acme.example/", response.Url.AbsoluteUri);
         Assert.Equal("text/html", response.ContentType);
+        Assert.Equal("utf-8", response.Charset);
         Assert.Contains("Acme", Encoding.UTF8.GetString(response.Body));
         Assert.Equal($"KairoBot/1.0 (+{SafeWeb.PublicOrigin})", Assert.Single(sites.UserAgents));
     }

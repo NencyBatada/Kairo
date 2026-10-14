@@ -18,8 +18,13 @@ internal static partial class PageText
 
     static PageText() => Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-    public static IHtmlDocument Parse(byte[] body)
+    public static IHtmlDocument Parse(byte[] body, string? charset = null)
     {
+        if (!HasByteOrderMark(body) && EncodingOf(charset) is { } encoding)
+        {
+            return new HtmlParser().ParseDocument(encoding.GetString(body));
+        }
+
         using var stream = new MemoryStream(body);
         return new HtmlParser().ParseDocument(stream);
     }
@@ -43,6 +48,31 @@ internal static partial class PageText
     public static string Clean(string? text) => Whitespace().Replace(text ?? "", " ").Trim();
 
     public static string Cut(string text, int max) => text.Length > max ? text[..max].TrimEnd() : text;
+
+    private static Encoding? EncodingOf(string? charset)
+    {
+        if (string.IsNullOrWhiteSpace(charset))
+        {
+            return null;
+        }
+
+        try
+        {
+            return Encoding.GetEncoding(charset.Trim());
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static bool HasByteOrderMark(byte[] body)
+    {
+        var start = body.AsSpan();
+        return start.StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF])
+            || start.StartsWith((ReadOnlySpan<byte>)[0xFE, 0xFF])
+            || start.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xFE]);
+    }
 
     private static string MainText(IHtmlDocument document)
     {

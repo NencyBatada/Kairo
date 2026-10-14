@@ -73,7 +73,7 @@ internal sealed class WebsiteReader(SafeWebClient web, ILogger<WebsiteReader> lo
                 return null;
             }
 
-            var document = PageText.Parse(response.Body);
+            var document = PageText.Parse(response.Body, response.Charset);
             return new LoadedPage(response.Url, document, PageText.Read(document, response.Url));
         }
         catch (SafeFetchException exception)

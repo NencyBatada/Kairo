@@ -5,7 +5,7 @@ namespace Kairo.SharedKernel.Http;
 
 public sealed record SafeFetchOptions(long MaxBytes, TimeSpan Timeout, bool HtmlOnly = false);
 
-public sealed record SafeWebResponse(Uri Url, string? ContentType, byte[] Body);
+public sealed record SafeWebResponse(Uri Url, string? ContentType, byte[] Body, string? Charset = null);
 
 public sealed class SafeWebClient(IHttpClientFactory http, IConfiguration configuration)
 {
@@ -83,12 +83,14 @@ public sealed class SafeWebClient(IHttpClientFactory http, IConfiguration config
             }
 
             var contentType = response.Content.Headers.ContentType?.MediaType;
+            var charset = response.Content.Headers.ContentType?.CharSet?.Trim('"', ' ');
             if (options.HtmlOnly && !string.Equals(contentType, "text/html", StringComparison.OrdinalIgnoreCase))
             {
                 throw new SafeFetchException(SafeFetchErrors.NotHtml, $"{current} isn't a web page.");
             }
 
-            return new SafeWebResponse(current, contentType, await ReadAsync(response.Content, options.MaxBytes, current, cancellationToken));
+            var body = await ReadAsync(response.Content, options.MaxBytes, current, cancellationToken);
+            return new SafeWebResponse(current, contentType, body, string.IsNullOrEmpty(charset) ? null : charset);
         }
     }
 

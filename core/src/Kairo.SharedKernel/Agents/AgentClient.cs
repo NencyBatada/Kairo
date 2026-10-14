@@ -26,7 +26,7 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         };
         if (configuration[AudienceSetting] is { Length: > 0 } audience)
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await identity.GetTokenAsync(audience, cancellationToken));
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(audience, cancellationToken));
         }
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -57,6 +57,18 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         catch (HttpRequestException exception)
         {
             throw new AgentCallException(AgentCallException.Failed, "Couldn't reach the agent service.", exception);
+        }
+    }
+
+    private async Task<string> TokenAsync(string audience, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await identity.GetTokenAsync(audience, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            throw new AgentCallException(AgentCallException.Failed, "Couldn't get an identity token for the agent service.", exception);
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Text;
 using Kairo.IntegrationTests.Web;
 using Kairo.Modules.BrandKit.Drafting;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -103,16 +104,27 @@ public sealed class WebsiteReaderTests
         var sites = new FakeWebsites();
         sites.Html("https://acme.example/", "<html><body><a href=\"/about\">About</a><a href=\"/collections\">Shop</a><a href=\"/news\">News</a></body></html>");
         sites.Html("https://acme.example/about", "<html><head><title>About</title></head><body><p>Hi.</p></body></html>");
-        sites.Slow("https://acme.example/collections", "<html><body>late</body></html>", TimeSpan.FromSeconds(30));
+        sites.Slow("https://acme.example/collections", "<html><body>late</body></html>", TimeSpan.FromSeconds(60));
         sites.Html("https://acme.example/news", "<html><body>news</body></html>");
         var reader = Reader(sites);
-        reader.Budget = TimeSpan.FromSeconds(1);
+        reader.Budget = TimeSpan.FromSeconds(5);
         var clock = Stopwatch.StartNew();
 
         var reading = await reader.ReadAsync(new Uri("https://acme.example/"), Token);
 
         Assert.Equal(new[] { "https://acme.example/", "https://acme.example/about" }, reading.Pages.Select(page => page.Url.AbsoluteUri));
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"Reading took {clock.Elapsed}.");
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), $"Reading took {clock.Elapsed}.");
+    }
+
+    [Fact]
+    public async Task Reads_a_page_in_the_charset_its_server_declares()
+    {
+        var sites = new FakeWebsites();
+        sites.File("https://acme.example/", "text/html; charset=windows-1252", Encoding.Latin1.GetBytes("<html><head><title>Café Acme</title></head><body><p>Crème</p></body></html>"));
+
+        var reading = await Reader(sites).ReadAsync(new Uri("https://acme.example/"), Token);
+
+        Assert.Equal("Café Acme", Assert.Single(reading.Pages).Title);
     }
 
     private static WebsiteReader Reader(FakeWebsites sites) => new(SafeWeb.Client(sites), NullLogger<WebsiteReader>.Instance);

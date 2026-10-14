@@ -40,6 +40,18 @@ public sealed class AgentClientTests
     }
 
     [Fact]
+    public async Task A_failure_to_get_an_identity_token_is_a_failed_call()
+    {
+        var agents = new FakeAgents { Respond = (_, _) => FakeAgents.Json(new { name = "ok", count = 0 }) };
+
+        var error = await Assert.ThrowsAsync<AgentCallException>(() =>
+            Client(agents, audience: Audience, identity: new BrokenIdentity()).PostAsync<Echo, Echo>("brand-kit/draft", new Echo("Acme", 1), Timeout, Token));
+
+        Assert.Equal(AgentCallException.Failed, error.Code);
+        Assert.Empty(agents.Requests);
+    }
+
+    [Fact]
     public async Task An_error_status_is_a_failed_call()
     {
         var agents = new FakeAgents { Failures = 1 };
@@ -85,7 +97,7 @@ public sealed class AgentClientTests
         Assert.Empty(agents.Requests);
     }
 
-    private static AgentClient Client(FakeAgents agents, string? url = "http://agents.test", string? audience = null)
+    private static AgentClient Client(FakeAgents agents, string? url = "http://agents.test", string? audience = null, IAgentIdentity? identity = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
@@ -96,12 +108,18 @@ public sealed class AgentClientTests
             })
             .Build());
         services.AddKairoAgents();
-        services.AddSingleton<IAgentIdentity, FakeAgentIdentity>();
+        services.AddSingleton(identity ?? new FakeAgentIdentity());
         services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => agents);
         return services.BuildServiceProvider().GetRequiredService<AgentClient>();
     }
 
     private sealed record Echo(string Name, int Count);
+
+    private sealed class BrokenIdentity : IAgentIdentity
+    {
+        public Task<string> GetTokenAsync(string audience, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("The metadata server is unavailable.");
+    }
 
     private sealed class FakeAgentIdentity : IAgentIdentity
     {

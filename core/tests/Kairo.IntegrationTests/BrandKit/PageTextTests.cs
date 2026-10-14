@@ -81,5 +81,27 @@ public sealed class PageTextTests
         Assert.Equal("Crème", content.Text);
     }
 
+    [Fact]
+    public void Decodes_a_page_in_the_charset_its_server_declares()
+    {
+        var html = "<html><head><title>Café</title></head><body><p>Crème</p></body></html>";
+        var document = PageText.Parse(Encoding.Latin1.GetBytes(html), "windows-1252");
+
+        var content = PageText.Read(document, Page);
+
+        Assert.Equal("Café", content.Title);
+        Assert.Equal("Crème", content.Text);
+    }
+
+    [Fact]
+    public void An_unknown_server_charset_falls_back_to_the_page()
+    {
+        var html = "<html><head><meta charset=\"iso-8859-1\"><title>Café</title></head><body></body></html>";
+
+        var content = PageText.Read(PageText.Parse(Encoding.Latin1.GetBytes(html), "not-a-charset"), Page);
+
+        Assert.Equal("Café", content.Title);
+    }
+
     private static PageContent Read(string html) => PageText.Read(PageText.Parse(Encoding.UTF8.GetBytes(html)), Page);
 }

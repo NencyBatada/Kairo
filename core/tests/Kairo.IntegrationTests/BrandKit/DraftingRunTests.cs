@@ -5,6 +5,7 @@ using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.Live;
 using Kairo.IntegrationTests.Notifications;
 using Kairo.Modules.BrandKit.Drafting;
+using Kairo.SharedKernel.Files;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -266,11 +267,35 @@ public sealed class DraftingRunTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Empty(draft.GetProperty("files").EnumerateArray());
     }
 
+    [Fact]
+    public async Task An_unexpected_error_frees_the_run_for_one_retry_then_fails_it()
+    {
+        await using var api = new KairoApiFactory(_connectionString, services => services.AddSingleton<IFileStore>(new BrokenFileStore()));
+        api.Agents.Respond = (_, request) => DraftAnswers.From(request);
+        DraftingSites.Acme(api.Websites);
+        var admin = await Workspaces.SignInAsync(api);
+        var brandId = await Workspaces.CreateAsync(admin.Browser);
+        await DraftingCalls.StartedAsync(admin.Browser, brandId, DraftingSites.Home);
+
+        Assert.Equal(1, await DispatchAsync(api));
+        var between = await DraftingCalls.LatestAsync(admin.Browser, brandId);
+        Assert.Equal(1, await DispatchAsync(api));
+
+        Assert.Equal("running", between.GetProperty("status").GetString());
+        var run = await DraftingCalls.LatestAsync(admin.Browser, brandId);
+        Assert.Equal(("failed", "drafting_failed"), (run.GetProperty("status").GetString(), run.GetProperty("error").GetProperty("code").GetString()));
+        Assert.Equal(JsonValueKind.Null, (await BrandKits.GetAsync(admin.Browser, brandId)).GetProperty("draft").ValueKind);
+        var notification = Assert.Single(await NotificationRows.NotificationsAsync(_connectionString, brandId), row => row.Kind == "brand_kit.drafted");
+        Assert.Equal("Kairo couldn't draft the Brand Kit", notification.Title);
+    }
+
     public async ValueTask DisposeAsync() => await _api.DisposeAsync();
 
-    private async Task<int> DispatchAsync()
+    private Task<int> DispatchAsync() => DispatchAsync(_api);
+
+    private static async Task<int> DispatchAsync(KairoApiFactory api)
     {
-        await using var scope = _api.Services.CreateAsyncScope();
+        await using var scope = api.Services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<DraftDispatcher>().RunDueAsync(Token);
     }
 
@@ -287,6 +312,15 @@ public sealed class DraftingRunTests(SqlServer sqlServer) : IAsyncLifetime
         command.Parameters.AddWithValue("@expired", _api.Clock.GetUtcNow().AddMinutes(-1));
         command.Parameters.AddWithValue("@id", runId);
         Assert.Equal(1, await command.ExecuteNonQueryAsync(Token));
+    }
+
+    private sealed class BrokenFileStore : IFileStore
+    {
+        public Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("The disk is full.");
+
+        public Task<Stream> OpenAsync(string bucket, string key, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("The disk is full.");
     }
 
     private async Task<(Member Admin, Guid BrandId, string Handle)> WorkspaceAsync()

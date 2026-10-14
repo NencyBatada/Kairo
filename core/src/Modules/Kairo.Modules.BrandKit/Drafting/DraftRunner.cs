@@ -52,6 +52,26 @@ internal sealed class DraftRunner(
             return;
         }
 
+        try
+        {
+            await DraftAsync(run, lease, brand, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogError(exception, "Drafting run {RunId} failed unexpectedly on attempt {Attempt}.", run.Id, run.Attempts);
+            db.ChangeTracker.Clear();
+            if (run.Attempts < MaxAttempts)
+            {
+                await ReleaseAsync(run.Id, lease, cancellationToken);
+                return;
+            }
+
+            await FailAsync(run.Id, lease, brand, DraftingFailed, FailedMessage, null, [], cancellationToken);
+        }
+    }
+
+    private async Task DraftAsync(DraftRun run, DateTimeOffset lease, BrandSummary brand, CancellationToken cancellationToken)
+    {
         await live.PublishAsync(BrandKitLiveEvents.Drafting(run.Id, DraftRunStatus.Running), cancellationToken);
         var reading = await website.ReadAsync(new Uri(run.WebsiteUrl), cancellationToken);
         var ads = await bestAds.ReadAsync(cancellationToken);
