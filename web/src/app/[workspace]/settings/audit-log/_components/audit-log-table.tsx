@@ -2,22 +2,40 @@ import { ScrollText } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AuditLogPage } from "@/lib/core-api/types";
 import { cn } from "@/lib/utils";
 
-import { auditActionLabel } from "./audit-actions";
+import { actorTypeLabels } from "./audit-log-search";
 
 type AuditLogTableProps = {
   page: AuditLogPage;
   timeZone: string;
+  actionLabels: Record<string, string>;
   olderHref: (before: string) => string;
   filtered?: boolean;
 };
 
-export function AuditLogTable({ page, timeZone, olderHref, filtered = false }: AuditLogTableProps) {
+const targetLabels: Record<string, string> = {
+  brand: "Workspace",
+  brand_kit_version: "Brand Kit version",
+  brand_kit_file: "Brand Kit file",
+  connection: "Connection",
+  invitation: "Invitation",
+  member: "Member",
+  sales_source: "Sales source",
+  sales_upload: "Sales upload",
+  user: "Person",
+};
+
+function targetLabel(targetType: string) {
+  return targetLabels[targetType] ?? targetType.replaceAll("_", " ");
+}
+
+export function AuditLogTable({ page, timeZone, actionLabels, olderHref, filtered = false }: AuditLogTableProps) {
   const format = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
 
   if (page.entries.length === 0) {
@@ -27,7 +45,7 @@ export function AuditLogTable({ page, timeZone, olderHref, filtered = false }: A
         title={filtered ? "No matching entries" : "Nothing recorded yet"}
         description={
           filtered
-            ? "Nothing on this page matches your filters. Try clearing them or loading older entries."
+            ? "Nothing matches your filters. Try widening the dates or clearing the filters."
             : "Changes to the workspace, the team and approvals will appear here, with who made them and when."
         }
       />
@@ -41,17 +59,35 @@ export function AuditLogTable({ page, timeZone, olderHref, filtered = false }: A
           <TableCaption>Audit log, newest first</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="md:w-48">When</TableHead>
-              <TableHead className="md:w-52">Who</TableHead>
+              <TableHead className="md:w-44">When</TableHead>
+              <TableHead className="md:w-56">Who</TableHead>
               <TableHead>What</TableHead>
+              <TableHead className="md:w-56">Target</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {page.entries.map((entry) => (
               <TableRow key={String(entry.id)}>
-                <TableCell className="text-small text-muted-foreground tabular-nums md:whitespace-nowrap">{format.format(new Date(entry.occurredAt))}</TableCell>
-                <TableCell className="font-medium text-foreground">{entry.actorName}</TableCell>
-                <TableCell className="text-foreground">{auditActionLabel(entry.action)}</TableCell>
+                <TableCell className="text-small text-muted-foreground tabular-nums md:whitespace-nowrap">
+                  <time dateTime={entry.occurredAt}>{format.format(new Date(entry.occurredAt))}</time>
+                </TableCell>
+                <TableCell>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate font-medium text-foreground" title={entry.actorEmail ?? entry.actorName}>
+                      {entry.actorName}
+                    </span>
+                    <Badge variant={entry.actorType === "agent" ? "info" : "neutral"}>{actorTypeLabels[entry.actorType]}</Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="text-foreground">{actionLabels[entry.action] ?? entry.action}</TableCell>
+                <TableCell>
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-small text-foreground">{targetLabel(entry.targetType)}</span>
+                    <span className="truncate font-mono text-xs text-subtle-foreground" title={entry.targetId}>
+                      {entry.targetId}
+                    </span>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
