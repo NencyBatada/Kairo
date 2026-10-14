@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
 
 import type { ConnectionView } from "@/lib/core-api/types";
 
@@ -96,4 +96,67 @@ test("keeps long connection details inside the responsive row", () => {
   const row = screen.getByRole("listitem", { name: "Google Ads" });
   expect(row.className).toContain("min-w-0");
   expect(within(row).getByText(/very long reason/).className).toContain("wrap-anywhere");
+});
+
+test("shows an account picker from connection state even when callback choose points elsewhere", () => {
+  render(
+    <ConnectionList
+      connections={[states[1], states[2]]}
+      canManage
+      brandId="brand-1"
+      callbackChoose="merchant-center"
+      accountChoices={{ youtube: { accounts: [{ id: "yt-1", name: "Channel", managerId: null }] } }}
+      chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
+    />,
+  );
+
+  const youtube = screen.getByRole("listitem", { name: "YouTube" });
+  expect(within(youtube).getByRole("combobox", { name: "Account" })).toBeTruthy();
+  expect(within(youtube).getByRole("button", { name: "Use account" })).toBeTruthy();
+  expect(within(screen.getByRole("listitem", { name: "Merchant Center" })).queryByRole("combobox")).toBeNull();
+});
+
+test("keeps account discovery failures local to the affected product", () => {
+  render(
+    <ConnectionList
+      connections={[states[1], states[2]]}
+      canManage
+      brandId="brand-1"
+      accountChoices={{ youtube: { error: "Google did not answer." } }}
+      chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
+    />,
+  );
+
+  expect(within(screen.getByRole("listitem", { name: "YouTube" })).getByRole("alert").textContent).toContain("Google did not answer.");
+  expect(screen.getByRole("listitem", { name: "Merchant Center" })).toBeTruthy();
+});
+
+test("highlights only the matching account choice returned from Google", () => {
+  render(
+    <ConnectionList
+      connections={[states[1], states[2]]}
+      canManage
+      brandId="brand-1"
+      callbackChoose="youtube"
+      accountChoices={{ youtube: { accounts: [] } }}
+      chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
+    />,
+  );
+  expect(screen.getByRole("listitem", { name: "YouTube" }).className).toContain("border-primary");
+  expect(screen.getByRole("listitem", { name: "Merchant Center" }).className).not.toContain("border-primary");
+});
+
+test("lets an admin restart consent when no account is available", () => {
+  render(
+    <ConnectionList
+      connections={[states[1]]}
+      canManage
+      brandId="brand-1"
+      accountChoices={{ youtube: { accounts: [] } }}
+      chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
+    />,
+  );
+  expect(screen.getByRole("link", { name: "Connect again" }).getAttribute("href")).toBe(
+    "/api/brands/brand-1/connections/youtube/connect",
+  );
 });
