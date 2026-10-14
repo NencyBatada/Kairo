@@ -137,6 +137,14 @@ Describe 'Invoke-KairoDeploy' {
         }
     }
 
+    It 'tells the API and the worker which project holds the file buckets' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        foreach ($service in 'kairo-api', 'kairo-worker') {
+            ($calls | Where-Object { $_ -like "run deploy $service *" }) | Should -BeLike '*Kairo__Files__Project=kairo-test*'
+        }
+    }
+
     It 'creates the nightly analytics job when it is missing' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

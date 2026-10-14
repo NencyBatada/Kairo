@@ -6,6 +6,7 @@ $script:Apis = @(
     'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
+$script:FileBuckets = @('brand-files')
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
 $script:MailRedirectUri = 'http://localhost:8765/'
 $script:GmailSendScope = 'https://www.googleapis.com/auth/gmail.send'
@@ -23,6 +24,7 @@ function Initialize-KairoProject {
     Initialize-KairoDatabase -Environment $Environment
     Initialize-KairoSecrets -Environment $Environment
     Initialize-KairoServiceAccounts -Environment $Environment
+    Initialize-KairoBuckets -Environment $Environment
     Initialize-KairoKeys -Environment $Environment
 }
 
@@ -202,6 +204,22 @@ function Initialize-KairoServiceAccounts {
     Add-KairoBinding -ArgumentList (@('artifacts', 'repositories', 'add-iam-policy-binding', $script:Registry, '--location', $Environment.Region, '--member', $build, '--role', 'roles/artifactregistry.writer') + $scope)
     Add-KairoBinding -ArgumentList (@('storage', 'buckets', 'add-iam-policy-binding', "gs://$($Environment.Project)-builds", '--member', $build, '--role', 'roles/storage.objectViewer') + $scope)
     Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', $build, '--role', 'roles/logging.logWriter', '--condition', 'None')
+}
+
+function Initialize-KairoBuckets {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $scope = @('--project', $Environment.Project)
+    foreach ($name in $script:FileBuckets) {
+        $bucket = "gs://$($Environment.Project)-$name"
+        if (-not (Test-Gcloud -ArgumentList (@('storage', 'buckets', 'describe', $bucket) + $scope))) {
+            Invoke-Gcloud -ArgumentList (@('storage', 'buckets', 'create', $bucket, '--location', $Environment.Region, '--uniform-bucket-level-access', '--public-access-prevention') + $scope)
+        }
+
+        foreach ($service in 'kairo-api', 'kairo-worker') {
+            Add-KairoBinding -ArgumentList (@('storage', 'buckets', 'add-iam-policy-binding', $bucket, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $service)", '--role', 'roles/storage.objectAdmin') + $scope)
+        }
+    }
 }
 
 function Initialize-KairoKeys {

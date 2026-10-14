@@ -29,6 +29,7 @@ function Invoke-KairoDeploy {
     $sqlSecret = "ConnectionStrings__kairo=$($script:SqlSecret):latest"
     $keyName = Get-KairoTokenKeyName -Environment $Environment
     $analytics = "Kairo__Analytics__Project=$($Environment.Project),Kairo__Analytics__Location=$($Environment.Region)"
+    $files = "Kairo__Files__Project=$($Environment.Project)"
     $serviceSecrets = @($sqlSecret)
     $googleConfigured = $true
     foreach ($secret in $script:GoogleSecrets.Values) {
@@ -41,7 +42,7 @@ function Invoke-KairoDeploy {
             $serviceSecrets += "$($entry.Key)=$($entry.Value):latest"
         }
     }
-    $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName,$analytics"
+    $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName,$analytics,$files"
     $apiSecrets = @($serviceSecrets)
     $mailSender = "$($Environment.MailSender)".Trim()
     $mailConfigured = $googleConfigured -and $mailSender -and (Test-KairoSecretHasValue -Environment $Environment -Name $script:MailSecret)
@@ -72,7 +73,7 @@ function Invoke-KairoDeploy {
             '--timeout', '3600',
             '--no-cpu-throttling',
             '--memory', '1Gi',
-            "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics",
+            "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics,$files",
             "--set-secrets=$($serviceSecrets -join ',')"
         ))
 
