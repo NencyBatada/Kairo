@@ -27,7 +27,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 - [x] **Live updates**: Pushes agent progress and status changes to the web app as they happen.
 - [x] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports.
 - [x] **Audit log**: Records every user and agent action, approval, override and automatic change.
-- [/] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
+- [x] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
 
 ### Nency (web app)
 
