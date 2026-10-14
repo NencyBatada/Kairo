@@ -337,6 +337,7 @@ Kairo notifies people in the app and by email, and every notification links to t
 | Pacing alert | The campaign's marketer and budget owner | Email and in app | Daily |
 | Recommendation or impact report ready | The campaign's marketer and approvers | Email and in app | When the test window ends |
 | Impact Lab result ready | The person who ran it | In app | When the analysis finishes |
+| Brand Kit drafted | The admin who started it | In app | When drafting finishes or fails |
 | Connection or data problem | Admins | Email and in app | Immediately |
 
 ## 10. Product analytics
