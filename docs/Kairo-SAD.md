@@ -17,12 +17,13 @@ flowchart LR
         W --> F[("Cloud Storage")]
         C --> S[("SQL Server<br/>Cloud SQL")]
         A --> B[("BigQuery")]
+        C -->|nightly feeds| B
     end
     C --> X["Google Ads, YouTube Data, Merchant,<br/>Google Analytics 4 and Weather APIs"]
     A --> M["Gemini, Imagen, Veo, Text-to-Speech<br/>and Search grounding"]
 ```
 
-The web app talks only to the core. The core calls the agent service for each stage and is the only path to Google Ads, YouTube and Merchant Center, while the agents call Google's models and read analytics from BigQuery.
+The web app talks only to the core. The core calls the agent service for each stage and is the only path to Google Ads, YouTube and Merchant Center. Every night it also loads each brand's Google Ads, GA4 and sales data into BigQuery, where the agents read analytics. The agents call Google's models.
 
 ### Architecture principles
 
@@ -48,9 +49,9 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Media processing | FFmpeg in the agent service container | Adding voiceover, captions and logo to generated video |
 | AI models | Gemini (Pro and Flash), Imagen and Gemini image generation, Veo, Grounding with Google Search, on Gemini Enterprise Agent Platform; Cloud Text-to-Speech | Reasoning, copy, checks, images, video, sourced explanations and voiceover |
 | Operational database | Cloud SQL for SQL Server | Brands, users, Brand Kits, catalogue, campaign rooms, approvals, trigger rules, Brand Memory and the audit log |
-| Analytics | BigQuery, BigQuery Data Transfer Service for Google Ads, GA4 export to BigQuery | Performance, sales and stock history, and measurement results |
+| Analytics | BigQuery, loaded nightly by the core worker from the Google Ads API, the GA4 Data API, sales uploads and the brand's own tables | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
-| Jobs and events | Cloud Scheduler, Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
+| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
@@ -75,7 +76,7 @@ The core is one .NET codebase deployed twice: the API serves the web app and the
 | Approvals | Gate requests, decisions, approval tokens | Route approvals, enforce the budget limit and bind each approval to the exact plan |
 | Launch | Launch records, Google Ads and YouTube IDs, product-to-ad mapping | Upload videos, build campaigns paused, turn them on together, and apply approved changes and stock pauses |
 | Care | Pacing checks, health checks, the stock pause log, recommendations | Watch delivery, pause and resume ads for stock, and queue recommendations |
-| Measurement | Test windows, impact reports, Impact Lab analyses | Start Prove runs when a test ends, and store results |
+| Measurement | Test windows, impact reports, Impact Lab analyses, data feed runs, sales uploads and sales sources | Load each brand's Google Ads, GA4 and sales data into BigQuery every night; start Prove runs when a test ends, and store results |
 | Brand Memory | Memory entries and where each was used | Save what Learn finds, serve entries to agents and honour removals |
 | Notifications | In-app notifications, email digests, preferences | Send in-app notifications as live updates and emails through the Gmail API |
 | Audit | Append-only audit log | Record every agent and user action, approval, override and automatic change |
@@ -164,13 +165,13 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 
 | Dataset | Contents | Fed by |
 | --- | --- | --- |
-| Google Ads | Campaign, ad group, ad and geographic performance | BigQuery Data Transfer Service, daily |
-| GA4 | Event export | GA4's BigQuery link, when the brand connects it |
-| Brand sales | Orders and revenue by region and day | Uploaded files or the brand's own tables |
+| Google Ads | Campaign, ad group, ad and region performance by day | Core worker, nightly, through the Google Ads API |
+| GA4 | Sessions, key events, transactions and revenue by region and day | Core worker, nightly, through the GA4 Data API |
+| Brand sales | Orders and revenue by region and day | CSV uploads, or a nightly copy of a table in the brand's own BigQuery |
 | Kairo history | Keyword trends, opportunity scores, trigger firings and stock history | Core worker, daily |
 | Measurement | Lift estimates, Impact Lab results and model diagnostics | Agent service |
 
-Each brand gets its own datasets, so access can be granted and removed per brand.
+Each brand gets its own datasets, starting with `brand_<brand ID>` for these feeds in Kairo's project, so access can be granted and removed per brand. Every load replaces whole days, so a rerun never duplicates rows, and the later of an upload or a table copy wins each day.
 
 ### Cloud Storage
 
@@ -182,12 +183,11 @@ The core connects to every Google service that holds the brand's ads or data; th
 
 | System | Used for | How Kairo connects | Limits to plan for |
 | --- | --- | --- | --- |
-| Google Ads API | Keyword metrics, performance and recommendations; creating campaigns, pausing and resuming ads, budgets and bid targets | The Google Ads REST API from the core, with each brand's OAuth consent through Kairo's OAuth client. Since 9 September 2026 access levels belong to the Google Cloud project behind the OAuth client, and no developer token is sent. | Keyword planning needs Basic access or above, which the `kairo2` project has. Basic allows 15,000 operations a day; Standard has no daily cap. |
-| BigQuery Data Transfer Service | Daily Google Ads performance in BigQuery | One transfer per brand | Data lands daily, so same-day pacing reads the API |
+| Google Ads API | Keyword metrics, performance and recommendations, nightly performance reports; creating campaigns, pausing and resuming ads, budgets and bid targets | The Google Ads REST API from the core, with each brand's OAuth consent through Kairo's OAuth client. Since 9 September 2026 access levels belong to the Google Cloud project behind the OAuth client, and no developer token is sent. | Keyword planning needs Basic access or above, which the `kairo2` project has. Basic allows 15,000 operations a day; Standard has no daily cap. |
 | YouTube Data API | Uploading approved videos as unlisted | Google API .NET client in the core, with the brand's channel consent | Uploads have their own limit of 100 a day per project |
 | Merchant API | Checking the Merchant Center link and product status, and updating titles if chosen | The Merchant API v1 REST endpoints from the core, with the brand's consent. The Content API for Shopping it replaces was sunset on 18 August 2026. | Shopping needs the Merchant Center account linked to Google Ads |
 | Google Maps Platform Weather API | Hourly and daily forecasts for trigger rules | REST from the core worker, with a server-only API key | Billed per call, so forecasts are cached by region and hour |
-| Google Analytics 4 | Outcome data for Impact Lab | BigQuery export, or the GA4 Data API | Export history starts only when it is switched on |
+| Google Analytics 4 | Outcome data for measurement and Impact Lab | The GA4 Data API from the core worker, with the brand's consent, nightly by region and day | Totals only; raw events need the brand's own BigQuery export, which Kairo doesn't read |
 | Gemini Enterprise Agent Platform | Gemini, Imagen, Veo and Google Search grounding | Google Gen AI SDK in the agent service | Per-model quotas; Veo and Imagen run in fewer regions than Gemini |
 | Cloud Text-to-Speech | Voiceover in each language | Client library in the agent service | Voice choice varies by language |
 | Model Armor | Screening untrusted text | API from the agent service | Adds a short delay to each screened call |
@@ -218,7 +218,7 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | --- | --- | --- |
 | Web app | Cloud Run service | At least 1 instance; public through the load balancer |
 | Core API | Cloud Run service | At least 1 instance; 60-minute request timeout for live update streams; CPU always allocated so the email outbox keeps sending between requests |
-| Core worker | Cloud Run service | Scales to zero; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
+| Core worker | Cloud Run service | Scales to zero; 60-minute request timeout; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
 | Agent service | Cloud Run service | Internal access only; long request timeout for video jobs |
 | Database | Cloud SQL for SQL Server | Express edition for the prototype; Standard with high availability in production; automated backups and point-in-time recovery |
 | Queues | Cloud Tasks | Separate queues for agent runs and Google Ads changes, each with its own rate limit. Notification emails go through an outbox in SQL Server, sent by the core API, so they need no queue. |
@@ -260,7 +260,7 @@ Each BRD target maps to a specific design choice.
 | AD-3 Lifecycle owner | A state machine in the core, with one agent run per stage | One long-running agent for the whole campaign | Approvals can take days, so state must be durable, auditable and recoverable |
 | AD-4 Google Ads writes | Only the Launch module, with approval tokens | Google Ads tools given to agents | Spend safety becomes a property of the code, not of a prompt |
 | AD-5 Operational database | Cloud SQL for SQL Server | Firestore; Cloud SQL for PostgreSQL | Team expertise, relational integrity, row-level security and JSON columns in one store |
-| AD-6 Analytics store | BigQuery | Reporting from SQL Server | Built-in Google Ads and GA4 transfers, and time-series analysis at scale |
+| AD-6 Analytics store | BigQuery | Reporting from SQL Server | Per-brand datasets, whole-day loads and time-series analysis at scale |
 | AD-7 Campaign build | Create everything paused, then turn it on together | Create live, item by item | A failed launch never leaves half a campaign spending |
 | AD-8 Stock pauses | Rule-based code | A model's judgement | Predictable, testable and auditable |
 | AD-9 Live updates | Server-Sent Events fed by a SQL Server outbox | SignalR with a Memorystore backplane; Firestore listeners | Events commit with the change they describe, the worker publishes the same way as the API, several API instances need no backplane, and plain HTTP passes through the development project's web proxy and the load balancer |

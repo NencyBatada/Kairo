@@ -45,7 +45,7 @@ Since 9 September 2026 the Google Ads API needs no developer token. Access level
 
 Do this once in the Cloud Console for `kairo2`:
 
-1. **APIs.** `deploy/setup.ps1` enables the Google Ads, YouTube Data, Merchant, Analytics Admin, BigQuery and Cloud KMS APIs. Run it once before connecting accounts locally, too.
+1. **APIs.** `deploy/setup.ps1` enables the Google Ads, YouTube Data, Merchant, Analytics Admin, Analytics Data, BigQuery, Cloud Scheduler and Cloud KMS APIs. Run it once before connecting accounts locally, too.
 2. **Data access.** In Google Auth Platform → Data Access, add these scopes:
    - `https://www.googleapis.com/auth/adwords`
    - `https://www.googleapis.com/auth/youtube.readonly`
@@ -82,6 +82,34 @@ Locally, emails are logged unless you give the AppHost a sender, for example the
 dotnet user-secrets set "Kairo:MailSender" "<sender address>" --project core/src/Kairo.AppHost
 dotnet user-secrets set "Kairo:MailSenderRefreshToken" "<refresh token>" --project core/src/Kairo.AppHost
 ```
+
+## Run the analytics feeds locally
+
+Every night at 05:00 India time, Cloud Scheduler calls the worker. It loads each brand's Google Ads reports, GA4 totals and sales table into a BigQuery dataset of its own, `brand_<brand ID>`. Admins and marketers can also upload sales as a CSV file with the columns `date`, `region`, `orders` and `revenue`.
+
+Locally the feeds are off until you point them at a project:
+
+1. Sign in for Application Default Credentials, which Kairo uses to write to BigQuery:
+
+   ```bash
+   gcloud auth application-default login
+   ```
+
+2. Tell the AppHost which project holds the datasets:
+
+   ```bash
+   dotnet user-secrets set "Parameters:analytics-project" "kairo2" --project core/src/Kairo.AppHost
+   ```
+
+3. Start Kairo and connect Google Ads, GA4 or BigQuery in Settings → Connections. Then run the job for every brand, or add `?brandId=<id>` for one:
+
+   ```bash
+   curl -X POST http://localhost:5200/jobs/analytics/daily
+   ```
+
+   The worker listens on http://localhost:5200, as the Aspire dashboard shows. The response lists each brand's feeds and how many rows each loaded.
+
+Your Google account needs BigQuery Data Owner and Job User on the project. Local runs write real datasets in `kairo2`, so delete a test brand's dataset in the BigQuery console when you're done with it.
 
 ## Run everything locally
 
