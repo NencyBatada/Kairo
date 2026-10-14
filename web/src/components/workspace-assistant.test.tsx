@@ -30,6 +30,7 @@ test("opens a labelled panel without a fake chat and closes on Escape", async ()
   const trigger = screen.getByRole("button", { name: "Ask Kairo" });
   fireEvent.click(trigger);
   const panel = await screen.findByRole("dialog", { name: "Ask Kairo" });
+  expect(panel.querySelector(".min-h-0.overflow-y-auto")).toBeTruthy();
   expect(within(panel).getByText(/conversations will be available/i)).toBeTruthy();
   expect(within(panel).getByText("Today")).toBeTruthy();
   expect(within(panel).queryByRole("textbox")).toBeNull();
@@ -41,13 +42,14 @@ test("opens a labelled panel without a fake chat and closes on Escape", async ()
 });
 
 test("docks the panel on wide screens and leaves the page interactive", async () => {
+  const matchMedia = vi.fn().mockImplementation(() => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
-    value: vi.fn().mockImplementation(() => ({
-      matches: true,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
+    value: matchMedia,
   });
   render(
     <WorkspaceAssistant>
@@ -57,6 +59,8 @@ test("docks the panel on wide screens and leaves the page interactive", async ()
 
   fireEvent.click(screen.getByRole("button", { name: "Ask Kairo" }));
   const panel = await screen.findByRole("complementary", { name: "Ask Kairo" });
+  expect(matchMedia).toHaveBeenCalledWith("(min-width: 90rem)");
+  expect(panel.querySelector(".min-h-0.overflow-y-auto")).toBeTruthy();
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(screen.getByRole("button", { name: "Page action" })).toBeTruthy();
   fireEvent.click(within(panel).getByRole("button", { name: "Close" }));
