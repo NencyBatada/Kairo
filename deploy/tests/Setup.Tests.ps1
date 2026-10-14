@@ -127,6 +127,14 @@ Describe 'Initialize-KairoProject' {
             }
             ($calls | Where-Object { $_ -like 'projects add-iam-policy-binding*bigquery*kairo-web@*' -or $_ -like 'projects add-iam-policy-binding*kairo-web@*bigquery*' }) | Should -BeNullOrEmpty
         }
+
+        It 'creates a private bucket for brand files that only the API and the worker can use' {
+            $calls | Should -Contain 'storage buckets create gs://kairo-test-brand-files --location asia-south1 --uniform-bucket-level-access --public-access-prevention --project kairo-test'
+            foreach ($name in 'kairo-api', 'kairo-worker') {
+                $calls | Should -Contain "storage buckets add-iam-policy-binding gs://kairo-test-brand-files --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/storage.objectAdmin --project kairo-test"
+            }
+            ($calls | Where-Object { $_ -like 'storage buckets add-iam-policy-binding gs://kairo-test-brand-files *kairo-web@*' }) | Should -BeNullOrEmpty
+        }
     }
 
     Context 'in a project that is already set up' {

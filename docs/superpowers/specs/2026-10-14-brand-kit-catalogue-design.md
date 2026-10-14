@@ -43,20 +43,16 @@ Tasks: `docs/task.md` §2, Talha: **Brand rules and versions**, **Brand Kit draf
 ```csharp
 public interface IFileStore
 {
-    Task PutAsync(string bucket, string key, Stream content, string contentType, CancellationToken cancellationToken);
+    Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken);
 
     Task<Stream> OpenAsync(string bucket, string key, CancellationToken cancellationToken);
-
-    Task DeleteAsync(string bucket, string key, CancellationToken cancellationToken);
-
-    Task<Uri> GetDownloadUrlAsync(string bucket, string key, string fileName, TimeSpan lifetime, CancellationToken cancellationToken);
 }
 ```
 
-- **Buckets.** Logical names `brand-files` and `catalogue-imports`, mapped to `{project}-brand-files` and `{project}-catalogue-imports`. `setup.ps1` creates both with uniform bucket-level access, grants `kairo-api` and `kairo-worker` `roles/storage.objectAdmin` on them, and gives `catalogue-imports` a 30-day delete lifecycle rule.
+- **Buckets.** Logical names `brand-files` and `catalogue-imports`, mapped to `{project}-brand-files` and `{project}-catalogue-imports`. `setup.ps1` creates both with uniform bucket-level access and public access blocked, grants `kairo-api` and `kairo-worker` `roles/storage.objectAdmin` on them, and gives `catalogue-imports` a 30-day delete lifecycle rule.
 - **Keys.** `{brandId:N}/{area}/{id:N}`, for example `…/guidelines/…`, `…/logos/…` or `…/imports/…`. File names stay in SQL, never in keys.
-- **Cloud Storage.** JSON API over REST (`https://storage.googleapis.com/storage/v1` and `/upload/storage/v1`), with the service account's Application Default Credentials scoped to `devstorage.read_write` (the Measurement module's `IServiceAccessToken` is BigQuery-scoped and internal, so the file store has its own). Download links are V4 signed URLs, signed with the IAM Credentials `signBlob` call, so no key file is needed; each service account gets `roles/iam.serviceAccountTokenCreator` on itself.
-- **Development and tests.** When `Kairo:Files:Project` isn't set, a disk store writes under `Kairo:Files:Root` (default: the app's temp folder), and download links point to `GET /api/files/dev/{token}`, a short-lived HMAC-signed route that exists only with the disk store.
+- **Cloud Storage.** JSON API over REST (`https://storage.googleapis.com/storage/v1` and `/upload/storage/v1`), with the service account's Application Default Credentials scoped to `devstorage.read_write`. Files reach the browser only through the core's download endpoints, as attachments, so no signed URLs are needed.
+- **Development and tests.** When `Kairo:Files:Project` isn't set, a disk store writes under `Kairo:Files:Root` (default: the `kairo-files` folder in the system temp folder).
 
 ### Safe web client
 
@@ -71,7 +67,7 @@ public interface IFileStore
 
 ## Brand Kit
 
-Module `Kairo.Modules.BrandKit`, SQL schema `brandkit`.
+Module `Kairo.Modules.BrandKit`, SQL schema `brand_kit`.
 
 ### Content
 
@@ -114,12 +110,12 @@ Every version holds one JSON document:
 
 | Schema | Table | Belongs to a workspace | Holds |
 | --- | --- | --- | --- |
-| `brandkit` | `KitVersions` | Yes | `Id`, brand, `Number` (1, 2, 3… per brand), `Status` (`Draft`, `Approved`, `Superseded`), `Content` (JSON), `Revision` (int, starts at 1, +1 on each save), `Origin` (`manual`, `drafted` or `restored`), `RestoredFrom` (number or null), `CreatedBy`, `CreatedAt`, `UpdatedBy`, `UpdatedAt`, `ApprovedBy`, `ApprovedAt` |
-| `brandkit` | `KitFiles` | Yes | `Id`, brand, `Kind` (`guideline` or `logo`), `FileName`, `ContentType`, `Size`, `StorageKey`, `UploadedBy`, `UploadedAt`, `DeletedAt` |
-| `brandkit` | `DraftRuns` | Yes | See **Drafting** |
+| `brand_kit` | `KitVersions` | Yes | `Id`, brand, `Number` (1, 2, 3… per brand), `Status` (`Draft`, `Approved`, `Superseded`), `Content` (JSON), `Revision` (int; a new draft starts one above the highest revision any of the brand's versions has had, and each save adds 1, so a revision never names two drafts), `Origin` (`manual`, `drafted` or `restored`), `RestoredFrom` (number or null), `CreatedBy`, `CreatedAt`, `UpdatedBy`, `UpdatedAt`, `ApprovedBy`, `ApprovedAt` |
+| `brand_kit` | `KitFiles` | Yes | `Id`, brand, `Kind` (`guideline` or `logo`), `FileName`, `ContentType`, `Size`, `StorageKey`, `UploadedBy`, `UploadedAt`, `DeletedAt` |
+| `brand_kit` | `DraftRuns` | Yes | See **Drafting** |
 
 - Filtered unique indexes allow one `Draft` and one `Approved` row per brand, and `Number` is unique per brand.
-- A version's number is fixed when its draft is created. A discarded draft's number is not reused.
+- A version's number is fixed when its draft is created. A discarded draft is kept with status `Discarded`, hidden from history, so its number is not reused.
 - Files are never changed. Removing a guideline file sets `DeletedAt` and takes it out of the draft; versions that referred to it still show its name, and the stored object is kept so an older version can be restored.
 
 ### API
@@ -137,7 +133,7 @@ All under `/api/brands/{brandId}/brand-kit`. Every member can read; only admins 
 | `POST /versions/{number}/restore` | Copies that version's content into the draft, replacing any draft, with origin `restored`. The body is `{ revision }` of the current draft, or `0` with none. Restoring the approved or draft version is a `400`. Returns the draft. |
 | `POST /files` | Multipart upload, one `file` field, at most 20 MB, of PDF, PNG, JPEG, WebP, SVG or DOCX, checked by content type and the file's first bytes. `kind` is `guideline` (default) or `logo`. Returns `201` with the file view. Uploading does not change the draft; adding it to the draft is a `PUT /draft`. |
 | `GET /files` | Guideline and logo files that aren't deleted |
-| `GET /files/{fileId}/download` | `302` to a download link valid for 5 minutes |
+| `GET /files/{fileId}/download` | The file itself, as an attachment, with `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` |
 | `DELETE /files/{fileId}` | Marks the file deleted and removes it from the draft, raising the draft's revision |
 
 A version view is `{ number, status, origin, restoredFrom, revision, content, files, createdBy, createdAt, updatedBy, updatedAt, approvedBy, approvedAt }`, where `files` lists `{ id, kind, fileName, contentType, size, deleted }` for every file the content refers to.
@@ -164,7 +160,7 @@ It reads in the current brand's scope, like `IConnections`. Drafts are never ret
 ### Side effects
 
 - **Audit.** `brand_kit.draft_saved`, `brand_kit.draft_discarded`, `brand_kit.approved` (with the version number), `brand_kit.restored`, `brand_kit.file_uploaded` and `brand_kit.file_deleted`.
-- **Live events.** `brand-kit.changed` with `{ number, status }` to everyone in the workspace, after every change above.
+- **Live events.** `brand_kit.changed` with `{ number, status }` to everyone in the workspace, after every change to a version, and `brand_kit.files_changed` with `{ fileId }` after a file is uploaded or deleted.
 
 ## Brand Kit drafting
 
@@ -177,7 +173,7 @@ It reads in the current brand's scope, like `IConnections`. Drafts are never ret
 
 A run view is `{ id, status, websiteUrl, pages: [{ url, title }], ads: [{ id, headline }], error: { code, message } | null, requestedBy, requestedAt, finishedAt, version }`, where `version` is the draft number it produced.
 
-`brandkit.DraftRuns` holds `Id`, brand, `WebsiteUrl`, `Status` (`pending`, `running`, `succeeded`, `failed`), `ErrorCode`, `ErrorMessage`, `Pages` (JSON), `Ads` (JSON), `Model`, `PromptVersion`, `Attempts`, `ClaimedUntil`, `RequestedBy`, `RequestedAt`, `StartedAt`, `FinishedAt` and `VersionNumber`.
+`brand_kit.DraftRuns` holds `Id`, brand, `WebsiteUrl`, `Status` (`pending`, `running`, `succeeded`, `failed`), `ErrorCode`, `ErrorMessage`, `Pages` (JSON), `Ads` (JSON), `Model`, `PromptVersion`, `Attempts`, `ClaimedUntil`, `RequestedBy`, `RequestedAt`, `StartedAt`, `FinishedAt` and `VersionNumber`.
 
 ### Processing
 
@@ -207,7 +203,7 @@ A hosted loop in the API, `DraftDispatcher`, wakes every 2 seconds and claims up
 7. **Saves the logo.** When the agent chose a logo candidate, the core downloads it (at most 2 MB; PNG, JPEG, WebP, SVG or ICO, checked by its first bytes) as a `logo` file. A download failure just leaves the logo empty.
 8. **Saves the draft.** Replacing any draft, with origin `drafted`, and records the model, prompt version, pages and ads on the run.
 
-Then it publishes `brand-kit.drafting` with `{ runId, status }` to admins, `brand-kit.changed` to everyone, and a `brand_kit.drafted` in-app notification to the person who started it, linking to `/{handle}/brand-kit`. `running` is also published when the run starts.
+Then it publishes `brand_kit.drafting` with `{ runId, status }` to admins, `brand_kit.changed` to everyone, and a `brand_kit.drafted` in-app notification to the person who started it, linking to `/{handle}/brand-kit`. `running` is also published when the run starts.
 
 **Failures.** An agent error, timeout or invalid answer releases the lease and retries once. The second failure ends the run as `drafting_failed`: "Kairo couldn't draft the Brand Kit this time. Try again, or fill it in by hand." A run whose lease runs out twice is failed the same way. Every failure is logged with the run ID.
 

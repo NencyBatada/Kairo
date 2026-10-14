@@ -4,4 +4,8 @@
     <PackageReference Include="Google.Cloud.Kms.V1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kairo.IntegrationTests" />
+  </ItemGroup>
+
 </Project>
