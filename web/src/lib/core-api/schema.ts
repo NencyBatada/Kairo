@@ -957,6 +957,148 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/brand-kit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BrandKitView"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/brand-kit/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveDraftRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["KitVersionView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/brand-kit/draft/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RevisionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["KitVersionView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -1440,6 +1582,10 @@ export interface components {
             entries: components["schemas"]["AuditEntryResponse"][];
             nextBefore: null | string;
         };
+        BrandKitView: {
+            approved: null | components["schemas"]["KitVersionView"];
+            draft: null | components["schemas"]["KitVersionView"];
+        };
         BrandRole: "admin" | "marketer" | "approver";
         ChangeRolesRequest: {
             roles: components["schemas"]["BrandRole"][];
@@ -1451,6 +1597,8 @@ export interface components {
         ChooseAccountRequest: {
             externalId: null | string;
         };
+        ColourRole: "primary" | "secondary" | "accent" | "background" | "text";
+        CompetitorPolicy: "never" | "neutral";
         ConnectionState: "notConnected" | "choosingAccount" | "connected" | "needsReconnect";
         ConnectionView: {
             product: string;
@@ -1520,6 +1668,85 @@ export interface components {
             handle: string;
         };
         JsonNode: unknown;
+        KitCategory: {
+            name?: string;
+            sources?: components["schemas"]["KitSource"][];
+        };
+        KitColour: {
+            hex?: string;
+            name?: string;
+            role?: components["schemas"]["ColourRole"];
+            sources?: components["schemas"]["KitSource"][];
+        };
+        KitCompetitor: {
+            name?: string;
+            policy?: components["schemas"]["CompetitorPolicy"];
+        };
+        KitContent: {
+            voice?: components["schemas"]["KitVoice"];
+            colours?: components["schemas"]["KitColour"][];
+            logo?: null | components["schemas"]["KitLogo"];
+            keyMessages?: components["schemas"]["KitMessage"][];
+            productCategories?: components["schemas"]["KitCategory"][];
+            rules?: components["schemas"]["KitRules"];
+            guidelineFileIds?: string[];
+        };
+        KitDisclaimer: {
+            text?: string;
+            when?: string;
+        };
+        KitFileKind: "guideline" | "logo";
+        KitFileView: {
+            id: string;
+            kind: components["schemas"]["KitFileKind"];
+            fileName: string;
+            contentType: string;
+            size: number | string;
+            deleted: boolean;
+            uploadedBy: string;
+            uploadedAt: string;
+        };
+        KitLogo: {
+            fileId?: null | string;
+            sourceUrl?: null | string;
+        };
+        KitMessage: {
+            text?: string;
+            sources?: components["schemas"]["KitSource"][];
+        };
+        KitRules: {
+            bannedWords?: string[];
+            requiredDisclaimers?: components["schemas"]["KitDisclaimer"][];
+            tone?: string[];
+            competitors?: components["schemas"]["KitCompetitor"][];
+        };
+        KitSource: {
+            kind: components["schemas"]["SourceKind"];
+            ref: string;
+        };
+        KitVersionView: {
+            number: number | string;
+            status: components["schemas"]["VersionStatus"];
+            origin: components["schemas"]["VersionOrigin"];
+            restoredFrom: null | number | string;
+            revision: number | string;
+            content: components["schemas"]["KitContent"];
+            files: components["schemas"]["KitFileView"][];
+            createdBy: string;
+            createdAt: string;
+            updatedBy: string;
+            updatedAt: string;
+            approvedBy: null | string;
+            approvedAt: null | string;
+        };
+        KitVoice: {
+            summary?: string;
+            traits?: string[];
+            dos?: string[];
+            donts?: string[];
+            examples?: string[];
+            sources?: components["schemas"]["KitSource"][];
+        };
         MemberResponse: {
             userId: string;
             name: string;
@@ -1569,6 +1796,9 @@ export interface components {
             name: string;
             managerId?: null | string;
         };
+        RevisionRequest: {
+            revision: number | string;
+        };
         SalesColumns: {
             date: string;
             region: string;
@@ -1609,9 +1839,14 @@ export interface components {
             budgetOwners: string[];
             budgetLimit: null | number | string;
         };
+        SaveDraftRequest: {
+            content: null | components["schemas"]["KitContent"];
+            revision: number | string;
+        };
         SaveEmailSettingsRequest: {
             kinds: null | components["schemas"]["EmailSettingChange"][];
         };
+        SourceKind: "page" | "ad";
         SseItemOfstring: {
             data?: null | string;
             eventType?: null | string;
@@ -1622,6 +1857,8 @@ export interface components {
             name: null | string;
             timeZone: null | string;
         };
+        VersionOrigin: "manual" | "drafted" | "restored";
+        VersionStatus: "draft" | "approved" | "superseded" | "discarded";
         WorkspaceDetails: {
             id: string;
             handle: string;

@@ -868,6 +868,143 @@
         }
       }
     },
+    "/api/brands/{brandId}/brand-kit": {
+      "get": {
+        "tags": [
+          "KitEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandKitView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/brand-kit/draft": {
+      "put": {
+        "tags": [
+          "KitEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitVersionView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "KitEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/brand-kit/draft/approve": {
+      "post": {
+        "tags": [
+          "KitEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitVersionView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -1495,6 +1632,35 @@
           }
         }
       },
+      "BrandKitView": {
+        "required": [
+          "approved",
+          "draft"
+        ],
+        "type": "object",
+        "properties": {
+          "approved": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/KitVersionView"
+              }
+            ]
+          },
+          "draft": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/KitVersionView"
+              }
+            ]
+          }
+        }
+      },
       "BrandRole": {
         "enum": [
           "admin",
@@ -1547,6 +1713,21 @@
             ]
           }
         }
+      },
+      "ColourRole": {
+        "enum": [
+          "primary",
+          "secondary",
+          "accent",
+          "background",
+          "text"
+        ]
+      },
+      "CompetitorPolicy": {
+        "enum": [
+          "never",
+          "neutral"
+        ]
       },
       "ConnectionState": {
         "enum": [
@@ -1872,6 +2053,365 @@
         }
       },
       "JsonNode": {},
+      "KitCategory": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitSource"
+            }
+          }
+        }
+      },
+      "KitColour": {
+        "type": "object",
+        "properties": {
+          "hex": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ColourRole"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitSource"
+            }
+          }
+        }
+      },
+      "KitCompetitor": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/CompetitorPolicy"
+          }
+        }
+      },
+      "KitContent": {
+        "type": "object",
+        "properties": {
+          "voice": {
+            "$ref": "#/components/schemas/KitVoice"
+          },
+          "colours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitColour"
+            }
+          },
+          "logo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/KitLogo"
+              }
+            ]
+          },
+          "keyMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitMessage"
+            }
+          },
+          "productCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitCategory"
+            }
+          },
+          "rules": {
+            "$ref": "#/components/schemas/KitRules"
+          },
+          "guidelineFileIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "KitDisclaimer": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          }
+        }
+      },
+      "KitFileKind": {
+        "enum": [
+          "guideline",
+          "logo"
+        ]
+      },
+      "KitFileView": {
+        "required": [
+          "id",
+          "kind",
+          "fileName",
+          "contentType",
+          "size",
+          "deleted",
+          "uploadedBy",
+          "uploadedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/KitFileKind"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "size": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "uploadedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "KitLogo": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "sourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "KitMessage": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitSource"
+            }
+          }
+        }
+      },
+      "KitRules": {
+        "type": "object",
+        "properties": {
+          "bannedWords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredDisclaimers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitDisclaimer"
+            }
+          },
+          "tone": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "competitors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitCompetitor"
+            }
+          }
+        }
+      },
+      "KitSource": {
+        "required": [
+          "kind",
+          "ref"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "ref": {
+            "type": "string"
+          }
+        }
+      },
+      "KitVersionView": {
+        "required": [
+          "number",
+          "status",
+          "origin",
+          "restoredFrom",
+          "revision",
+          "content",
+          "files",
+          "createdBy",
+          "createdAt",
+          "updatedBy",
+          "updatedAt",
+          "approvedBy",
+          "approvedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VersionStatus"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/VersionOrigin"
+          },
+          "restoredFrom": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "content": {
+            "$ref": "#/components/schemas/KitContent"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitFileView"
+            }
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "approvedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "approvedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "KitVoice": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "traits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "donts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "examples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitSource"
+            }
+          }
+        }
+      },
       "MemberResponse": {
         "required": [
           "userId",
@@ -2110,6 +2650,22 @@
           }
         }
       },
+      "RevisionRequest": {
+        "required": [
+          "revision"
+        ],
+        "type": "object",
+        "properties": {
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SalesColumns": {
         "required": [
           "date",
@@ -2325,6 +2881,33 @@
           }
         }
       },
+      "SaveDraftRequest": {
+        "required": [
+          "content",
+          "revision"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/KitContent"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SaveEmailSettingsRequest": {
         "required": [
           "kinds"
@@ -2341,6 +2924,12 @@
             }
           }
         }
+      },
+      "SourceKind": {
+        "enum": [
+          "page",
+          "ad"
+        ]
       },
       "SseItemOfstring": {
         "type": "object",
@@ -2392,6 +2981,21 @@
             ]
           }
         }
+      },
+      "VersionOrigin": {
+        "enum": [
+          "manual",
+          "drafted",
+          "restored"
+        ]
+      },
+      "VersionStatus": {
+        "enum": [
+          "draft",
+          "approved",
+          "superseded",
+          "discarded"
+        ]
       },
       "WorkspaceDetails": {
         "required": [
@@ -2481,6 +3085,9 @@
     },
     {
       "name": "AccountEndpoints"
+    },
+    {
+      "name": "KitEndpoints"
     },
     {
       "name": "FeedEndpoints"
