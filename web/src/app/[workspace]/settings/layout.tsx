@@ -8,7 +8,7 @@ export default function SettingsLayout({ children, params }: LayoutProps<"/[work
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <PageHeader title="Settings" description="Workspace details, your team, who approves what, and the audit log." />
+        <PageHeader title="Settings" description="Workspace details, connections, your team, approvals, and the audit log." />
         <Suspense fallback={<div className="mt-6 h-11 border-b border-border" />}>
           <SettingsNavFor params={params} />
         </Suspense>

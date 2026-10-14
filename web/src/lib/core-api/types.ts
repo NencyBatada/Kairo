@@ -11,6 +11,9 @@ export type PendingInvitation = Schemas["PendingInvitation"];
 export type ApprovalSettings = Schemas["ApprovalSettings"];
 export type AuditLogPage = Schemas["AuditLogPage"];
 export type AuditEntry = Schemas["AuditEntryResponse"];
+export type ConnectionView = Schemas["ConnectionView"];
+export type ProductAccount = Schemas["ProductAccount"];
+export type CheckResult = Schemas["CheckResult"];
 
 export const roleLabels: Record<Role, string> = {
   admin: "Admin",
