@@ -1,4 +1,5 @@
 using Kairo.SharedKernel.Access;
+using Kairo.SharedKernel.Agents;
 using Kairo.SharedKernel.Files;
 using Kairo.SharedKernel.Http;
 using Kairo.SharedKernel.Persistence;
@@ -20,6 +21,7 @@ public static class KairoCoreServices
         services.AddScoped<CurrentMember>();
         services.AddKairoFiles();
         services.AddSafeWebClient();
+        services.AddKairoAgents();
         return services;
     }
 }
