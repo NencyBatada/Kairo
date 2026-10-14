@@ -66,6 +66,41 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_first_run_replaces_one_month_at_a_time()
+    {
+        var brandId = await BrandWithAdsAsync();
+
+        await RunAsync();
+
+        var target = $"`{FakeBigQuery.KairoProject}.{AnalyticsOptions.DatasetFor(brandId)}.ads_campaign_daily`";
+        var replaces = Google.BigQuery.Queries.Where(query => query.Sql.Contains($"DELETE FROM {target}", StringComparison.Ordinal)).ToList();
+        Assert.Equal(14, replaces.Count);
+        Assert.All(replaces, replace => Assert.InRange(replace.Parameters[0].GetProperty("parameterValue").GetProperty("arrayValues").GetArrayLength(), 1, 31));
+        Assert.Equal(14, CampaignQueries().Count);
+        Assert.Contains("segments.date BETWEEN '2025-09-14' AND '2025-09-30'", CampaignQueries()[0]);
+    }
+
+    [Fact]
+    public async Task A_first_run_that_fails_part_way_keeps_the_months_it_loaded_and_starts_over_next_time()
+    {
+        var brandId = await BrandWithAdsAsync();
+        Google.AdsFailFrom = "2026-03-01";
+
+        var failed = await RunAsync();
+
+        Assert.Equal("failed", Outcome(failed, brandId).GetProperty("status").GetString());
+        var dataset = AnalyticsOptions.DatasetFor(brandId);
+        Assert.Equal(168, Google.BigQuery.Rows(dataset, "ads_campaign_daily").Count);
+
+        Google.AdsFailFrom = null;
+        var retried = await RunAsync();
+
+        Assert.Equal("succeeded", Outcome(retried, brandId).GetProperty("status").GetString());
+        Assert.Equal(FirstWindowDays, Google.BigQuery.Rows(dataset, "ads_campaign_daily").Count);
+        Assert.Equal(2, CampaignQueries().Count(query => query.Contains("segments.date BETWEEN '2025-09-14' AND '2025-09-30'", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public async Task The_dataset_and_tables_are_created_once()
     {
         var brandId = await BrandWithAdsAsync();
@@ -87,12 +122,13 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
         var brandId = await BrandWithAdsAsync();
 
         await RunAsync();
-        var first = CampaignQueries()[^1];
+        var first = CampaignQueries();
         await RunAsync();
-        var second = CampaignQueries()[^1];
+        var second = CampaignQueries().Skip(first.Count).ToList();
 
-        Assert.Contains("segments.date BETWEEN '2025-09-14' AND '2026-10-13'", first);
-        Assert.Contains("segments.date BETWEEN '2026-10-07' AND '2026-10-13'", second);
+        Assert.Contains("segments.date BETWEEN '2025-09-14' AND '2025-09-30'", first[0]);
+        Assert.Contains("segments.date BETWEEN '2026-10-01' AND '2026-10-13'", first[^1]);
+        Assert.Contains("segments.date BETWEEN '2026-10-07' AND '2026-10-13'", Assert.Single(second));
         var windows = (await FeedRunRows.ListAsync(_database, brandId))
             .Where(stored => stored.Feed == FeedNames.GoogleAds)
             .Select(stored => (stored.FromDate, stored.ToDate));
@@ -113,7 +149,8 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
 
         await RunAsync();
 
-        Assert.Contains("segments.date BETWEEN '2025-09-13' AND '2026-10-12'", Assert.Single(CampaignQueries()));
+        Assert.Contains("segments.date BETWEEN '2025-09-13' AND '2025-09-30'", CampaignQueries()[0]);
+        Assert.Contains("segments.date BETWEEN '2026-10-01' AND '2026-10-12'", CampaignQueries()[^1]);
     }
 
     [Fact]

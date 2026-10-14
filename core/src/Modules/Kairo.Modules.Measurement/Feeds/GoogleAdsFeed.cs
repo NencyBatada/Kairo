@@ -16,15 +16,20 @@ internal sealed class GoogleAdsFeed(GoogleAdsReports reports, BigQueryTables tab
     {
         var account = await reports.DescribeAsync(access, cancellationToken);
         var window = FeedWindow.For(FeedClock.Today(time, account.TimeZone), firstRun);
-        var days = window.Days();
-        var rows = await tables.ReplaceDaysAsync(
-            brandId, TableSchemas.AdsCampaignDaily, days, await reports.CampaignsAsync(access, account, window, cancellationToken), cancellationToken);
-        rows += await tables.ReplaceDaysAsync(
-            brandId, TableSchemas.AdsAdGroupDaily, days, await reports.AdGroupsAsync(access, account, window, cancellationToken), cancellationToken);
-        rows += await tables.ReplaceDaysAsync(
-            brandId, TableSchemas.AdsAdDaily, days, await reports.AdsAsync(access, account, window, cancellationToken), cancellationToken);
-        rows += await tables.ReplaceDaysAsync(
-            brandId, TableSchemas.AdsRegionDaily, days, await reports.RegionsAsync(access, account, window, cancellationToken), cancellationToken);
+        var rows = 0;
+        foreach (var month in window.Months())
+        {
+            var days = month.Days();
+            rows += await tables.ReplaceDaysAsync(
+                brandId, TableSchemas.AdsCampaignDaily, days, await reports.CampaignsAsync(access, account, month, cancellationToken), cancellationToken);
+            rows += await tables.ReplaceDaysAsync(
+                brandId, TableSchemas.AdsAdGroupDaily, days, await reports.AdGroupsAsync(access, account, month, cancellationToken), cancellationToken);
+            rows += await tables.ReplaceDaysAsync(
+                brandId, TableSchemas.AdsAdDaily, days, await reports.AdsAsync(access, account, month, cancellationToken), cancellationToken);
+            rows += await tables.ReplaceDaysAsync(
+                brandId, TableSchemas.AdsRegionDaily, days, await reports.RegionsAsync(access, account, month, cancellationToken), cancellationToken);
+        }
+
         return new FeedResult(window, rows);
     }
 }

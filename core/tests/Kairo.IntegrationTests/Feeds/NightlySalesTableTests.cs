@@ -46,7 +46,8 @@ public sealed class NightlySalesTableTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(
             new[] { "2026-10-05 Goa 4 400.50 table", "2026-10-06 Goa 2 200 table", "2026-10-06 Kerala 1 10 table" },
             SalesFiles.RowsOf(BigQuery, brandId));
-        var query = Assert.Single(BigQuery.Queries, query => query.Project == FakeBigQuery.BrandProject);
+        var query = BigQuery.Queries.First(query => query.Project == FakeBigQuery.BrandProject);
+        Assert.Equal(14, BigQuery.Queries.Count(query => query.Project == FakeBigQuery.BrandProject));
         Assert.StartsWith("access-", query.AccessToken);
         Assert.Equal("asia-south1", query.Location);
         Assert.Contains("FROM `acme-data.shop.daily_orders`", query.Sql);
@@ -74,9 +75,11 @@ public sealed class NightlySalesTableTests(SqlServer sqlServer) : IAsyncLifetime
 
         await RunAsync();
 
-        var parameters = Assert.Single(BigQuery.Queries, query => query.Project == FakeBigQuery.BrandProject).Parameters;
-        Assert.Equal("2025-09-14", ParameterValue(parameters, "from"));
-        Assert.Equal("2026-10-13", ParameterValue(parameters, "to"));
+        var queries = BigQuery.Queries.Where(query => query.Project == FakeBigQuery.BrandProject).ToList();
+        Assert.Equal("2025-09-14", ParameterValue(queries[0].Parameters, "from"));
+        Assert.Equal("2025-09-30", ParameterValue(queries[0].Parameters, "to"));
+        Assert.Equal("2026-10-01", ParameterValue(queries[^1].Parameters, "from"));
+        Assert.Equal("2026-10-13", ParameterValue(queries[^1].Parameters, "to"));
     }
 
     [Fact]

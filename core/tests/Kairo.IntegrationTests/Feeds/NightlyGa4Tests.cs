@@ -9,7 +9,7 @@ namespace Kairo.IntegrationTests.Feeds;
 
 public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
 {
-    private const int FirstWindowRows = 396;
+    private const int FirstWindowRows = 395 + 14;
 
     private static readonly DateTimeOffset Night = new(2026, 10, 13, 20, 0, 0, TimeSpan.Zero);
 
@@ -56,10 +56,13 @@ public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
     public async Task Every_page_of_the_report_is_read()
     {
         await BrandWithGa4Async();
+        await RunAsync();
+        Google.Ga4Requests.Clear();
+        Google.Ga4PageRows = 3;
 
         await RunAsync();
 
-        Assert.Equal(new[] { 0, 100, 200, 300 }, Google.Ga4Requests.Select(request => request.GetProperty("offset").GetInt32()));
+        Assert.Equal(new[] { 0, 3, 6 }, Google.Ga4Requests.Select(request => request.GetProperty("offset").GetInt32()));
         Assert.All(Google.Ga4Requests, request => Assert.Equal(Ga4Reports.PageSize, request.GetProperty("limit").GetInt32()));
     }
 
@@ -71,11 +74,13 @@ public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
 
         await RunAsync();
         var first = Google.Ga4Requests.First().GetProperty("dateRanges")[0];
+        var firstEnd = Google.Ga4Requests.Last().GetProperty("dateRanges")[0];
         await RunAsync();
         var later = Google.Ga4Requests.Last().GetProperty("dateRanges")[0];
 
         Assert.Equal("2025-09-13", first.GetProperty("startDate").GetString());
-        Assert.Equal("2026-10-12", first.GetProperty("endDate").GetString());
+        Assert.Equal("2025-09-30", first.GetProperty("endDate").GetString());
+        Assert.Equal("2026-10-12", firstEnd.GetProperty("endDate").GetString());
         Assert.Equal("2026-10-06", later.GetProperty("startDate").GetString());
         Assert.Equal("2026-10-12", later.GetProperty("endDate").GetString());
     }

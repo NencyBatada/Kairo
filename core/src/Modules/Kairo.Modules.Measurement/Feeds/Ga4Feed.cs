@@ -16,12 +16,17 @@ internal sealed class Ga4Feed(Ga4Reports reports, BigQueryTables tables, TimePro
     {
         var property = await reports.DescribeAsync(access, cancellationToken);
         var window = FeedWindow.For(FeedClock.Today(time, property.TimeZone), firstRun);
-        var rows = await tables.ReplaceDaysAsync(
-            brandId,
-            TableSchemas.Ga4RegionDaily,
-            window.Days(),
-            await reports.DailyAsync(access, property, window, cancellationToken),
-            cancellationToken);
+        var rows = 0;
+        foreach (var month in window.Months())
+        {
+            rows += await tables.ReplaceDaysAsync(
+                brandId,
+                TableSchemas.Ga4RegionDaily,
+                month.Days(),
+                await reports.DailyAsync(access, property, month, cancellationToken),
+                cancellationToken);
+        }
+
         return new FeedResult(window, rows);
     }
 }

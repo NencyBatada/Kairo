@@ -60,6 +60,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HashSet<string> AdsFailures { get; } = [];
 
+    public string? AdsFailFrom { get; set; }
+
     public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
     public Action? BeforeAdsReport { get; set; }
@@ -231,7 +233,9 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
         BeforeAdsReport?.Invoke();
         AdsReports.Enqueue(new AdsReport(customer, login, query));
-        if (AdsFailures.Contains(customer))
+        var range = Regex.Match(query, "segments.date BETWEEN '(?<from>[0-9-]+)'");
+        if (AdsFailures.Contains(customer)
+            || (AdsFailFrom is { } failFrom && range.Success && string.CompareOrdinal(range.Groups["from"].Value, failFrom) >= 0))
         {
             return Json(
                 HttpStatusCode.InternalServerError,

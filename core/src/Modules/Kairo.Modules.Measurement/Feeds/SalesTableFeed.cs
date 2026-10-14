@@ -40,23 +40,29 @@ internal sealed class SalesTableFeed(MeasurementDbContext db, BigQueryClient big
     {
         var source = _source ?? throw new InvalidOperationException("No sales table is set.");
         var window = FeedWindow.For(FeedClock.Today(time, FeedClock.IndiaTimeZone), firstRun);
-        var results = await bigQuery.QueryAsync(
-            access.ExternalId,
-            access.AccessToken,
-            SalesTableQuery.For(source),
-            source.Location,
-            [QueryParameter.Date("from", window.From), QueryParameter.Date("to", window.To)],
-            cancellationToken);
-        var rows = results
-            .Select(result => new JsonObject
-            {
-                ["date"] = result[0],
-                ["region"] = result[1],
-                ["orders"] = long.Parse(result[2] ?? "0", CultureInfo.InvariantCulture),
-                ["revenue"] = result[3] ?? "0",
-                ["source"] = SalesRows.Table,
-            })
-            .ToList();
-        return new FeedResult(window, await tables.ReplaceDaysAsync(brandId, TableSchemas.SalesDaily, window.Days(), rows, cancellationToken));
+        var loaded = 0;
+        foreach (var month in window.Months())
+        {
+            var results = await bigQuery.QueryAsync(
+                access.ExternalId,
+                access.AccessToken,
+                SalesTableQuery.For(source),
+                source.Location,
+                [QueryParameter.Date("from", month.From), QueryParameter.Date("to", month.To)],
+                cancellationToken);
+            var rows = results
+                .Select(result => new JsonObject
+                {
+                    ["date"] = result[0],
+                    ["region"] = result[1],
+                    ["orders"] = long.Parse(result[2] ?? "0", CultureInfo.InvariantCulture),
+                    ["revenue"] = result[3] ?? "0",
+                    ["source"] = SalesRows.Table,
+                })
+                .ToList();
+            loaded += await tables.ReplaceDaysAsync(brandId, TableSchemas.SalesDaily, month.Days(), rows, cancellationToken);
+        }
+
+        return new FeedResult(window, loaded);
     }
 }
