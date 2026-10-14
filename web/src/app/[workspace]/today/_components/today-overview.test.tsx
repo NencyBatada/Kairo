@@ -1,5 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useEffect } from "react";
 import { expect, test, vi } from "vitest";
+
+import { useLiveDispatch, WorkspaceLiveProvider } from "@/components/workspace-live-provider";
 
 import { TodayOverview } from "./today-overview";
 
@@ -57,4 +60,43 @@ test("marks an unread update read when it is opened from Today", async () => {
   fireEvent.click(screen.getByRole("link", { name: new RegExp(notification.title) }));
 
   await waitFor(() => expect(markNotificationRead).toHaveBeenCalledWith("brand-1", 1));
+});
+
+test("shows agent jobs while they run", () => {
+  function Report() {
+    const { reportProgress } = useLiveDispatch();
+    useEffect(() => {
+      reportProgress({
+        jobId: "job-1",
+        agent: "sense",
+        status: "running",
+        step: "Scoring opportunities",
+        stepNumber: 1,
+        stepCount: 3,
+        message: null,
+        subject: null,
+        at: "2026-10-14T09:05:00Z",
+      });
+    }, [reportProgress]);
+    return null;
+  }
+
+  render(
+    <WorkspaceLiveProvider>
+      <Report />
+      <TodayOverview items={[]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" />
+    </WorkspaceLiveProvider>,
+  );
+
+  expect(screen.getByRole("heading", { name: "Agents at work" })).toBeTruthy();
+  expect(screen.getByText("1 job running")).toBeTruthy();
+  expect(screen.getByText("Sense agent")).toBeTruthy();
+  expect(screen.getByText("Scoring opportunities")).toBeTruthy();
+});
+
+test("says when no agents are working", () => {
+  render(<TodayOverview items={[]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" />);
+
+  expect(screen.getByRole("heading", { name: "Agents at work" })).toBeTruthy();
+  expect(screen.getByText(/No agents are working right now/)).toBeTruthy();
 });
