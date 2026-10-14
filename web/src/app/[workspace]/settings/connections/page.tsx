@@ -15,7 +15,12 @@ export default async function ConnectionsPage({ params, searchParams }: PageProp
   const { error, choose } = await searchParams;
   const workspace = await getWorkspace(handle);
   const api = await coreApi();
-  const connections = await unwrap(await api.GET("/api/brands/{brandId}/connections", { params: { path: { brandId: workspace.id } } }));
+  const [connectionsResult, detailsResult] = await Promise.all([
+    api.GET("/api/brands/{brandId}/connections", { params: { path: { brandId: workspace.id } } }),
+    api.GET("/api/brands/{brandId}", { params: { path: { brandId: workspace.id } } }),
+  ]);
+  const connections = await unwrap(connectionsResult);
+  const details = await unwrap(detailsResult);
   const canManage = workspace.roles.includes("admin");
   const accountChoices: Record<string, { accounts?: ProductAccount[]; error?: string }> = {};
 
@@ -44,6 +49,7 @@ export default async function ConnectionsPage({ params, searchParams }: PageProp
       connections={connections}
       canManage={canManage}
       brandId={workspace.id}
+      timeZone={details.timeZone}
       callbackError={typeof error === "string" ? error : undefined}
       callbackChoose={typeof choose === "string" ? choose : undefined}
       accountChoices={accountChoices}

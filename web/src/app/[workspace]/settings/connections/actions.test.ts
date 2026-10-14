@@ -107,3 +107,15 @@ test("reports a failed disconnect without refreshing", async () => {
   expect(result).toEqual({ status: "error", message: "Disconnect failed." });
   expect(refresh).not.toHaveBeenCalled();
 });
+
+test.each(["choose", "check", "disconnect"])("keeps a rejected %s request as a recoverable row error", async (operation) => {
+  post.mockRejectedValue(new Error("fetch failed"));
+  del.mockRejectedValue(new Error("fetch failed"));
+  const action = operation === "choose" ? chooseConnectionAccount : operation === "check" ? checkConnection : disconnectConnection;
+
+  const result = await action("brand-1", "youtube", { status: "idle" }, new FormData());
+
+  expect(result).toEqual({ status: "error", message: "Could not reach the service. Please try again." });
+  expect(refresh).not.toHaveBeenCalled();
+  expect(signInAgain).not.toHaveBeenCalled();
+});

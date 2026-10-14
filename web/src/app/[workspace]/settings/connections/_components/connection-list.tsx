@@ -13,6 +13,7 @@ type ConnectionListProps = {
   connections: ConnectionView[];
   canManage: boolean;
   brandId: string;
+  timeZone: string;
   callbackError?: string;
   callbackChoose?: string;
   accountChoices?: Record<string, { accounts?: ProductAccount[]; error?: string }>;
@@ -41,7 +42,8 @@ function callbackMessage(code: string) {
   }
 }
 
-export function ConnectionList({ connections, canManage, brandId, callbackError, callbackChoose, accountChoices, chooseAccount, checkConnection, disconnectConnection }: ConnectionListProps) {
+export function ConnectionList({ connections, canManage, brandId, timeZone, callbackError, callbackChoose, accountChoices, chooseAccount, checkConnection, disconnectConnection }: ConnectionListProps) {
+  const format = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
   return (
     <section aria-labelledby="connections-heading" className="flex flex-col gap-4">
       <div>
@@ -71,10 +73,11 @@ export function ConnectionList({ connections, canManage, brandId, callbackError,
                         <Badge variant={state.variant}>{state.label}</Badge>
                       </div>
                       {connection.displayName && <p className="text-small wrap-anywhere text-foreground">{connection.displayName}</p>}
+                      {connection.externalId && <p className="text-small text-subtle-foreground">Account ID <span className="font-mono break-all">{connection.externalId}</span></p>}
                       {connection.connectedByName && <p className="text-small wrap-anywhere text-subtle-foreground">Connected by <span>{connection.connectedByName}</span></p>}
                       {connection.checkedAt && (
                         <p className="text-small text-subtle-foreground">
-                          Last checked <time dateTime={connection.checkedAt}>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(connection.checkedAt))} UTC</time>
+                          Last checked <time dateTime={connection.checkedAt}>{format.format(new Date(connection.checkedAt))}</time>
                         </p>
                       )}
                       {connection.reconnectReason && <p className="text-small wrap-anywhere text-warning-strong">{connection.reconnectReason}</p>}

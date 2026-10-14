@@ -37,7 +37,7 @@ const states = [
 ];
 
 test("shows all connection states and account details to a member without management controls", () => {
-  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" />);
+  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" timeZone="Asia/Kolkata" />);
 
   expect(screen.getByText("Not connected")).toBeTruthy();
   expect(screen.getByText("Choose account")).toBeTruthy();
@@ -55,7 +55,7 @@ test("offers admin consent links through the same-origin API proxy with encoded 
     <ConnectionList
       connections={[connection({ product: "x/y", name: "Google Ads" }), states[3]]}
       canManage
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
     />,
   );
 
@@ -75,7 +75,7 @@ test.each([
   ["scopes_missing", "The requested Google access was not granted."],
   ["anything-else", "Google connection failed. Please try again."],
 ])("explains callback error %s without echoing its raw value", (callbackError, message) => {
-  render(<ConnectionList connections={[]} canManage brandId="brand-1" callbackError={callbackError} />);
+  render(<ConnectionList connections={[]} canManage brandId="brand-1" timeZone="Asia/Kolkata" callbackError={callbackError} />);
   expect(screen.getByRole("alert").textContent).toBe(message);
 });
 
@@ -90,7 +90,7 @@ test("keeps long connection details inside the responsive row", () => {
         }),
       ]}
       canManage={false}
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
     />,
   );
   const row = screen.getByRole("listitem", { name: "Google Ads" });
@@ -103,7 +103,7 @@ test("shows an account picker from connection state even when callback choose po
     <ConnectionList
       connections={[states[1], states[2]]}
       canManage
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
       callbackChoose="merchant-center"
       accountChoices={{ youtube: { accounts: [{ id: "yt-1", name: "Channel", managerId: null }] } }}
       chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
@@ -121,7 +121,7 @@ test("keeps account discovery failures local to the affected product", () => {
     <ConnectionList
       connections={[states[1], states[2]]}
       canManage
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
       accountChoices={{ youtube: { error: "Google did not answer." } }}
       chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
     />,
@@ -136,7 +136,7 @@ test("highlights only the matching account choice returned from Google", () => {
     <ConnectionList
       connections={[states[1], states[2]]}
       canManage
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
       callbackChoose="youtube"
       accountChoices={{ youtube: { accounts: [] } }}
       chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
@@ -151,7 +151,7 @@ test("lets an admin restart consent when no account is available", () => {
     <ConnectionList
       connections={[states[1]]}
       canManage
-      brandId="brand-1"
+      brandId="brand-1" timeZone="Asia/Kolkata"
       accountChoices={{ youtube: { accounts: [] } }}
       chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
     />,
@@ -163,7 +163,7 @@ test("lets an admin restart consent when no account is available", () => {
 
 test("offers admin checks only for connected rows and disconnect for active connections", () => {
   const action = vi.fn(async () => ({ status: "saved" as const }));
-  render(<ConnectionList connections={states} canManage brandId="brand-1" checkConnection={action} disconnectConnection={action} />);
+  render(<ConnectionList connections={states} canManage brandId="brand-1" timeZone="Asia/Kolkata" checkConnection={action} disconnectConnection={action} />);
 
   expect(within(screen.getByRole("listitem", { name: "Google Ads" })).queryByRole("button", { name: /check access|disconnect/i })).toBeNull();
   expect(within(screen.getByRole("listitem", { name: "YouTube" })).queryByRole("button", { name: "Check access" })).toBeNull();
@@ -176,6 +176,21 @@ test("offers admin checks only for connected rows and disconnect for active conn
 
 test("members never receive check or disconnect controls", () => {
   const action = vi.fn(async () => ({ status: "saved" as const }));
-  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" checkConnection={action} disconnectConnection={action} />);
+  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" timeZone="Asia/Kolkata" checkConnection={action} disconnectConnection={action} />);
   expect(screen.queryByRole("button", { name: /check access|disconnect/i })).toBeNull();
+});
+
+test("distinguishes connected accounts that share a display name", () => {
+  render(<ConnectionList
+    connections={[
+      connection({ product: "google-ads", name: "Google Ads", state: "connected", displayName: "Main account", externalId: "ads-123" }),
+      connection({ product: "youtube", name: "YouTube", state: "connected", displayName: "Main account", externalId: "channel-456" }),
+    ]}
+    canManage={false}
+    brandId="brand-1"
+    timeZone="Asia/Kolkata"
+  />);
+
+  expect(within(screen.getByRole("listitem", { name: "Google Ads" })).getByText("ads-123")).toBeTruthy();
+  expect(within(screen.getByRole("listitem", { name: "YouTube" })).getByText("channel-456")).toBeTruthy();
 });

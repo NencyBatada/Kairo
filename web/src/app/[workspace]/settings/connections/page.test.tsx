@@ -88,3 +88,20 @@ test("redirects to sign-in when account discovery loses the session", async () =
   await expect(ConnectionsPage({ params: Promise.resolve({ workspace: "acme" }), searchParams: Promise.resolve({}) }))
     .rejects.toThrow("sign-in redirect");
 });
+
+test("formats the last access check in the workspace time zone", async () => {
+  getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["marketer"] });
+  getConnections.mockResolvedValue({ data: [{
+    product: "youtube", name: "YouTube", state: "connected", externalId: "channel-1", displayName: "Channel",
+    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: "2026-10-14T05:00:00Z", reconnectReason: null,
+  }] });
+  const getDetails = vi.fn().mockResolvedValue({ data: { timeZone: "Asia/Kolkata" } });
+  const get = vi.fn((path: string) => path === "/api/brands/{brandId}" ? getDetails() : getConnections());
+  coreApi.mockResolvedValue({ GET: get });
+  unwrap.mockImplementation(async (result) => result.data);
+
+  render(await ConnectionsPage({ params: Promise.resolve({ workspace: "acme" }), searchParams: Promise.resolve({}) }));
+
+  expect(getDetails).toHaveBeenCalledOnce();
+  expect(screen.getByText(/10:30/)).toBeTruthy();
+});
