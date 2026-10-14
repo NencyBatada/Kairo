@@ -21,7 +21,7 @@ export function PageHeader({ title, description, eyebrow, actions, className }: 
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {actions}
-        <AskKairoTrigger />
+        <AskKairoTrigger area={title} />
       </div>
     </header>
   );

@@ -4,8 +4,6 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { PageHeader } from "./page-header";
 import { WorkspaceAssistant } from "./workspace-assistant";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/acme/today" }));
-
 beforeEach(() => {
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
@@ -63,4 +61,30 @@ test("docks the panel on wide screens and leaves the page interactive", async ()
   expect(screen.getByRole("button", { name: "Page action" })).toBeTruthy();
   fireEvent.click(within(panel).getByRole("button", { name: "Close" }));
   expect(screen.queryByRole("complementary", { name: "Ask Kairo" })).toBeNull();
+});
+
+test("updates the panel area when a workspace page changes", async () => {
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn().mockImplementation(() => ({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  });
+  const view = render(
+    <WorkspaceAssistant>
+      <PageHeader title="Today" />
+    </WorkspaceAssistant>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Ask Kairo" }));
+  const panel = await screen.findByRole("complementary", { name: "Ask Kairo" });
+  expect(within(panel).getByText("Today")).toBeTruthy();
+
+  view.rerender(
+    <WorkspaceAssistant>
+      <PageHeader title="Settings" />
+    </WorkspaceAssistant>,
+  );
+  expect(within(panel).getByText("Settings")).toBeTruthy();
 });

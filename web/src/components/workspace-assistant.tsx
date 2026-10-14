@@ -1,8 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { createContext, useContext, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useContext, useState, useSyncExternalStore, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
 import { AskKairoPanel } from "@/components/ask-kairo-panel";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 type AssistantContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
+  setArea: Dispatch<SetStateAction<string>>;
 };
 
 const AssistantContext = createContext<AssistantContextValue | null>(null);
@@ -33,28 +33,14 @@ function getServerWideSnapshot() {
   return false;
 }
 
-function areaName(pathname: string) {
-  const area = pathname.split("/")[2];
-  const names: Record<string, string> = {
-    today: "Today",
-    opportunities: "Opportunities",
-    campaigns: "Campaigns",
-    triggers: "Triggers",
-    "impact-lab": "Impact Lab",
-    "brand-kit": "Brand Kit",
-    settings: "Settings",
-  };
-  return names[area] ?? "Workspace";
-}
-
 export function useWorkspaceAssistant() {
   return useContext(AssistantContext);
 }
 
 export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [area, setArea] = useState("Workspace");
   const wide = useSyncExternalStore(subscribeToWide, getWideSnapshot, getServerWideSnapshot);
-  const area = areaName(usePathname() ?? "");
 
   function changeOpen(next: boolean) {
     setOpen(next);
@@ -64,7 +50,7 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AssistantContext.Provider value={{ open, setOpen: changeOpen }}>
+    <AssistantContext.Provider value={{ open, setOpen: changeOpen, setArea }}>
       <div className={open && wide ? "min-w-0 wide:grid wide:grid-cols-[minmax(0,1fr)_26.25rem]" : "min-w-0"}>
         <div className="min-w-0">{children}</div>
         {open && wide && (
