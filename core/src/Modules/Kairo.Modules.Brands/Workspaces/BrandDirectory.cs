@@ -29,4 +29,15 @@ internal sealed class BrandDirectory(BrandsDbContext db, KairoDatabase database)
                 .ToListAsync(cancellationToken);
         }
     }
+
+    public async Task<string?> FindTimeZoneAsync(Guid brandId, CancellationToken cancellationToken)
+    {
+        await using (await database.EnterSystemScopeAsync(cancellationToken))
+        {
+            return await db.Brands
+                .Where(brand => brand.Id == brandId)
+                .Select(brand => brand.TimeZone)
+                .SingleOrDefaultAsync(cancellationToken);
+        }
+    }
 }
