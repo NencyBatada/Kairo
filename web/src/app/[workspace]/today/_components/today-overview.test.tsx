@@ -100,3 +100,11 @@ test("says when no agents are working", () => {
   expect(screen.getByRole("heading", { name: "Agents at work" })).toBeTruthy();
   expect(screen.getByText(/No agents are working right now/)).toBeTruthy();
 });
+
+test("long unbroken update text wraps instead of widening the page on phones", () => {
+  const long = { ...notification, title: "a".repeat(120), body: `https://example.com/${"b".repeat(200)}` };
+  render(<TodayOverview items={[long]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" />);
+
+  expect(screen.getByText(long.title).className).toContain("wrap-anywhere");
+  expect(screen.getByText(long.body).className).toContain("wrap-anywhere");
+});
