@@ -44,7 +44,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 ### Talha (core and agents)
 
 - [ ] **Brand Kit drafting**: Reads the brand's website and best-performing ads and drafts its voice, colours, logo, key messages and product categories.
-- [ ] **Brand rules and versions**: Stores guidelines and rules that every agent follows, keeps each change as a draft, and gives agents only the approved version.
+- [x] **Brand rules and versions**: Stores guidelines and rules that every agent follows, keeps each change as a draft, and gives agents only the approved version.
 - [ ] **Catalogue import**: Imports products from a file or feed link with price, image, category and stock, and finds products with missing details.
 
 ### Nency (web app)

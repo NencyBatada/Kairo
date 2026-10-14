@@ -151,7 +151,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Area | Main tables | Notes |
 | --- | --- | --- |
 | Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; Connection rows live in the brands schema; OAuth refresh tokens encrypted with Cloud KMS |
-| Brand | BrandKitVersion, BrandRule, BrandFile, BestAd | Kit content stored as JSON; one approved version at a time |
+| Brand Kit | KitVersion, KitFile | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage |
 | Catalogue | Product, StockEvent, FeedImport | Current stock on Product; full history in BigQuery |
 | Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
 | Triggers | TriggerRule, TriggerFiring | Conditions stored as JSON; cooldown per rule and region |
@@ -175,7 +175,7 @@ Each brand gets its own datasets, starting with `brand_<brand ID>` for these fee
 
 ### Cloud Storage
 
-Separate buckets hold brand files, catalogue imports, generated media and reports. Files are served through short-lived signed URLs. Draft media that is never approved expires under a lifecycle rule, and retention for everything else is set per brand.
+Separate buckets hold brand files (`{project}-brand-files`), catalogue imports, generated media and reports. Brand files are private and reach the browser only through the core, as attachments. Other files are served through short-lived signed URLs. Draft media that is never approved expires under a lifecycle rule, and retention for everything else is set per brand.
 
 ## 7. Integrations
 

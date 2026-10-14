@@ -93,6 +93,8 @@ namespace Kairo.Modules.Brands.Data.Migrations
 
                     b.HasIndex("GoogleSubject");
 
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("GoogleSubject"), new[] { "BrandId", "RefreshToken" });
+
                     b.HasIndex("BrandId", "Product")
                         .IsUnique();
 

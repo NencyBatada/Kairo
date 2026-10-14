@@ -32,7 +32,7 @@ internal sealed class BrandsDbContext(DbContextOptions<BrandsDbContext> options,
         {
             connection.ToTable("Connections");
             connection.HasIndex(c => new { c.BrandId, c.Product }).IsUnique();
-            connection.HasIndex(c => c.GoogleSubject);
+            connection.HasIndex(c => c.GoogleSubject).IncludeProperties(c => new { c.BrandId, c.RefreshToken });
             connection.Property(c => c.Product).HasConversion<string>().HasMaxLength(20);
             connection.Property(c => c.State).HasConversion<string>().HasMaxLength(20);
             connection.Property(c => c.ExternalId).HasMaxLength(100);
