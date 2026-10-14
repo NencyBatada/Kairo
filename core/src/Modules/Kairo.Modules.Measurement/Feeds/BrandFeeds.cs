@@ -72,7 +72,7 @@ internal sealed class BrandFeeds(
         try
         {
             var access = await connections.GetAccessAsync(feed.Product, cancellationToken);
-            await AnnounceAsync(FeedNotices.Started, run, cancellationToken);
+            await AnnounceAsync(FeedNotices.Started(run), run, cancellationToken);
             var result = await feed.RunAsync(brandId, access, firstRun, cancellationToken);
             run.FromDate = result.Window.From;
             run.ToDate = result.Window.To;
@@ -134,15 +134,15 @@ internal sealed class BrandFeeds(
         await db.SaveChangesAsync(cancellationToken);
         if (status != RunStatuses.Skipped)
         {
-            await AnnounceAsync(status == RunStatuses.Succeeded ? FeedNotices.Succeeded : FeedNotices.Failed, run, cancellationToken);
+            await AnnounceAsync(status == RunStatuses.Succeeded ? FeedNotices.Succeeded(run) : FeedNotices.Failed(run), run, cancellationToken);
         }
 
         return new FeedOutcome(brandId, run.Feed, status, run.Rows);
     }
 
-    private async Task AnnounceAsync(string action, FeedRun run, CancellationToken cancellationToken)
+    private async Task AnnounceAsync(AuditRecord record, FeedRun run, CancellationToken cancellationToken)
     {
-        await audit.RecordAsync(FeedNotices.Audit(action, run), cancellationToken);
+        await audit.RecordAsync(record, cancellationToken);
         await live.PublishAsync(FeedNotices.Event(run), cancellationToken);
     }
 

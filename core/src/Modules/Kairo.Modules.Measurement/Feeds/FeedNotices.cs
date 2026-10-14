@@ -6,10 +6,6 @@ namespace Kairo.Modules.Measurement.Feeds;
 
 internal static class FeedNotices
 {
-    public const string Changed = "feeds.changed";
-    public const string Started = "analytics.feed_started";
-    public const string Succeeded = "analytics.feed_succeeded";
-    public const string Failed = "analytics.feed_failed";
     public const string AuditTarget = "feed_run";
 
     private const int MaxDetailLength = 600;
@@ -23,10 +19,19 @@ internal static class FeedNotices
     };
 
     public static LiveEvent Event(FeedRun run) =>
-        new(Changed, new { feed = run.Feed, status = run.Status }, LiveAudience.Everyone);
+        new LiveEvent("feeds.changed", new { feed = run.Feed, status = run.Status }, LiveAudience.Everyone);
 
-    public static AuditRecord Audit(string action, FeedRun run) =>
-        new(action, AuditTarget, run.Id.ToString(), After: new
+    public static AuditRecord Started(FeedRun run) =>
+        new AuditRecord("analytics.feed_started", AuditTarget, run.Id.ToString(), After: Details(run));
+
+    public static AuditRecord Succeeded(FeedRun run) =>
+        new AuditRecord("analytics.feed_succeeded", AuditTarget, run.Id.ToString(), After: Details(run));
+
+    public static AuditRecord Failed(FeedRun run) =>
+        new AuditRecord("analytics.feed_failed", AuditTarget, run.Id.ToString(), After: Details(run));
+
+    private static object Details(FeedRun run) =>
+        new
         {
             run.Feed,
             run.ExternalId,
@@ -36,7 +41,7 @@ internal static class FeedNotices
             run.ToDate,
             run.Rows,
             run.Error,
-        });
+        };
 
     public static Notification FeedFailed(FeedRun run)
     {
