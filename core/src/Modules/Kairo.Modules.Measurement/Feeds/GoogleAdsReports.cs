@@ -83,7 +83,7 @@ internal sealed class GoogleAdsReports(IHttpClientFactory http, AnalyticsOptions
             access.AccessToken,
             new { query },
             cancellationToken,
-            headers);
+            headers).OnConnectionAsync();
         var results = new List<JsonElement>();
         if (batches.ValueKind != JsonValueKind.Array)
         {

@@ -38,7 +38,7 @@ public sealed class ConnectionLifecycleTests(SqlServer sqlServer) : IAsyncDispos
 
         var connection = check.GetProperty("connection");
         Assert.Equal("needsReconnect", connection.GetProperty("state").GetString());
-        Assert.Equal("token_rejected", connection.GetProperty("reconnectReason").GetString());
+        Assert.Equal("Google stopped accepting Kairo's access to Google Ads.", connection.GetProperty("reconnectReason").GetString());
         Assert.Contains("Connect it again", check.GetProperty("problem").GetString());
         Assert.Null(await Connections.StoredTokenAsync(sqlServer.KairoConnectionString, brandId, "google-ads"));
         Assert.Contains("connection.needs_reconnect", await Workspaces.AuditActionsAsync(admin, brandId));
@@ -128,7 +128,7 @@ public sealed class ConnectionLifecycleTests(SqlServer sqlServer) : IAsyncDispos
         var check = await CheckAsync(admin, second, "google-ads");
 
         Assert.Equal("needsReconnect", check.GetProperty("connection").GetProperty("state").GetString());
-        Assert.Equal("token_unreadable", check.GetProperty("connection").GetProperty("reconnectReason").GetString());
+        Assert.Equal("Kairo can no longer read its stored access to Google Ads.", check.GetProperty("connection").GetProperty("reconnectReason").GetString());
     }
 
     [Fact]

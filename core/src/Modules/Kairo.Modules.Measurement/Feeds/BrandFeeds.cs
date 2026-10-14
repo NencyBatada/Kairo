@@ -1,4 +1,7 @@
+using Kairo.Contracts.Audit;
 using Kairo.Contracts.Connections;
+using Kairo.Contracts.Live;
+using Kairo.Contracts.Notifications;
 using Kairo.Modules.Measurement.Data;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +11,9 @@ internal sealed class BrandFeeds(
     IEnumerable<IFeed> feeds,
     IConnections connections,
     MeasurementDbContext db,
+    IAuditLog audit,
+    ILiveUpdates live,
+    INotifications notifications,
     TimeProvider time,
     ILogger<BrandFeeds> logger)
 {
@@ -66,11 +72,11 @@ internal sealed class BrandFeeds(
         try
         {
             var access = await connections.GetAccessAsync(feed.Product, cancellationToken);
+            await AnnounceAsync(FeedNotices.Started, run, cancellationToken);
             var result = await feed.RunAsync(brandId, access, firstRun, cancellationToken);
             run.FromDate = result.Window.From;
             run.ToDate = result.Window.To;
             run.Rows = result.Rows;
-            return await FinishAsync(brandId, run, RunStatuses.Succeeded, null, cancellationToken);
         }
         catch (ConnectionUnavailableException unavailable)
         {
@@ -80,15 +86,44 @@ internal sealed class BrandFeeds(
         catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
             run.Error = Interrupted;
-            await FinishAsync(brandId, run, RunStatuses.Failed, null, CancellationToken.None);
+            await FinishAsync(brandId, run, RunStatuses.Failed, FailReasons.Interrupted, CancellationToken.None);
             throw;
         }
-        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
+        catch (ConnectionAccessLostException lost)
+        {
+            logger.LogWarning(lost, "The {Feed} feed lost access to its account for brand {BrandId}.", feed.Name, brandId);
+            run.Error = Shorten(lost.Message);
+            var outcome = await FinishAsync(brandId, run, RunStatuses.Failed, FailReasons.AccessLost, cancellationToken);
+            await connections.ReportAccessLostAsync(feed.Product, status.ExternalId!, cancellationToken);
+            return outcome;
+        }
+        catch (Exception exception)
         {
             logger.LogError(exception, "The {Feed} feed failed for brand {BrandId}.", feed.Name, brandId);
-            run.Error = exception.Message.Length > MaxErrorLength ? exception.Message[..MaxErrorLength] : exception.Message;
-            return await FinishAsync(brandId, run, RunStatuses.Failed, null, cancellationToken);
+            run.Error = Shorten(exception.Message);
+            var alert = await IsNewProblemAsync(run, cancellationToken);
+            var outcome = await FinishAsync(brandId, run, RunStatuses.Failed, null, cancellationToken);
+            if (alert)
+            {
+                await notifications.NotifyAsync(FeedNotices.FeedFailed(run), cancellationToken);
+            }
+
+            return outcome;
         }
+
+        return await FinishAsync(brandId, run, RunStatuses.Succeeded, null, cancellationToken);
+    }
+
+    private async Task<bool> IsNewProblemAsync(FeedRun run, CancellationToken cancellationToken)
+    {
+        var previous = await db.FeedRuns
+            .Where(existing => existing.Feed == run.Feed
+                && existing.Id != run.Id
+                && (existing.Status == RunStatuses.Succeeded || (existing.Status == RunStatuses.Failed && existing.Reason == null)))
+            .OrderByDescending(existing => existing.StartedAt)
+            .Select(existing => existing.Status)
+            .FirstOrDefaultAsync(cancellationToken);
+        return previous != RunStatuses.Failed;
     }
 
     private async Task<FeedOutcome> FinishAsync(Guid brandId, FeedRun run, string status, string? reason, CancellationToken cancellationToken)
@@ -97,6 +132,19 @@ internal sealed class BrandFeeds(
         run.Reason = reason;
         run.FinishedAt = time.GetUtcNow();
         await db.SaveChangesAsync(cancellationToken);
+        if (status != RunStatuses.Skipped)
+        {
+            await AnnounceAsync(status == RunStatuses.Succeeded ? FeedNotices.Succeeded : FeedNotices.Failed, run, cancellationToken);
+        }
+
         return new FeedOutcome(brandId, run.Feed, status, run.Rows);
     }
+
+    private async Task AnnounceAsync(string action, FeedRun run, CancellationToken cancellationToken)
+    {
+        await audit.RecordAsync(FeedNotices.Audit(action, run), cancellationToken);
+        await live.PublishAsync(FeedNotices.Event(run), cancellationToken);
+    }
+
+    private static string Shorten(string message) => message.Length > MaxErrorLength ? message[..MaxErrorLength] : message;
 }

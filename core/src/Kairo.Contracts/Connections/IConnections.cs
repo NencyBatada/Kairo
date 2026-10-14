@@ -24,6 +24,8 @@ public interface IConnections
     Task<ConnectionAccess> GetAccessAsync(ConnectedProduct product, CancellationToken cancellationToken);
 
     Task ReleaseAsync(Guid userId, CancellationToken cancellationToken);
+
+    Task ReportAccessLostAsync(ConnectedProduct product, string externalId, CancellationToken cancellationToken);
 }
 
 public sealed record ConnectionStatus(ConnectedProduct Product, ConnectionState State, string? ExternalId, string? DisplayName);

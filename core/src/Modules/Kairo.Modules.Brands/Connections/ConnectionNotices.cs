@@ -8,22 +8,24 @@ internal static class ConnectionNotices
 {
     private const string Continue = "Reconnect it so refreshes and changes can continue.";
 
-    public static Notification NeedsReconnect(ConnectedProduct product, string reason)
+    public static string Explain(ConnectedProduct product, string? reason)
     {
         var name = Products.Get(product).Name;
-        var cause = reason switch
+        return reason switch
         {
             ReconnectReasons.TokenRejected => $"Google stopped accepting Kairo's access to {name}.",
             ReconnectReasons.TokenUnreadable => $"Kairo can no longer read its stored access to {name}.",
             ReconnectReasons.AdminLeft => $"{name} was connected by an admin who has left or is no longer an admin.",
+            ReconnectReasons.AccessLost => $"The Google account that connected {name} no longer has access to the chosen account.",
             _ => $"Kairo lost its access to {name}.",
         };
+    }
 
-        return new Notification(
+    public static Notification NeedsReconnect(ConnectedProduct product, string reason) =>
+        new(
             "connection.problem",
             LiveAudience.Roles(BrandRoles.Admin),
-            $"{name} needs reconnecting",
-            $"{cause} {Continue}",
+            $"{Products.Get(product).Name} needs reconnecting",
+            $"{Explain(product, reason)} {Continue}",
             "/settings/connections");
-    }
 }

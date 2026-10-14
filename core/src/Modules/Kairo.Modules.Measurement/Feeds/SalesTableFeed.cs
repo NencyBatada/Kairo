@@ -49,7 +49,7 @@ internal sealed class SalesTableFeed(MeasurementDbContext db, BigQueryClient big
                 SalesTableQuery.For(source),
                 source.Location,
                 [QueryParameter.Date("from", month.From), QueryParameter.Date("to", month.To)],
-                cancellationToken);
+                cancellationToken).OnConnectionAsync();
             var rows = results
                 .Select(result => new JsonObject
                 {

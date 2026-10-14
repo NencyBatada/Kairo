@@ -43,7 +43,8 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
     public async Task<Ga4Property> DescribeAsync(ConnectionAccess access, CancellationToken cancellationToken)
     {
         var property = await http.CreateClient(MeasurementHttp.ClientName).CallAsync(
-            HttpMethod.Get, $"{AdminUrl}/properties/{Uri.EscapeDataString(access.ExternalId)}", access.AccessToken, null, cancellationToken);
+            HttpMethod.Get, $"{AdminUrl}/properties/{Uri.EscapeDataString(access.ExternalId)}", access.AccessToken, null, cancellationToken)
+            .OnConnectionAsync();
         return new Ga4Property(
             access.ExternalId,
             AdsRows.Text(property, "timeZone") ?? FeedClock.IndiaTimeZone,
@@ -69,7 +70,7 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
                     limit = PageSize,
                     offset,
                 },
-                cancellationToken);
+                cancellationToken).OnConnectionAsync();
             var read = 0;
             if (page.TryGetProperty("rows", out var list) && list.ValueKind == JsonValueKind.Array)
             {

@@ -79,7 +79,7 @@ public sealed class ConnectionReleaseTests(SqlServer sqlServer) : IAsyncDisposab
 
         var connection = await Connections.GetAsync(owner.Browser, brandId, "google-ads");
         Assert.Equal("needsReconnect", connection.GetProperty("state").GetString());
-        Assert.Equal("admin_left", connection.GetProperty("reconnectReason").GetString());
+        Assert.Equal("Google Ads was connected by an admin who has left or is no longer an admin.", connection.GetProperty("reconnectReason").GetString());
         Assert.Null(await Connections.StoredTokenAsync(sqlServer.KairoConnectionString, brandId, "google-ads"));
     }
 
@@ -97,7 +97,7 @@ public sealed class ConnectionReleaseTests(SqlServer sqlServer) : IAsyncDisposab
     {
         var connection = await Connections.GetAsync(owner, brandId, "google-ads");
         Assert.Equal("needsReconnect", connection.GetProperty("state").GetString());
-        Assert.Equal("admin_left", connection.GetProperty("reconnectReason").GetString());
+        Assert.Equal("Google Ads was connected by an admin who has left or is no longer an admin.", connection.GetProperty("reconnectReason").GetString());
         Assert.Null(await Connections.StoredTokenAsync(sqlServer.KairoConnectionString, brandId, "google-ads"));
         Assert.Contains(issued.RefreshToken, _api.GoogleApis.Revoked);
     }

@@ -33,6 +33,15 @@ internal sealed class BrandConnections(
         return new ConnectionAccess(externalId, token.Value, token.ExpiresAt, connection.ManagerId);
     }
 
+    public async Task ReportAccessLostAsync(ConnectedProduct product, string externalId, CancellationToken cancellationToken)
+    {
+        var connection = await ConnectionLifecycle.FindAsync(db, product, cancellationToken);
+        if (connection is { State: ConnectionState.Connected } && connection.ExternalId == externalId)
+        {
+            await tokens.LoseOnItsOwnAsync(connection, ReconnectReasons.AccessLost, cancellationToken);
+        }
+    }
+
     public async Task ReleaseAsync(Guid userId, CancellationToken cancellationToken)
     {
         var theirs = await db.Connections

@@ -115,7 +115,8 @@ internal sealed record ConnectionView(
         return connection is null || state == ConnectionState.NotConnected
             ? new(product.Slug, product.Name, ConnectionState.NotConnected, null, null, null, null, null, null, null)
             : new(product.Slug, product.Name, state, connection.ExternalId, connection.DisplayName, connection.ConnectedBy,
-                connection.ConnectedByName, connection.ConnectedAt, connection.CheckedAt, connection.ReconnectReason);
+                connection.ConnectedByName, connection.ConnectedAt, connection.CheckedAt,
+                connection.ReconnectReason is null ? null : ConnectionNotices.Explain(product.Product, connection.ReconnectReason));
     }
 }
 

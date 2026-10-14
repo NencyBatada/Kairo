@@ -62,6 +62,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HashSet<string> AdsFailures { get; } = [];
 
+    public ConcurrentDictionary<string, string> AdsAccessErrors { get; } = new();
+
+    public bool Ga4Denied { get; set; }
+
     public Action? BeforeRevoke { get; set; }
 
     public string? AdsFailFrom { get; set; }
@@ -261,6 +265,11 @@ public sealed class FakeGoogleApis : HttpMessageHandler
                 Json(HttpStatusCode.OK, new { accounts = new[] { new { accountId = "555", accountName = "Acme Store" } } }),
             ("merchantapi.googleapis.com", "/accounts/v1/accounts/555/users/me") =>
                 Json(HttpStatusCode.OK, new { accessRights = MerchantAccessRights }),
+            ("analyticsadmin.googleapis.com" or "analyticsdata.googleapis.com", _) when Ga4Denied && path.Contains("/properties/777", StringComparison.Ordinal) =>
+                Json(HttpStatusCode.Forbidden, new
+                {
+                    error = new { code = 403, message = "User does not have sufficient permissions for this property.", status = "PERMISSION_DENIED" },
+                }),
             ("analyticsadmin.googleapis.com", "/v1beta/accountSummaries") =>
                 Json(HttpStatusCode.OK, new { accountSummaries = new[] { new { displayName = "Acme", propertySummaries = new[] { new { property = "properties/777", displayName = "Acme web" } } } } }),
             ("analyticsadmin.googleapis.com", "/v1beta/properties/777") =>
@@ -301,6 +310,30 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
         BeforeAdsReport?.Invoke();
         AdsReports.Enqueue(new AdsReport(customer, login, query));
+        if (AdsAccessErrors.TryGetValue(customer, out var accessError))
+        {
+            return Json(HttpStatusCode.Forbidden, new[]
+            {
+                new
+                {
+                    error = new
+                    {
+                        code = 403,
+                        message = "The caller does not have permission",
+                        status = "PERMISSION_DENIED",
+                        details = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["@type"] = "type.googleapis.com/google.ads.googleads.v25.errors.GoogleAdsFailure",
+                                ["errors"] = new[] { new { errorCode = new { authorizationError = accessError }, message = "User doesn't have permission to access customer." } },
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
         var range = Regex.Match(query, "segments.date BETWEEN '(?<from>[0-9-]+)'");
         if (AdsFailures.Contains(customer)
             || (AdsFailFrom is { } failFrom && range.Success && string.CompareOrdinal(range.Groups["from"].Value, failFrom) >= 0))
