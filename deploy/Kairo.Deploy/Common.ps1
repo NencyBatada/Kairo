@@ -7,7 +7,10 @@ $script:SqlSecret = 'kairo-sql-connection'
 $script:KeyRing = 'kairo'
 $script:TokenKey = 'connection-tokens'
 $script:MailSecret = 'mail-sender-refresh-token'
-$script:AnalyticsJob = 'kairo-analytics-daily'
+$script:ScheduledJobs = @(
+    @{ Name = 'kairo-analytics-daily'; Schedule = '0 5 * * *'; Path = '/jobs/analytics/daily'; Deadline = '1800s' }
+    @{ Name = 'kairo-notifications-due'; Schedule = '*/15 * * * *'; Path = '/jobs/notifications/due'; Deadline = '600s' }
+)
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'
     'Authentication__Google__ClientSecret' = 'google-client-secret'
