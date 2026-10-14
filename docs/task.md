@@ -20,24 +20,24 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [x] **Deployment script**: deploy.bat runs the tests and deploys every service to the chosen project (development, staging or production), applying database migrations first.
+- [x] **Deployment script**: deploy.bat runs the tests and deploys every service to the chosen project (development, staging or production), applying database migrations first. *Note: only development has a Google Cloud project so far; staging and production need their projects in deploy/environments.psd1 before first use.*
 - [x] **Sign-in check**: The core checks each user's Google sign-in on every request.
-- [x] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit.
-- [x] **Account connections**: Connects Google Ads, YouTube, Merchant Center, GA4 and BigQuery with the brand's consent, and keeps access tokens encrypted.
-- [x] **Live updates**: Pushes agent progress and status changes to the web app as they happen.
-- [x] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports.
-- [x] **Audit log**: Records every user and agent action, approval, override and automatic change.
+- [/] **Workspace, roles and approvers**: Stores each brand's workspace, users, roles, approvers for each gate and the budget limit. *Left: approvers for each recommendation type.*
+- [/] **Account connections**: Connects Google Ads, YouTube, Merchant Center, GA4 and BigQuery with the brand's consent, and keeps access tokens encrypted. *Left: flag and alert on lost account access, refuse to start without the KMS key outside development, and revoke at Google only after a disconnect is saved.*
+- [/] **Live updates**: Pushes agent progress and status changes to the web app as they happen. *Left: the agent progress event and data feed run events.*
+- [/] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports. *Left: the 4-working-hour approval reminder, hourly grouping, the daily digest, data feed failure alerts and invitation emails.*
+- [/] **Audit log**: Records every user and agent action, approval, override and automatic change. *Left: filters and export in the API, agent as an actor, and recording sign-ins and data feed runs.*
 - [x] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
 
 ### Nency (web app)
 
 - [x] **Design system**: docs/design.md, shared components on shadcn/Base UI, and the new look on every existing screen, phones included.
 - [/] **Sign-in and app layout**: The Google sign-in screen, the Today home, a left-hand menu for the seven areas and the Ask Kairo side panel. *Done: sign-in screen, workspace switcher, left-hand menu, Today home content and Ask Kairo panel merged into develop. Left: verify the full journey in a running development environment.*
-- [/] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit. *Done: invite users, assign roles, choose approvers, budget limit and Connections UI merged into develop. Left: verify the OAuth, account-check and disconnect journey in a running development environment.*
-- [x] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh.
-- [x] **Notifications**: The in-app notification list with links to where to act, email settings per user, and the email templates.
-- [x] **Audit log screen**: Lists every recorded action, with filters and export.
-- [x] **Phone-friendly approvals**: Approval screens work in a phone browser.
+- [/] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit. *Done: invite users, assign roles, choose approvers, budget limit and Connections UI merged into develop. Left: approvers for each recommendation type, and verify the OAuth, account-check and disconnect journey in a running development environment.*
+- [/] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh. *Left: reconnect after the stream closes, and show agent progress on screen.*
+- [/] **Notifications**: The in-app notification list with links to where to act, email settings per user, and the email templates. *Left: a notification bell with unread count in the app layout, and showing email settings validation errors.*
+- [/] **Audit log screen**: Lists every recorded action, with filters and export. *Left: filter and export through the API across all entries, every recorded action in the filter, and safe CSV export.*
+- [/] **Phone-friendly approvals**: Approval screens work in a phone browser. *Left: a shared phone-friendly approval panel for the gate screens to use.*
 
 ## 2. Brand Kit and catalogue
 
