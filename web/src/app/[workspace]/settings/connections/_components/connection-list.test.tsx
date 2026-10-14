@@ -160,3 +160,22 @@ test("lets an admin restart consent when no account is available", () => {
     "/api/brands/brand-1/connections/youtube/connect",
   );
 });
+
+test("offers admin checks only for connected rows and disconnect for active connections", () => {
+  const action = vi.fn(async () => ({ status: "saved" as const }));
+  render(<ConnectionList connections={states} canManage brandId="brand-1" checkConnection={action} disconnectConnection={action} />);
+
+  expect(within(screen.getByRole("listitem", { name: "Google Ads" })).queryByRole("button", { name: /check access|disconnect/i })).toBeNull();
+  expect(within(screen.getByRole("listitem", { name: "YouTube" })).queryByRole("button", { name: "Check access" })).toBeNull();
+  expect(within(screen.getByRole("listitem", { name: "YouTube" })).getByRole("button", { name: "Disconnect" })).toBeTruthy();
+  expect(within(screen.getByRole("listitem", { name: "Merchant Center" })).getByRole("button", { name: "Check access" })).toBeTruthy();
+  expect(within(screen.getByRole("listitem", { name: "Merchant Center" })).getByRole("button", { name: "Disconnect" })).toBeTruthy();
+  expect(within(screen.getByRole("listitem", { name: "Google Analytics" })).queryByRole("button", { name: "Check access" })).toBeNull();
+  expect(within(screen.getByRole("listitem", { name: "Google Analytics" })).getByRole("button", { name: "Disconnect" })).toBeTruthy();
+});
+
+test("members never receive check or disconnect controls", () => {
+  const action = vi.fn(async () => ({ status: "saved" as const }));
+  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" checkConnection={action} disconnectConnection={action} />);
+  expect(screen.queryByRole("button", { name: /check access|disconnect/i })).toBeNull();
+});

@@ -24,3 +24,47 @@ export async function chooseConnectionAccount(
   refresh();
   return { status: "saved", message: "Account connected." };
 }
+
+export async function checkConnection(
+  brandId: string,
+  product: string,
+  _state: FormState,
+  _formData: FormData,
+): Promise<FormState> {
+  void _state;
+  void _formData;
+  const { data, error, response } = await (await coreApi()).POST("/api/brands/{brandId}/connections/{product}/check", {
+    params: { path: { brandId, product } },
+  });
+  if (response.status === 401) {
+    return signInAgain();
+  }
+  if (!response.ok) {
+    return problemToFormState(error, response.status);
+  }
+  refresh();
+  return data?.problem
+    ? { status: "error", message: data.problem }
+    : { status: "saved", message: "Access confirmed." };
+}
+
+export async function disconnectConnection(
+  brandId: string,
+  product: string,
+  _state: FormState,
+  _formData: FormData,
+): Promise<FormState> {
+  void _state;
+  void _formData;
+  const { error, response } = await (await coreApi()).DELETE("/api/brands/{brandId}/connections/{product}", {
+    params: { path: { brandId, product } },
+  });
+  if (response.status === 401) {
+    return signInAgain();
+  }
+  if (!response.ok) {
+    return problemToFormState(error, response.status);
+  }
+  refresh();
+  return { status: "saved", message: "Connection removed." };
+}

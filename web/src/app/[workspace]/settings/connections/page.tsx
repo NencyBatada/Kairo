@@ -6,7 +6,7 @@ import type { ConnectionView, ProductAccount } from "@/lib/core-api/types";
 import { problemToFormState } from "@/lib/forms";
 
 import { ConnectionList } from "./_components/connection-list";
-import { chooseConnectionAccount } from "./actions";
+import { checkConnection, chooseConnectionAccount, disconnectConnection } from "./actions";
 
 export const metadata: Metadata = { title: "Connections" };
 
@@ -48,6 +48,8 @@ export default async function ConnectionsPage({ params, searchParams }: PageProp
       callbackChoose={typeof choose === "string" ? choose : undefined}
       accountChoices={accountChoices}
       chooseAccount={chooseConnectionAccount.bind(null, workspace.id)}
+      checkConnection={checkConnection.bind(null, workspace.id)}
+      disconnectConnection={disconnectConnection.bind(null, workspace.id)}
     />
   );
 }

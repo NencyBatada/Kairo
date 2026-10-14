@@ -7,6 +7,7 @@ import type { FormState } from "@/lib/forms";
 import { cn } from "@/lib/utils";
 
 import { AccountPicker } from "./account-picker";
+import { ConnectionControls } from "./connection-controls";
 
 type ConnectionListProps = {
   connections: ConnectionView[];
@@ -16,6 +17,8 @@ type ConnectionListProps = {
   callbackChoose?: string;
   accountChoices?: Record<string, { accounts?: ProductAccount[]; error?: string }>;
   chooseAccount?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
+  checkConnection?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
+  disconnectConnection?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
 };
 
 const states = {
@@ -38,7 +41,7 @@ function callbackMessage(code: string) {
   }
 }
 
-export function ConnectionList({ connections, canManage, brandId, callbackError, callbackChoose, accountChoices, chooseAccount }: ConnectionListProps) {
+export function ConnectionList({ connections, canManage, brandId, callbackError, callbackChoose, accountChoices, chooseAccount, checkConnection, disconnectConnection }: ConnectionListProps) {
   return (
     <section aria-labelledby="connections-heading" className="flex flex-col gap-4">
       <div>
@@ -76,10 +79,22 @@ export function ConnectionList({ connections, canManage, brandId, callbackError,
                       )}
                       {connection.reconnectReason && <p className="text-small wrap-anywhere text-warning-strong">{connection.reconnectReason}</p>}
                     </div>
-                    {canManage && connection.state !== "connected" && (
-                      <a className={buttonVariants({ variant: "secondary", size: "sm" })} href={connectHref}>
-                        {connection.state === "needsReconnect" ? "Reconnect" : connection.state === "choosingAccount" ? "Connect again" : "Connect"}
-                      </a>
+                    {canManage && (
+                      <div className="flex min-w-0 flex-col items-start gap-2">
+                        {connection.state !== "connected" && (
+                          <a className={buttonVariants({ variant: "secondary", size: "sm" })} href={connectHref}>
+                            {connection.state === "needsReconnect" ? "Reconnect" : connection.state === "choosingAccount" ? "Connect again" : "Connect"}
+                          </a>
+                        )}
+                        {connection.state !== "notConnected" && checkConnection && disconnectConnection && (
+                          <ConnectionControls
+                            connected={connection.state === "connected"}
+                            productName={connection.name}
+                            check={checkConnection.bind(null, connection.product)}
+                            disconnect={disconnectConnection.bind(null, connection.product)}
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                   {canManage && connection.state === "choosingAccount" && chooseAccount && (
