@@ -34,10 +34,10 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 - [x] **Design system**: docs/design.md, shared components on shadcn/Base UI, and the new look on every existing screen, phones included.
 - [/] **Sign-in and app layout**: The Google sign-in screen, the Today home, a left-hand menu for the seven areas and the Ask Kairo side panel. *Done: sign-in screen, workspace switcher, left-hand menu, Today home content and Ask Kairo panel merged into develop. Left: verify the full journey in a running development environment.*
 - [/] **Settings screens**: Connect accounts, invite users, assign roles, choose approvers and set the budget limit. *Done: invite users, assign roles, choose approvers, budget limit and Connections UI merged into develop. Left: verify the OAuth, account-check and disconnect journey in a running development environment.*
-- [ ] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh.
-- [ ] **Notifications**: The in-app notification list with links to where to act, email settings per user, and the email templates.
-- [/] **Audit log screen**: Lists every recorded action, with filters and export. *Done: the list. Left: filters and export.*
-- [ ] **Phone-friendly approvals**: Approval screens work in a phone browser.
+- [x] **Live status**: Shows agent progress and status changes on screen as they arrive, without a refresh.
+- [x] **Notifications**: The in-app notification list with links to where to act, email settings per user, and the email templates.
+- [x] **Audit log screen**: Lists every recorded action, with filters and export.
+- [x] **Phone-friendly approvals**: Approval screens work in a phone browser.
 
 ## 2. Brand Kit and catalogue
 
