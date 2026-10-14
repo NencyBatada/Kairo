@@ -12,6 +12,7 @@ public sealed class LiveModule : IModule
         services.AddDbContext<LiveDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, LiveDbContext.SchemaName));
         services.AddScoped<ILiveUpdates, LiveUpdates>();
+        services.AddScoped<IAgentProgress, AgentProgressReporter>();
         services.AddSingleton<LiveFeed>();
         services.AddScoped<LiveStream>();
         services.AddScoped<OutboxCleanup>();
