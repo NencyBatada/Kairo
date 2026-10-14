@@ -1,20 +1,21 @@
-import { Sun } from "lucide-react";
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
+import { coreApi, unwrap } from "@/lib/core-api/client";
+import { getWorkspace } from "@/lib/core-api/queries";
+
+import { TodayOverview } from "./_components/today-overview";
 
 export const metadata: Metadata = { title: "Today" };
 
-export default function TodayPage() {
-  return (
-    <div className="flex flex-col gap-8">
-      <PageHeader title="Today" description="What needs you this morning." />
-      <EmptyState
-        icon={Sun}
-        title="Nothing needs you yet"
-        description="Approvals waiting for you, alerts, top opportunities and live tests will show up here each morning."
-      />
-    </div>
+export default async function TodayPage({ params }: PageProps<"/[workspace]/today">) {
+  const { workspace: handle } = await params;
+  const workspace = await getWorkspace(handle);
+  const api = await coreApi();
+  const page = await unwrap(
+    await api.GET("/api/brands/{brandId}/notifications", {
+      params: { path: { brandId: workspace.id }, query: { limit: 5 } },
+    }),
   );
+
+  return <TodayOverview items={page.items} />;
 }
