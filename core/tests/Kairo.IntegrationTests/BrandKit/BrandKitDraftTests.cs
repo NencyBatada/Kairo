@@ -84,6 +84,24 @@ public sealed class BrandKitDraftTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task A_revision_from_an_earlier_draft_cannot_approve_or_overwrite_a_newer_one()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await BrandKits.SaveAsync(admin.Browser, brandId, BrandKits.Content("first"), 0);
+        await BrandKits.ApproveAsync(admin.Browser, brandId, 1);
+        var newer = await BrandKits.SaveAsync(admin.Browser, brandId, BrandKits.Content("second"), 0);
+
+        var staleApprove = await admin.Browser.PostAsJsonAsync($"{BrandKits.Draft(brandId)}/approve", new { revision = 1 }, Token);
+        var staleSave = await BrandKits.PutDraftAsync(admin.Browser, brandId, BrandKits.Content("third"), 1);
+
+        Assert.NotEqual(1, newer.GetProperty("revision").GetInt32());
+        Assert.Equal(new[] { HttpStatusCode.Conflict, HttpStatusCode.Conflict }, new[] { staleApprove.StatusCode, staleSave.StatusCode });
+        var kit = await BrandKits.GetAsync(admin.Browser, brandId);
+        Assert.Equal("first", BrandKits.Summary(kit.GetProperty("approved")));
+        Assert.Equal("second", BrandKits.Summary(kit.GetProperty("draft")));
+    }
+
+    [Fact]
     public async Task A_first_draft_must_start_from_revision_0()
     {
         var (admin, brandId) = await WorkspaceAsync();

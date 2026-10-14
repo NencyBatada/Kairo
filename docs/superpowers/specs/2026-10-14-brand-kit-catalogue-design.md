@@ -110,7 +110,7 @@ Every version holds one JSON document:
 
 | Schema | Table | Belongs to a workspace | Holds |
 | --- | --- | --- | --- |
-| `brand_kit` | `KitVersions` | Yes | `Id`, brand, `Number` (1, 2, 3… per brand), `Status` (`Draft`, `Approved`, `Superseded`), `Content` (JSON), `Revision` (int, starts at 1, +1 on each save), `Origin` (`manual`, `drafted` or `restored`), `RestoredFrom` (number or null), `CreatedBy`, `CreatedAt`, `UpdatedBy`, `UpdatedAt`, `ApprovedBy`, `ApprovedAt` |
+| `brand_kit` | `KitVersions` | Yes | `Id`, brand, `Number` (1, 2, 3… per brand), `Status` (`Draft`, `Approved`, `Superseded`), `Content` (JSON), `Revision` (int; a new draft starts one above the highest revision any of the brand's versions has had, and each save adds 1, so a revision never names two drafts), `Origin` (`manual`, `drafted` or `restored`), `RestoredFrom` (number or null), `CreatedBy`, `CreatedAt`, `UpdatedBy`, `UpdatedAt`, `ApprovedBy`, `ApprovedAt` |
 | `brand_kit` | `KitFiles` | Yes | `Id`, brand, `Kind` (`guideline` or `logo`), `FileName`, `ContentType`, `Size`, `StorageKey`, `UploadedBy`, `UploadedAt`, `DeletedAt` |
 | `brand_kit` | `DraftRuns` | Yes | See **Drafting** |
 

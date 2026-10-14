@@ -36,6 +36,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
     public async Task<KitVersion> CreateDraftAsync(KitContent content, VersionOrigin origin, int? restoredFrom, CancellationToken cancellationToken)
     {
         var number = (await db.Versions.MaxAsync(version => (int?)version.Number, cancellationToken) ?? 0) + 1;
+        var revision = (await db.Versions.MaxAsync(version => (int?)version.Revision, cancellationToken) ?? 0) + 1;
         var now = time.GetUtcNow();
         var draft = new KitVersion
         {
@@ -43,7 +44,7 @@ internal sealed class KitVersions(BrandKitDbContext db, KairoDatabase database, 
             Number = number,
             Status = VersionStatus.Draft,
             Content = KitJson.Write(content),
-            Revision = 1,
+            Revision = revision,
             Origin = origin,
             RestoredFrom = restoredFrom,
             CreatedBy = member.UserId,

@@ -120,7 +120,7 @@ public sealed class BrandKitFileTests(SqlServer sqlServer) : IAsyncDisposable
         var (admin, brandId) = await WorkspaceAsync();
         var guide = await BrandKits.UploadAsync(admin.Browser, brandId, BrandKits.Pdf, "guide.pdf");
         await BrandKits.ApproveNewAsync(admin.Browser, brandId, new { guidelineFileIds = new[] { guide } });
-        await BrandKits.SaveAsync(admin.Browser, brandId, new { guidelineFileIds = new[] { guide } }, 0);
+        var draftRevision = (await BrandKits.SaveAsync(admin.Browser, brandId, new { guidelineFileIds = new[] { guide } }, 0)).GetProperty("revision").GetInt32();
 
         var deleted = await admin.Browser.DeleteAsync($"{Files(brandId)}/{guide}", Token);
         var again = await admin.Browser.DeleteAsync($"{Files(brandId)}/{guide}", Token);
@@ -130,7 +130,7 @@ public sealed class BrandKitFileTests(SqlServer sqlServer) : IAsyncDisposable
         Assert.Empty((await admin.Browser.GetFromJsonAsync<JsonElement>(Files(brandId), Token)).EnumerateArray());
         var kit = await BrandKits.GetAsync(admin.Browser, brandId);
         Assert.Empty(kit.GetProperty("draft").GetProperty("content").GetProperty("guidelineFileIds").EnumerateArray());
-        Assert.Equal(2, kit.GetProperty("draft").GetProperty("revision").GetInt32());
+        Assert.Equal(draftRevision + 1, kit.GetProperty("draft").GetProperty("revision").GetInt32());
         var approvedFile = Assert.Single(kit.GetProperty("approved").GetProperty("files").EnumerateArray());
         Assert.True(approvedFile.GetProperty("deleted").GetBoolean());
         Assert.Equal(HttpStatusCode.OK, (await admin.Browser.GetAsync($"{Files(brandId)}/{guide}/download", Token)).StatusCode);

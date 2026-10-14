@@ -83,14 +83,15 @@ public sealed class BrandKitHistoryTests(SqlServer sqlServer) : IAsyncDisposable
         var (admin, brandId) = await WorkspaceAsync();
         await BrandKits.ApproveNewAsync(admin.Browser, brandId, BrandKits.Content("first"));
         await BrandKits.ApproveNewAsync(admin.Browser, brandId, BrandKits.Content("second"));
-        await BrandKits.SaveAsync(admin.Browser, brandId, BrandKits.Content("third"), 0);
+        var third = await BrandKits.SaveAsync(admin.Browser, brandId, BrandKits.Content("third"), 0);
+        var revision = third.GetProperty("revision").GetInt32();
 
         var stale = await admin.Browser.PostAsJsonAsync($"{BrandKits.Kit(brandId)}/versions/1/restore", new { revision = 0 }, Token);
-        var restored = await admin.Browser.PostAsJsonAsync($"{BrandKits.Kit(brandId)}/versions/1/restore", new { revision = 1 }, Token);
+        var restored = await admin.Browser.PostAsJsonAsync($"{BrandKits.Kit(brandId)}/versions/1/restore", new { revision }, Token);
 
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
         var draft = await restored.Content.ReadFromJsonAsync<JsonElement>(Token);
-        Assert.Equal((3, 2, "first"), (draft.GetProperty("number").GetInt32(), draft.GetProperty("revision").GetInt32(), BrandKits.Summary(draft)));
+        Assert.Equal((3, revision + 1, "first"), (draft.GetProperty("number").GetInt32(), draft.GetProperty("revision").GetInt32(), BrandKits.Summary(draft)));
     }
 
     [Fact]
