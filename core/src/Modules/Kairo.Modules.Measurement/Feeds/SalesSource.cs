@@ -8,6 +8,8 @@ internal sealed class SalesSource : IBrandOwned
 
     public string DateColumn { get; set; } = "";
 
+    public string DateColumnType { get; set; } = "DATE";
+
     public string RegionColumn { get; set; } = "";
 
     public string OrdersColumn { get; set; } = "";

@@ -88,6 +88,13 @@ namespace Kairo.Modules.Measurement.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("DateColumnType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("DATE");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(64)

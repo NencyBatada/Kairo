@@ -8,12 +8,16 @@ namespace Kairo.Modules.Measurement.Feeds;
 internal static class SalesTableQuery
 {
     public static string For(SalesSource source) => $"""
-        SELECT DATE(`{source.DateColumn}`) AS date, CAST(`{source.RegionColumn}` AS STRING) AS region,
+        SELECT {DayOf(source)} AS date, CAST(`{source.RegionColumn}` AS STRING) AS region,
                CAST(SUM(`{source.OrdersColumn}`) AS INT64) AS orders, CAST(SUM(`{source.RevenueColumn}`) AS NUMERIC) AS revenue
         FROM `{source.TableRef}`
-        WHERE DATE(`{source.DateColumn}`) BETWEEN @from AND @to
+        WHERE {DayOf(source)} BETWEEN @from AND @to
         GROUP BY 1, 2
         """;
+
+    private static string DayOf(SalesSource source) => source.DateColumnType == "TIMESTAMP"
+        ? $"DATE(`{source.DateColumn}`, '{FeedClock.IndiaTimeZone}')"
+        : $"DATE(`{source.DateColumn}`)";
 }
 
 internal sealed class SalesTableFeed(MeasurementDbContext db, BigQueryClient bigQuery, BigQueryTables tables, TimeProvider time) : IFeed

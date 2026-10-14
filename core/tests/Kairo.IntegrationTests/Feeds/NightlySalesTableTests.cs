@@ -56,6 +56,18 @@ public sealed class NightlySalesTableTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_timestamp_column_is_counted_by_the_day_in_India()
+    {
+        await BrandWithSalesTableAsync("acme-data.shop.orders", "ordered_at");
+
+        await RunAsync();
+
+        var query = BigQuery.Queries.First(query => query.Project == FakeBigQuery.BrandProject);
+        Assert.Contains("SELECT DATE(`ordered_at`, 'Asia/Kolkata') AS date", query.Sql);
+        Assert.Contains("WHERE DATE(`ordered_at`, 'Asia/Kolkata') BETWEEN @from AND @to", query.Sql);
+    }
+
+    [Fact]
     public async Task The_sales_window_is_in_India_time()
     {
         await BrandWithSalesTableAsync();
@@ -124,7 +136,9 @@ public sealed class NightlySalesTableTests(SqlServer sqlServer) : IAsyncLifetime
         return await response.Content.ReadFromJsonAsync<JsonElement>(Token);
     }
 
-    private async Task<(Member Admin, Guid BrandId)> BrandWithSalesTableAsync()
+    private async Task<(Member Admin, Guid BrandId)> BrandWithSalesTableAsync(
+        string table = "acme-data.shop.daily_orders",
+        string date = "order_date")
     {
         var admin = await Workspaces.SignInAsync(_api);
         var brandId = await Workspaces.CreateAsync(admin.Browser);
@@ -133,8 +147,8 @@ public sealed class NightlySalesTableTests(SqlServer sqlServer) : IAsyncLifetime
             $"/api/brands/{brandId}/analytics/sales/source",
             new
             {
-                table = "acme-data.shop.daily_orders",
-                columns = new { date = "order_date", region = "state", orders = "order_count", revenue = "net_revenue" },
+                table,
+                columns = new { date, region = "state", orders = "order_count", revenue = "net_revenue" },
             },
             Token)).EnsureSuccessStatusCode();
         return (admin, brandId);

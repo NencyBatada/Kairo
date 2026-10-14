@@ -226,6 +226,7 @@ internal static class SalesEndpoints
 
         source.TableRef = table!.ToString();
         source.DateColumn = columns["date"]!;
+        source.DateColumnType = info.Fields.First(field => string.Equals(field.Name, source.DateColumn, StringComparison.OrdinalIgnoreCase)).Type;
         source.RegionColumn = columns["region"]!;
         source.OrdersColumn = columns["orders"]!;
         source.RevenueColumn = columns["revenue"]!;

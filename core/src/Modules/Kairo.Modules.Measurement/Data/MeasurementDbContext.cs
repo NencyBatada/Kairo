@@ -42,6 +42,7 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
             source.HasKey(s => s.BrandId);
             source.Property(s => s.TableRef).HasMaxLength(300);
             source.Property(s => s.DateColumn).HasMaxLength(300);
+            source.Property(s => s.DateColumnType).HasMaxLength(20).HasDefaultValue("DATE");
             source.Property(s => s.RegionColumn).HasMaxLength(300);
             source.Property(s => s.OrdersColumn).HasMaxLength(300);
             source.Property(s => s.RevenueColumn).HasMaxLength(300);

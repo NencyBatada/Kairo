@@ -38,6 +38,9 @@ public sealed partial class FakeBigQuery
         ["shop.daily_orders"] = new BrandTable(
             "asia-south1",
             [("order_date", "DATE"), ("state", "STRING"), ("order_count", "INTEGER"), ("net_revenue", "NUMERIC"), ("notes", "STRING")]),
+        ["shop.orders"] = new BrandTable(
+            "asia-south1",
+            [("ordered_at", "TIMESTAMP"), ("state", "STRING"), ("order_count", "INTEGER"), ("net_revenue", "NUMERIC")]),
     };
 
     public List<SalesTableRow> SalesTableRows { get; } = [];
