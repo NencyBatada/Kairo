@@ -24,9 +24,13 @@ public static class AuditActions
         new("brand_kit.restored", "Restored an earlier Brand Kit version"),
         new("brand_kit.file_uploaded", "Uploaded a Brand Kit file"),
         new("brand_kit.file_deleted", "Deleted a Brand Kit file"),
+        new("brand_kit.drafting_started", "Started drafting the Brand Kit"),
         new("analytics.sales_uploaded", "Uploaded sales data"),
         new("analytics.sales_source_set", "Set the sales data source"),
         new("analytics.sales_source_removed", "Removed the sales data source"),
+        new("analytics.feed_started", "Started a data feed refresh"),
+        new("analytics.feed_succeeded", "Refreshed a data feed"),
+        new("analytics.feed_failed", "A data feed refresh failed"),
         new("notifications.email_settings_changed", "Changed notification email settings"),
     ];
 
