@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AskKairoTrigger } from "@/components/ask-kairo-trigger";
 import { cn } from "@/lib/utils";
 
 type PageHeaderProps = {
@@ -18,7 +19,10 @@ export function PageHeader({ title, description, eyebrow, actions, className }: 
         <h1 className="font-display text-display-md text-foreground md:text-display-lg">{title}</h1>
         {description && <p className="mt-2 max-w-prose text-muted-foreground">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      <div className="flex flex-wrap items-center gap-2">
+        {actions}
+        <AskKairoTrigger />
+      </div>
     </header>
   );
 }
