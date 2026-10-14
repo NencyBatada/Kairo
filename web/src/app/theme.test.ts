@@ -58,6 +58,10 @@ test("both themes define the same colour tokens", () => {
   expect(Object.keys(dark).sort()).toEqual(Object.keys(light).sort());
 });
 
+test("the Ask Kairo dock uses the documented 1440px wide breakpoint", () => {
+  expect(css).toMatch(/--breakpoint-wide:\s*90rem\s*;/);
+});
+
 describe.each([
   ["light", light],
   ["dark", dark],
