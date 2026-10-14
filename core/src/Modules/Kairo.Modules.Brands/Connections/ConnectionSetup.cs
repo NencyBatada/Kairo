@@ -1,7 +1,16 @@
 using Kairo.Contracts.Connections;
 using Kairo.Modules.Brands.Connections.Accounts;
+using Microsoft.Extensions.Hosting;
 
 namespace Kairo.Modules.Brands.Connections;
+
+internal sealed class TokenKeyOptions
+{
+    public const string Missing =
+        "Kairo:Kms:KeyName is not set. Outside Development, connection tokens must be sealed with Cloud KMS; set Kairo__Kms__KeyName to the token key's resource name.";
+
+    public string? KeyName { get; set; }
+}
 
 internal static class ConnectionSetup
 {
@@ -11,6 +20,12 @@ internal static class ConnectionSetup
         services.AddSingleton<ConsentStates>();
         services.AddSingleton<GoogleOAuth>();
         var keyName = configuration["Kairo:Kms:KeyName"];
+        services.AddOptions<TokenKeyOptions>()
+            .Configure(options => options.KeyName = keyName)
+            .Validate<IHostEnvironment>(
+                (options, environment) => !string.IsNullOrEmpty(options.KeyName) || environment.IsDevelopment(),
+                TokenKeyOptions.Missing)
+            .ValidateOnStart();
         if (string.IsNullOrEmpty(keyName))
         {
             services.AddSingleton<ITokenCipher, DataProtectionTokenCipher>();

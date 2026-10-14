@@ -42,6 +42,23 @@ public sealed class WorkerHostTests(WorkerFactory factory) : IClassFixture<Worke
     }
 }
 
+public sealed class WorkerKmsTests
+{
+    [Fact]
+    public async Task Outside_Development_the_worker_refuses_to_start_without_a_key()
+    {
+        await using var factory = new WorkerFactory().WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+
+        var exception = Record.Exception(() => factory.Services);
+
+        Assert.NotNull(exception);
+        Assert.Contains("Kairo:Kms:KeyName is not set", Flatten(exception));
+    }
+
+    private static string Flatten(Exception exception) =>
+        exception.InnerException is null ? exception.Message : $"{exception.Message} {Flatten(exception.InnerException)}";
+}
+
 public sealed class WorkerFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
