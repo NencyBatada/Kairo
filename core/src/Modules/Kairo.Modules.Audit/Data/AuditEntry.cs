@@ -14,6 +14,8 @@ internal sealed class AuditEntry : IBrandOwned
 
     public string ActorName { get; set; } = "";
 
+    public string? ActorEmail { get; set; }
+
     public string Action { get; set; } = "";
 
     public string TargetType { get; set; } = "";

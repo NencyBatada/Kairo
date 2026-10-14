@@ -40,6 +40,32 @@ public sealed class AuditStorageTests(SqlServer sqlServer)
     }
 
     [Fact]
+    public async Task Agents_are_recorded_by_name()
+    {
+        var brandId = Guid.NewGuid();
+        await using var host = MigratorHost.Build([$"--ConnectionStrings:kairo={sqlServer.KairoConnectionString}"]);
+        await using (var scope = host.Services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(brandId, Token);
+            await scope.ServiceProvider.GetRequiredService<IAuditLog>().RecordAsync(
+                new AuditRecord("brand_kit.approved", "brand_kit", "3", Actor: AuditActor.Agent("Sense agent", "sense")),
+                Token);
+        }
+
+        await using var connection = new SqlConnection(sqlServer.KairoConnectionString);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.brand_id', @value = @brand;
+            SELECT [ActorType], [ActorId], [ActorName] FROM [audit].[Entries];
+            """;
+        command.Parameters.AddWithValue("@brand", brandId);
+        await using var reader = await command.ExecuteReaderAsync(Token);
+        Assert.True(await reader.ReadAsync(Token));
+        Assert.Equal(("agent", "sense", "Sense agent"), (reader.GetString(0), reader.GetString(1), reader.GetString(2)));
+    }
+
+    [Fact]
     public async Task Recording_needs_a_brand()
     {
         await using var host = MigratorHost.Build([$"--ConnectionStrings:kairo={sqlServer.KairoConnectionString}"]);

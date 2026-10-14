@@ -10,14 +10,14 @@ internal sealed class AuditLog(AuditDbContext db, IHttpContextAccessor http, Tim
 {
     public async Task RecordAsync(AuditRecord record, CancellationToken cancellationToken)
     {
-        var principal = http.HttpContext?.User;
-        var userId = principal?.FindUserId();
+        var actor = record.Actor ?? CurrentActor();
         db.Entries.Add(new AuditEntry
         {
             OccurredAt = time.GetUtcNow(),
-            ActorType = userId is null ? "system" : "user",
-            ActorId = userId?.ToString(),
-            ActorName = userId is null ? "Kairo" : principal!.FindFirstValue(KairoClaims.Name) ?? "",
+            ActorType = AuditActorTypes.KeyOf(actor.Type),
+            ActorId = actor.Id,
+            ActorName = actor.Name,
+            ActorEmail = actor.Email,
             Action = record.Action,
             TargetType = record.TargetType,
             TargetId = record.TargetId,
@@ -26,6 +26,18 @@ internal sealed class AuditLog(AuditDbContext db, IHttpContextAccessor http, Tim
             TraceId = Activity.Current?.TraceId.ToString(),
         });
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private AuditActor CurrentActor()
+    {
+        var principal = http.HttpContext?.User;
+        return principal?.FindUserId() is { } userId
+            ? new AuditActor(
+                AuditActorType.User,
+                principal.FindFirstValue(KairoClaims.Name) ?? "",
+                userId.ToString(),
+                principal.FindFirstValue(KairoClaims.Email))
+            : new AuditActor(AuditActorType.System, "Kairo");
     }
 
     private static string? Serialize(object? value) =>
