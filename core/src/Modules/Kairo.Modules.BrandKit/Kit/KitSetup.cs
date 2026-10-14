@@ -1,3 +1,4 @@
+using Kairo.Contracts.BrandKit;
 using Kairo.Modules.BrandKit.Files;
 
 namespace Kairo.Modules.BrandKit.Kit;
@@ -7,6 +8,7 @@ internal static class KitSetup
     public static void AddBrandKit(this IServiceCollection services)
     {
         services.AddScoped<KitVersions>();
+        services.AddScoped<IBrandKit, BrandKitReader>();
     }
 
     public static void MapBrandKit(this IEndpointRouteBuilder api)
