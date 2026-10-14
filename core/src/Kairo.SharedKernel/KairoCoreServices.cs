@@ -1,5 +1,6 @@
 using Kairo.SharedKernel.Access;
 using Kairo.SharedKernel.Files;
+using Kairo.SharedKernel.Http;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public static class KairoCoreServices
                 ?? throw new InvalidOperationException("The 'kairo' connection string is missing.")));
         services.AddScoped<CurrentMember>();
         services.AddKairoFiles();
+        services.AddSafeWebClient();
         return services;
     }
 }
