@@ -123,6 +123,8 @@ Describe 'Invoke-KairoDeploy' {
         $worker | Should -BeLike '*--no-allow-unauthenticated*'
         $worker | Should -BeLike '*--network kairo --subnet kairo-run --vpc-egress private-ranges-only*'
         $worker | Should -BeLike '*--timeout 3600*'
+        $worker | Should -BeLike '*--no-cpu-throttling*'
+        $worker | Should -BeLike '*--memory 1Gi*'
         $worker | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest,Authentication__Google__ClientId=google-client-id:latest,Authentication__Google__ClientSecret=google-client-secret:latest*'
     }
 

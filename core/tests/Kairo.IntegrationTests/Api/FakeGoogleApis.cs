@@ -24,6 +24,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     private readonly ConcurrentDictionary<string, PendingCode> _codes = new();
     private readonly ConcurrentDictionary<string, string> _refreshTokens = new();
     private readonly ConcurrentDictionary<string, bool> _accessTokens = new();
+    private readonly object _adsReportsLock = new();
+    private int _adsReportsInFlight;
 
     public ConcurrentQueue<string> Requests { get; } = new();
 
@@ -61,6 +63,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public HashSet<string> AdsFailures { get; } = [];
 
     public string? AdsFailFrom { get; set; }
+
+    public TimeSpan AdsReportDelay { get; set; }
+
+    public int MostAdsReportsAtOnce { get; private set; }
 
     public ConcurrentQueue<AdsReport> AdsReports { get; } = new();
 
@@ -105,6 +111,27 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         if (uri.Host == "bigquery.googleapis.com" && BigQuery.Handle(request, body, accessToken) is { } answer)
         {
             return answer;
+        }
+
+        if (AdsReportDelay > TimeSpan.Zero && uri.AbsolutePath.EndsWith("/googleAds:searchStream", StringComparison.Ordinal))
+        {
+            lock (_adsReportsLock)
+            {
+                _adsReportsInFlight++;
+                MostAdsReportsAtOnce = Math.Max(MostAdsReportsAtOnce, _adsReportsInFlight);
+            }
+
+            try
+            {
+                await Task.Delay(AdsReportDelay, cancellationToken);
+            }
+            finally
+            {
+                lock (_adsReportsLock)
+                {
+                    _adsReportsInFlight--;
+                }
+            }
         }
 
         var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;

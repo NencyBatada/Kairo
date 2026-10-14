@@ -70,6 +70,8 @@ function Invoke-KairoDeploy {
     Publish-KairoService -Environment $Environment -Service 'kairo-worker' -Image (Get-KairoImage -Environment $Environment -Name 'worker' -Tag $tag) `
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
             '--timeout', '3600',
+            '--no-cpu-throttling',
+            '--memory', '1Gi',
             "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics",
             "--set-secrets=$($serviceSecrets -join ',')"
         ))

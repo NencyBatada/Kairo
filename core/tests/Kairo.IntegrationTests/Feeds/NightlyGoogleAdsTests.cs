@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.Live;
+using Kairo.Contracts.Brands;
 using Kairo.Modules.Measurement.Feeds;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -98,6 +99,43 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal("succeeded", Outcome(retried, brandId).GetProperty("status").GetString());
         Assert.Equal(FirstWindowDays, Google.BigQuery.Rows(dataset, "ads_campaign_daily").Count);
         Assert.Equal(2, CampaignQueries().Count(query => query.Contains("segments.date BETWEEN '2025-09-14' AND '2025-09-30'", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task Brands_run_four_at_a_time()
+    {
+        var admin = await Workspaces.SignInAsync(_api);
+        for (var brand = 0; brand < 6; brand++)
+        {
+            await BrandWithAdsAsync(admin: admin);
+        }
+
+        Google.AdsReportDelay = TimeSpan.FromMilliseconds(20);
+
+        var run = await RunAsync();
+
+        Assert.Equal(6, run.GetProperty("runs").EnumerateArray().Count(outcome => outcome.GetProperty("status").GetString() == "succeeded"));
+        Assert.Equal(FeedRunner.BrandsAtOnce, Google.MostAdsReportsAtOnce);
+    }
+
+    [Fact]
+    public async Task The_brand_whose_data_is_oldest_runs_first()
+    {
+        var admin = await Workspaces.SignInAsync(_api);
+        var first = await BrandWithAdsAsync(admin: admin);
+        var second = await BrandWithAdsAsync(admin: admin);
+        await using var scope = _api.Services.CreateAsyncScope();
+        var listed = await scope.ServiceProvider.GetRequiredService<IBrandDirectory>().ListAllAsync(Token);
+        var fresh = listed[0].Id;
+        var stale = fresh == first ? second : first;
+        await FeedRunRows.InsertAsync(_database, fresh, FeedNames.GoogleAds, "succeeded", Night.AddHours(-2), new DateOnly(2026, 10, 12));
+        await FeedRunRows.InsertAsync(_database, stale, FeedNames.GoogleAds, "succeeded", Night.AddDays(-3), new DateOnly(2026, 10, 9));
+
+        var run = await RunAsync();
+
+        Assert.Equal(
+            new[] { stale, fresh },
+            run.GetProperty("runs").EnumerateArray().Select(outcome => outcome.GetProperty("brandId").GetGuid()).Distinct());
     }
 
     [Fact]
