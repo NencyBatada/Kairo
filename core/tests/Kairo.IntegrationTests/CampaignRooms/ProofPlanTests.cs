@@ -214,6 +214,74 @@ public sealed class ProofPlanTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Conflict, swapped.StatusCode);
     }
 
+    [Fact]
+    public async Task Changing_the_briefs_dates_or_regions_redesigns_the_test_with_them()
+    {
+        CityHistory();
+        var roomId = await _world.OpenWithBriefAsync();
+        var version = Campaigns.Version(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId));
+        var start = Today().AddDays(3);
+
+        using var edited = await Campaigns.EditBriefAsync(_world.Marketer, _world.BrandId, roomId, new
+        {
+            version,
+            briefVersion = 1,
+            regions = new[] { "Maharashtra" },
+            startDate = Iso(start),
+            endDate = Iso(start.AddDays(20)),
+        });
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        Assert.False((await edited.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("editable").GetBoolean());
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.Equal("agent_working", Campaigns.Status(detail));
+        Assert.Equal(("proof_plan", "queued"), (detail.GetProperty("runs")[0].GetProperty("kind").GetString(), detail.GetProperty("runs")[0].GetProperty("status").GetString()));
+
+        Assert.Equal(1, await _world.RunStagesAsync());
+
+        var request = _world.Proof.Requests[^1];
+        Assert.Equal(21, request.GetProperty("maxDays").GetInt32());
+        Assert.Equal(["mumbai", "nagpur", "nashik", "pune"], request.GetProperty("regions").EnumerateArray()
+            .Where(region => region.GetProperty("inArea").GetBoolean())
+            .Select(region => region.GetProperty("id").GetString()));
+        var plan = (await PlanAsync(roomId)).GetProperty("plan");
+        Assert.Equal((2, 2), (plan.GetProperty("version").GetInt32(), plan.GetProperty("briefVersion").GetInt32()));
+        Assert.Equal(Iso(start), plan.GetProperty("window").GetProperty("start").GetString());
+    }
+
+    [Fact]
+    public async Task Changes_that_leave_dates_and_regions_alone_keep_the_test()
+    {
+        CityHistory();
+        var roomId = await _world.OpenWithBriefAsync();
+        var version = Campaigns.Version(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId));
+
+        using var edited = await Campaigns.EditBriefAsync(_world.Marketer, _world.BrandId, roomId, new { version, briefVersion = 1, languages = new[] { "en", "hi" } });
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        Assert.Equal("in_progress", Campaigns.Status(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)));
+        Assert.Equal(0, await _world.RunStagesAsync());
+        Assert.Single(_world.Proof.Requests);
+    }
+
+    [Fact]
+    public async Task An_applied_instruction_that_moves_the_regions_redesigns_the_test()
+    {
+        CityHistory();
+        _world.Plan.Changes = _ => new { regions = new[] { "Maharashtra" }, reasons = new { regions = "Only Maharashtra." }, summary = "Keeps Maharashtra." };
+        var roomId = await _world.OpenWithBriefAsync();
+        var version = Campaigns.Version(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId));
+        using var previewed = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "brief/instructions", new { version, briefVersion = 1, instruction = "only Maharashtra" });
+        var id = (await previewed.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("id").GetGuid();
+
+        using var applied = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, $"brief/proposals/{id}/apply", new { version });
+
+        Assert.Equal(HttpStatusCode.OK, applied.StatusCode);
+        Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Equal(2, _world.Proof.Requests.Count);
+        Assert.Equal(2, (await PlanAsync(roomId)).GetProperty("plan").GetProperty("briefVersion").GetInt32());
+    }
+
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();
 
     private void CityHistory()

@@ -30,7 +30,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
 
         var briefed = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal("agent_working", Campaigns.Status(briefed));
-        Assert.Equal(["proof_plan", "starter_brief"], briefed.GetProperty("runs").EnumerateArray().Select(row => row.GetProperty("kind").GetString()));
+        Assert.Equal(["proof_plan", "brief"], briefed.GetProperty("runs").EnumerateArray().Select(row => row.GetProperty("kind").GetString()));
 
         Assert.Equal(1, await _world.RunStagesAsync());
 

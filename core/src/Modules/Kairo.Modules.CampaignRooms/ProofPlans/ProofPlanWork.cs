@@ -52,7 +52,7 @@ internal sealed class ProofPlanWork(
         var zone = TimeZoneInfo.TryFindSystemTimeZoneById(brand.TimeZone, out var found) ? found : TimeZoneInfo.Utc;
         var evidence = RoomEvidence.Read(room.Evidence);
         var scope = BriefScope.Of(brief, evidence, zone, time.GetUtcNow());
-        var to = scope.Start.AddDays(-2);
+        var to = scope.HistoryEnd;
         var from = to.AddDays(1 - HistoryDays);
 
         var unit = choice is not null && latest is not null ? latest.Read().Unit : null;

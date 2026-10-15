@@ -1,4 +1,5 @@
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 
 namespace Kairo.IntegrationTests.CampaignRooms;
@@ -156,6 +157,40 @@ public sealed class BriefRulesTests
         var (start, end) = BriefWork.SuggestedDates(context);
 
         Assert.Equal((Today.AddDays(startIn), Today.AddDays(endIn)), (start, end));
+    }
+
+    [Fact]
+    public void The_test_scope_follows_the_briefs_regions_and_dates()
+    {
+        var brief = new Brief { Content = Complete() };
+        brief.Content.Regions = ["Maharashtra", " "];
+        brief.Content.StartDate = Today.AddDays(10);
+        brief.Content.EndDate = Today.AddDays(30);
+
+        var scope = BriefScope.Of(brief, RoomEvidence.Empty, TimeZoneInfo.Utc, new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero));
+
+        Assert.Equal(["Maharashtra"], scope.Regions);
+        Assert.Equal((Today.AddDays(10), Today.AddDays(30), 21), (scope.Start, scope.End, scope.Days));
+        Assert.Equal(Today.AddDays(-1), scope.HistoryEnd);
+    }
+
+    [Fact]
+    public void An_older_brief_without_dates_is_tested_from_tomorrow_until_the_moment_ends()
+    {
+        var brief = new Brief { Content = new BriefContent { Title = "Rain", Goal = "Sell", Regions = ["Mumbai"] } };
+        var evidence = RoomEvidence.Empty with { Trigger = new EvidenceTrigger("weather", "Rain", [], new DateTimeOffset(2026, 10, 20, 0, 0, 0, TimeSpan.Zero)) };
+
+        var scope = BriefScope.Of(brief, evidence, TimeZoneInfo.Utc, new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero));
+
+        Assert.Equal((Today.AddDays(1), new DateOnly(2026, 10, 19), Today.AddDays(-1)), (scope.Start, scope.End, scope.HistoryEnd));
+    }
+
+    [Fact]
+    public void Only_region_and_date_changes_redesign_the_test()
+    {
+        Assert.True(BriefEditor.RedesignsTest([BriefFields.Budget, BriefFields.Dates]));
+        Assert.True(BriefEditor.RedesignsTest([BriefFields.Regions]));
+        Assert.False(BriefEditor.RedesignsTest([BriefFields.Budget, BriefFields.Languages, BriefFields.KeyMessages]));
     }
 
     private static RoomEvidence Evidence(EvidenceBids? bids, long searches) =>

@@ -2,6 +2,7 @@ using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandKit;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
+using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Agents;
 using Microsoft.Extensions.Logging;
 
@@ -32,6 +33,7 @@ internal sealed class BriefEditor(
     RoomWorkflow workflow,
     CampaignReader reader,
     BriefDesk desk,
+    StageQueue queue,
     BriefAgent agent,
     IBrandKit brandKit,
     IAuditLog audit,
@@ -110,7 +112,7 @@ internal sealed class BriefEditor(
             edited.SetReason(field, $"Changed by {name}.");
         }
 
-        var brief = await SaveAsync(room, latest, edited, BriefOrigins.Edit, member.UserId, null, null, null, cancellationToken);
+        var brief = await SaveAsync(room, latest, edited, fields, BriefOrigins.Edit, member.UserId, null, null, null, cancellationToken);
         await FinishAsync(room, new AuditRecord("brief.edited", RoomWorkflow.AuditTarget, room.Id.ToString(), new { briefVersion = latest.Version }, new { briefVersion = brief.Version, fields }), cancellationToken);
         return BriefResult<BriefDetail>.Done(await DetailAsync(room, cancellationToken));
     }
@@ -279,7 +281,7 @@ internal sealed class BriefEditor(
 
         var (room, latest) = (opened.Room, opened.Brief!);
         proposal.AppliedAt = time.GetUtcNow();
-        var brief = await SaveAsync(room, latest, proposal.Content.Copy(), BriefOrigins.Instruction, member.UserId, proposal.Instruction, proposal.Model, proposal.PromptVersion, cancellationToken);
+        var brief = await SaveAsync(room, latest, proposal.Content.Copy(), proposal.Fields, BriefOrigins.Instruction, member.UserId, proposal.Instruction, proposal.Model, proposal.PromptVersion, cancellationToken);
         await FinishAsync(
             room,
             new AuditRecord(
@@ -291,6 +293,9 @@ internal sealed class BriefEditor(
             cancellationToken);
         return BriefResult<BriefDetail>.Done(await DetailAsync(room, cancellationToken));
     }
+
+    public static bool RedesignsTest(IEnumerable<string> fields) =>
+        fields.Any(field => field is BriefFields.Regions or BriefFields.Dates);
 
     public static string? Blocker(Room room)
     {
@@ -579,6 +584,7 @@ internal sealed class BriefEditor(
         Room room,
         Brief latest,
         BriefContent content,
+        IReadOnlyList<string> fields,
         string origin,
         Guid by,
         string? instruction,
@@ -601,6 +607,11 @@ internal sealed class BriefEditor(
             CreatedAt = time.GetUtcNow(),
         };
         db.Briefs.Add(brief);
+        if (RedesignsTest(fields) && queue.Find(StageKinds.ProofPlan) is not null)
+        {
+            await queue.EnqueueAsync(room, StageKinds.ProofPlan, by, cancellationToken);
+        }
+
         workflow.Touch(room);
         await db.SaveChangesAsync(cancellationToken);
         return brief;

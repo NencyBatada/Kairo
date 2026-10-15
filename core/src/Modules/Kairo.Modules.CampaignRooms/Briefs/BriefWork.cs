@@ -27,6 +27,8 @@ internal sealed class BriefWork(
 
     public string Stage => RoomStates.BriefDraft;
 
+    public string? FollowUp => StageKinds.ProofPlan;
+
     public async Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken)
     {
         var context = await desk.ReadAsync(room, null, false, cancellationToken);
@@ -365,6 +367,8 @@ internal sealed class StarterBriefAlias(BriefWork work) : IStageWork
     public string Agent => work.Agent;
 
     public string Stage => work.Stage;
+
+    public string? FollowUp => work.FollowUp;
 
     public Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken) => work.RunAsync(run, room, cancellationToken);
 
