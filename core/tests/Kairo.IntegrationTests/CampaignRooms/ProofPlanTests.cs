@@ -250,6 +250,32 @@ public sealed class ProofPlanTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task New_dates_keep_the_holdouts_the_marketer_chose_but_new_regions_do_not()
+    {
+        CityHistory();
+        var roomId = await _world.OpenWithBriefAsync();
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        (await ChooseAsync(_world.Marketer, roomId, ["pune"], Campaigns.Version(detail))).EnsureSuccessStatusCode();
+        Assert.Equal(1, await _world.RunStagesAsync());
+        var version = Campaigns.Version(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId));
+        var start = Today().AddDays(2);
+
+        using var moved = await Campaigns.EditBriefAsync(_world.Marketer, _world.BrandId, roomId, new { version, briefVersion = 1, startDate = Iso(start), endDate = Iso(start.AddDays(13)) });
+        Assert.Equal(HttpStatusCode.OK, moved.StatusCode);
+        Assert.Equal(1, await _world.RunStagesAsync());
+
+        Assert.Equal(["pune"], _world.Proof.Requests[^1].GetProperty("holdoutIds").EnumerateArray().Select(id => id.GetString()));
+        Assert.Equal(["Pune"], Names((await PlanAsync(roomId)).GetProperty("plan"), "holdouts"));
+
+        var next = (await moved.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("campaignVersion").GetInt32() + 1;
+        using var regions = await Campaigns.EditBriefAsync(_world.Marketer, _world.BrandId, roomId, new { version = next, briefVersion = 2, regions = new[] { "Maharashtra" } });
+        Assert.Equal(HttpStatusCode.OK, regions.StatusCode);
+        Assert.Equal(1, await _world.RunStagesAsync());
+
+        Assert.Equal(JsonValueKind.Null, _world.Proof.Requests[^1].GetProperty("holdoutIds").ValueKind);
+    }
+
+    [Fact]
     public async Task Changes_that_leave_dates_and_regions_alone_keep_the_test()
     {
         CityHistory();

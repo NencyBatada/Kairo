@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandKit;
 using Kairo.Modules.CampaignRooms.Data;
+using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Agents;
@@ -609,12 +611,25 @@ internal sealed class BriefEditor(
         db.Briefs.Add(brief);
         if (RedesignsTest(fields) && queue.Find(StageKinds.ProofPlan) is not null)
         {
-            await queue.EnqueueAsync(room, StageKinds.ProofPlan, by, cancellationToken);
+            await queue.EnqueueAsync(room, StageKinds.ProofPlan, by, cancellationToken, await KeptHoldoutsAsync(room, fields, cancellationToken));
         }
 
         workflow.Touch(room);
         await db.SaveChangesAsync(cancellationToken);
         return brief;
+    }
+
+    private async Task<string?> KeptHoldoutsAsync(Room room, IReadOnlyList<string> fields, CancellationToken cancellationToken)
+    {
+        if (fields.Contains(BriefFields.Regions) || await ProofPlanReader.LatestAsync(db, room.Id, cancellationToken) is not { } plan)
+        {
+            return null;
+        }
+
+        var content = plan.Read();
+        return content.ChosenByUser && content.Holdouts.Count > 0
+            ? JsonSerializer.Serialize(new HoldoutChoice([.. content.Holdouts.Select(region => region.Id)]), JsonSerializerOptions.Web)
+            : null;
     }
 
     private async Task FinishAsync(Room room, AuditRecord record, CancellationToken cancellationToken)
