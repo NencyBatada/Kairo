@@ -257,6 +257,7 @@ Kairo uses Tailwind's default breakpoints, plus `wide`, which is added with the 
 
 - **From `lg`:** the sidebar holds, top to bottom, the logo, the WorkspaceSwitcher, the NavMenu of the seven areas and the UserMenu.
 - **Below `lg`:** a top bar shows the menu button, the logo and the workspace name. The menu button opens the same sidebar as a left-hand sheet.
+- **Brand Kit pages:** when the Brand Kit area is open, show Catalogue as an indented child link below it in both the desktop sidebar and phone drawer. The seven main areas stay in their existing order.
 
 **PageHeader.**
 

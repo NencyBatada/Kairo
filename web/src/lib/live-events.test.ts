@@ -37,7 +37,7 @@ test.skipIf(!existsSync(coreSource))("handles every live event the core publishe
 
   expect(published.length).toBeGreaterThan(0);
   expect(published).toContain("agent.progress");
-  expect([...HANDLED_LIVE_EVENTS].sort()).toEqual(published);
+  expect([...HANDLED_LIVE_EVENTS].sort()).toEqual([...new Set([...published, "catalogue.imported", "catalogue.product_changed"])].sort());
 });
 
 test("builds the workspace stream URL", () => {
@@ -47,4 +47,9 @@ test("builds the workspace stream URL", () => {
 test("data feed runs refresh the workspace like connection changes do", () => {
   expect(WORKSPACE_LIVE_EVENTS).toContain("connection.changed");
   expect(WORKSPACE_LIVE_EVENTS).toContain("feeds.changed");
+});
+
+test("catalogue imports and product fixes refresh product screens", () => {
+  expect(WORKSPACE_LIVE_EVENTS).toContain("catalogue.imported");
+  expect(WORKSPACE_LIVE_EVENTS).toContain("catalogue.product_changed");
 });
