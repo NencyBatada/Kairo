@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kairo.IntegrationTests.Opportunities;
+using Kairo.IntegrationTests.Triggers;
 using Kairo.Modules.Measurement.Feeds;
 using Microsoft.AspNetCore.WebUtilities;
 using MimeKit;
@@ -35,6 +36,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public FakeBigQuery BigQuery { get; } = new();
 
     public FakeKeywordPlanner Keywords { get; } = new();
+
+    public FakeWeather Weather { get; } = new();
 
     public bool RevocationFails { get; set; }
 
@@ -143,6 +146,11 @@ public sealed class FakeGoogleApis : HttpMessageHandler
                     _adsReportsInFlight--;
                 }
             }
+        }
+
+        if (uri.Host == "weather.googleapis.com")
+        {
+            return Weather.Handle(request);
         }
 
         var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;

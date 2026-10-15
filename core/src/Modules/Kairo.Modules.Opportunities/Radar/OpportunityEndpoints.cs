@@ -32,6 +32,7 @@ internal static class OpportunityEndpoints
         string? category,
         bool? watched,
         int? minScore,
+        bool? triggered,
         CancellationToken cancellationToken)
     {
         var wanted = status ?? Open;
@@ -64,9 +65,11 @@ internal static class OpportunityEndpoints
             .Where(o => !shelf.Ignored(o))
             .Where(o => string.IsNullOrWhiteSpace(category) || o.MatchedCategories.Contains(category.Trim(), StringComparer.OrdinalIgnoreCase))
             .Select(o => OpportunityCard.Of(o, shelf.InStock(o), shelf.Watched(o)))
-            .Where(card => !openOnly || (card.Available && (card.Score >= OpportunityOptions.CutOff || card.Watched)))
+            .Where(card => !openOnly || (card.Available && (card.Score >= OpportunityOptions.CutOff || card.Watched || card.Trigger is not null)))
             .Where(card => watched is null || card.Watched == watched)
+            .Where(card => triggered is null || (card.Trigger is not null) == triggered)
             .Where(card => minScore is null || card.Score >= minScore)
+            .OrderByDescending(card => card.Trigger is not null)
             .ToArray();
 
         var latest = await db.BrandRuns.AsNoTracking()

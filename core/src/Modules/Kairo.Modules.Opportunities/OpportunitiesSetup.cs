@@ -1,7 +1,9 @@
+using Kairo.Contracts.Opportunities;
 using Kairo.Modules.Opportunities.Radar;
 using Kairo.Modules.Opportunities.Refresh;
 using Kairo.Modules.Opportunities.Sense;
 using Kairo.Modules.Opportunities.Topics;
+using Kairo.Modules.Opportunities.Triggered;
 
 namespace Kairo.Modules.Opportunities;
 
@@ -16,6 +18,7 @@ internal static class OpportunitiesSetup
         services.AddSingleton<RefreshRunner>();
         services.AddScoped<BrandRefresher>();
         services.AddScoped<OpportunityReader>();
+        services.AddScoped<IOpportunities, TriggeredOpportunities>();
     }
 
     public static void MapOpportunities(this IEndpointRouteBuilder api)

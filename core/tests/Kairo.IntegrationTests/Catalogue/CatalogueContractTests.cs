@@ -94,6 +94,39 @@ public sealed class CatalogueContractTests(SqlServer sqlServer) : IAsyncDisposab
         Assert.Empty(fromOtherBrand);
     }
 
+    [Fact]
+    public async Task Category_stock_adds_up_the_units_of_products_in_stock()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Catalogues.ImportAsync(admin.Browser, brandId, """
+            id,title,link,image_link,price,availability,product_type,g:quantity
+            A-1,Rain Boot,https://acme.example/p/1,https://acme.example/i/1.jpg,1499.00 INR,in_stock,Shoes > Rain,"1,200"
+            A-2,Puddle Runner,https://acme.example/p/2,https://acme.example/i/2.jpg,1499.00 INR,in_stock,Shoes > Rain,30
+            A-3,Drizzle Sneaker,https://acme.example/p/3,https://acme.example/i/3.jpg,1499.00 INR,in_stock,Shoes > Rain,lots
+            A-4,Ankle Splash,https://acme.example/p/4,https://acme.example/i/4.jpg,1499.00 INR,out_of_stock,Shoes > Rain,900
+
+            """);
+
+        var stock = await WithCatalogueAsync(brandId, catalogue => catalogue.GetCategoryStockAsync("Shoes > Rain", Token));
+
+        Assert.Equal(new CategoryStock(3, 2, 1230), stock);
+        Assert.Equal(new CategoryStock(0, 0, 0), await WithCatalogueAsync(brandId, catalogue => catalogue.GetCategoryStockAsync("Hats", Token)));
+    }
+
+    [Fact]
+    public async Task The_latest_update_is_the_last_import_that_changed_the_catalogue()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        Assert.Null(await WithCatalogueAsync(brandId, catalogue => catalogue.LatestImportAsync(Token)));
+        var first = await Catalogues.ImportAsync(admin.Browser, brandId, Catalogues.Csv(Catalogues.Row("A-1")));
+        var second = await Catalogues.ImportAsync(admin.Browser, brandId, Catalogues.Csv(Catalogues.Row("A-1"), Catalogues.Row("A-2")));
+
+        var latest = await WithCatalogueAsync(brandId, catalogue => catalogue.LatestImportAsync(Token));
+
+        Assert.NotEqual(first.GetProperty("id").GetGuid(), second.GetProperty("id").GetGuid());
+        Assert.Equal(second.GetProperty("id").GetGuid(), latest!.ImportId);
+    }
+
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private async Task<T> WithCatalogueAsync<T>(Guid brandId, Func<ICatalogue, Task<T>> read)

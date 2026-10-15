@@ -11,6 +11,10 @@ public sealed class OpportunitiesTableTests(SqlServer sqlServer)
     [InlineData("opportunities.WatchTopics")]
     [InlineData("opportunities.RefreshRuns")]
     [InlineData("campaign_rooms.Rooms")]
+    [InlineData("triggers.TriggerRules")]
+    [InlineData("triggers.TriggerFirings")]
+    [InlineData("triggers.FestivalEvents")]
+    [InlineData("triggers.BrandStates")]
     public async Task The_table_is_covered_by_its_schemas_security_policy(string table)
     {
         var predicates = await ScalarAsync(
@@ -19,6 +23,17 @@ public sealed class OpportunitiesTableTests(SqlServer sqlServer)
             Guid.Empty);
 
         Assert.Equal(3, predicates);
+    }
+
+    [Fact]
+    public async Task Weather_forecasts_are_shared_by_every_workspace()
+    {
+        var predicates = await ScalarAsync(
+            "SELECT COUNT(*) FROM sys.security_predicates WHERE target_object_id = OBJECT_ID(N'triggers.WeatherForecasts')",
+            Guid.Empty,
+            Guid.Empty);
+
+        Assert.Equal(0, predicates);
     }
 
     [Fact]
