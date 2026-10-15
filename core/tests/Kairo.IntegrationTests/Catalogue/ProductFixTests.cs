@@ -54,6 +54,17 @@ public sealed class ProductFixTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task A_price_fix_with_a_blank_currency_uses_the_brands_currency()
+    {
+        var (admin, brandId, productId) = await ProductAsync(Untitled);
+
+        var fixedProduct = await FixAsync(admin.Browser, brandId, productId, new { price = 10, currency = "" });
+
+        Assert.Equal(10m, fixedProduct.GetProperty("price").GetDecimal());
+        Assert.Equal("INR", fixedProduct.GetProperty("currency").GetString());
+    }
+
+    [Fact]
     public async Task A_fix_lasts_while_the_import_leaves_the_field_empty()
     {
         var (admin, brandId, productId) = await ProductAsync(Untitled);

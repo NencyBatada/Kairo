@@ -80,13 +80,13 @@ internal static class ProductFixRequest
             var currency = brandCurrency;
             if (currencyNode is not null)
             {
-                if (!TryReadText(currencyNode, out var code) || code is null || code.Length != 3 || !code.All(char.IsAsciiLetter))
+                if (!TryReadText(currencyNode, out var code) || code is { Length: not 3 } || (code is not null && !code.All(char.IsAsciiLetter)))
                 {
                     errors[ProductFields.Currency] = [BadCurrency];
                     return;
                 }
 
-                currency = code.ToUpperInvariant();
+                currency = code?.ToUpperInvariant() ?? brandCurrency;
             }
 
             if (product.Price is not null)
