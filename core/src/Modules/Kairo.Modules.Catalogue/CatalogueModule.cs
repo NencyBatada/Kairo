@@ -8,10 +8,12 @@ public sealed class CatalogueModule : IModule
     {
         services.AddDbContext<CatalogueDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, CatalogueDbContext.SchemaName));
+        services.AddCatalogue();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.MapCatalogue();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)

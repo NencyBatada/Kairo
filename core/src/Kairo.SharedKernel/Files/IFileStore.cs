@@ -10,6 +10,7 @@ public interface IFileStore
 public static class FileBuckets
 {
     public const string BrandFiles = "brand-files";
+    public const string CatalogueImports = "catalogue-imports";
 }
 
 public sealed class StoredFileMissingException(string bucket, string key)

@@ -1463,6 +1463,121 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/catalogue/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    } & {
+                        allowLargeRemoval?: boolean;
+                    };
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportDetailView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -2160,6 +2275,50 @@ export interface components {
             };
         };
         IFormFile: string;
+        ImportDetailView: {
+            id: string;
+            kind: string;
+            fileName: null | string;
+            feedUrl: null | string;
+            status: string;
+            rows: number | string;
+            valid: number | string;
+            invalid: number | string;
+            added: number | string;
+            updated: number | string;
+            removed: number | string;
+            unchanged: number | string;
+            errorCode: null | string;
+            errorMessage: null | string;
+            startedBy: null | string;
+            startedAt: string;
+            finishedAt: string;
+            problems: components["schemas"]["ImportProblem"][];
+        };
+        ImportProblem: {
+            row: number | string;
+            attribute: string;
+            message: string;
+        };
+        ImportView: {
+            id: string;
+            kind: string;
+            fileName: null | string;
+            feedUrl: null | string;
+            status: string;
+            rows: number | string;
+            valid: number | string;
+            invalid: number | string;
+            added: number | string;
+            updated: number | string;
+            removed: number | string;
+            unchanged: number | string;
+            errorCode: null | string;
+            errorMessage: null | string;
+            startedBy: null | string;
+            startedAt: string;
+            finishedAt: string;
+        };
         InviteRequest: {
             email: string;
             roles: components["schemas"]["BrandRole"][];
