@@ -76,9 +76,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Trigger rules screen**: Create, edit, pause and delete rules, each shown in plain words, and turn on suggested rules.
-- [ ] **Festival calendar screen**: Manage the festivals and events for each market.
-- [ ] **Triggered cards**: Shows triggered opportunities on Today and in the Radar, marked with what triggered them.
+- [/] **Trigger rules screen**: Create, edit, pause and delete rules, each shown in plain words, and turn on suggested rules. *In progress: implementing Nency's web screen against the merged trigger API.*
+- [/] **Festival calendar screen**: Manage the festivals and events for each market. *In progress: implementing Nency's calendar against the merged festival API.*
+- [/] **Triggered cards**: Shows triggered opportunities on Today and in the Radar, marked with what triggered them. *In progress: implementing Nency's triggered opportunity views against the merged API.*
 
 ## 5. Campaign room
 
