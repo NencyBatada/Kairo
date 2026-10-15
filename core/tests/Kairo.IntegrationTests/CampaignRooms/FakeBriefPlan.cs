@@ -14,6 +14,8 @@ public sealed class FakeBriefPlan
 
     public Action? WhileDrafting { get; set; }
 
+    public Action? WhileInstructing { get; set; }
+
     public Func<JsonElement, object>? Answer { get; set; }
 
     public Func<JsonElement, object>? Changes { get; set; }
@@ -41,7 +43,7 @@ public sealed class FakeBriefPlan
         budget = request.GetProperty("budget").GetProperty("suggested").GetDecimal(),
         startDate = request.GetProperty("dates").GetProperty("suggestedStart").GetString(),
         endDate = request.GetProperty("dates").GetProperty("suggestedEnd").GetString(),
-        regions = request.GetProperty("opportunity").GetProperty("regions").EnumerateArray().Take(2).Select(region => region.GetProperty("name").GetString()).ToArray(),
+        regions = request.GetProperty("opportunity").GetProperty("regions").EnumerateArray().Select(region => region.GetProperty("name").GetString()).ToArray(),
         audiences = new[] { "Commuters caught in the rain" },
         keyMessages = new[] { "Stay dry on the way to work.", "Dries in minutes." },
         productIds = new[] { "p1", "p9" },
@@ -71,6 +73,7 @@ public sealed class FakeBriefPlan
 
             if (!drafting)
             {
+                WhileInstructing?.Invoke();
                 return FakeAgents.Json(new
                 {
                     changes = Changes?.Invoke(body) ?? new { reasons = new { }, summary = "Nothing to change." },

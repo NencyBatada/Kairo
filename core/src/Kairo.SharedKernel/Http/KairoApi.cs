@@ -22,6 +22,12 @@ public static class KairoApi
     public static TBuilder RequireBrandRole<TBuilder>(this TBuilder builder, BrandRoles roles)
         where TBuilder : IEndpointConventionBuilder =>
         builder.WithMetadata(new BrandRoleRequirement(roles));
+
+    public static TBuilder WithoutRequestTransaction<TBuilder>(this TBuilder builder)
+        where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(new NoRequestTransaction());
 }
 
 public sealed record BrandRoleRequirement(BrandRoles Roles);
+
+public sealed record NoRequestTransaction;

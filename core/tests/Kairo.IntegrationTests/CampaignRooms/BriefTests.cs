@@ -29,7 +29,7 @@ public sealed class BriefTests(SqlServer sqlServer) : IAsyncLifetime
         var start = DateOnly.Parse(brief.GetProperty("startDate").GetString()!);
         var end = DateOnly.Parse(brief.GetProperty("endDate").GetString()!);
         Assert.Equal(13, end.DayNumber - start.DayNumber);
-        Assert.Equal(2, brief.GetProperty("regions").GetArrayLength());
+        Assert.Equal(3, brief.GetProperty("regions").GetArrayLength());
         var product = Assert.Single(brief.GetProperty("products").EnumerateArray());
         Assert.True(product.GetProperty("inStock").GetBoolean());
         Assert.Equal([product.GetProperty("link").GetString()], Strings(brief.GetProperty("landingPages")));
@@ -330,7 +330,47 @@ public sealed class BriefTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(("Sell", "This week"), (room.GetProperty("brief").GetProperty("goal").GetString(), room.GetProperty("brief").GetProperty("timing").GetString()));
     }
 
+    [Fact]
+    public async Task No_transaction_stays_open_while_the_agent_works_on_an_instruction()
+    {
+        var roomId = await _world.OpenWithBriefAsync();
+        var version = (await Campaigns.BriefAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("campaignVersion").GetInt32();
+        int? idleTransactions = null;
+        _world.Plan.WhileInstructing = () => idleTransactions = IdleTransactionsAsync().GetAwaiter().GetResult();
+
+        using var previewed = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "brief/instructions", new { version, briefVersion = 1, instruction = "add Hindi" });
+
+        Assert.Equal(HttpStatusCode.OK, previewed.StatusCode);
+        Assert.Equal(0, idleTransactions);
+        Assert.Equal(1, await CountAsync("BriefProposals", roomId));
+    }
+
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();
+
+    private async Task<int> IdleTransactionsAsync()
+    {
+        await using var connection = new SqlConnection(_world.Database);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*) FROM sys.dm_exec_sessions
+            WHERE database_id = DB_ID() AND session_id <> @@SPID AND status = N'sleeping' AND open_transaction_count > 0;
+            """;
+        return (int)(await command.ExecuteScalarAsync(Token))!;
+    }
+
+    private async Task<int> CountAsync(string table, Guid roomId)
+    {
+        await using var connection = new SqlConnection(_world.Database);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            SELECT COUNT(*) FROM campaign_rooms.{table} WHERE RoomId = @room;
+            """;
+        command.Parameters.AddWithValue("@room", roomId);
+        return (int)(await command.ExecuteScalarAsync(Token))!;
+    }
 
     private async Task<Guid> ProposeAsync(Guid roomId, int version, int briefVersion = 1)
     {

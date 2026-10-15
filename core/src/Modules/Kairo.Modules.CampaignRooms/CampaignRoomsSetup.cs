@@ -44,7 +44,7 @@ internal static class CampaignRoomsSetup
         campaigns.MapPost("/{campaignId:guid}/proof-plan/holdouts", ProofPlanEndpoints.ChooseHoldoutsAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("/{campaignId:guid}/brief", BriefEndpoints.GetAsync);
         campaigns.MapPatch("/{campaignId:guid}/brief", BriefEndpoints.EditAsync).RequireBrandRole(BrandRoles.Marketer);
-        campaigns.MapPost("/{campaignId:guid}/brief/instructions", BriefEndpoints.ProposeAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/brief/instructions", BriefEndpoints.ProposeAsync).RequireBrandRole(BrandRoles.Marketer).WithoutRequestTransaction();
         campaigns.MapPost("/{campaignId:guid}/brief/proposals/{proposalId:guid}/apply", BriefEndpoints.ApplyAsync).RequireBrandRole(BrandRoles.Marketer);
     }
 }

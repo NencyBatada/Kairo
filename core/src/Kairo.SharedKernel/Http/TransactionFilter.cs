@@ -8,7 +8,10 @@ internal sealed class TransactionFilter(KairoDatabase database) : IEndpointFilte
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var request = context.HttpContext.Request;
-        if (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method) || HttpMethods.IsOptions(request.Method))
+        if (HttpMethods.IsGet(request.Method)
+            || HttpMethods.IsHead(request.Method)
+            || HttpMethods.IsOptions(request.Method)
+            || context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<NoRequestTransaction>() is not null)
         {
             return await next(context);
         }
