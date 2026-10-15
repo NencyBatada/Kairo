@@ -60,3 +60,4 @@ Files: `page.tsx`, `page.test.tsx`, `_components/drafting-form.tsx`, `drafting-f
 - Read-only code review found a changed-draft discard confirmation and unassociated field errors. Both were reproduced in failing tests and fixed; focused tests and the full suite passed afterward.
 - The existing core DELETE draft endpoint has no revision precondition. The screen invalidates open confirmations when received live state changes; atomic protection against changes before event delivery requires a future core contract change.
 - Full development-environment verification and user merge into develop remain outstanding. The task stays in progress.
+- During local browser QA, Next.js logged an uncached-navigation diagnostic from the shared WorkspaceSidebar queries. The page and save action returned 200; production build passed. Review this diagnostic during development verification.
