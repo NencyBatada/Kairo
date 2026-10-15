@@ -22,6 +22,12 @@ internal static class SkipReasons
     public const string AlreadyRunning = "already_running";
 }
 
+internal static class FailReasons
+{
+    public const string AccessLost = "access_lost";
+    public const string Interrupted = "interrupted";
+}
+
 internal static class FeedStates
 {
     public const string NotSetUp = "not_set_up";

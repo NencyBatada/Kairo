@@ -13,6 +13,7 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
         """;
 
     private readonly List<DbContext> _contexts = [];
+    private readonly List<Func<CancellationToken, Task>> _afterCommit = [];
     private SqlTransaction? _transaction;
     private int _systemScopes;
 
@@ -57,6 +58,17 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
         }
     }
 
+    public async Task AfterCommitAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken)
+    {
+        if (_transaction is null)
+        {
+            await action(cancellationToken);
+            return;
+        }
+
+        _afterCommit.Add(action);
+    }
+
     public async Task LockAsync(string resource, CancellationToken cancellationToken)
     {
         var transaction = _transaction ?? throw new InvalidOperationException("A lock needs a transaction.");
@@ -80,10 +92,17 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
         var transaction = _transaction ?? throw new InvalidOperationException("No transaction is in progress.");
         await transaction.CommitAsync(cancellationToken);
         await EndTransactionAsync(transaction);
+        var actions = _afterCommit.ToList();
+        _afterCommit.Clear();
+        foreach (var action in actions)
+        {
+            await action(cancellationToken);
+        }
     }
 
     public async Task RollbackAsync(CancellationToken cancellationToken)
     {
+        _afterCommit.Clear();
         if (_transaction is not { } transaction)
         {
             return;

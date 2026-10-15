@@ -13,6 +13,7 @@ internal static class ReconnectReasons
     public const string TokenRejected = "token_rejected";
     public const string TokenUnreadable = "token_unreadable";
     public const string AdminLeft = "admin_left";
+    public const string AccessLost = "access_lost";
 }
 
 internal sealed class ConnectionTokens(
@@ -114,7 +115,7 @@ internal sealed class ConnectionTokens(
         await notifications.NotifyAsync(ConnectionNotices.NeedsReconnect(connection.Product, reason), cancellationToken);
     }
 
-    private async Task LoseOnItsOwnAsync(Connection connection, string reason, CancellationToken cancellationToken)
+    public async Task LoseOnItsOwnAsync(Connection connection, string reason, CancellationToken cancellationToken)
     {
         cache.Forget(connection.Id);
         await using (var scope = scopes.CreateAsyncScope())

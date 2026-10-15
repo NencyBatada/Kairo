@@ -8,7 +8,7 @@ internal static class SignInEndpoints
 {
     public static void MapSignIn(this IEndpointRouteBuilder api)
     {
-        var auth = api.MapGroup("/auth");
+        var auth = api.MapGroup("/auth").AllowAnonymous();
 
         auth.MapGet("/sign-in", (string? returnUrl) =>
             TypedResults.Challenge(
