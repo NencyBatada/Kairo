@@ -89,8 +89,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Campaign room screen**: The stage tracker with owner and next action, a tab for each stage, and the activity log.
-- [/] **Campaigns list**: Every campaign, with filters for stage, status, owner and date, and search.
+- [/] **Campaign room screen**: The stage tracker with owner and next action, a tab for each stage, and the activity log. *Implemented in draft PR #12 on feature/campaign-room-screen; 44 focused room checks, lint, production build and web CI pass. Verified tracker ownership, approver names, evidence, activity paging, failed/successful retries, live progress and refreshes, dark mode, long content and 320px reflow in the local API-contract fixture preview. Combined verification with Campaigns list: all 636 web tests, API type generation, lint and production build pass; the combined list-to-room journey and 200% layout check pass. Left: development-environment verification and user merge into develop.*
+- [/] **Campaigns list**: Every campaign, with filters for stage, status, owner and date, and search. *Implemented in draft PR #13 on feature/campaigns-list; 43 focused campaign/area checks, lint, production build and web CI pass. Verified campaign/product search, all filters, older/latest paging, invalid dates, empty results, dark mode and 320px reflow in the local API-contract fixture preview. Combined verification with Campaign room screen: all 636 web tests, API type generation, lint and production build pass; the combined list-to-room journey and 200% layout check pass. Left: development-environment verification and user merge into develop.*
 
 ## 6. Smart Brief and proof plan
 
