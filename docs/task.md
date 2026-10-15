@@ -64,7 +64,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 - [/] **Opportunities screen**: Ranked cards with trend line, growth, regions, matching products, score and reason, with filters.
 - [/] **Opportunity detail**: Trend chart, regional view, matching products, sourced reasons and score breakdown, with accept, save and dismiss.
-- [ ] **Watched and ignored topics**: Lets the brand pick topics to always see or never see.
+- [/] **Watched and ignored topics**: Lets the brand pick topics to always see or never see.
 
 ## 4. Real-world triggers
 
