@@ -3,7 +3,36 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { liveStreamUrl, WORKSPACE_LIVE_EVENTS } from "@/lib/live-events";
+import { useLiveDispatch } from "@/components/workspace-live-provider";
+import { parseAgentProgress } from "@/lib/agent-progress";
+import { AGENT_PROGRESS_EVENT, liveStreamUrl, WORKSPACE_LIVE_EVENTS } from "@/lib/live-events";
+import { navigateTo } from "@/lib/navigation";
+
+export const REFRESH_DELAY_MS = 100;
+export const RECONNECT_BASE_DELAY_MS = 1_000;
+export const RECONNECT_MAX_DELAY_MS = 30_000;
+
+export function reconnectDelay(attempt: number, random: () => number = Math.random) {
+  const ceiling = Math.min(RECONNECT_MAX_DELAY_MS, RECONNECT_BASE_DELAY_MS * 2 ** attempt);
+  return Math.round(ceiling / 2 + random() * (ceiling / 2));
+}
+
+type Access = "allowed" | "signed-out" | "not-a-member" | "unknown";
+
+async function checkAccess(brandId: string): Promise<Access> {
+  try {
+    const response = await fetch(`/api/brands/${brandId}`, { credentials: "same-origin", cache: "no-store" });
+    if (response.status === 401) {
+      return "signed-out";
+    }
+    if (response.status === 403 || response.status === 404) {
+      return "not-a-member";
+    }
+    return response.ok ? "allowed" : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 type WorkspaceLiveUpdatesProps = {
   brandId: string;
@@ -12,7 +41,7 @@ type WorkspaceLiveUpdatesProps = {
 export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { reportProgress, setConnection, clearJobs } = useLiveDispatch();
   const pathnameRef = useRef(pathname);
 
   useEffect(() => {
@@ -20,51 +49,103 @@ export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
   }, [pathname]);
 
   useEffect(() => {
+    let disposed = false;
+    let source: EventSource | null = null;
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let attempt = 0;
+    let catchUpOnOpen = false;
+
+    clearJobs();
+    setConnection("connecting");
+
     const scheduleRefresh = () => {
-      if (refreshTimer.current) {
-        clearTimeout(refreshTimer.current);
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
       }
-      refreshTimer.current = setTimeout(() => {
-        refreshTimer.current = null;
+      refreshTimer = setTimeout(() => {
+        refreshTimer = null;
         router.refresh();
-      }, 100);
+      }, REFRESH_DELAY_MS);
     };
 
-    const redirectToSignIn = () => {
-      const returnUrl = pathnameRef.current || "/";
-      router.replace(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
-    };
-
-    const checkAccess = async () => {
-      const response = await fetch(`/api/brands/${brandId}`, { credentials: "same-origin", cache: "no-store" });
-      if (response.status === 401 || response.status === 404) {
-        redirectToSignIn();
-        return false;
+    const onProgress = (event: Event) => {
+      const progress = parseAgentProgress(String((event as MessageEvent).data ?? ""));
+      if (progress) {
+        reportProgress(progress);
       }
-      return true;
     };
 
-    const source = new EventSource(liveStreamUrl(brandId));
-
-    for (const type of WORKSPACE_LIVE_EVENTS) {
-      source.addEventListener(type, scheduleRefresh);
-    }
-    source.addEventListener("reset", scheduleRefresh);
-
-    source.onerror = () => {
-      if (source.readyState !== EventSource.CLOSED) {
+    const recover = async () => {
+      const access = await checkAccess(brandId);
+      if (disposed) {
         return;
       }
-      void checkAccess();
+      if (access === "signed-out") {
+        const returnUrl = pathnameRef.current || "/";
+        router.replace(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
+        return;
+      }
+      if (access === "not-a-member") {
+        navigateTo("/");
+        return;
+      }
+      const delay = reconnectDelay(attempt);
+      attempt += 1;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        catchUpOnOpen = true;
+        open();
+      }, delay);
     };
 
-    return () => {
-      if (refreshTimer.current) {
-        clearTimeout(refreshTimer.current);
+    const open = () => {
+      const stream = new EventSource(liveStreamUrl(brandId));
+      source = stream;
+
+      for (const type of WORKSPACE_LIVE_EVENTS) {
+        stream.addEventListener(type, scheduleRefresh);
       }
-      source.close();
+      stream.addEventListener("reset", scheduleRefresh);
+      stream.addEventListener(AGENT_PROGRESS_EVENT, onProgress);
+
+      stream.onopen = () => {
+        attempt = 0;
+        setConnection("open");
+        if (catchUpOnOpen) {
+          catchUpOnOpen = false;
+          scheduleRefresh();
+        }
+      };
+
+      stream.onerror = () => {
+        if (disposed || source !== stream) {
+          return;
+        }
+        setConnection("reconnecting");
+        if (stream.readyState !== EventSource.CLOSED) {
+          return;
+        }
+        stream.close();
+        source = null;
+        void recover();
+      };
     };
-  }, [brandId, router]);
+
+    open();
+
+    return () => {
+      disposed = true;
+      if (refreshTimer) {
+        clearTimeout(refreshTimer);
+      }
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      source?.close();
+      source = null;
+    };
+  }, [brandId, router, reportProgress, setConnection, clearJobs]);
 
   return null;
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { components } from "@/lib/core-api/schema";
 
 import { markNotificationRead } from "../../settings/notifications/actions";
+import { TodayAgentJobs } from "./today-agent-jobs";
 
 type NotificationItem = components["schemas"]["NotificationItem"];
 
@@ -41,6 +42,7 @@ export function TodayOverview({ items, workspace, brandId, timeZone }: TodayOver
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Today" description="What needs you this morning." />
+      <TodayAgentJobs />
       <section aria-labelledby="recent-updates-title" className="flex flex-col gap-3">
         <h2 id="recent-updates-title" className="font-display text-display-sm text-foreground">
           Recent updates
