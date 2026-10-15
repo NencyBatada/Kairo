@@ -277,6 +277,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Button | `default` (terracotta), `secondary` (outlined card), `ghost`, `destructive` (destructive text), `destructive-solid` (confirm dialogs only), `link`; sizes `sm` 32px, `default` 36px, `lg` 40px, `icon` 36px | Grows to 44px on touch screens (`pointer-coarse:`). Presses in to 98%, except `link`. While pending it's disabled, shows a spinner and keeps its label. |
 | Input | Default, focus, invalid (`aria-invalid`), disabled | 36px tall, 44px on touch screens; `input` border; 16px text on phones |
 | NativeSelect | The same as Input, with a chevron | Uses the platform picker on phones |
+| Textarea | The same states as Input | Grows with its content from 96px, wraps long words, 16px text on phones |
 | Checkbox | Unchecked, checked, focus, disabled | Native, styled: a 16px box with an `input` border; checked fills with `primary`. In forced-colours mode it falls back to the system checkbox. |
 | ChoiceChip | Unchecked, checked | A label-wrapped native checkbox shaped as a pill, for picking several short options such as roles |
 | Field | Label, control, description, error | A layout wrapper for those four. Forms wire `htmlFor`, `aria-describedby` and `aria-invalid` themselves, on selects as well as inputs, and the error sits under the control. |
@@ -286,7 +287,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | Avatar | Image, initials fallback | The Google photo when available, otherwise initials on `accent` (`primary-soft` for you). Initials, and the one-letter workspace tiles, are built from whole characters (`initials()` and `initial()` in `lib/initials.ts`), so an emoji or a Devanagari letter is never cut in half. |
 | Table | Header, rows, numeric cells | Headers in `text-xs` `subtle-foreground` on a `muted` band; 44px rows; numbers right-aligned with tabular numerals. Wraps on phones rather than scrolling sideways. |
 | DropdownMenu | Items, link items, labels, separators | `card` surface, `shadow-popover`. The highlighted item gets an `accent` fill and a 3px terracotta bar on its left, so keyboard focus clears 3:1. Arrow keys move, Escape closes and focus returns to the trigger. |
-| Sheet | Left (navigation), right (Ask Kairo) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim |
+| Sheet | Left (navigation), right (Ask Kairo), bottom (decisions) | Holds focus inside, Escape closes, a close button labelled "Close", a warm scrim. The bottom sheet slides up on phones and tablets, pads for the home indicator (`env(safe-area-inset-bottom)`) and scrolls inside above 90% of the screen height; from `lg` it shows as a centred dialog 448px wide. |
 | AlertDialog | Title, description, Cancel, confirm | For destructive or irreversible actions (section 9.4). On a very short screen it scrolls inside instead of running off the screen. |
 | Skeleton | Text line, block | `accent` fill with a slow pulse that stops under reduced motion |
 
@@ -305,6 +306,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline; hovering another tab previews its underline in `border-strong`. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
 | EmptyState | An icon tile, a serif title, one line of explanation and optional actions. It never offers an action that doesn't work yet. |
 | FormStatus | The result of a form, next to its main action: a tick and `success-strong` text with `role="status"`, or an alert icon and `destructive-strong` text with `role="alert"` |
+| ApprovalPanel | Every approval: the gate badge, the approval status, the title and named approver, a summary slot, the key facts and the decision actions (section 9.5). Each decision is confirmed in a bottom sheet and handed to an `onDecision` callback. People who can't decide see a read-only note naming the approver. Lives in `components/approval/` with ApprovalFacts and ApprovalStatusBadge. |
 
 ## 9. Patterns
 
@@ -344,7 +346,10 @@ Every list and page has all three.
 - A summary of exactly what is being approved: budget against the limit, dates, regions, holdout regions, and asset counts with previews.
 - Above the budget limit, a warning Alert names the budget owner it goes to.
 - Actions: "Approve brief" (the one terracotta button) and "Send back" (secondary), which asks for a comment.
-- On phones, the summary stacks and the actions sit in a bar fixed to the bottom, with 44px buttons.
+- "Override flag" (secondary) appears only where Brand Guardian has flagged something, and needs a reason.
+- Every decision is confirmed before it's sent: approving shows its consequence, and sending back or overriding asks for a required comment, focused when the sheet opens. The sheet stays open while the decision is pending, shows any error inside it, and keeps the comment.
+- The result is announced through a `role="status"` line, which takes focus once the actions are gone.
+- On phones and tablets, the summary stacks, key facts put the label above the value, and the actions sit in a bar stuck to the bottom of the screen with 44px buttons, padded for the home indicator. On phones the buttons span the full width. The confirmations open as a bottom sheet.
 - Ask Kairo never shows approve buttons. It links to the approval step instead.
 
 ### 9.6 Evidence ("Show the why")
@@ -386,6 +391,10 @@ Every list and page has all three.
 | Recommendation | Applied | `success` |
 | Recommendation | Held during a test | `info` |
 | Recommendation | Dismissed, Expired | `neutral` |
+| Approval | Waiting for approval | `gate`, with a clock |
+| Approval | Approved | `success` |
+| Approval | Sent back | `warning` |
+| Approval | Expired | `neutral`, with a timer-off icon |
 
 ### 9.9 Numbers, money and dates
 

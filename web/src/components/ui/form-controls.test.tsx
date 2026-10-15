@@ -8,6 +8,7 @@ import { RoleCheckboxes } from "@/components/role-checkboxes";
 import { Checkbox } from "./checkbox";
 import { ChoiceChip } from "./choice-chip";
 import { NativeSelect } from "./native-select";
+import { Textarea } from "./textarea";
 
 test("a native select is found by its label and keeps its value", () => {
   render(
@@ -80,4 +81,19 @@ test("field errors read as one sentence under their field", () => {
   render(<FieldError id="email-error" errors={["Enter an email.", "It must be unique."]} />);
 
   expect(screen.getByText("Enter an email. It must be unique.").closest("p")?.id).toBe("email-error");
+});
+
+test("a textarea is found by its label, wraps long words and shows the invalid state", () => {
+  render(
+    <>
+      <label htmlFor="reason">What needs to change</label>
+      <Textarea id="reason" aria-invalid defaultValue="Lead with quick-dry." />
+    </>,
+  );
+
+  const textarea = screen.getByLabelText("What needs to change") as HTMLTextAreaElement;
+  expect(textarea.value).toBe("Lead with quick-dry.");
+  expect(textarea.className).toContain("wrap-anywhere");
+  expect(textarea.className).toContain("aria-invalid:border-destructive");
+  expect(textarea.className).toContain("text-base");
 });

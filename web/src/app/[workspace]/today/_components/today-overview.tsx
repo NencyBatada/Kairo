@@ -67,10 +67,10 @@ export function TodayOverview({ items, workspace, brandId, timeZone }: TodayOver
                     className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-accent md:px-5 pointer-coarse:py-5"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-foreground">{item.title}</span>
+                      <span className="min-w-0 font-semibold wrap-anywhere text-foreground">{item.title}</span>
                       {item.readAt === null && <Badge variant="info">New</Badge>}
                     </div>
-                    <p className="max-w-prose text-small text-muted-foreground">{item.body}</p>
+                    <p className="max-w-prose text-small wrap-anywhere text-muted-foreground">{item.body}</p>
                     <time dateTime={item.createdAt} className="text-xs text-subtle-foreground">
                       {format.format(new Date(item.createdAt))}
                     </time>
@@ -83,7 +83,7 @@ export function TodayOverview({ items, workspace, brandId, timeZone }: TodayOver
       </section>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {futureSections.map(({ title, description, icon: Icon }) => (
-          <Card key={title} className="gap-2">
+          <Card key={title} className="min-w-0 gap-2">
             <CardHeader className="flex-row items-center gap-2">
               <Icon className="size-4 text-primary" aria-hidden="true" />
               <CardTitle>{title}</CardTitle>
