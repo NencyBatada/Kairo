@@ -11,13 +11,9 @@ import PerformancePage from "./campaigns/[id]/performance/page";
 import ResultsPage from "./campaigns/[id]/results/page";
 import CampaignsPage from "./campaigns/page";
 import ImpactLabPage from "./impact-lab/page";
-import OpportunityPage from "./opportunities/[id]/page";
-import OpportunitiesPage from "./opportunities/page";
 import TriggersPage from "./triggers/page";
 
 test.each([
-  ["Opportunities", OpportunitiesPage, "No opportunities yet"],
-  ["Opportunity", OpportunityPage, "Nothing to show yet"],
   ["Campaigns", CampaignsPage, "No campaigns yet"],
   ["Triggers", TriggersPage, "No trigger rules yet"],
   ["Impact Lab", ImpactLabPage, "No analyses yet"],
