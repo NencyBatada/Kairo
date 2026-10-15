@@ -322,14 +322,14 @@ Describe 'Set-KairoMailSender' {
 
     BeforeEach {
         $script:sender = $environment.Clone()
-        $script:sender.MailSender = 'khanmohdtalha3250@gmail.com'
+        $script:sender.MailSender = 'evolixgcpadmin@gmail.com'
         $script:consentUrl = $null
         $script:tokenRequest = $null
         $script:returnedState = $null
         $script:grant = [pscustomobject]@{
             refresh_token = 'sender-refresh-1'
             scope         = 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.send'
-            id_token      = New-TestIdToken 'khanmohdtalha3250@gmail.com' $true
+            id_token      = New-TestIdToken 'evolixgcpadmin@gmail.com' $true
         }
         Mock -ModuleName Kairo.Deploy Get-KairoSecretValue {
             if ($Name -eq 'google-client-id') { 'client-id' } else { 'client-secret' }
@@ -404,7 +404,7 @@ Describe 'Set-KairoMailSender' {
     }
 
     It 'refuses an address Google has not verified' {
-        $script:grant.id_token = New-TestIdToken 'khanmohdtalha3250@gmail.com' $false
+        $script:grant.id_token = New-TestIdToken 'evolixgcpadmin@gmail.com' $false
 
         { Set-KairoMailSender -Environment $sender } | Should -Throw '*verified*'
         Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
