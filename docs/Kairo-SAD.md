@@ -51,7 +51,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Operational database | Cloud SQL for SQL Server | Brands, users, Brand Kits, catalogue, campaign rooms, approvals, trigger rules, Brand Memory and the audit log |
 | Analytics | BigQuery, loaded nightly by the core worker from the Google Ads API, the GA4 Data API, sales uploads and the brand's own tables | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
-| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
+| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh and `kairo-opportunities-hourly` Radar refresh), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
@@ -89,7 +89,7 @@ The agent service is a stateless Python app built with ADK, running on Cloud Run
 
 | Agent | ADK pattern | Models | Tools it can use |
 | --- | --- | --- | --- |
-| Sense | Sequential: score, match to the catalogue, explain | Gemini Flash with Google Search grounding | Keyword metrics, catalogue and Brand Memory, read through the core |
+| Sense | Two Gen AI SDK calls, not an ADK agent: match keywords to topics and catalogue categories, then explain each top topic | Gemini Flash; Google Search grounding for the explanations | None; the core sends keyword metrics, in-stock categories, dismissals and watched topics as data, and scores the topics itself |
 | Plan | Sequential: draft the brief, then the proof plan | Gemini Pro | Brand Kit, keyword metrics, holdout matching and smallest detectable lift |
 | Create | Parallel: copy, images, video, shopping titles and translations | Gemini Flash, Imagen and Gemini image generation, Veo, Cloud Text-to-Speech | Brand Kit, catalogue photos and file storage |
 | Check (Brand Guardian) | Loop: check, fix and re-check, up to 3 times | Gemini Pro for review; code for format checks | Brand rules, policy guidance and format specs |
@@ -156,7 +156,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; Connection rows live in the brands schema; OAuth refresh tokens encrypted with Cloud KMS |
 | Brand Kit | KitVersion, KitFile, DraftRun | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage; DraftRun records each drafting run's pages, ads, model and prompt version |
 | Catalogue | Product, Source, Import, StockEvent | Current details, stock and fixes on Product; every stock change in StockEvent; each import's counts and first 50 problems in Import |
-| Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
+| Opportunities | Opportunity, WatchTopic, RefreshRun | Evidence and sources stored as JSON |
 | Triggers | TriggerRule, TriggerFiring | Conditions stored as JSON; cooldown per rule and region |
 | Campaign rooms | CampaignRoom, StageRun, Brief, ProofPlan, Asset, CheckResult | Briefs are versioned; each StageRun records model, prompt version, tokens, cost and timing |
 | Approvals and launch | Approval, LaunchRecord, ProductAdMap | Approval holds the plan hash; ProductAdMap links products to ads for stock pauses |

@@ -207,6 +207,16 @@ Describe 'Invoke-KairoDeploy' {
             '--location asia-south1 --project kairo-test')
     }
 
+    It 'creates the hourly opportunity refresh job when it is missing' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $calls | Should -Contain ('scheduler jobs create http kairo-opportunities-hourly --schedule 30 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/opportunities/refresh --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
     It 'updates the hourly catalogue job when it already exists' {
         $script:scheduleExists = $true
 
@@ -297,11 +307,13 @@ Describe 'Invoke-KairoDeploy' {
             Should -BeLike '*--set-env-vars=GOOGLE_CLOUD_PROJECT=kairo-test,GOOGLE_CLOUD_LOCATION=global*'
     }
 
-    It 'tells the API where the agent service is and which audience its tokens need' {
+    It 'tells the API and the worker where the agent service is and which audience its tokens need' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
-        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) |
-            Should -BeLike '*Kairo__Agents__Url=https://kairo-agents-123.asia-south1.run.app,Kairo__Agents__Audience=https://kairo-agents-abc123-el.a.run.app*'
+        foreach ($service in 'kairo-api', 'kairo-worker') {
+            ($calls | Where-Object { $_ -like "run deploy $service *" }) |
+                Should -BeLike '*Kairo__Agents__Url=https://kairo-agents-123.asia-south1.run.app,Kairo__Agents__Audience=https://kairo-agents-abc123-el.a.run.app*'
+        }
     }
 
     It 'deploys the agent service privately with a long timeout' {
