@@ -19,6 +19,7 @@ internal static class OpportunitiesSetup
         services.AddScoped<BrandRefresher>();
         services.AddScoped<OpportunityReader>();
         services.AddScoped<IOpportunities, TriggeredOpportunities>();
+        services.AddScoped<IKeywordDemand, KeywordDemandReader>();
     }
 
     public static void MapOpportunities(this IEndpointRouteBuilder api)
