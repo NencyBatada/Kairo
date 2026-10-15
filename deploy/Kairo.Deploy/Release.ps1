@@ -65,6 +65,7 @@ function Invoke-KairoDeploy {
             '--timeout', '3600',
             '--concurrency', '500',
             '--no-cpu-throttling',
+            '--memory', '1Gi',
             "--min-instances=$apiMinInstances",
             "--set-env-vars=$apiSettings",
             "--set-secrets=$($apiSecrets -join ',')"
@@ -76,7 +77,7 @@ function Invoke-KairoDeploy {
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
             '--timeout', '3600',
             '--no-cpu-throttling',
-            '--memory', '1Gi',
+            '--memory', '2Gi',
             "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics,$files",
             "--set-secrets=$($serviceSecrets -join ',')"
         ))

@@ -125,8 +125,14 @@ Describe 'Invoke-KairoDeploy' {
         $worker | Should -BeLike '*--network kairo --subnet kairo-run --vpc-egress private-ranges-only*'
         $worker | Should -BeLike '*--timeout 3600*'
         $worker | Should -BeLike '*--no-cpu-throttling*'
-        $worker | Should -BeLike '*--memory 1Gi*'
         $worker | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest,Authentication__Google__ClientId=google-client-id:latest,Authentication__Google__ClientSecret=google-client-secret:latest*'
+    }
+
+    It 'gives the API and the worker enough memory to import a 50 MB catalogue' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -BeLike '*--memory 1Gi*'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike '*--memory 2Gi*'
     }
 
     It 'tells the API and the worker where brand datasets live' {
