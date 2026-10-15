@@ -1,3 +1,4 @@
+using Kairo.Contracts.Identity;
 using Kairo.Modules.Identity.Data;
 
 namespace Kairo.Modules.Identity.Members;

@@ -10,6 +10,9 @@ const settings = {
   assetApprovers: ["u1"],
   launchApprovers: ["u1"],
   budgetOwners: ["u1"],
+  budgetMoveApprovers: ["u1"],
+  targetChangeApprovers: ["u2"],
+  googleSuggestionApprovers: ["u1", "u2"],
   budgetLimit: null,
   currency: "INR",
 };
@@ -36,6 +39,52 @@ test("sends each duty's people and the budget limit", async () => {
   expect((await screen.findByRole("status")).textContent).toBe("Approval settings saved.");
 });
 
+test("shows the gates and each type of recommendation in their own groups", () => {
+  render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={approvers} canEdit />);
+
+  const gates = screen.getByRole("region", { name: "Approval gates" });
+  const recommendations = screen.getByRole("region", { name: "Recommendations" });
+  expect(within(gates).getAllByRole("group").map((group) => group.querySelector("legend")?.textContent)).toEqual([
+    "Brief approvers",
+    "Asset approvers",
+    "Launch approvers",
+    "Budget owners",
+  ]);
+  expect(within(recommendations).getAllByRole("group").map((group) => group.querySelector("legend")?.textContent)).toEqual([
+    "Budget moves",
+    "Target CPA and ROAS changes",
+    "Google Ads recommendations",
+  ]);
+});
+
+test("ticks the people already approving each type of recommendation", () => {
+  render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={approvers} canEdit />);
+
+  const ticked = (name: string) =>
+    within(screen.getByRole("group", { name }))
+      .getAllByRole("checkbox")
+      .map((box) => (box as HTMLInputElement).checked);
+  expect(ticked("Budget moves")).toEqual([true, false]);
+  expect(ticked("Target CPA and ROAS changes")).toEqual([false, true]);
+  expect(ticked("Google Ads recommendations")).toEqual([true, true]);
+});
+
+test("sends the approvers for each type of recommendation", async () => {
+  const action = vi.fn(async (_: FormState, formData: FormData): Promise<FormState> => {
+    expect(formData.getAll("budgetMoveApprovers")).toEqual(["u1", "u2"]);
+    expect(formData.getAll("targetChangeApprovers")).toEqual([]);
+    expect(formData.getAll("googleSuggestionApprovers")).toEqual(["u1", "u2"]);
+    return { status: "error", fieldErrors: { targetChangeApprovers: ["Choose at least one person."] } };
+  });
+  render(<ApprovalsForm action={action} settings={settings} approvers={approvers} canEdit />);
+
+  fireEvent.click(within(screen.getByRole("group", { name: "Budget moves" })).getByLabelText("Arjun Mehta"));
+  fireEvent.click(within(screen.getByRole("group", { name: "Target CPA and ROAS changes" })).getByLabelText("Arjun Mehta"));
+  fireEvent.click(screen.getByRole("button", { name: "Save approval settings" }));
+
+  expect(await within(screen.getByRole("group", { name: "Target CPA and ROAS changes" })).findByText("Choose at least one person.")).toBeTruthy();
+});
+
 test("explains an empty budget limit", () => {
   render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={approvers} canEdit />);
 
@@ -58,5 +107,5 @@ test("tells members who aren't admins why they can't edit", () => {
 test("explains an empty list of approvers", () => {
   render(<ApprovalsForm action={vi.fn()} settings={settings} approvers={[]} canEdit />);
 
-  expect(screen.getAllByText("Nobody has the approver role yet. Give someone the role on the Team page.")).toHaveLength(4);
+  expect(screen.getAllByText("Nobody has the approver role yet. Give someone the role on the Team page.")).toHaveLength(7);
 });

@@ -13,13 +13,39 @@ import { Label } from "@/components/ui/label";
 import type { ApprovalSettings } from "@/lib/core-api/types";
 import { idle, type FormState } from "@/lib/forms";
 
-type Duty = "briefApprovers" | "assetApprovers" | "launchApprovers" | "budgetOwners";
+type Duty =
+  | "briefApprovers"
+  | "assetApprovers"
+  | "launchApprovers"
+  | "budgetOwners"
+  | "budgetMoveApprovers"
+  | "targetChangeApprovers"
+  | "googleSuggestionApprovers";
 
-const duties: { field: Duty; label: string; help: string }[] = [
-  { field: "briefApprovers", label: "Brief approvers", help: "Approve briefs, gate 1." },
-  { field: "assetApprovers", label: "Asset approvers", help: "Approve the asset set, gate 2." },
-  { field: "launchApprovers", label: "Launch approvers", help: "Approve launches, gate 3." },
-  { field: "budgetOwners", label: "Budget owners", help: "Approve briefs and launches above the budget limit." },
+type DutyGroup = { id: string; title: string; description: string; duties: { field: Duty; label: string; help: string }[] };
+
+const groups: DutyGroup[] = [
+  {
+    id: "gates",
+    title: "Approval gates",
+    description: "Who signs off each step before a campaign goes live.",
+    duties: [
+      { field: "briefApprovers", label: "Brief approvers", help: "Approve briefs, gate 1." },
+      { field: "assetApprovers", label: "Asset approvers", help: "Approve the asset set, gate 2." },
+      { field: "launchApprovers", label: "Launch approvers", help: "Approve launches, gate 3." },
+      { field: "budgetOwners", label: "Budget owners", help: "Approve briefs and launches above the budget limit." },
+    ],
+  },
+  {
+    id: "recommendations",
+    title: "Recommendations",
+    description: "Who approves each kind of change Kairo suggests after a campaign goes live.",
+    duties: [
+      { field: "budgetMoveApprovers", label: "Budget moves", help: "Move budget from one campaign to another." },
+      { field: "targetChangeApprovers", label: "Target CPA and ROAS changes", help: "Raise or lower a campaign's target CPA or target ROAS." },
+      { field: "googleSuggestionApprovers", label: "Google Ads recommendations", help: "Apply Google Ads' own suggestions to Kairo's campaigns." },
+    ],
+  },
 ];
 
 type ApprovalsFormProps = {
@@ -37,35 +63,45 @@ export function ApprovalsForm({ action, settings, approvers, canEdit }: Approval
     <form action={formAction} className="flex flex-col gap-6">
       {!canEdit && <Alert>Only admins can change who approves what.</Alert>}
       <fieldset disabled={!canEdit || pending} className="flex min-w-0 flex-col gap-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          {duties.map((duty) => (
-            <Card key={duty.field} className="min-w-0">
-              <fieldset className="min-w-0 px-4 md:px-5">
-                <legend className="text-base font-semibold text-foreground">{duty.label}</legend>
-                <p className="mt-1 text-small text-subtle-foreground">{duty.help}</p>
-                {approvers.length === 0 ? (
-                  <p className="mt-4 text-small text-muted-foreground">Nobody has the approver role yet. Give someone the role on the Team page.</p>
-                ) : (
-                  <ul className="mt-4 flex flex-col gap-2.5">
-                    {approvers.map((approver) => (
-                      <li key={approver.userId}>
-                        <label className="flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-foreground pointer-coarse:min-h-11">
-                          <Checkbox name={duty.field} value={approver.userId} defaultChecked={settings[duty.field].includes(approver.userId)} />
-                          <span className="min-w-0 truncate" title={approver.name}>
-                            {approver.name}
-                          </span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="mt-2">
-                  <FieldError id={`${duty.field}-error`} errors={errors[duty.field]} />
-                </div>
-              </fieldset>
-            </Card>
-          ))}
-        </div>
+        {groups.map((group) => (
+          <section key={group.id} aria-labelledby={`${group.id}-heading`} className="flex flex-col gap-3">
+            <div>
+              <h2 id={`${group.id}-heading`} className="text-base font-semibold text-foreground">
+                {group.title}
+              </h2>
+              <p className="text-small text-subtle-foreground">{group.description}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {group.duties.map((duty) => (
+                <Card key={duty.field} className="min-w-0">
+                  <fieldset className="min-w-0 px-4 md:px-5">
+                    <legend className="text-base font-semibold text-foreground">{duty.label}</legend>
+                    <p className="mt-1 text-small text-subtle-foreground">{duty.help}</p>
+                    {approvers.length === 0 ? (
+                      <p className="mt-4 text-small text-muted-foreground">Nobody has the approver role yet. Give someone the role on the Team page.</p>
+                    ) : (
+                      <ul className="mt-4 flex flex-col gap-2.5">
+                        {approvers.map((approver) => (
+                          <li key={approver.userId}>
+                            <label className="flex min-h-6 cursor-pointer items-center gap-2.5 text-sm text-foreground pointer-coarse:min-h-11">
+                              <Checkbox name={duty.field} value={approver.userId} defaultChecked={settings[duty.field].includes(approver.userId)} />
+                              <span className="min-w-0 truncate" title={approver.name}>
+                                {approver.name}
+                              </span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="mt-2">
+                      <FieldError id={`${duty.field}-error`} errors={errors[duty.field]} />
+                    </div>
+                  </fieldset>
+                </Card>
+              ))}
+            </div>
+          </section>
+        ))}
         <Card>
           <CardContent className="flex flex-col gap-1.5">
             <Label htmlFor="budgetLimit" className="text-base">

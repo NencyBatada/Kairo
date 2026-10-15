@@ -1,4 +1,5 @@
 using Kairo.Contracts.Audit;
+using Kairo.Contracts.Identity;
 using Kairo.Contracts.Live;
 using Kairo.Modules.Identity.Data;
 using Kairo.Modules.Identity.Members;
@@ -34,6 +35,9 @@ internal static class ApprovalSettingsEndpoints
             ("assetApprovers", ApprovalDuty.Assets, request.AssetApprovers),
             ("launchApprovers", ApprovalDuty.Launch, request.LaunchApprovers),
             ("budgetOwners", ApprovalDuty.BudgetOwner, request.BudgetOwners),
+            ("budgetMoveApprovers", ApprovalDuty.BudgetMoves, request.BudgetMoveApprovers),
+            ("targetChangeApprovers", ApprovalDuty.TargetChanges, request.TargetChangeApprovers),
+            ("googleSuggestionApprovers", ApprovalDuty.GoogleSuggestions, request.GoogleSuggestionApprovers),
         ];
 
         await TeamRules.LockAsync(database, member.BrandId, cancellationToken);
@@ -103,6 +107,9 @@ internal static class ApprovalSettingsEndpoints
             On(ApprovalDuty.Assets),
             On(ApprovalDuty.Launch),
             On(ApprovalDuty.BudgetOwner),
+            On(ApprovalDuty.BudgetMoves),
+            On(ApprovalDuty.TargetChanges),
+            On(ApprovalDuty.GoogleSuggestions),
             limit.Amount,
             limit.Currency);
     }
@@ -113,6 +120,9 @@ internal sealed record ApprovalSettings(
     Guid[] AssetApprovers,
     Guid[] LaunchApprovers,
     Guid[] BudgetOwners,
+    Guid[] BudgetMoveApprovers,
+    Guid[] TargetChangeApprovers,
+    Guid[] GoogleSuggestionApprovers,
     decimal? BudgetLimit,
     string Currency);
 
@@ -121,4 +131,7 @@ internal sealed record SaveApprovalSettingsRequest(
     Guid[] AssetApprovers,
     Guid[] LaunchApprovers,
     Guid[] BudgetOwners,
+    Guid[] BudgetMoveApprovers,
+    Guid[] TargetChangeApprovers,
+    Guid[] GoogleSuggestionApprovers,
     decimal? BudgetLimit);
