@@ -71,21 +71,14 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
 
     public async Task LockAsync(string resource, CancellationToken cancellationToken)
     {
-        var transaction = _transaction ?? throw new InvalidOperationException("A lock needs a transaction.");
-        await using var command = Connection.CreateCommand();
-        command.Transaction = transaction;
-        command.CommandText = """
-            DECLARE @result int;
-            EXEC @result = sys.sp_getapplock @Resource = @resource, @LockMode = N'Exclusive', @LockOwner = N'Transaction', @LockTimeout = 15000;
-            SELECT @result;
-            """;
-        command.Parameters.Add(new SqlParameter("@resource", SqlDbType.NVarChar, 255) { Value = resource });
-        var result = (int)(await command.ExecuteScalarAsync(cancellationToken))!;
-        if (result < 0)
+        if (!await GetAppLockAsync(resource, 15000, cancellationToken))
         {
             throw new TimeoutException($"Could not lock {resource}.");
         }
     }
+
+    public Task<bool> TryLockAsync(string resource, CancellationToken cancellationToken) =>
+        GetAppLockAsync(resource, 0, cancellationToken);
 
     public async Task CommitAsync(CancellationToken cancellationToken)
     {
@@ -180,6 +173,21 @@ public sealed class KairoDatabase(string connectionString) : IDisposable, IAsync
         {
             await ApplySessionContextAsync(Connection, cancellationToken);
         }
+    }
+
+    private async Task<bool> GetAppLockAsync(string resource, int timeoutMilliseconds, CancellationToken cancellationToken)
+    {
+        var transaction = _transaction ?? throw new InvalidOperationException("A lock needs a transaction.");
+        await using var command = Connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            DECLARE @result int;
+            EXEC @result = sys.sp_getapplock @Resource = @resource, @LockMode = N'Exclusive', @LockOwner = N'Transaction', @LockTimeout = @timeout;
+            SELECT @result;
+            """;
+        command.Parameters.Add(new SqlParameter("@resource", SqlDbType.NVarChar, 255) { Value = resource });
+        command.Parameters.Add(new SqlParameter("@timeout", SqlDbType.Int) { Value = timeoutMilliseconds });
+        return (int)(await command.ExecuteScalarAsync(cancellationToken))! >= 0;
     }
 
     private async Task EndTransactionAsync(SqlTransaction transaction)
