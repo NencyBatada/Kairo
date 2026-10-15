@@ -232,21 +232,23 @@ function Publish-KairoSchedule {
     )
 
     $scope = @('--location', $Environment.Region, '--project', $Environment.Project)
-    $verb = 'create'
-    if (Test-Gcloud -ArgumentList (@('scheduler', 'jobs', 'describe', $script:AnalyticsJob) + $scope)) {
-        $verb = 'update'
-    }
+    foreach ($job in $script:ScheduledJobs) {
+        $verb = 'create'
+        if (Test-Gcloud -ArgumentList (@('scheduler', 'jobs', 'describe', $job.Name) + $scope)) {
+            $verb = 'update'
+        }
 
-    Write-Host "Scheduling $script:AnalyticsJob"
-    Invoke-Gcloud -ArgumentList (@(
-            'scheduler', 'jobs', $verb, 'http', $script:AnalyticsJob,
-            '--schedule', '0 5 * * *',
-            '--time-zone', 'Asia/Kolkata',
-            '--uri', "$WorkerUrl/jobs/analytics/daily",
-            '--http-method', 'POST',
-            '--oidc-service-account-email', (Get-KairoServiceAccount -Environment $Environment -Name 'kairo-scheduler'),
-            '--oidc-token-audience', $WorkerUrl,
-            '--attempt-deadline', '1800s',
-            '--max-retry-attempts', '0'
-        ) + $scope)
+        Write-Host "Scheduling $($job.Name)"
+        Invoke-Gcloud -ArgumentList (@(
+                'scheduler', 'jobs', $verb, 'http', $job.Name,
+                '--schedule', $job.Schedule,
+                '--time-zone', 'Asia/Kolkata',
+                '--uri', "$WorkerUrl$($job.Path)",
+                '--http-method', 'POST',
+                '--oidc-service-account-email', (Get-KairoServiceAccount -Environment $Environment -Name 'kairo-scheduler'),
+                '--oidc-token-audience', $WorkerUrl,
+                '--attempt-deadline', $job.Deadline,
+                '--max-retry-attempts', '0'
+            ) + $scope)
+    }
 }

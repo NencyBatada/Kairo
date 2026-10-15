@@ -13,7 +13,7 @@ internal sealed class BrandDirectory(BrandsDbContext db, KairoDatabase database)
             return await db.Brands
                 .Where(brand => ids.Contains(brand.Id))
                 .OrderBy(brand => brand.Name)
-                .Select(brand => new BrandSummary(brand.Id, brand.Handle, brand.Name, brand.Currency))
+                .Select(brand => new BrandSummary(brand.Id, brand.Handle, brand.Name, brand.Currency, brand.TimeZone))
                 .ToListAsync(cancellationToken);
         }
     }
@@ -25,7 +25,7 @@ internal sealed class BrandDirectory(BrandsDbContext db, KairoDatabase database)
             return await db.Brands
                 .OrderBy(brand => brand.Name)
                 .ThenBy(brand => brand.Id)
-                .Select(brand => new BrandSummary(brand.Id, brand.Handle, brand.Name, brand.Currency))
+                .Select(brand => new BrandSummary(brand.Id, brand.Handle, brand.Name, brand.Currency, brand.TimeZone))
                 .ToListAsync(cancellationToken);
         }
     }

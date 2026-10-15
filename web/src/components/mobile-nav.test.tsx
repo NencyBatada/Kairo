@@ -49,3 +49,13 @@ test("closes on Escape and gives focus back to the menu button", async () => {
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await waitFor(() => expect(document.activeElement).toBe(button));
 });
+
+test("keeps top bar actions such as the notification bell on the bar itself", () => {
+  render(
+    <MobileNav context={<span>Acme Shoes</span>} actions={<button type="button">Notifications, 2 unread</button>}>
+      <nav aria-label="Main" />
+    </MobileNav>,
+  );
+
+  expect(within(screen.getByRole("banner")).getByRole("button", { name: "Notifications, 2 unread" })).toBeTruthy();
+});

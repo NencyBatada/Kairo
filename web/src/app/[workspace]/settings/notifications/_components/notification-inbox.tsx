@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
+import { NotificationLink } from "@/components/notification-link";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -56,13 +57,10 @@ export function NotificationInbox({ brandId, workspace, page, timeZone, olderHre
 
             return (
               <li key={String(item.id)}>
-                <Link
+                <NotificationLink
                   href={href}
-                  onClick={() => {
-                    if (unread) {
-                      void markNotificationRead(brandId, Number(item.id));
-                    }
-                  }}
+                  unread={unread}
+                  markRead={() => markNotificationRead(brandId, Number(item.id))}
                   className="flex flex-col gap-2 px-4 py-4 transition-colors hover:bg-accent md:px-5 pointer-coarse:py-5"
                 >
                   <div className="flex flex-wrap items-center gap-2">
@@ -73,7 +71,7 @@ export function NotificationInbox({ brandId, workspace, page, timeZone, olderHre
                   <time dateTime={item.createdAt} className="text-xs text-subtle-foreground">
                     {format.format(new Date(item.createdAt))}
                   </time>
-                </Link>
+                </NotificationLink>
               </li>
             );
           })}

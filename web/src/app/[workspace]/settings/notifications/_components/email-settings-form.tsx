@@ -16,9 +16,27 @@ type EmailSettingsFormProps = {
   action: (brandId: string, state: FormState, formData: FormData) => Promise<FormState>;
 };
 
+const kindErrorKey = /^kinds\[(\d+)\]\./;
+
+function splitKindErrors(fieldErrors: Record<string, string[]>, count: number) {
+  const byKind: string[][] = Array.from({ length: count }, () => []);
+  const general: string[] = [];
+  for (const [key, messages] of Object.entries(fieldErrors)) {
+    const match = kindErrorKey.exec(key);
+    const index = match ? Number(match[1]) : -1;
+    if (index >= 0 && index < count) {
+      byKind[index].push(...messages);
+    } else {
+      general.push(...messages);
+    }
+  }
+
+  return { byKind, general };
+}
+
 export function EmailSettingsForm({ brandId, settings, action }: EmailSettingsFormProps) {
   const [state, formAction, pending] = useActionState(action.bind(null, brandId), idle);
-  const errors = state.fieldErrors ?? {};
+  const errors = splitKindErrors(state.fieldErrors ?? {}, settings.kinds.length);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -35,6 +53,8 @@ export function EmailSettingsForm({ brandId, settings, action }: EmailSettingsFo
                 <label className="flex min-h-6 cursor-pointer items-start gap-2.5 text-sm text-foreground pointer-coarse:min-h-11">
                   <Checkbox
                     name={kind.canTurnOff ? `email-${index}` : undefined}
+                    aria-invalid={errors.byKind[index].length > 0 || undefined}
+                    aria-describedby={errors.byKind[index].length > 0 ? `email-setting-error-${index}` : undefined}
                     defaultChecked={kind.email}
                     disabled={!kind.canTurnOff || pending}
                     className="mt-0.5"
@@ -47,10 +67,11 @@ export function EmailSettingsForm({ brandId, settings, action }: EmailSettingsFo
                     )}
                   </span>
                 </label>
+                <FieldError id={`email-setting-error-${index}`} errors={errors.byKind[index]} />
               </li>
             ))}
           </ul>
-          <FieldError id="email-settings-error" errors={errors.kinds} />
+          <FieldError id="email-settings-error" errors={errors.general} />
         </CardContent>
       </Card>
       <div className="flex flex-wrap items-center gap-3">

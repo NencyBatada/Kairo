@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Kairo.IntegrationTests.Notifications;
 
 namespace Kairo.IntegrationTests.Api;
 
@@ -25,6 +26,33 @@ public sealed class InvitationTests(SqlServer sqlServer) : IAsyncDisposable
         Assert.Equal("Neha Rao", invitation.GetProperty("invitedBy").GetString());
         Assert.Equal(["marketer", "approver"], invitation.GetProperty("roles").EnumerateArray().Select(role => role.GetString()));
         Assert.Equal("invitation.sent", (await Workspaces.LatestAuditEntryAsync(owner.Browser, brandId)).GetProperty("action").GetString());
+    }
+
+    [Fact]
+    public async Task Inviting_queues_an_email_to_the_invited_address_each_time_it_is_sent()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        var address = $"priya-{Guid.NewGuid():N}@example.com";
+
+        await Workspaces.InviteAsync(owner.Browser, brandId, address.ToUpperInvariant(), "marketer");
+        await Workspaces.InviteAsync(owner.Browser, brandId, address, "approver");
+
+        var emails = await NotificationRows.EmailsAsync(sqlServer.KairoConnectionString, brandId, "Invitation");
+        Assert.Equal(2, emails.Count);
+        Assert.All(emails, email => Assert.Equal((address, "Pending"), (email.Address, email.Status)));
+    }
+
+    [Fact]
+    public async Task A_refused_invitation_queues_no_email()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+
+        var response = await owner.Browser.PostAsJsonAsync($"/api/brands/{brandId}/invitations", new { email = "not-an-email", roles = new[] { "marketer" } }, Token);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Empty(await NotificationRows.EmailsAsync(sqlServer.KairoConnectionString, brandId, "Invitation"));
     }
 
     [Fact]

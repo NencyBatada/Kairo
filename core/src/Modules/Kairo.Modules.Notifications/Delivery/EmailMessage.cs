@@ -1,6 +1,6 @@
 namespace Kairo.Modules.Notifications.Delivery;
 
-internal sealed record EmailMessage(Guid UserId, string Kind, string To, string ToName, string Subject, string Html, string Text);
+internal sealed record EmailMessage(Guid? UserId, string Kind, string To, string ToName, string Subject, string Html, string Text);
 
 internal enum SendResult
 {

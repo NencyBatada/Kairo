@@ -159,6 +159,28 @@ Describe 'Invoke-KairoDeploy' {
             '--location asia-south1 --project kairo-test')
     }
 
+    It 'creates the notification job that runs every 15 minutes when it is missing' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        Should -Invoke -ModuleName Kairo.Deploy Test-Gcloud -ParameterFilter {
+            ($ArgumentList -join ' ') -eq 'scheduler jobs describe kairo-notifications-due --location asia-south1 --project kairo-test'
+        }
+        $calls | Should -Contain ('scheduler jobs create http kairo-notifications-due --schedule */15 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/notifications/due --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 600s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
+    It 'updates the notification job when it already exists' {
+        $script:scheduleExists = $true
+
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'scheduler jobs update http kairo-notifications-due *' }) |
+            Should -BeLike '*--uri https://kairo-worker-abc123-el.a.run.app/jobs/notifications/due *'
+    }
+
     It 'updates the nightly analytics job when it already exists' {
         $script:scheduleExists = $true
 

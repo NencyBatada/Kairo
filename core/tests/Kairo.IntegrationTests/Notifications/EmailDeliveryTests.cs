@@ -111,6 +111,7 @@ public sealed class EmailDeliveryTests(SqlServer sqlServer) : IAsyncLifetime
     {
         var (owner, brandId) = await WorkspaceAsync();
         var marketer = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "marketer");
+        await NotificationRows.ExecuteAsync(_connectionString, "DELETE FROM notifications.OutboundEmails WHERE Type = N'Invitation'");
         await Notifying.NotifyAsync(_api, brandId, Notifying.Sample(LiveAudience.Users(marketer.UserId)));
         (await owner.Browser.DeleteAsync($"/api/brands/{brandId}/members/{marketer.UserId}", Token)).EnsureSuccessStatusCode();
 

@@ -1,25 +1,43 @@
 namespace Kairo.Modules.Notifications.Kinds;
 
+internal enum NotificationDelivery
+{
+    Immediate,
+    GroupedHourly,
+    DailyDigest,
+}
+
 internal sealed record NotificationKind(
     string Key,
     string Name,
     string Description,
     BrandRoles UsualRecipients,
     bool Email,
-    bool CanTurnOff);
+    bool CanTurnOff)
+{
+    public NotificationDelivery Delivery { get; init; } = NotificationDelivery.Immediate;
+
+    public TimeSpan? RemindAfter { get; init; }
+
+    public string? GroupLink { get; init; }
+}
 
 internal static class NotificationKinds
 {
     public static readonly NotificationKind[] All =
     [
-        new("opportunities.ready", "New top opportunities", "Kairo found new top opportunities in the daily refresh.", BrandRoles.Marketer, true, true),
+        new("opportunities.ready", "New top opportunities", "Kairo found new top opportunities in the daily refresh.", BrandRoles.Marketer, true, true) { Delivery = NotificationDelivery.DailyDigest },
         new("trigger.fired", "Trigger fired", "A trigger rule's conditions were met.", BrandRoles.Marketer, true, true),
-        new("approval.needed", "Approval needed", "Something is waiting for your approval.", BrandRoles.Approver, true, false),
+        new("approval.needed", "Approval needed", "Something is waiting for your approval.", BrandRoles.Approver, true, false) { RemindAfter = TimeSpan.FromHours(4) },
         new("work.returned", "Work sent back", "An approver sent a brief or assets back for changes.", BrandRoles.Marketer, true, true),
         new("launch.finished", "Launch finished", "A campaign is live in Google Ads.", BrandRoles.Marketer, true, true),
         new("launch.failed", "Launch failed", "A campaign could not be launched.", BrandRoles.Marketer, true, false),
         new("health.problem", "Health-check problem", "A campaign's check a day after launch found a problem.", BrandRoles.Marketer, true, true),
-        new("stock.pause_changed", "Ad paused or resumed for stock", "Kairo paused or resumed ads because stock changed.", BrandRoles.Marketer, false, false),
+        new("stock.pause_changed", "Ad paused or resumed for stock", "Kairo paused or resumed ads because stock changed.", BrandRoles.Marketer, false, false)
+        {
+            Delivery = NotificationDelivery.GroupedHourly,
+            GroupLink = "/campaigns",
+        },
         new("mass_pause.held", "Mass pause held for confirmation", "A stock change would pause many ads at once and is waiting for confirmation.", BrandRoles.Admin | BrandRoles.Marketer, true, true),
         new("pacing.alert", "Pacing alert", "A campaign is spending faster or slower than planned.", BrandRoles.Marketer | BrandRoles.Approver, true, true),
         new("report.ready", "Recommendation or impact report ready", "A test window ended and its report or recommendation is ready.", BrandRoles.Marketer | BrandRoles.Approver, true, true),

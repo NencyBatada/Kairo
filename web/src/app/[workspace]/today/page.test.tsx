@@ -12,10 +12,13 @@ const { getWorkspace, getNotifications, coreApi, unwrap } = vi.hoisted(() => ({
 
 vi.mock("@/lib/core-api/queries", () => ({ getWorkspace }));
 vi.mock("@/lib/core-api/client", () => ({ coreApi, unwrap }));
+vi.mock("../settings/notifications/actions", () => ({ markNotificationRead: vi.fn() }));
 
 test("loads current workspace notifications for Today", async () => {
   getWorkspace.mockResolvedValue({ id: "brand-1" });
-  getNotifications.mockResolvedValue({ data: { items: [] } });
+  getNotifications.mockImplementation(async (path: string) =>
+    path === "/api/brands/{brandId}" ? { data: { timeZone: "Asia/Kolkata" } } : { data: { items: [] } },
+  );
   coreApi.mockResolvedValue({ GET: getNotifications });
   unwrap.mockImplementation(async (result) => result.data);
 
@@ -25,5 +28,6 @@ test("loads current workspace notifications for Today", async () => {
   expect(getNotifications).toHaveBeenCalledWith("/api/brands/{brandId}/notifications", {
     params: { path: { brandId: "brand-1" }, query: { limit: 5 } },
   });
+  expect(getNotifications).toHaveBeenCalledWith("/api/brands/{brandId}", { params: { path: { brandId: "brand-1" } } });
   expect(screen.getByRole("heading", { name: "No recent updates" })).toBeTruthy();
 });

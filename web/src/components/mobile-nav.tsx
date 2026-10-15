@@ -5,8 +5,9 @@ import { useState, type MouseEvent, type ReactNode } from "react";
 
 import { Logo } from "@/components/logo";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
-export function MobileNav({ context, children }: { context?: ReactNode; children: ReactNode }) {
+export function MobileNav({ context, actions, children }: { context?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   function closeOnLink(event: MouseEvent<HTMLDivElement>) {
@@ -33,6 +34,7 @@ export function MobileNav({ context, children }: { context?: ReactNode; children
       </Sheet>
       <Logo href="/" />
       {context && <div className="ml-auto min-w-0 truncate pr-2 text-small font-semibold text-muted-foreground">{context}</div>}
+      {actions && <div className={cn("flex shrink-0 items-center", !context && "ml-auto")}>{actions}</div>}
     </header>
   );
 }

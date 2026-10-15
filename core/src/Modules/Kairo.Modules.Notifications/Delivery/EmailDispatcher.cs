@@ -2,6 +2,7 @@ using Kairo.Contracts.Brands;
 using Kairo.Contracts.Identity;
 using Kairo.Modules.Notifications.Data;
 using Kairo.Modules.Notifications.Kinds;
+using Kairo.Modules.Notifications.Publishing;
 using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Notifications.Delivery;
@@ -65,12 +66,8 @@ internal sealed class EmailDispatcher(
             return;
         }
 
-        var notification = email.Notification!;
-        var kind = NotificationKinds.Find(notification.Kind);
-        var member = await members.FindAsync(email.BrandId, email.UserId, cancellationToken);
-        var workspace = (await brands.GetAsync([email.BrandId], cancellationToken)).SingleOrDefault();
-
-        if (kind is null || member is null || workspace is null)
+        var message = await RenderAsync(email, cancellationToken);
+        if (message is null)
         {
             email.Status = EmailStatus.Skipped;
         }
@@ -78,8 +75,7 @@ internal sealed class EmailDispatcher(
         {
             try
             {
-                var message = EmailTemplate.Render(notification, kind, workspace, member, configuration[NotificationSettings.PublicOrigin] ?? "");
-                var result = await sender.SendAsync(message, cancellationToken);
+                var result = await sender.SendAsync(message(), cancellationToken);
                 email.Status = result == SendResult.Sent ? EmailStatus.Sent : EmailStatus.Logged;
                 email.SentAt = time.GetUtcNow();
                 email.LastError = null;
@@ -102,6 +98,44 @@ internal sealed class EmailDispatcher(
             logger.LogWarning("Notification email {EmailId} was claimed by another sender before its result was recorded.", id);
         }
     }
+
+    private async Task<Func<EmailMessage>?> RenderAsync(OutboundEmail email, CancellationToken cancellationToken)
+    {
+        var workspace = (await brands.GetAsync([email.BrandId], cancellationToken)).SingleOrDefault();
+        if (workspace is null)
+        {
+            return null;
+        }
+
+        var origin = configuration[NotificationSettings.PublicOrigin] ?? "";
+        switch (email.Type)
+        {
+            case EmailType.Invitation:
+                return email.Address is { Length: > 0 } address
+                    ? () => EmailTemplate.RenderInvitation(address, InvitationDetails.Read(email.Payload), workspace, origin)
+                    : null;
+            case EmailType.Digest:
+            {
+                var member = await MemberAsync(email, cancellationToken);
+                var items = await db.Notifications.AsNoTracking()
+                    .Where(notification => notification.DigestEmailId == email.Id)
+                    .OrderBy(notification => notification.Id)
+                    .ToListAsync(cancellationToken);
+                return member is null || items.Count == 0 ? null : () => EmailTemplate.RenderDigest(items, workspace, member, origin);
+            }
+
+            default:
+            {
+                var member = await MemberAsync(email, cancellationToken);
+                var notification = email.Notification;
+                var kind = notification is null ? null : NotificationKinds.Find(notification.Kind);
+                return member is null || kind is null ? null : () => EmailTemplate.Render(notification!, kind, workspace, member, origin);
+            }
+        }
+    }
+
+    private async Task<BrandMember?> MemberAsync(OutboundEmail email, CancellationToken cancellationToken) =>
+        email.UserId is { } userId ? await members.FindAsync(email.BrandId, userId, cancellationToken) : null;
 
     private IQueryable<OutboundEmail> Ours(long id, DateTimeOffset lease) =>
         db.OutboundEmails.Where(row => row.Id == id && row.ClaimedUntil == lease);

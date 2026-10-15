@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 
 import { NotificationInbox } from "./notification-inbox";
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("../actions", () => ({
   markNotificationRead: vi.fn(),
   markAllNotificationsRead: vi.fn(),
@@ -46,4 +47,21 @@ test("shows an empty state when there are no notifications", () => {
   );
 
   expect(screen.getByRole("heading", { name: "Nothing to act on" })).toBeTruthy();
+});
+
+test("marks a notification read when it is opened from the list", async () => {
+  const { markNotificationRead } = await import("../actions");
+  render(
+    <NotificationInbox
+      brandId="brand-1"
+      workspace="acme"
+      timeZone="Asia/Kolkata"
+      olderHref={() => "/acme/settings/notifications"}
+      page={{ items: [item], unreadCount: 1, nextBefore: null }}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("link", { name: new RegExp(item.title) }));
+
+  await waitFor(() => expect(markNotificationRead).toHaveBeenCalledWith("brand-1", 9));
 });
