@@ -1,0 +1,7 @@
+import type { components } from "@/lib/core-api/schema";
+export const options: components["schemas"]["TriggerOptions"] = {
+  regions: [{ id: "mumbai", name: "Mumbai", kind: "city", stateId: "IN-MH" }, { id: "IN-MH", name: "Maharashtra", kind: "state", stateId: null }], categories: ["Trainers"],
+  weatherKinds: [{ kind: "heavy_rain", unit: "mm", default: 50, min: 10, max: 300 }, { kind: "heatwave", unit: "°C", default: 40, min: 30, max: 50 }], defaultWithinDays: 3, maxWithinDays: 7, defaultDaysBefore: 7, maxDaysBefore: 60, defaultCooldownHours: 72, maxCooldownHours: 720, maxRegions: 20,
+};
+export const festival: components["schemas"]["FestivalView"] = { id: "festival-1", name: "Diwali", startsOn: "2026-11-08", endsOn: "2026-11-08", regions: [], origin: "seeded", rules: 1 };
+export const rule: components["schemas"]["RuleView"] = { id: "rule-1", name: "Rain in Mumbai", source: "weather", condition: { kind: "heavy_rain", threshold: 50, withinDays: 3, eventId: null, eventName: null, daysBefore: null, minUnits: null }, regions: [options.regions[0]], category: "Trainers", cooldownHours: 72, status: "active", origin: "manual", evidence: null, description: "When heavy rain is forecast in Mumbai, suggest trainers. Waits 3 days before firing again.", lastFiredAt: null, lastCheckedAt: "2026-10-15T01:00:00Z", lastCheckOutcome: "quiet", results: { fired: 2, created: 1, joined: 1, accepted: 1, lift: null }, createdAt: "2026-10-15T01:00:00Z", updatedAt: "2026-10-15T01:00:00Z" };
