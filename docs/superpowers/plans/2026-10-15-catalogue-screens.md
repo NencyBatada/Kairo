@@ -32,3 +32,10 @@
 ## Integration checklist
 
 The backend catalogue module is currently a stub. Before marking this task complete, replace the temporary contract types with generated OpenAPI types and verify the product-detail `fixes`/`stockEvents` fields and every response shape against the implemented endpoints, then run imports and product corrections in the development project. No mock behaviour is enabled in the shipped application.
+
+## Verification record
+
+- 411 tests passed across 67 files, including 28 new regressions covering catalogue behaviour, navigation and live event subscriptions.
+- Focused tests were run red before implementation and green afterward. Read-only review identified filter defaults surviving soft navigation; a failing rerender test reproduced it and the form now resets with the active query.
+- Local browser QA against a separate contract-fixture server verified the product list, price corrections, applied-fix feedback and feed setup. Product and list pages had no page overflow at 320 CSS pixels (page width 300 px); the product table scrolls inside its container.
+- Backend integration, generated types and development-environment verification remain outstanding. This task stays in progress until those checks and user merge into develop.

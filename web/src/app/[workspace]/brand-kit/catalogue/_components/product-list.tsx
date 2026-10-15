@@ -13,7 +13,7 @@ import type { ProductPage } from "../_lib/types";
 export function ProductList({ products, filters, categories, handle, currency }: { products: ProductPage; filters: Filters; categories: { name: string; products: number }[]; handle: string; currency: string }) {
   const path = `/${handle}/brand-kit/catalogue`;
   return <Card><CardHeader><CardTitle>Products</CardTitle></CardHeader><CardContent className="flex min-w-0 flex-col gap-5">
-    <form action={path} method="get" className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <form key={catalogueQuery(filters)} action={path} method="get" className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor="product-search">Search title or product ID</Label><Input id="product-search" name="search" defaultValue={filters.search} maxLength={200} /></div>
       <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor="product-category">Category</Label><NativeSelect id="product-category" name="category" defaultValue={filters.category ?? ""}><option value="">All categories</option>{filters.category && !categories.some((c) => c.name === filters.category) && <option value={filters.category}>{filters.category}</option>}{categories.map((category) => <option key={category.name} value={category.name}>{category.name}</option>)}</NativeSelect></div>
       <div className="flex min-w-0 flex-col gap-1.5"><Label htmlFor="product-stock">Stock</Label><NativeSelect id="product-stock" name="availability" defaultValue={filters.availability ?? ""}><option value="">All stock states</option>{Object.entries(availabilityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</NativeSelect></div>

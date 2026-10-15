@@ -19,3 +19,11 @@ test("shows a useful filtered empty state and no paging links when no products m
   expect(screen.getByText("No products match these filters.")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Next page" })).toBeNull();
 });
+
+test("soft navigation to cleared filters resets the search and picker values", () => {
+  const props = { products: { items: [], page: 1, pageSize: 25, total: 0 }, categories: [], handle: "acme", currency: "INR" };
+  const { rerender } = render(<ProductList {...props} filters={catalogueFilters({ search: "trail", missing: "price" })} />);
+  rerender(<ProductList {...props} filters={catalogueFilters({})} />);
+  expect((screen.getByLabelText("Search title or product ID") as HTMLInputElement).value).toBe("");
+  expect((screen.getByLabelText("Missing details") as HTMLSelectElement).value).toBe("");
+});
