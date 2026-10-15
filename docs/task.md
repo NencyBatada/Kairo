@@ -76,9 +76,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Trigger rules screen**: Create, edit, pause and delete rules, each shown in plain words, and turn on suggested rules. *In progress: implementing Nency's web screen against the merged trigger API.*
-- [/] **Festival calendar screen**: Manage the festivals and events for each market. *In progress: implementing Nency's calendar against the merged festival API.*
-- [/] **Triggered cards**: Shows triggered opportunities on Today and in the Radar, marked with what triggered them. *In progress: implementing Nency's triggered opportunity views against the merged API.*
+- [/] **Trigger rules screen**: Create, edit, pause and delete rules, each shown in plain words, and turn on suggested rules. *Implemented in draft PR #9 on feature/trigger-rules-screen; 32 focused checks, lint, production build and web CI pass. Verified rule previews, stale-preview invalidation, creation, pause/resume, suggestion activation, deletion redirects and 320px reflow in the local API-contract fixture preview. Left: development-environment verification and user merge into develop.*
+- [/] **Festival calendar screen**: Manage the festivals and events for each market. *Implemented in draft PR #10 on feature/festival-calendar-screen; focused tests, lint, production build and web CI pass. Verified market filtering, validation with preserved fields, create/edit/remove flows, in-use safeguards and 320px reflow in the local API-contract fixture preview. Left: development-environment verification and user merge into develop.*
+- [/] **Triggered cards**: Shows triggered opportunities on Today and in the Radar, marked with what triggered them. *Implemented in draft PR #11 on feature/triggered-cards; 85 focused checks, lint, production build and web CI pass. Verified Today-to-Radar navigation, trigger labels and evidence, drafted/failed brief states and 320px reflow in the local API-contract fixture preview. Combined verification of all three frontend tasks: 568 web tests pass, one existing test is skipped, and the combined production build passes. Left: development-environment verification and user merge into develop.*
 
 ## 5. Campaign room
 
