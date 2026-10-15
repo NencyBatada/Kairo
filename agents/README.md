@@ -8,5 +8,5 @@ Run it on its own with `uv run uvicorn kairo_agents.main:app --reload`, or start
 | --- | --- |
 | `src/kairo_agents/agents/` | One package per agent. When an agent is built, its `agent.py` exposes `root_agent`, so `uv run adk web src/kairo_agents/agents` opens it in ADK's development UI. Brand Kit drafting (`brand_kit/`) is a single structured Gemini call through the Gen AI SDK, so it has no `root_agent`; its prompt is versioned in `brand_kit/prompts/`. |
 | `src/kairo_agents/tools/` | Typed clients for the core's internal API |
-| `src/kairo_agents/measurement/` | Holdout matching, smallest detectable lift and lift estimates |
+| `src/kairo_agents/measurement/` | Holdout matching, smallest detectable lift and lift estimates. `holdout.py` backs `POST /plan/proof-plan`: it scores candidate regions by how their weekly sales, conversions and search demand move with the test area, and finds the smallest detectable lift from placebo tests on past periods, in numpy with no model call. |
 | `src/kairo_agents/media/` | FFmpeg helpers for video |

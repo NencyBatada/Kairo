@@ -44,6 +44,10 @@ Every table is partitioned by day on `date`, and every row has `loaded_at TIMEST
 | `ads_region_daily` | `customer_id`, `campaign_id`, `region_id`, `region_name`, `country_code`, `currency`, and the same five metrics | Google Ads `geographic_view` |
 | `ga4_region_daily` | `property_id`, `country`, `region`, `currency`, `sessions INT64`, `key_events FLOAT64`, `transactions INT64`, `purchase_revenue NUMERIC` | GA4 Data API |
 | `sales_daily` | `region`, `orders INT64`, `revenue NUMERIC`, `source` (`upload` or `table`) | CSV uploads and the brand's table |
+| `ads_city_daily` | `customer_id`, `campaign_id`, `city_id`, `city_name`, `state_name` (from the geo target's canonical name), `country_code`, `currency`, and the five metrics | Google Ads `geographic_view` with `segments.geo_target_city` |
+| `ga4_city_daily` | `property_id`, `country`, `region`, `city`, `currency`, and the GA4 metrics | GA4 Data API with the `city` dimension |
+
+*Added for holdout design (section 6):* the two city tables were added after the first release. Each successful run records the tables it loaded in `FeedRuns.Tables`, and a table the account hasn't loaded yet gets the 13-month first-run window while the others load the last 7 days.
 
 - `cost` is `metrics.cost_micros` divided by 1,000,000.
 - `region_id` is the geo target constant's ID, and `region_name` its name. A row Google doesn't place in a state has both empty.

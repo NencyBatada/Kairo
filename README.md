@@ -85,7 +85,9 @@ dotnet user-secrets set "Kairo:MailSenderRefreshToken" "<refresh token>" --proje
 
 ## Run the analytics feeds locally
 
-Every night at 05:00 India time, Cloud Scheduler calls the worker. It loads each brand's Google Ads reports, GA4 totals and sales table into a BigQuery dataset of its own, `brand_<brand ID>`. Admins and marketers can also upload sales as a CSV file with the columns `date`, `region`, `orders` and `revenue`.
+Every night at 05:00 India time, Cloud Scheduler calls the worker. It loads each brand's Google Ads reports, GA4 totals and sales table into a BigQuery dataset of its own, `brand_<brand ID>`. Ads and GA4 results are loaded by state and by city, which the proof plan uses to match holdout regions. Admins and marketers can also upload sales as a CSV file with the columns `date`, `region`, `orders` and `revenue`; name cities in `region` where you can.
+
+A feed loads the last 13 months the first time it runs, then the last 7 days. A table added to a feed later, such as the city tables, gets its own 13-month backfill on the next run.
 
 Locally the feeds are off until you point them at a project:
 
@@ -185,6 +187,7 @@ Accepting an opportunity opens a campaign room. The room moves through brief dra
   ```
 
 - **The starter brief.** Accepting queues the Plan agent, which drafts a first brief from the opportunity's evidence, or reuses the brief drafted when a trigger fired. Smart Brief replaces it with the full brief later.
+- **The proof plan.** Once the brief is saved, the Plan agent designs the test. It reads a year of daily history by city from the analytics dataset, plus search demand by city from Keyword Planner when the room has keywords. It picks holdout cities inside the brief's regions that move like the rest, works out the test window and the smallest lift the test can detect from past periods, and the cost of holding the cities back. With too little city history it compares whole states, and it warns when the data is thin. Marketers can swap holdouts from the ranked list while the brief is a draft (`GET /campaigns/{id}/proof-plan` and `POST /campaigns/{id}/proof-plan/holdouts`).
 - **Gates.** A marketer asks for brief and launch approval, and asset approval is asked for when the checked assets arrive. Only the approvers chosen for that gate in Settings can approve or send work back, with a comment. A marketer can discard a room before launch.
 - **Failures.** A failed agent run is retried twice, after 30 seconds and 2 minutes. After that the room shows "needs attention" and a marketer can try again.
 
