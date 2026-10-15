@@ -22,6 +22,8 @@ public sealed class FakeKeywordPlanner
 
     public ConcurrentDictionary<string, long[]> Volumes { get; } = new(StringComparer.OrdinalIgnoreCase);
 
+    public ConcurrentDictionary<string, (long Low, long High)> Bids { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public ConcurrentDictionary<string, double> RegionLastMonth { get; } = new() { [Kerala] = 3.0 };
 
     public ConcurrentQueue<PlannerCall> Calls { get; } = new();
@@ -113,9 +115,25 @@ public sealed class FakeKeywordPlanner
             results = Volumes.OrderBy(entry => entry.Key, StringComparer.Ordinal).Select(entry => new
             {
                 text = entry.Key,
-                keywordIdeaMetrics = new { avgMonthlySearches = entry.Value.Last().ToString(), monthlySearchVolumes = Months(entry.Value, end, 1) },
+                keywordIdeaMetrics = IdeaMetrics(entry.Key, entry.Value, end),
             }).ToArray(),
         });
+    }
+
+    private Dictionary<string, object> IdeaMetrics(string keyword, long[] volumes, DateOnly end)
+    {
+        var metrics = new Dictionary<string, object>
+        {
+            ["avgMonthlySearches"] = volumes.Last().ToString(),
+            ["monthlySearchVolumes"] = Months(volumes, end, 1),
+        };
+        if (Bids.TryGetValue(keyword, out var bids))
+        {
+            metrics["lowTopOfPageBidMicros"] = bids.Low.ToString();
+            metrics["highTopOfPageBidMicros"] = bids.High.ToString();
+        }
+
+        return metrics;
     }
 
     private HttpResponseMessage History(JsonElement request)

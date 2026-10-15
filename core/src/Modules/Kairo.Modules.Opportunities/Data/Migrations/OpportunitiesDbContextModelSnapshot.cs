@@ -237,6 +237,26 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
 
             modelBuilder.Entity("Kairo.Modules.Opportunities.Radar.Opportunity", b =>
                 {
+                    b.OwnsOne("Kairo.Modules.Opportunities.Radar.BidRange", "Bids", b1 =>
+                        {
+                            b1.Property<Guid>("OpportunityId");
+
+                            b1.Property<decimal>("High");
+
+                            b1.Property<decimal>("Low");
+
+                            b1.HasKey("OpportunityId");
+
+                            b1.ToTable("Opportunities", "opportunities");
+
+                            b1
+                                .ToJson("Bids")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OpportunityId");
+                        });
+
                     b.OwnsOne("Kairo.Modules.Opportunities.Radar.OpportunityBrief", "Brief", b1 =>
                         {
                             b1.Property<Guid>("OpportunityId");
@@ -477,6 +497,8 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("OpportunityId");
                         });
+
+                    b.Navigation("Bids");
 
                     b.Navigation("Breakdown")
                         .IsRequired();

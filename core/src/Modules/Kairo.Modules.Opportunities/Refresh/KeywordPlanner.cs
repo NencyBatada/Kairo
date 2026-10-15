@@ -5,7 +5,9 @@ using Kairo.Modules.Opportunities.Scoring;
 
 namespace Kairo.Modules.Opportunities.Refresh;
 
-internal sealed record KeywordDemand(string Text, IReadOnlyList<MonthlySearches> Months);
+internal sealed record KeywordDemand(string Text, IReadOnlyList<MonthlySearches> Months, BidMicros? Bids = null);
+
+internal sealed record BidMicros(long Low, long High);
 
 internal sealed record GeoTarget(string Id, string Name, string Type);
 
@@ -143,9 +145,16 @@ internal sealed class KeywordPlanner(IHttpClientFactory http, OpportunityOptions
                 .ToList();
             if (months.Count > 0)
             {
-                yield return new KeywordDemand(text, months);
+                yield return new KeywordDemand(text, months, BidsOf(metrics));
             }
         }
+    }
+
+    private static BidMicros? BidsOf(JsonElement metrics)
+    {
+        var low = AdsHttp.Number(metrics, "lowTopOfPageBidMicros");
+        var high = AdsHttp.Number(metrics, "highTopOfPageBidMicros");
+        return low > 0 && high >= low ? new BidMicros(low, high) : null;
     }
 
     private static int MonthOf(JsonElement volume)

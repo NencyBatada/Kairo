@@ -217,6 +217,10 @@ internal sealed class BrandRefresher(
                 Key = key,
                 Keywords = keywords,
                 Demand = demand,
+                Bids = BidRange.Of(keywords
+                    .Select(text => byText[text])
+                    .Where(idea => idea.Bids is not null)
+                    .Select(idea => (idea.Bids!.Low, idea.Bids.High, new Demand(idea.Months).LastMonth))),
                 Breakdown = breakdown,
                 Score = OpportunityScoring.Score(breakdown),
                 Categories = matched,

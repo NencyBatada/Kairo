@@ -13,6 +13,8 @@ internal sealed class RadarTopic
 
     public Demand Demand { get; init; } = new([]);
 
+    public BidRange? Bids { get; init; }
+
     public ScoreBreakdown Breakdown { get; init; } = new();
 
     public int Score { get; init; }
@@ -134,6 +136,7 @@ internal static class OpportunityMerger
         opportunity.LastMonthSearches = topic.Demand.LastMonth;
         opportunity.AvgMonthlySearches = topic.Demand.Average12;
         opportunity.Trend = topic.Demand.Months.Select(month => new TrendPoint { Year = month.Year, Month = month.Month, Searches = month.Searches }).ToList();
+        opportunity.Bids = topic.Bids;
         opportunity.MatchedCategories = [.. topic.Categories];
         if (topic.ProductIds.Count > 0)
         {

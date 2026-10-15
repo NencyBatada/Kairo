@@ -47,6 +47,7 @@ internal sealed class OpportunitiesDbContext(DbContextOptions<OpportunitiesDbCon
             opportunity.Navigation(o => o.Breakdown).IsRequired();
             opportunity.OwnsMany(o => o.Trend, trend => trend.ToJson());
             opportunity.OwnsMany(o => o.Regions, regions => regions.ToJson());
+            opportunity.OwnsOne(o => o.Bids, bids => bids.ToJson());
             opportunity.OwnsMany(o => o.Reasons, reasons =>
             {
                 reasons.ToJson();

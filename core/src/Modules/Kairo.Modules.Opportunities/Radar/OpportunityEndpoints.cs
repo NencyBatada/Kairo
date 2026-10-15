@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.CampaignRooms;
 using Kairo.Contracts.Live;
@@ -126,13 +127,24 @@ internal static class OpportunityEndpoints
 
         var before = opportunity.Status;
         var roomId = await rooms.OpenAsync(
-            new RoomOpening(opportunity.Id, opportunity.Topic, JsonSerializer.SerializeToElement(evidence, JsonSerializerOptions.Web), member.UserId),
+            new RoomOpening(opportunity.Id, opportunity.Topic, Evidence(evidence, opportunity), member.UserId),
             cancellationToken);
         Close(opportunity, OpportunityStatuses.Accepted, member, time);
         opportunity.RoomId = roomId;
         await db.SaveChangesAsync(cancellationToken);
         await RecordAsync(new AuditRecord("opportunity.accepted", AuditTarget, opportunity.Id.ToString(), Before(opportunity, before), new { opportunity.Status, roomId }), opportunity, audit, live, cancellationToken);
         return TypedResults.Ok(new AcceptedView(roomId, await reader.DetailAsync(opportunity, cancellationToken)));
+    }
+
+    public static JsonElement Evidence(OpportunityDetail detail, Opportunity opportunity)
+    {
+        var evidence = JsonSerializer.SerializeToNode(detail, JsonSerializerOptions.Web)!.AsObject();
+        if (opportunity.Bids is { } bids)
+        {
+            evidence["bids"] = new JsonObject { ["low"] = bids.Low, ["high"] = bids.High };
+        }
+
+        return JsonSerializer.SerializeToElement(evidence, JsonSerializerOptions.Web);
     }
 
     public static async Task<Results<Ok<OpportunityDetail>, NotFound, ProblemHttpResult>> SaveAsync(

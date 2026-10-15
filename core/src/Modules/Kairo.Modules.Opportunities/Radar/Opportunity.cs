@@ -34,6 +34,8 @@ internal sealed class Opportunity : IBrandOwned
 
     public List<RegionDemand> Regions { get; set; } = [];
 
+    public BidRange? Bids { get; set; }
+
     public List<string> MatchedCategories { get; set; } = [];
 
     public List<Guid> MatchedProductIds { get; set; } = [];
@@ -156,6 +158,31 @@ internal sealed class TrendPoint
     public int Month { get; set; }
 
     public long Searches { get; set; }
+}
+
+internal sealed class BidRange
+{
+    public const decimal MicrosPerUnit = 1_000_000m;
+
+    public decimal Low { get; set; }
+
+    public decimal High { get; set; }
+
+    public static BidRange? Of(IEnumerable<(long LowMicros, long HighMicros, long Searches)> keywords)
+    {
+        var weights = keywords.Select(keyword => (keyword.LowMicros, keyword.HighMicros, Weight: (decimal)Math.Max(keyword.Searches, 1))).ToList();
+        if (weights.Count == 0)
+        {
+            return null;
+        }
+
+        var total = weights.Sum(keyword => keyword.Weight);
+        return new BidRange
+        {
+            Low = Math.Round(weights.Sum(keyword => keyword.LowMicros * keyword.Weight) / total / MicrosPerUnit, 2),
+            High = Math.Round(weights.Sum(keyword => keyword.HighMicros * keyword.Weight) / total / MicrosPerUnit, 2),
+        };
+    }
 }
 
 internal sealed class RegionDemand
