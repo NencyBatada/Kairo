@@ -89,8 +89,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Campaign room screen**: The stage tracker with owner and next action, a tab for each stage, and the activity log.
-- [ ] **Campaigns list**: Every campaign, with filters for stage, status, owner and date, and search.
+- [/] **Campaign room screen**: The stage tracker with owner and next action, a tab for each stage, and the activity log.
+- [/] **Campaigns list**: Every campaign, with filters for stage, status, owner and date, and search.
 
 ## 6. Smart Brief and proof plan
 
