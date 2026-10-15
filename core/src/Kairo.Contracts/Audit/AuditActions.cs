@@ -37,6 +37,14 @@ public static class AuditActions
         new("analytics.feed_succeeded", "Refreshed a data feed"),
         new("analytics.feed_failed", "A data feed refresh failed"),
         new("notifications.email_settings_changed", "Changed notification email settings"),
+        new("opportunities.refreshed", "Refreshed the opportunities"),
+        new("opportunity.accepted", "Accepted an opportunity"),
+        new("opportunity.saved", "Saved an opportunity"),
+        new("opportunity.unsaved", "Took an opportunity off the saved list"),
+        new("opportunity.dismissed", "Dismissed an opportunity"),
+        new("opportunity_topic.added", "Added a watched or ignored topic"),
+        new("opportunity_topic.removed", "Removed a watched or ignored topic"),
+        new("campaign_room.opened", "Opened a campaign room"),
     ];
 
     private static readonly Dictionary<string, string> Labels = All.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);

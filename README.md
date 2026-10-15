@@ -145,6 +145,20 @@ The catalogue takes product data in Google's Merchant Center format: CSV, TSV, o
 
 Three failed refreshes in a row send admins a "Your product feed isn't refreshing" notification.
 
+## Try Opportunity Radar locally
+
+Opportunity Radar turns rising Google searches into ranked opportunities the brand can sell into. A brand needs Google Ads connected and at least one categorised product in stock.
+
+- **The daily refresh.** Cloud Scheduler calls the worker at half past every hour, and each brand refreshes once a day from 05:00 in its own time zone, or straight away if it has never refreshed. Locally, call it yourself. With `?brandId=<id>` it refreshes that brand even if it already ran today:
+
+  ```bash
+  curl -X POST "http://localhost:5200/jobs/opportunities/refresh?brandId=<id>"
+  ```
+
+- **What it does.** The worker seeds Google Ads Keyword Planner with watched topics, the approved Brand Kit's product categories and the in-stock catalogue categories. It keeps searches that grew at least 20% and had 100 searches last month. The Sense agent groups them into topics and rates product fit, and the core scores each topic: 40% growth, 30% volume, 30% fit, lowered for topics like recently dismissed ones. Sense then explains the top topics with Google Search grounding, and only reasons with a source are kept.
+- **Market.** Keyword data and rising regions come from one country and language, set with `Kairo:Opportunities:CountryCode` (default `IN`) and `Kairo:Opportunities:Language` (a Google Ads language constant, default `1000` for English).
+- **Accepting** an opportunity opens a campaign room with the evidence copied in.
+
 ## Run everything locally
 
 From the repository root:

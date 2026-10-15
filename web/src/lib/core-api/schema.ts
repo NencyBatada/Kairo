@@ -1908,6 +1908,391 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/brands/{brandId}/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                    category?: string;
+                    watched?: boolean;
+                    minScore?: number | string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpportunityList"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/{opportunityId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opportunityId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpportunityDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TopicView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TopicRequest"];
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TopicView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/topics/{topicId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    topicId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/{opportunityId}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opportunityId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AcceptedView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/{opportunityId}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opportunityId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpportunityDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/{opportunityId}/unsave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opportunityId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpportunityDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/opportunities/{opportunityId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    opportunityId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DismissRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OpportunityDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -2466,6 +2851,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptedView: {
+            roomId: string;
+            opportunity: components["schemas"]["OpportunityDetail"];
+        };
         ApprovalSettings: {
             briefApprovers: string[];
             assetApprovers: string[];
@@ -2552,6 +2941,10 @@ export interface components {
             handle: string;
             timeZone: string;
             currency: string;
+        };
+        DismissRequest: {
+            reason: null | string;
+            note: null | string;
         };
         DraftingRequest: {
             websiteUrl: null | string;
@@ -2779,6 +3172,17 @@ export interface components {
             examples?: string[];
             sources?: components["schemas"]["KitSource"][];
         };
+        MatchedProductView: {
+            id: string;
+            offerId: string;
+            title: string;
+            category: null | string;
+            link: null | string;
+            imageLink: null | string;
+            price: null | number | string;
+            salePrice: null | number | string;
+            currency: null | string;
+        };
         MemberResponse: {
             userId: string;
             name: string;
@@ -2822,6 +3226,66 @@ export interface components {
             items: components["schemas"]["NotificationItem"][];
             unreadCount: number | string;
             nextBefore: null | number | string;
+        };
+        OpportunityCard: {
+            id: string;
+            topic: string;
+            status: string;
+            source: string;
+            score: number | string;
+            growth: number | string;
+            mom: null | number | string;
+            yoy: null | number | string;
+            lastMonthSearches: number | string;
+            avgMonthlySearches: number | string;
+            trend: components["schemas"]["TrendPointView"][];
+            regions: components["schemas"]["RegionView"][];
+            products: components["schemas"]["MatchedProductView"][];
+            productCount: number | string;
+            reason: null | string;
+            watched: boolean;
+            available: boolean;
+            firstSeenAt: string;
+            lastSeenAt: string;
+            savedAt: null | string;
+        };
+        OpportunityDetail: {
+            id: string;
+            topic: string;
+            status: string;
+            source: string;
+            score: number | string;
+            growth: number | string;
+            mom: null | number | string;
+            yoy: null | number | string;
+            lastMonthSearches: number | string;
+            avgMonthlySearches: number | string;
+            trend: components["schemas"]["TrendPointView"][];
+            regions: components["schemas"]["RegionView"][];
+            products: components["schemas"]["MatchedProductView"][];
+            reason: null | string;
+            watched: boolean;
+            available: boolean;
+            firstSeenAt: string;
+            lastSeenAt: string;
+            savedAt: null | string;
+            keywords: string[];
+            categories: string[];
+            reasons: components["schemas"]["ReasonView"][];
+            reasonsStatus: string;
+            scoreBreakdown: components["schemas"]["ScoreBreakdownView"];
+            closedAt: null | string;
+            dismissReason: null | string;
+            dismissNote: null | string;
+            roomId: null | string;
+            model: null | string;
+            promptVersion: null | string;
+        };
+        OpportunityList: {
+            refreshedAt: null | string;
+            lastOutcome: null | string;
+            lastReason: null | string;
+            items: components["schemas"]["OpportunityCard"][];
         };
         PendingInvitation: {
             id: string;
@@ -2888,6 +3352,21 @@ export interface components {
             status: string;
             updatedAt: string;
         };
+        ReasonSourceView: {
+            title: string;
+            url: string;
+        };
+        ReasonView: {
+            text: string;
+            sources: components["schemas"]["ReasonSourceView"][];
+        };
+        RegionView: {
+            id: string;
+            name: string;
+            lastMonthSearches: number | string;
+            growth: null | number | string;
+            rising: boolean;
+        };
         RevisionRequest: {
             revision: number | string;
         };
@@ -2941,6 +3420,21 @@ export interface components {
         SaveEmailSettingsRequest: {
             kinds: null | components["schemas"]["EmailSettingChange"][];
         };
+        ScoreBreakdownView: {
+            total: number | string;
+            growth: number | string;
+            growthScore: number | string;
+            growthWeight: number | string;
+            lastMonthSearches: number | string;
+            volumeScore: number | string;
+            volumeWeight: number | string;
+            fit: number | string;
+            fitScore: number | string;
+            fitWeight: number | string;
+            fitReason: null | string;
+            feedback: number | string;
+            feedbackReasons: string[];
+        };
         SourceKind: "page" | "ad";
         SourceView: {
             kind: string;
@@ -2962,6 +3456,20 @@ export interface components {
             to: null | string;
             importId: string;
             at: string;
+        };
+        TopicRequest: {
+            phrase: null | string;
+            kind: null | string;
+        };
+        TopicView: {
+            id: string;
+            phrase: string;
+            kind: string;
+            createdAt: string;
+        };
+        TrendPointView: {
+            month: string;
+            searches: number | string;
         };
         UpdateWorkspaceRequest: {
             name: null | string;

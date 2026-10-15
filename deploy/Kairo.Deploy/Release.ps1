@@ -57,7 +57,8 @@ function Invoke-KairoDeploy {
         -Settings @('--no-allow-unauthenticated', '--timeout', '3600', "--set-env-vars=GOOGLE_CLOUD_PROJECT=$($Environment.Project),GOOGLE_CLOUD_LOCATION=$($script:AiLocation)")
 
     $agentsAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-agents'
-    $apiSettings += ",Kairo__Agents__Url=$($urls['kairo-agents']),Kairo__Agents__Audience=$agentsAudience"
+    $agentsSettings = "Kairo__Agents__Url=$($urls['kairo-agents']),Kairo__Agents__Audience=$agentsAudience"
+    $apiSettings += ",$agentsSettings"
 
     Publish-KairoService -Environment $Environment -Service 'kairo-api' -Image (Get-KairoImage -Environment $Environment -Name 'api' -Tag $tag) `
         -Settings (@('--no-allow-unauthenticated') + $script:Vpc + @(
@@ -78,7 +79,7 @@ function Invoke-KairoDeploy {
             '--timeout', '3600',
             '--no-cpu-throttling',
             '--memory', '2Gi',
-            "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics,$files",
+            "--set-env-vars=Kairo__Kms__KeyName=$keyName,$analytics,$files,$agentsSettings",
             "--set-secrets=$($serviceSecrets -join ',')"
         ))
 

@@ -10,6 +10,9 @@ export const WORKSPACE_LIVE_EVENTS = [
   "brand_kit.drafting",
   "catalogue.imported",
   "catalogue.product_changed",
+  "opportunities.refreshed",
+  "opportunity.changed",
+  "opportunity_topics.changed",
   "notification.created",
   "notifications.read",
 ] as const;

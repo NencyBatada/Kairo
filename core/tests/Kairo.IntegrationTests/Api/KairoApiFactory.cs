@@ -107,6 +107,7 @@ public sealed class KairoApiFactory(
             services.AddHttpClient("kairo-gmail").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-brand-kit-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddHttpClient("kairo-opportunities-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient(SafeWebClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Websites);
             services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Agents);
             services.AddSingleton<IServiceAccessToken, FakeServiceToken>();
