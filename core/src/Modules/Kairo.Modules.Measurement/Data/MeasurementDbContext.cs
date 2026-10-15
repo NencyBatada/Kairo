@@ -27,6 +27,7 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
             run.Property(r => r.Status).HasMaxLength(20);
             run.Property(r => r.Reason).HasMaxLength(40);
             run.Property(r => r.Error).HasMaxLength(1000);
+            run.Property(r => r.Tables).HasMaxLength(300);
         });
 
         modelBuilder.Entity<SalesUpload>(upload =>

@@ -65,6 +65,10 @@ namespace Kairo.Modules.Measurement.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("Tables")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<DateOnly?>("ToDate")
                         .HasColumnType("date");
 

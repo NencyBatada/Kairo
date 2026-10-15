@@ -8,23 +8,33 @@ internal sealed class Ga4Feed(Ga4Reports reports, BigQueryTables tables, TimePro
 
     public ConnectedProduct Product => ConnectedProduct.Ga4;
 
+    public IReadOnlyList<TableSchema> Tables { get; } = [TableSchemas.Ga4RegionDaily, TableSchemas.Ga4CityDaily];
+
     public Task<bool> IsSetUpAsync(CancellationToken cancellationToken) => Task.FromResult(true);
 
     public string TargetOf(ConnectionStatus status) => status.ExternalId ?? "";
 
-    public async Task<FeedResult> RunAsync(Guid brandId, ConnectionAccess access, bool firstRun, CancellationToken cancellationToken)
+    public async Task<FeedResult> RunAsync(Guid brandId, ConnectionAccess access, FeedHistory history, CancellationToken cancellationToken)
     {
         var property = await reports.DescribeAsync(access, cancellationToken);
-        var window = FeedWindow.For(FeedClock.Today(time, property.TimeZone), firstRun);
+        var today = FeedClock.Today(time, property.TimeZone);
+        var window = history.WindowFor(this, today);
         var rows = 0;
         foreach (var month in window.Months())
         {
-            rows += await tables.ReplaceDaysAsync(
-                brandId,
-                TableSchemas.Ga4RegionDaily,
-                month.Days(),
-                await reports.DailyAsync(access, property, month, cancellationToken),
-                cancellationToken);
+            foreach (var table in Tables)
+            {
+                if (history.Span(table, month, today) is { } span)
+                {
+                    var cities = table == TableSchemas.Ga4CityDaily;
+                    rows += await tables.ReplaceDaysAsync(
+                        brandId,
+                        table,
+                        span.Days(),
+                        await reports.DailyAsync(access, property, span, cities, cancellationToken),
+                        cancellationToken);
+                }
+            }
         }
 
         return new FeedResult(window, rows);

@@ -20,6 +20,8 @@ internal sealed class FeedRun : IBrandOwned
 
     public int Rows { get; set; }
 
+    public string? Tables { get; set; }
+
     public string? Error { get; set; }
 
     public DateTimeOffset StartedAt { get; set; }

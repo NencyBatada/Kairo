@@ -37,7 +37,7 @@ public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
 
         var outcome = Outcome(run, brandId);
         Assert.Equal("succeeded", outcome.GetProperty("status").GetString());
-        Assert.Equal(FirstWindowRows, outcome.GetProperty("rows").GetInt32());
+        Assert.Equal(FirstWindowRows * 2, outcome.GetProperty("rows").GetInt32());
         var rows = Google.BigQuery.Rows(AnalyticsOptions.DatasetFor(brandId), "ga4_region_daily");
         Assert.Equal(FirstWindowRows, rows.Count);
         var day = rows.Single(row => row["date"]!.GetValue<string>() == "2026-10-13");
@@ -50,6 +50,28 @@ public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(3, day["transactions"]!.GetValue<long>());
         Assert.Equal("5600.75", day["purchase_revenue"]!.GetValue<string>());
         Assert.Contains(rows, row => row["region"]!.GetValue<string>() == "(not set)" && row["date"]!.GetValue<string>() == "2025-09-14");
+        var cities = Google.BigQuery.Rows(AnalyticsOptions.DatasetFor(brandId), "ga4_city_daily");
+        Assert.Equal(FirstWindowRows, cities.Count);
+        var city = cities.Single(row => row["date"]!.GetValue<string>() == "2026-10-13");
+        Assert.Equal("Maharashtra", city["region"]!.GetValue<string>());
+        Assert.Equal("Pune", city["city"]!.GetValue<string>());
+        Assert.Equal(3, city["transactions"]!.GetValue<long>());
+    }
+
+    [Fact]
+    public void Feed_history_backfills_only_the_tables_a_target_has_not_loaded()
+    {
+        var feed = new Ga4Feed(null!, null!, TimeProvider.System);
+
+        var first = FeedHistory.Of(feed, []);
+        var legacy = FeedHistory.Of(feed, [null]);
+        var current = FeedHistory.Of(feed, [null, FeedHistory.Record(feed)]);
+
+        Assert.True(first.Backfills(TableSchemas.Ga4RegionDaily));
+        Assert.False(legacy.Backfills(TableSchemas.Ga4RegionDaily));
+        Assert.True(legacy.Backfills(TableSchemas.Ga4CityDaily));
+        Assert.False(current.Backfills(TableSchemas.Ga4CityDaily));
+        Assert.Equal("ga4_region_daily ga4_city_daily", FeedHistory.Record(feed));
     }
 
     [Fact]
@@ -62,7 +84,7 @@ public sealed class NightlyGa4Tests(SqlServer sqlServer) : IAsyncLifetime
 
         await RunAsync();
 
-        Assert.Equal(new[] { 0, 3, 6 }, Google.Ga4Requests.Select(request => request.GetProperty("offset").GetInt32()));
+        Assert.Equal(new[] { 0, 3, 6, 0, 3, 6 }, Google.Ga4Requests.Select(request => request.GetProperty("offset").GetInt32()));
         Assert.All(Google.Ga4Requests, request => Assert.Equal(Ga4Reports.PageSize, request.GetProperty("limit").GetInt32()));
     }
 

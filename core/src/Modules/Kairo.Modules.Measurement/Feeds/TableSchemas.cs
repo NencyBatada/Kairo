@@ -37,6 +37,10 @@ internal static class TableSchemas
         "ads_region_daily",
         [Text("customer_id"), Text("campaign_id"), Text("region_id"), Text("region_name"), Text("country_code"), Text("currency"), .. Metrics]);
 
+    public static readonly TableSchema AdsCityDaily = Of(
+        "ads_city_daily",
+        [Text("customer_id"), Text("campaign_id"), Text("city_id"), Text("city_name"), Text("state_name"), Text("country_code"), Text("currency"), .. Metrics]);
+
     public static readonly TableSchema Ga4RegionDaily = Of(
         "ga4_region_daily",
         [
@@ -44,9 +48,18 @@ internal static class TableSchemas
             new("sessions", "INT64"), new("key_events", "FLOAT64"), new("transactions", "INT64"), new("purchase_revenue", "NUMERIC"),
         ]);
 
+    public static readonly TableSchema Ga4CityDaily = Of(
+        "ga4_city_daily",
+        [
+            Text("property_id"), Text("country"), Text("region"), Text("city"), Text("currency"),
+            new("sessions", "INT64"), new("key_events", "FLOAT64"), new("transactions", "INT64"), new("purchase_revenue", "NUMERIC"),
+        ]);
+
     public static readonly TableSchema SalesDaily = Of(
         "sales_daily",
         [Text("region"), new("orders", "INT64"), new("revenue", "NUMERIC"), Text("source")]);
+
+    public static readonly IReadOnlySet<string> AddedLater = new HashSet<string>(StringComparer.Ordinal) { AdsCityDaily.Name, Ga4CityDaily.Name };
 
     private static TableColumn Text(string name) => new(name, "STRING");
 

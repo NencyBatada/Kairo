@@ -6,7 +6,10 @@ namespace Kairo.Modules.Measurement.Feeds;
 
 internal sealed record AdsAccount(string CustomerId, string TimeZone, string Currency);
 
-internal sealed record GeoTarget(string Id, string? Name, string? CountryCode);
+internal sealed record GeoTarget(string Id, string? Name, string? CountryCode, string? CanonicalName = null)
+{
+    public string? StateName => CanonicalName?.Split(',', StringSplitOptions.TrimEntries) is { Length: >= 3 } parts ? parts[^2] : null;
+}
 
 internal static class AdsRows
 {
@@ -50,12 +53,11 @@ internal static class AdsRows
 
     public static string? RegionOf(JsonElement row) => Text(row, "segments", GoogleAdsReports.RegionJson);
 
+    public static string? CityOf(JsonElement row) => Text(row, "segments", GoogleAdsReports.CityJson);
+
     public static JsonObject Region(JsonElement row, AdsAccount account, IReadOnlyDictionary<string, GeoTarget> names)
     {
-        var resource = RegionOf(row);
-        var geo = resource is null
-            ? null
-            : names.TryGetValue(resource, out var found) ? found : new GeoTarget(resource[(resource.LastIndexOf('/') + 1)..], null, null);
+        var geo = Geo(RegionOf(row), names);
         return WithMetrics(
             new JsonObject
             {
@@ -64,6 +66,24 @@ internal static class AdsRows
                 ["campaign_id"] = Text(row, "campaign", "id"),
                 ["region_id"] = geo?.Id,
                 ["region_name"] = geo?.Name,
+                ["country_code"] = geo?.CountryCode,
+                ["currency"] = account.Currency,
+            },
+            row);
+    }
+
+    public static JsonObject City(JsonElement row, AdsAccount account, IReadOnlyDictionary<string, GeoTarget> names)
+    {
+        var geo = Geo(CityOf(row), names);
+        return WithMetrics(
+            new JsonObject
+            {
+                ["date"] = Text(row, "segments", "date"),
+                ["customer_id"] = account.CustomerId,
+                ["campaign_id"] = Text(row, "campaign", "id"),
+                ["city_id"] = geo?.Id,
+                ["city_name"] = geo?.Name,
+                ["state_name"] = geo?.StateName,
                 ["country_code"] = geo?.CountryCode,
                 ["currency"] = account.Currency,
             },
@@ -89,6 +109,11 @@ internal static class AdsRows
     }
 
     public static string Money(decimal value) => value.ToString("0.#########", CultureInfo.InvariantCulture);
+
+    private static GeoTarget? Geo(string? resource, IReadOnlyDictionary<string, GeoTarget> names) =>
+        resource is null
+            ? null
+            : names.TryGetValue(resource, out var found) ? found : new GeoTarget(resource[(resource.LastIndexOf('/') + 1)..], null, null);
 
     private static JsonObject WithMetrics(JsonObject row, JsonElement source)
     {

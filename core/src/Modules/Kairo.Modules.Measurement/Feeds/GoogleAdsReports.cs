@@ -23,8 +23,12 @@ internal static class AdsQueries
         $"SELECT segments.date, campaign.id, {GoogleAdsReports.RegionField}, {Metrics} FROM geographic_view "
         + $"WHERE {During(window)} AND geographic_view.location_type = 'LOCATION_OF_PRESENCE'";
 
+    public static string Cities(FeedWindow window) =>
+        $"SELECT segments.date, campaign.id, {GoogleAdsReports.CityField}, {Metrics} FROM geographic_view "
+        + $"WHERE {During(window)} AND geographic_view.location_type = 'LOCATION_OF_PRESENCE'";
+
     public static string GeoTargets(IEnumerable<string> resourceNames) =>
-        "SELECT geo_target_constant.id, geo_target_constant.name, geo_target_constant.country_code FROM geo_target_constant "
+        "SELECT geo_target_constant.id, geo_target_constant.name, geo_target_constant.country_code, geo_target_constant.canonical_name FROM geo_target_constant "
         + $"WHERE geo_target_constant.resource_name IN ({string.Join(", ", resourceNames.Select(name => $"'{name}'"))})";
 
     private static string During(FeedWindow window) =>
@@ -35,6 +39,8 @@ internal sealed class GoogleAdsReports(IHttpClientFactory http, AnalyticsOptions
 {
     public const string RegionField = "segments.geo_target_state";
     public const string RegionJson = "geoTargetState";
+    public const string CityField = "segments.geo_target_city";
+    public const string CityJson = "geoTargetCity";
     public const int GeoBatch = 500;
 
     public async Task<AdsAccount> DescribeAsync(ConnectionAccess access, CancellationToken cancellationToken)
@@ -58,20 +64,33 @@ internal sealed class GoogleAdsReports(IHttpClientFactory http, AnalyticsOptions
     public async Task<List<JsonObject>> RegionsAsync(ConnectionAccess access, AdsAccount account, FeedWindow window, CancellationToken cancellationToken)
     {
         var rows = await SearchAsync(access, AdsQueries.Regions(window), cancellationToken);
+        var names = await GeoTargetsAsync(access, rows.Select(AdsRows.RegionOf), cancellationToken);
+        return rows.Select(row => AdsRows.Region(row, account, names)).ToList();
+    }
+
+    public async Task<List<JsonObject>> CitiesAsync(ConnectionAccess access, AdsAccount account, FeedWindow window, CancellationToken cancellationToken)
+    {
+        var rows = await SearchAsync(access, AdsQueries.Cities(window), cancellationToken);
+        var names = await GeoTargetsAsync(access, rows.Select(AdsRows.CityOf), cancellationToken);
+        return rows.Select(row => AdsRows.City(row, account, names)).ToList();
+    }
+
+    private async Task<Dictionary<string, GeoTarget>> GeoTargetsAsync(ConnectionAccess access, IEnumerable<string?> resources, CancellationToken cancellationToken)
+    {
         var names = new Dictionary<string, GeoTarget>();
-        foreach (var batch in rows.Select(AdsRows.RegionOf).OfType<string>().Distinct().Chunk(GeoBatch))
+        foreach (var batch in resources.OfType<string>().Distinct().Chunk(GeoBatch))
         {
             foreach (var row in await SearchAsync(access, AdsQueries.GeoTargets(batch), cancellationToken))
             {
                 var geo = row.GetProperty("geoTargetConstant");
                 if (AdsRows.Text(geo, "id") is { } id)
                 {
-                    names[$"geoTargetConstants/{id}"] = new GeoTarget(id, AdsRows.Text(geo, "name"), AdsRows.Text(geo, "countryCode"));
+                    names[$"geoTargetConstants/{id}"] = new GeoTarget(id, AdsRows.Text(geo, "name"), AdsRows.Text(geo, "countryCode"), AdsRows.Text(geo, "canonicalName"));
                 }
             }
         }
 
-        return rows.Select(row => AdsRows.Region(row, account, names)).ToList();
+        return names;
     }
 
     private async Task<IReadOnlyList<JsonElement>> SearchAsync(ConnectionAccess access, string query, CancellationToken cancellationToken)

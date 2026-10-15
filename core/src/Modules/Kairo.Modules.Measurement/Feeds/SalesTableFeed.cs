@@ -28,6 +28,8 @@ internal sealed class SalesTableFeed(MeasurementDbContext db, BigQueryClient big
 
     public ConnectedProduct Product => ConnectedProduct.BigQuery;
 
+    public IReadOnlyList<TableSchema> Tables { get; } = [TableSchemas.SalesDaily];
+
     public async Task<bool> IsSetUpAsync(CancellationToken cancellationToken)
     {
         _source = await db.SalesSources.AsNoTracking().SingleOrDefaultAsync(cancellationToken);
@@ -36,10 +38,10 @@ internal sealed class SalesTableFeed(MeasurementDbContext db, BigQueryClient big
 
     public string TargetOf(ConnectionStatus status) => _source?.TableRef ?? "";
 
-    public async Task<FeedResult> RunAsync(Guid brandId, ConnectionAccess access, bool firstRun, CancellationToken cancellationToken)
+    public async Task<FeedResult> RunAsync(Guid brandId, ConnectionAccess access, FeedHistory history, CancellationToken cancellationToken)
     {
         var source = _source ?? throw new InvalidOperationException("No sales table is set.");
-        var window = FeedWindow.For(FeedClock.Today(time, FeedClock.IndiaTimeZone), firstRun);
+        var window = history.WindowFor(this, FeedClock.Today(time, FeedClock.IndiaTimeZone));
         var loaded = 0;
         foreach (var month in window.Months())
         {

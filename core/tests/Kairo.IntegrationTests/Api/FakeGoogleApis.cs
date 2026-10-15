@@ -362,7 +362,9 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         }
         else if (query.Contains("FROM geo_target_constant", StringComparison.Ordinal))
         {
-            results = [new { geoTargetConstant = new { resourceName = "geoTargetConstants/21342", id = "21342", name = "Maharashtra", countryCode = "IN" } }];
+            results = query.Contains("1007785", StringComparison.Ordinal)
+                ? [new { geoTargetConstant = new { resourceName = "geoTargetConstants/1007785", id = "1007785", name = "Mumbai", countryCode = "IN", canonicalName = "Mumbai,Maharashtra,India" } }]
+                : [new { geoTargetConstant = new { resourceName = "geoTargetConstants/21342", id = "21342", name = "Maharashtra", countryCode = "IN", canonicalName = "Maharashtra,India" } }];
         }
         else if (query.Contains("DURING LAST_90_DAYS", StringComparison.Ordinal))
         {
@@ -394,6 +396,16 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     private static object AdsResult(string query, string date)
     {
         var metrics = new { impressions = "1000", clicks = "50", costMicros = "2500000", conversions = 3.0, conversionsValue = 4500.5 };
+        if (query.Contains(GoogleAdsReports.CityField, StringComparison.Ordinal))
+        {
+            return new Dictionary<string, object>
+            {
+                ["segments"] = new Dictionary<string, object> { ["date"] = date, [GoogleAdsReports.CityJson] = "geoTargetConstants/1007785" },
+                ["campaign"] = new { id = "9001" },
+                ["metrics"] = metrics,
+            };
+        }
+
         if (query.Contains("FROM geographic_view", StringComparison.Ordinal))
         {
             return new Dictionary<string, object>
@@ -436,14 +448,15 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var range = request.GetProperty("dateRanges")[0];
         var from = DateOnly.ParseExact(range.GetProperty("startDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var to = DateOnly.ParseExact(range.GetProperty("endDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var cities = request.GetProperty("dimensions").EnumerateArray().Any(dimension => dimension.GetProperty("name").GetString() == "city");
         var rows = new List<object>();
         for (var day = from; day <= to; day = day.AddDays(1))
         {
             var date = day.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
-            rows.Add(Ga4Row(date, "Maharashtra", "120", "4", "3", "5600.75"));
+            rows.Add(Ga4Row(date, cities ? ["Maharashtra", "Pune"] : ["Maharashtra"], "120", "4", "3", "5600.75"));
             if (day == from)
             {
-                rows.Add(Ga4Row(date, "(not set)", "7", "0", "0", "0"));
+                rows.Add(Ga4Row(date, cities ? ["(not set)", "(not set)"] : ["(not set)"], "7", "0", "0", "0"));
             }
         }
 
@@ -451,9 +464,9 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         return Json(HttpStatusCode.OK, new { rows = rows.Skip(offset).Take(Ga4PageRows).ToArray(), rowCount = rows.Count });
     }
 
-    private static object Ga4Row(string date, string region, params string[] metrics) => new
+    private static object Ga4Row(string date, string[] places, params string[] metrics) => new
     {
-        dimensionValues = new[] { new { value = date }, new { value = "India" }, new { value = region } },
+        dimensionValues = new[] { date, "India" }.Concat(places).Select(value => new { value }).ToArray(),
         metricValues = metrics.Select(value => new { value }).ToArray(),
     };
 

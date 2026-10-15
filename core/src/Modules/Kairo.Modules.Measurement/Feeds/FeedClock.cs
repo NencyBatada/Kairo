@@ -22,6 +22,13 @@ internal sealed record FeedWindow(DateOnly From, DateOnly To)
     public static FeedWindow For(DateOnly today, bool firstRun) =>
         new(firstRun ? today.AddMonths(-13) : today.AddDays(-7), today.AddDays(-1));
 
+    public FeedWindow? Within(FeedWindow other)
+    {
+        var from = From > other.From ? From : other.From;
+        var to = To < other.To ? To : other.To;
+        return from <= to ? new FeedWindow(from, to) : null;
+    }
+
     public IReadOnlyList<FeedWindow> Months()
     {
         var months = new List<FeedWindow>();

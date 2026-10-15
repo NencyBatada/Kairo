@@ -17,7 +17,7 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static readonly DateTimeOffset Night = new(2026, 10, 13, 20, 0, 0, TimeSpan.Zero);
 
-    private static readonly string[] AdsTables = ["ads_campaign_daily", "ads_ad_group_daily", "ads_ad_daily", "ads_region_daily"];
+    private static readonly string[] AdsTables = ["ads_campaign_daily", "ads_ad_group_daily", "ads_ad_daily", "ads_region_daily", "ads_city_daily"];
 
     private string _database = "";
     private KairoApiFactory _api = null!;
@@ -35,7 +35,7 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_nightly_run_loads_the_four_Google_Ads_tables()
+    public async Task A_nightly_run_loads_the_five_Google_Ads_tables()
     {
         var brandId = await BrandWithAdsAsync();
 
@@ -64,6 +64,32 @@ public sealed class NightlyGoogleAdsTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal("21342", region["region_id"]!.GetValue<string>());
         Assert.Equal("Maharashtra", region["region_name"]!.GetValue<string>());
         Assert.Equal("IN", region["country_code"]!.GetValue<string>());
+        var city = Day(dataset, "ads_city_daily", "2026-10-13");
+        Assert.Equal("1007785", city["city_id"]!.GetValue<string>());
+        Assert.Equal("Mumbai", city["city_name"]!.GetValue<string>());
+        Assert.Equal("Maharashtra", city["state_name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task A_run_after_the_city_table_was_added_backfills_only_that_table()
+    {
+        var brandId = await BrandWithAdsAsync();
+        await FeedRunRows.InsertAsync(_database, brandId, FeedNames.GoogleAds, "succeeded", Night.AddDays(-1), new DateOnly(2026, 10, 12), externalId: "1111111111");
+
+        var run = await RunAsync();
+
+        Assert.Equal("succeeded", Outcome(run, brandId).GetProperty("status").GetString());
+        var dataset = AnalyticsOptions.DatasetFor(brandId);
+        Assert.Equal(FirstWindowDays, Google.BigQuery.Rows(dataset, "ads_city_daily").Count);
+        Assert.Equal(7, Google.BigQuery.Rows(dataset, "ads_campaign_daily").Count);
+        Assert.Equal(7, Google.BigQuery.Rows(dataset, "ads_region_daily").Count);
+
+        Google.AdsReports.Clear();
+        await RunAsync();
+
+        Assert.All(
+            Google.AdsReports.Where(report => report.Query.Contains(GoogleAdsReports.CityField, StringComparison.Ordinal)),
+            report => Assert.Contains("segments.date BETWEEN '2026-10-07' AND '2026-10-13'", report.Query));
     }
 
     [Fact]

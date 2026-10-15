@@ -78,10 +78,49 @@ public sealed class AdsRowsTests
     }
 
     [Fact]
+    public void The_city_report_asks_for_the_window_and_where_people_were()
+    {
+        Assert.Equal(
+            $"SELECT segments.date, campaign.id, {GoogleAdsReports.CityField}, metrics.impressions, metrics.clicks, metrics.cost_micros, "
+            + "metrics.conversions, metrics.conversions_value FROM geographic_view "
+            + "WHERE segments.date BETWEEN '2026-10-07' AND '2026-10-13' AND geographic_view.location_type = 'LOCATION_OF_PRESENCE'",
+            AdsQueries.Cities(new FeedWindow(new DateOnly(2026, 10, 7), new DateOnly(2026, 10, 13))));
+    }
+
+    [Fact]
+    public void A_city_row_names_the_city_and_its_state()
+    {
+        var row = Parse("""{"segments":{"date":"2026-10-13","geoTargetCity":"geoTargetConstants/1007785"},"campaign":{"id":"9001"},"metrics":{"impressions":"10","clicks":"2","costMicros":"1500000","conversions":1.0,"conversionsValue":250.0}}""");
+        var names = new Dictionary<string, GeoTarget>
+        {
+            ["geoTargetConstants/1007785"] = new("1007785", "Mumbai", "IN", "Mumbai,Maharashtra,India"),
+        };
+
+        var city = AdsRows.City(row, new AdsAccount("1111111111", "Asia/Kolkata", "INR"), names);
+
+        Assert.Equal("1007785", city["city_id"]!.GetValue<string>());
+        Assert.Equal("Mumbai", city["city_name"]!.GetValue<string>());
+        Assert.Equal("Maharashtra", city["state_name"]!.GetValue<string>());
+        Assert.Equal("IN", city["country_code"]!.GetValue<string>());
+        Assert.Equal("1.5", city["cost"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void A_city_Google_does_not_name_keeps_its_id()
+    {
+        var row = Parse("""{"segments":{"date":"2026-10-13","geoTargetCity":"geoTargetConstants/42"},"campaign":{"id":"9001"},"metrics":{}}""");
+
+        var city = AdsRows.City(row, new AdsAccount("1111111111", "Asia/Kolkata", "INR"), new Dictionary<string, GeoTarget>());
+
+        Assert.Equal("42", city["city_id"]!.GetValue<string>());
+        Assert.Null(city["state_name"]);
+    }
+
+    [Fact]
     public void Geo_targets_are_looked_up_by_resource_name()
     {
         Assert.Equal(
-            "SELECT geo_target_constant.id, geo_target_constant.name, geo_target_constant.country_code FROM geo_target_constant "
+            "SELECT geo_target_constant.id, geo_target_constant.name, geo_target_constant.country_code, geo_target_constant.canonical_name FROM geo_target_constant "
             + "WHERE geo_target_constant.resource_name IN ('geoTargetConstants/1', 'geoTargetConstants/2')",
             AdsQueries.GeoTargets(["geoTargetConstants/1", "geoTargetConstants/2"]));
     }

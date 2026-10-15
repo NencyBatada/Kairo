@@ -9,22 +9,28 @@ internal sealed record Ga4Property(string Id, string TimeZone, string Currency);
 
 internal static class Ga4Rows
 {
-    public static JsonObject Of(JsonElement row, Ga4Property property)
+    public static JsonObject Of(JsonElement row, Ga4Property property, bool cities)
     {
         var dimensions = Values(row, "dimensionValues");
         var metrics = Values(row, "metricValues");
-        return new JsonObject
+        var result = new JsonObject
         {
             ["date"] = FeedClock.Iso(DateOnly.ParseExact(dimensions[0] ?? "", "yyyyMMdd", CultureInfo.InvariantCulture)),
             ["property_id"] = property.Id,
             ["country"] = dimensions[1],
             ["region"] = dimensions[2],
-            ["currency"] = property.Currency,
-            ["sessions"] = Whole(metrics[0]),
-            ["key_events"] = double.Parse(metrics[1] ?? "0", CultureInfo.InvariantCulture),
-            ["transactions"] = Whole(metrics[2]),
-            ["purchase_revenue"] = AdsRows.Money(decimal.Parse(metrics[3] ?? "0", NumberStyles.Float, CultureInfo.InvariantCulture)),
         };
+        if (cities)
+        {
+            result["city"] = dimensions[3];
+        }
+
+        result["currency"] = property.Currency;
+        result["sessions"] = Whole(metrics[0]);
+        result["key_events"] = double.Parse(metrics[1] ?? "0", CultureInfo.InvariantCulture);
+        result["transactions"] = Whole(metrics[2]);
+        result["purchase_revenue"] = AdsRows.Money(decimal.Parse(metrics[3] ?? "0", NumberStyles.Float, CultureInfo.InvariantCulture));
+        return result;
     }
 
     private static string?[] Values(JsonElement row, string name) =>
@@ -51,8 +57,9 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
             AdsRows.Text(property, "currencyCode") ?? "");
     }
 
-    public async Task<List<JsonObject>> DailyAsync(ConnectionAccess access, Ga4Property property, FeedWindow window, CancellationToken cancellationToken)
+    public async Task<List<JsonObject>> DailyAsync(ConnectionAccess access, Ga4Property property, FeedWindow window, bool cities, CancellationToken cancellationToken)
     {
+        string[] names = cities ? ["date", "country", "region", "city"] : ["date", "country", "region"];
         var client = http.CreateClient(MeasurementHttp.ClientName);
         var rows = new List<JsonObject>();
         var offset = 0;
@@ -65,7 +72,7 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
                 new
                 {
                     dateRanges = new[] { new { startDate = FeedClock.Iso(window.From), endDate = FeedClock.Iso(window.To) } },
-                    dimensions = new[] { new { name = "date" }, new { name = "country" }, new { name = "region" } },
+                    dimensions = names.Select(name => new { name }).ToArray(),
                     metrics = new[] { new { name = "sessions" }, new { name = "keyEvents" }, new { name = "transactions" }, new { name = "purchaseRevenue" } },
                     limit = PageSize,
                     offset,
@@ -76,7 +83,7 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
             {
                 foreach (var row in list.EnumerateArray())
                 {
-                    rows.Add(Ga4Rows.Of(row, property));
+                    rows.Add(Ga4Rows.Of(row, property, cities));
                     read++;
                 }
             }

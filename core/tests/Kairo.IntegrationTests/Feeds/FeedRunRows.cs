@@ -55,7 +55,8 @@ internal static class FeedRunRows
         string status,
         DateTimeOffset startedAt,
         DateOnly? toDate = null,
-        string? error = null)
+        string? error = null,
+        string externalId = "seeded")
     {
         await using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync();
@@ -63,12 +64,13 @@ internal static class FeedRunRows
         command.CommandText = """
             EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
             INSERT INTO measurement.FeedRuns (Id, BrandId, Feed, ExternalId, Status, FromDate, ToDate, [Rows], Error, StartedAt, FinishedAt)
-            VALUES (NEWID(), @brand, @feed, N'seeded', @status, @to, @to, 0, @error, @started,
+            VALUES (NEWID(), @brand, @feed, @external, @status, @to, @to, 0, @error, @started,
                     CASE WHEN @status = N'running' THEN NULL ELSE DATEADD(minute, 1, @started) END);
             """;
         command.Parameters.AddWithValue("@brand", brandId);
         command.Parameters.AddWithValue("@feed", feed);
         command.Parameters.AddWithValue("@status", status);
+        command.Parameters.AddWithValue("@external", externalId);
         command.Parameters.Add(new SqlParameter("@to", SqlDbType.Date) { Value = toDate is { } date ? date.ToDateTime(TimeOnly.MinValue) : DBNull.Value });
         command.Parameters.Add(new SqlParameter("@error", SqlDbType.NVarChar, 1000) { Value = (object?)error ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@started", SqlDbType.DateTimeOffset) { Value = startedAt });

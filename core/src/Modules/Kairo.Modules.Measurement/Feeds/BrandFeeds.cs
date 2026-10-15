@@ -63,9 +63,12 @@ internal sealed class BrandFeeds(
 
         var target = feed.TargetOf(status);
         run.ExternalId = target;
-        var firstRun = !await db.FeedRuns.AnyAsync(
-            existing => existing.Feed == feed.Name && existing.ExternalId == target && existing.Status == RunStatuses.Succeeded,
-            cancellationToken);
+        var history = FeedHistory.Of(
+            feed,
+            await db.FeedRuns
+                .Where(existing => existing.Feed == feed.Name && existing.ExternalId == target && existing.Status == RunStatuses.Succeeded)
+                .Select(existing => existing.Tables)
+                .ToListAsync(cancellationToken));
         run.Status = RunStatuses.Running;
         await db.SaveChangesAsync(cancellationToken);
 
@@ -73,10 +76,11 @@ internal sealed class BrandFeeds(
         {
             var access = await connections.GetAccessAsync(feed.Product, cancellationToken);
             await AnnounceAsync(FeedNotices.Started(run), run, cancellationToken);
-            var result = await feed.RunAsync(brandId, access, firstRun, cancellationToken);
+            var result = await feed.RunAsync(brandId, access, history, cancellationToken);
             run.FromDate = result.Window.From;
             run.ToDate = result.Window.To;
             run.Rows = result.Rows;
+            run.Tables = FeedHistory.Record(feed);
         }
         catch (ConnectionUnavailableException unavailable)
         {
