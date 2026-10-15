@@ -3362,6 +3362,199 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BriefDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BriefEditRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BriefDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/brief/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BriefInstructionRequestBody"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BriefProposalView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/brief/proposals/{proposalId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    proposalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApplyProposalRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BriefDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -3924,6 +4117,9 @@ export interface components {
             roomId: string;
             opportunity: components["schemas"]["OpportunityDetail"];
         };
+        ApplyProposalRequest: {
+            version: null | number | string;
+        };
         ApprovalRequest: {
             gate: null | string;
             version: null | number | string;
@@ -3971,6 +4167,100 @@ export interface components {
             draft: null | components["schemas"]["KitVersionView"];
         };
         BrandRole: "admin" | "marketer" | "approver";
+        BriefBudgetView: {
+            amount: number | string;
+            currency: string;
+        };
+        BriefChangeView: {
+            field: string;
+            label: string;
+            before: string;
+            after: string;
+            reason: string;
+        };
+        BriefChoiceView: {
+            value: string;
+            label: string;
+        };
+        BriefDetail: {
+            campaignId: string;
+            campaignVersion: number | string;
+            editable: boolean;
+            brief: null | components["schemas"]["SmartBriefView"];
+            warnings: components["schemas"]["BriefWarningView"][];
+            budgetLimit: null | components["schemas"]["BriefBudgetView"];
+            options: components["schemas"]["BriefOptionsView"];
+            history: components["schemas"]["BriefVersionView"][];
+        };
+        BriefEditRequest: {
+            version: null | number | string;
+            briefVersion: null | number | string;
+            title: null | string;
+            objective: null | string;
+            kpi: null | string;
+            campaignTypes: null | string[];
+            budget: null | number | string;
+            startDate: null | string;
+            endDate: null | string;
+            regions: null | string[];
+            audiences: null | string[];
+            keyMessages: null | string[];
+            productIds: null | string[];
+            landingPages: null | string[];
+            languages: null | string[];
+        };
+        BriefEvidenceView: {
+            label: string;
+            value: string;
+            source: null | string;
+        };
+        BriefInstructionRequestBody: {
+            version: null | number | string;
+            briefVersion: null | number | string;
+            instruction: null | string;
+        };
+        BriefOptionsView: {
+            regions: components["schemas"]["BriefRegionOptionView"][];
+            products: components["schemas"]["BriefProductView"][];
+            campaignTypes: components["schemas"]["BriefChoiceView"][];
+            kpis: components["schemas"]["BriefChoiceView"][];
+            languages: components["schemas"]["BriefChoiceView"][];
+        };
+        BriefProductView: {
+            id: string;
+            title: string;
+            price: null | number | string;
+            currency: null | string;
+            link: null | string;
+            inStock: boolean;
+        };
+        BriefProposalView: {
+            id: string;
+            briefVersion: number | string;
+            instruction: string;
+            summary: string;
+            changes: components["schemas"]["BriefChangeView"][];
+            preview: components["schemas"]["SmartBriefView"];
+            warnings: components["schemas"]["BriefWarningView"][];
+            expiresAt: string;
+        };
+        BriefReasonView: {
+            field: string;
+            reason: string;
+            evidence: components["schemas"]["BriefEvidenceView"][];
+        };
+        BriefRegionOptionView: {
+            id: null | string;
+            name: string;
+            lastMonthSearches: null | number | string;
+        };
+        BriefVersionView: {
+            version: number | string;
+            origin: string;
+            by: null | components["schemas"]["CampaignPersonView"];
+            instruction: null | string;
+            createdAt: string;
+        };
         BriefView: {
             title: string;
             goal: string;
@@ -3984,6 +4274,12 @@ export interface components {
             model: null | string;
             promptVersion: null | string;
             draftedAt: string;
+        };
+        BriefWarningView: {
+            code: string;
+            field: string;
+            severity: string;
+            message: string;
         };
         CampaignActionsView: {
             requestApproval: null | string;
@@ -4812,6 +5108,27 @@ export interface components {
             to: null | string;
             comment: null | string;
             version: null | number | string;
+        };
+        SmartBriefView: {
+            version: number | string;
+            origin: string;
+            title: string;
+            objective: string;
+            kpi: string;
+            campaignTypes: string[];
+            budget: null | components["schemas"]["BriefBudgetView"];
+            startDate: null | string;
+            endDate: null | string;
+            regions: string[];
+            audiences: string[];
+            keyMessages: string[];
+            products: components["schemas"]["BriefProductView"][];
+            landingPages: string[];
+            languages: string[];
+            reasons: components["schemas"]["BriefReasonView"][];
+            model: null | string;
+            promptVersion: null | string;
+            createdAt: string;
         };
         SourceKind: "page" | "ad";
         SourceView: {
