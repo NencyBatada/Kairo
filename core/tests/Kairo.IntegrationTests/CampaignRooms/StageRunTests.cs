@@ -28,13 +28,19 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
 
         Assert.Equal(1, await _world.RunStagesAsync());
 
+        var briefed = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.Equal("agent_working", Campaigns.Status(briefed));
+        Assert.Equal(["proof_plan", "starter_brief"], briefed.GetProperty("runs").EnumerateArray().Select(row => row.GetProperty("kind").GetString()));
+
+        Assert.Equal(1, await _world.RunStagesAsync());
+
         var drafted = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal("in_progress", Campaigns.Status(drafted));
         var brief = drafted.GetProperty("brief");
         Assert.Equal((1, "starter", "Monsoon runners"), (brief.GetProperty("version").GetInt32(), brief.GetProperty("origin").GetString(), brief.GetProperty("title").GetString()));
         Assert.Equal(("gemini-test", "plan-trigger-brief/1"), (brief.GetProperty("model").GetString(), brief.GetProperty("promptVersion").GetString()));
         Assert.Single(brief.GetProperty("productIds").EnumerateArray());
-        var run = Assert.Single(drafted.GetProperty("runs").EnumerateArray());
+        var run = drafted.GetProperty("runs")[1];
         Assert.Equal(("plan", "starter_brief", "succeeded", 1), (run.GetProperty("agent").GetString(), run.GetProperty("kind").GetString(), run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));
         Assert.Equal((812, 240), (run.GetProperty("inputTokens").GetInt32(), run.GetProperty("outputTokens").GetInt32()));
         Assert.Equal("brief", drafted.GetProperty("actions").GetProperty("requestApproval").GetString());
@@ -46,7 +52,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(2, request.GetProperty("products").GetArrayLength());
 
         var activity = await Campaigns.ActivityAsync(_world.Marketer, _world.BrandId, roomId);
-        var latest = activity.GetProperty("entries")[0];
+        var latest = activity.GetProperty("entries")[1];
         Assert.Equal(("stage_run.succeeded", "agent", "Plan agent"), (latest.GetProperty("action").GetString(), latest.GetProperty("actorType").GetString(), latest.GetProperty("actorName").GetString()));
     }
 
@@ -61,7 +67,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
             .Select(row => JsonDocument.Parse(row.Payload).RootElement)
             .Where(row => row.GetProperty("agent").GetString() == "plan")
             .ToList();
-        Assert.Equal(["queued", "running", "succeeded"], progress.Select(row => row.GetProperty("status").GetString()));
+        Assert.Equal(["queued", "running", "queued", "succeeded", "running", "succeeded"], progress.Select(row => row.GetProperty("status").GetString()));
         Assert.All(progress, row => Assert.Equal(roomId, row.GetProperty("subject").GetProperty("id").GetGuid()));
         Assert.Contains(rows, row => row.Type == "campaign.changed" && JsonDocument.Parse(row.Payload).RootElement.GetProperty("campaignId").GetGuid() == roomId);
         Assert.Contains(rows, row => row.Type == "campaigns.changed");
@@ -96,10 +102,11 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, retried.StatusCode);
         Assert.Equal("agent_working", Campaigns.Status(await retried.Content.ReadFromJsonAsync<JsonElement>(Token)));
         Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Equal(1, await _world.RunStagesAsync());
 
         var drafted = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal("in_progress", Campaigns.Status(drafted));
-        Assert.Equal(["succeeded", "failed"], drafted.GetProperty("runs").EnumerateArray().Select(row => row.GetProperty("status").GetString()));
+        Assert.Equal(["succeeded", "succeeded", "failed"], drafted.GetProperty("runs").EnumerateArray().Select(row => row.GetProperty("status").GetString()));
     }
 
     [Fact]
@@ -179,7 +186,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         _world.Api.Clock.Advance(TimeSpan.FromMinutes(11));
         Assert.Equal(1, await _world.RunStagesAsync());
 
-        var run = (await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("runs")[0];
+        var run = (await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("runs")[1];
         Assert.Equal(("succeeded", 2), (run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));
     }
 
@@ -192,8 +199,10 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         using var response = await _world.Worker.RunStageRunsAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(1, (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("processed").GetInt32());
-        Assert.Equal("succeeded", (await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("runs")[0].GetProperty("status").GetString());
+        Assert.Equal(2, (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("processed").GetInt32());
+        Assert.All(
+            (await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("runs").EnumerateArray(),
+            run => Assert.Equal("succeeded", run.GetProperty("status").GetString()));
     }
 
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();

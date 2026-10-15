@@ -27,6 +27,7 @@ public sealed class CampaignListTests(SqlServer sqlServer) : IAsyncLifetime
         _world.Api.Clock.Advance(TimeSpan.FromDays(2));
         _school = await _world.AcceptAsync(ids["Back to school shoes"]);
         await _world.RunStagesAsync();
+        await _world.RunStagesAsync();
     }
 
     [Fact]
@@ -109,12 +110,12 @@ public sealed class CampaignListTests(SqlServer sqlServer) : IAsyncLifetime
         var monsoon = await Campaigns.ActivityAsync(_world.Approver.Browser, _world.BrandId, _monsoon);
         var school = await Campaigns.ActivityAsync(_world.Approver.Browser, _world.BrandId, _school);
 
-        Assert.Equal(["stage_run.succeeded", "campaign_room.opened"], monsoon.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString()));
-        Assert.Equal(["stage_run.succeeded", "campaign_room.opened"], school.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString()));
+        Assert.Equal(["stage_run.succeeded", "stage_run.succeeded", "campaign_room.opened"], monsoon.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString()));
+        Assert.Equal(["stage_run.succeeded", "stage_run.succeeded", "campaign_room.opened"], school.GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString()));
         Assert.NotEqual(
             monsoon.GetProperty("entries")[0].GetProperty("id").GetInt64(),
             school.GetProperty("entries")[0].GetProperty("id").GetInt64());
-        Assert.Equal(_world.Brand.Marketer.Account.Name, monsoon.GetProperty("entries")[1].GetProperty("actorName").GetString());
+        Assert.Equal(_world.Brand.Marketer.Account.Name, monsoon.GetProperty("entries")[2].GetProperty("actorName").GetString());
     }
 
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();

@@ -13,7 +13,7 @@ internal sealed class StageQueue(
 {
     public IStageWork? Find(string kind) => works.FirstOrDefault(work => work.Kind == kind);
 
-    public async Task<StageRun> EnqueueAsync(Room room, string kind, Guid? requestedBy, CancellationToken cancellationToken)
+    public async Task<StageRun> EnqueueAsync(Room room, string kind, Guid? requestedBy, CancellationToken cancellationToken, string? input = null)
     {
         var work = Find(kind) ?? throw new InvalidOperationException($"No stage work is registered for {kind}.");
         if (work.Stage != room.State)
@@ -22,6 +22,7 @@ internal sealed class StageQueue(
         }
 
         var now = time.GetUtcNow();
+        var last = await db.StageRuns.Where(existing => existing.RoomId == room.Id).MaxAsync(existing => (DateTimeOffset?)existing.QueuedAt, cancellationToken);
         var run = new StageRun
         {
             Id = Guid.NewGuid(),
@@ -33,7 +34,8 @@ internal sealed class StageQueue(
             Status = StageRunStatuses.Queued,
             NextAttemptAt = now,
             RequestedBy = requestedBy,
-            QueuedAt = now,
+            Input = input,
+            QueuedAt = last is { } previous && previous >= now ? previous.AddTicks(1) : now,
         };
         db.StageRuns.Add(run);
         room.RunStatus = run.Status;

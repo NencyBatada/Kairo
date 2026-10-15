@@ -15,8 +15,9 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 
 public sealed class CampaignWorld : IAsyncDisposable
 {
-    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakePlan plan)
+    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakePlan plan, FakeProof proof)
     {
+        Proof = proof;
         Database = database;
         Api = api;
         Worker = worker;
@@ -37,6 +38,8 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public FakePlan Plan { get; }
 
+    public FakeProof Proof { get; }
+
     public Guid BrandId => Brand.BrandId;
 
     public HttpClient Marketer => Brand.Marketer.Browser;
@@ -53,12 +56,15 @@ public sealed class CampaignWorld : IAsyncDisposable
         var plan = new FakePlan();
         plan.Attach(api.Agents);
         plan.Attach(worker.Agents);
+        var proof = new FakeProof();
+        proof.Attach(api.Agents);
+        proof.Attach(worker.Agents);
         Radar.PlanDemand(api.GoogleApis.Keywords);
         demand?.Invoke(sense, api.GoogleApis.Keywords);
         var brand = await Radar.BrandAsync(api);
         var approver = await Workspaces.JoinAsync(api, brand.Admin.Browser, brand.BrandId, "approver");
         await Radar.RefreshAsync(worker);
-        var world = new CampaignWorld(database, api, worker, brand, approver, plan);
+        var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof);
         await world.AssignApproversAsync(approver.UserId, approver.UserId, approver.UserId);
         return world;
     }
@@ -77,6 +83,7 @@ public sealed class CampaignWorld : IAsyncDisposable
     public async Task<Guid> OpenWithBriefAsync()
     {
         var roomId = await AcceptAsync();
+        Assert.Equal(1, await RunStagesAsync());
         Assert.Equal(1, await RunStagesAsync());
         return roomId;
     }

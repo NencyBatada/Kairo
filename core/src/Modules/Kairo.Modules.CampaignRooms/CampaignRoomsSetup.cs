@@ -1,5 +1,6 @@
 using Kairo.Contracts.CampaignRooms;
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
 
@@ -15,6 +16,7 @@ internal static class CampaignRoomsSetup
         services.AddScoped<StageRunner>();
         services.AddScoped<StageDispatcher>();
         services.AddScoped<IStageWork, StarterBriefWork>();
+        services.AddScoped<IStageWork, ProofPlanWork>();
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
         services.AddSingleton<StageLoopSwitch>();
@@ -33,5 +35,7 @@ internal static class CampaignRoomsSetup
         campaigns.MapPost("/{campaignId:guid}/send-back", CampaignEndpoints.SendBackAsync).RequireBrandRole(BrandRoles.Approver);
         campaigns.MapPost("/{campaignId:guid}/discard", CampaignEndpoints.DiscardAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapPost("/{campaignId:guid}/stage-runs/{runId:guid}/retry", CampaignEndpoints.RetryAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapGet("/{campaignId:guid}/proof-plan", ProofPlanEndpoints.GetAsync);
+        campaigns.MapPost("/{campaignId:guid}/proof-plan/holdouts", ProofPlanEndpoints.ChooseHoldoutsAsync).RequireBrandRole(BrandRoles.Marketer);
     }
 }

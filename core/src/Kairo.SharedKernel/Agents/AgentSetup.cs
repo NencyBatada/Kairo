@@ -13,6 +13,7 @@ public static class AgentSetup
         services.TryAddSingleton<IAgentIdentity, GoogleAgentIdentity>();
         services.TryAddSingleton<AgentClient>();
         services.TryAddSingleton<PlanAgent>();
+        services.TryAddSingleton<ProofPlanAgent>();
         return services;
     }
 }

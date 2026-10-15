@@ -282,7 +282,7 @@ internal static class CampaignEndpoints
             return TypedResults.Problem(statusCode: StatusCodes.Status409Conflict, title: "Only the last failed step can be tried again.");
         }
 
-        var run = await queue.EnqueueAsync(room, latest.Kind, member.UserId, cancellationToken);
+        var run = await queue.EnqueueAsync(room, latest.Kind, member.UserId, cancellationToken, latest.Input);
         workflow.Touch(room);
         await db.SaveChangesAsync(cancellationToken);
         await audit.RecordAsync(

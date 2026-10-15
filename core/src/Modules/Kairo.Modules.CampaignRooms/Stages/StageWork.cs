@@ -11,6 +11,8 @@ internal interface IStageWork
 
     string Stage { get; }
 
+    string? FollowUp => null;
+
     Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken);
 
     Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken);
@@ -24,6 +26,8 @@ internal sealed class StageFailure(string code, string message) : Exception(mess
     public const string UnknownKind = "unknown_kind";
     public const string BadAnswer = "bad_answer";
     public const string Crashed = "crashed";
+    public const string NoBrief = "no_brief";
+    public const string Locked = "locked";
 
     public string Code { get; } = code;
 }

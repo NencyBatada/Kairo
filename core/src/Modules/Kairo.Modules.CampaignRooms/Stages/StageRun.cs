@@ -42,6 +42,8 @@ internal sealed class StageRun : IBrandOwned
 
     public string? ErrorMessage { get; set; }
 
+    public string? Input { get; set; }
+
     public string? Output { get; set; }
 }
 
@@ -57,4 +59,5 @@ internal static class StageAgents
 internal static class StageKinds
 {
     public const string StarterBrief = "starter_brief";
+    public const string ProofPlan = "proof_plan";
 }

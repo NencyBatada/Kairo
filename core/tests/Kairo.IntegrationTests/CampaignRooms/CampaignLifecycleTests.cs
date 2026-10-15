@@ -47,7 +47,7 @@ public sealed class CampaignLifecycleTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(_world.Api.Clock.GetUtcNow(), creating.GetProperty("tracker").GetProperty("enteredAt").GetDateTimeOffset());
         Assert.NotNull(Assert.Single(await NotificationsAsync(), row => row.Kind == "approval.needed").ResolvedAt);
         var activity = (await Campaigns.ActivityAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("entries").EnumerateArray().ToArray();
-        Assert.Equal(["campaign_room.approved", "campaign_room.approval_requested", "stage_run.succeeded", "campaign_room.opened"], activity.Select(entry => entry.GetProperty("action").GetString()));
+        Assert.Equal(["campaign_room.approved", "campaign_room.approval_requested", "stage_run.succeeded", "stage_run.succeeded", "campaign_room.opened"], activity.Select(entry => entry.GetProperty("action").GetString()));
         Assert.Equal("Approved a campaign step", activity[0].GetProperty("label").GetString());
         Assert.Equal("Looks good", activity[0].GetProperty("details").GetProperty("details").GetProperty("comment").GetString());
     }
@@ -203,7 +203,7 @@ public sealed class CampaignLifecycleTests(SqlServer sqlServer) : IAsyncLifetime
             .Where(row => row.Type == "campaign.changed")
             .Select(row => JsonDocument.Parse(row.Payload).RootElement.GetProperty("campaignId").GetGuid())
             .ToList();
-        Assert.Equal(4, changes.Count);
+        Assert.Equal(5, changes.Count);
         Assert.All(changes, id => Assert.Equal(roomId, id));
     }
 

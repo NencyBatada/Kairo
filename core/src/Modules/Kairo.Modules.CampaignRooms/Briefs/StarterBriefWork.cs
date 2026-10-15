@@ -30,6 +30,8 @@ internal sealed class StarterBriefWork(
 
     public string Stage => RoomStates.BriefDraft;
 
+    public string? FollowUp => StageKinds.ProofPlan;
+
     public async Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken)
     {
         var evidence = RoomEvidence.Read(room.Evidence);

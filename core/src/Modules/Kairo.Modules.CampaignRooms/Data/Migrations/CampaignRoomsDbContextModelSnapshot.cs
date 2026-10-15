@@ -68,6 +68,56 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     b.ToTable("Briefs", "campaign_rooms");
                 });
 
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.ProofPlans.ProofPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("ChangedAfterLock")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LockedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "Version")
+                        .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "Version"));
+
+                    b.ToTable("ProofPlans", "campaign_rooms");
+                });
+
             modelBuilder.Entity("Kairo.Modules.CampaignRooms.Rooms.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -187,6 +237,9 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
 
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Input")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("InputTokens")
                         .HasColumnType("int");

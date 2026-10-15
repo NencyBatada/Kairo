@@ -1,4 +1,5 @@
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
 
@@ -14,6 +15,8 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
     public DbSet<StageRun> StageRuns => Set<StageRun>();
 
     public DbSet<Brief> Briefs => Set<Brief>();
+
+    public DbSet<ProofPlan> ProofPlans => Set<ProofPlan>();
 
     protected override string Schema => SchemaName;
 
@@ -64,6 +67,14 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             brief.Property(b => b.PromptVersion).HasMaxLength(100);
             brief.OwnsOne(b => b.Content, content => content.ToJson());
             brief.Navigation(b => b.Content).IsRequired();
+        });
+
+        modelBuilder.Entity<ProofPlan>(plan =>
+        {
+            plan.ToTable("ProofPlans");
+            plan.HasKey(p => p.Id).IsClustered(false);
+            plan.HasIndex(p => new { p.BrandId, p.RoomId, p.Version }).IsUnique().IsClustered();
+            plan.Property(p => p.Method).HasMaxLength(100);
         });
     }
 }
