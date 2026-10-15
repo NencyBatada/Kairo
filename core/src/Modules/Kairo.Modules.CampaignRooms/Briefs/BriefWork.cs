@@ -107,7 +107,9 @@ internal sealed class BriefWork(
             start = context.Today;
         }
 
-        return (start, latest < start ? start : latest);
+        var end = latest < start ? start : latest;
+        var longest = start.AddDays(BriefChecks.MaxDays - 1);
+        return (start, end > longest ? longest : end);
     }
 
     public static BriefContent? Clean(

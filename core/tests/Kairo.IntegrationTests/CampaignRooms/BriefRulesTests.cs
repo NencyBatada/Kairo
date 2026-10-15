@@ -134,6 +134,30 @@ public sealed class BriefRulesTests
         Assert.False(normalized.IsSmart);
     }
 
+    [Theory]
+    [InlineData(null, 1, 14)]
+    [InlineData(5, 1, 5)]
+    [InlineData(0, 0, 0)]
+    [InlineData(-3, 0, 0)]
+    [InlineData(400, 1, 90)]
+    public void Suggested_dates_follow_the_moment_and_stay_within_ninety_days(int? endsInDays, int startIn, int endIn)
+    {
+        var context = new BriefDeskContext(
+            new Kairo.Contracts.Brands.BrandSummary(Guid.NewGuid(), "acme", "Acme", "INR", "Asia/Kolkata"),
+            RoomEvidence.Empty,
+            Today,
+            endsInDays is { } days ? Today.AddDays(days) : null,
+            [],
+            [],
+            new Kairo.Contracts.Identity.BudgetCap(null, "INR"),
+            true,
+            true);
+
+        var (start, end) = BriefWork.SuggestedDates(context);
+
+        Assert.Equal((Today.AddDays(startIn), Today.AddDays(endIn)), (start, end));
+    }
+
     private static RoomEvidence Evidence(EvidenceBids? bids, long searches) =>
         RoomEvidence.Empty with
         {
