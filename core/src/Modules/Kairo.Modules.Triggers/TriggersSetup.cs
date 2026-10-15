@@ -1,6 +1,7 @@
 using Kairo.Contracts.Triggers;
 using Kairo.Modules.Triggers.Checks;
 using Kairo.Modules.Triggers.Festivals;
+using Kairo.Modules.Triggers.Regions;
 using Kairo.Modules.Triggers.Rules;
 using Kairo.Modules.Triggers.Weather;
 
@@ -19,6 +20,7 @@ internal static class TriggersSetup
         services.AddScoped<FestivalCalendar>();
         services.AddScoped<BrandChecker>();
         services.AddScoped<ITriggerSuggestions, TriggerSuggestions>();
+        services.AddSingleton<IRegionPlaces, RegionPlaces>();
     }
 
     public static void MapTriggers(this IEndpointRouteBuilder api)
