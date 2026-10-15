@@ -3264,6 +3264,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/proof-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProofPlanResult"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/proof-plan/holdouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["HoldoutRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -4180,6 +4278,10 @@ export interface components {
             imageLink: null | string;
             category: null | string;
         };
+        HoldoutRequest: {
+            regionIds: null | string[];
+            version: null | number | string;
+        };
         HttpValidationProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -4527,6 +4629,60 @@ export interface components {
             missing: string[];
             status: string;
             updatedAt: string;
+        };
+        ProofCostView: {
+            amount: number | string;
+            currency: string;
+        };
+        ProofLiftView: {
+            days: number | string;
+            lift: null | number | string;
+        };
+        ProofPlanResult: {
+            plan: null | components["schemas"]["ProofPlanView"];
+            updating: boolean;
+            canChooseHoldouts: boolean;
+        };
+        ProofPlanView: {
+            version: number | string;
+            briefVersion: number | string;
+            unit: string;
+            kpi: string;
+            insideArea: boolean;
+            chosenByUser: boolean;
+            testRegions: components["schemas"]["ProofRegionView"][];
+            holdouts: components["schemas"]["ProofRegionView"][];
+            candidates: components["schemas"]["ProofRegionView"][];
+            window: components["schemas"]["ProofWindowView"];
+            minDetectableLift: null | number | string;
+            liftByWindow: components["schemas"]["ProofLiftView"][];
+            holdoutShare: null | number | string;
+            holdoutCost: null | components["schemas"]["ProofCostView"];
+            dataDays: number | string;
+            placeboWindows: number | string;
+            warnings: components["schemas"]["ProofWarningView"][];
+            lockedAt: null | string;
+            changedAfterLock: boolean;
+            createdAt: string;
+        };
+        ProofRegionView: {
+            id: string;
+            name: string;
+            state: null | string;
+            latitude: null | number | string;
+            longitude: null | number | string;
+            inArea: boolean;
+            matchScore: null | number | string;
+            share: null | number | string;
+        };
+        ProofWarningView: {
+            code: string;
+            message: string;
+        };
+        ProofWindowView: {
+            start: null | string;
+            end: null | string;
+            days: null | number | string;
         };
         ReasonSourceView: {
             title: string;
