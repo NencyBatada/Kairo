@@ -1,4 +1,5 @@
 using Kairo.Modules.Catalogue.Imports;
+using Kairo.Modules.Catalogue.Products;
 
 namespace Kairo.Modules.Catalogue;
 
@@ -29,5 +30,11 @@ internal static class CatalogueSetup
         feed.MapPut("", SourceEndpoints.SetFeedAsync);
         feed.MapDelete("", SourceEndpoints.RemoveFeedAsync);
         feed.MapPost("/refresh", SourceEndpoints.RefreshAsync);
+
+        catalogue.MapGet("/summary", SummaryEndpoints.GetAsync);
+        var products = catalogue.MapGroup("/products");
+        products.MapGet("", ProductEndpoints.ListAsync);
+        products.MapGet("/{productId:guid}", ProductEndpoints.GetAsync);
+        products.MapPatch("/{productId:guid}/fixes", ProductEndpoints.FixAsync).RequireBrandRole(BrandRoles.Admin | BrandRoles.Marketer);
     }
 }

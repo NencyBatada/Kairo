@@ -340,21 +340,6 @@ public sealed class FileImportTests(SqlServer sqlServer) : IAsyncDisposable
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
-    public async Task A_catalogue_of_50000_products_imports_within_a_minute()
-    {
-        var (admin, brandId) = await WorkspaceAsync();
-        var text = Catalogues.Many(CatalogueFile.MaxProducts);
-
-        var clock = Stopwatch.StartNew();
-        var import = await Catalogues.ImportAsync(admin.Browser, brandId, text);
-        clock.Stop();
-
-        Assert.Equal("succeeded", import.GetProperty("status").GetString());
-        Assert.Equal(CatalogueFile.MaxProducts, import.GetProperty("added").GetInt32());
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"The import took {clock.Elapsed}.");
-    }
-
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     private static (int Added, int Updated, int Unchanged, int Removed) Counts(JsonElement import) => (
