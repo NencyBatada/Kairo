@@ -1,0 +1,8 @@
+"use client";
+
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+
+export default function CampaignsError({ reset }: { reset: () => void }) {
+  return <Alert variant="destructive"><p className="font-medium">Campaigns could not be loaded.</p><p className="mt-1">Try again to load your campaigns and filters.</p><Button variant="secondary" onClick={reset} className="mt-3">Try again</Button></Alert>;
+}
