@@ -1922,6 +1922,7 @@ export interface paths {
                     category?: string;
                     watched?: boolean;
                     minScore?: number | string;
+                    triggered?: boolean;
                 };
                 header?: never;
                 path: {
@@ -2288,6 +2289,563 @@ export interface paths {
             };
         };
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TriggerOptions"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleView"][];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RuleRequest"];
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RuleRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RulePreview"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules/{ruleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RuleRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules/{ruleId}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules/{ruleId}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/rules/{ruleId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    ruleId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RuleDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/festivals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FestivalView"][];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalRequest"];
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FestivalView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/triggers/festivals/{festivalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    festivalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FestivalRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FestivalView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    festivalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -2893,6 +3451,20 @@ export interface components {
             draft: null | components["schemas"]["KitVersionView"];
         };
         BrandRole: "admin" | "marketer" | "approver";
+        BriefView: {
+            title: string;
+            goal: string;
+            audience: string;
+            keyMessage: string;
+            offer: null | string;
+            regions: string[];
+            productIds: string[];
+            channels: string[];
+            timing: string;
+            model: null | string;
+            promptVersion: null | string;
+            draftedAt: string;
+        };
         CatalogueSummary: {
             products: number | string;
             active: number | string;
@@ -2919,6 +3491,23 @@ export interface components {
         };
         ColourRole: "primary" | "secondary" | "accent" | "background" | "text";
         CompetitorPolicy: "never" | "neutral";
+        ConditionRequest: {
+            kind: null | string;
+            threshold: null | number | string;
+            withinDays: null | number | string;
+            eventId: null | string;
+            daysBefore: null | number | string;
+            minUnits: null | number | string;
+        };
+        ConditionView: {
+            kind: null | string;
+            threshold: null | number | string;
+            withinDays: null | number | string;
+            eventId: null | string;
+            eventName: null | string;
+            daysBefore: null | number | string;
+            minUnits: null | number | string;
+        };
         ConnectionState: "notConnected" | "choosingAccount" | "connected" | "needsReconnect";
         ConnectionView: {
             product: string;
@@ -3007,6 +3596,33 @@ export interface components {
         FeedsView: {
             dataset: string;
             feeds: components["schemas"]["FeedStatusView"][];
+        };
+        FestivalRequest: {
+            name: null | string;
+            startsOn: null | string;
+            endsOn: null | string;
+            regions: null | string[];
+        };
+        FestivalView: {
+            id: string;
+            name: string;
+            startsOn: string;
+            endsOn: string;
+            regions: components["schemas"]["PlaceView"][];
+            origin: string;
+            rules: number | string;
+        };
+        FiringView: {
+            id: string;
+            regions: components["schemas"]["PlaceView"][];
+            firedAt: string;
+            cooldownUntil: string;
+            conditionEndsAt: string;
+            endedAt: null | string;
+            summary: string;
+            outcome: string;
+            opportunityId: null | string;
+            opportunityStatus: null | string;
         };
         FixesView: {
             title: null | string;
@@ -3248,6 +3864,7 @@ export interface components {
             firstSeenAt: string;
             lastSeenAt: string;
             savedAt: null | string;
+            trigger: null | components["schemas"]["TriggerView"];
         };
         OpportunityDetail: {
             id: string;
@@ -3280,6 +3897,10 @@ export interface components {
             roomId: null | string;
             model: null | string;
             promptVersion: null | string;
+            trigger: null | components["schemas"]["TriggerView"];
+            triggers: components["schemas"]["TriggerView"][];
+            brief: null | components["schemas"]["BriefView"];
+            briefStatus: null | string;
         };
         OpportunityList: {
             refreshedAt: null | string;
@@ -3294,6 +3915,12 @@ export interface components {
             invitedBy: string;
             sentAt: string;
             expiresAt: string;
+        };
+        PlaceView: {
+            id: string;
+            name: string;
+            kind: string;
+            stateId: null | string;
         };
         ProductAccount: {
             id: string;
@@ -3369,6 +3996,47 @@ export interface components {
         };
         RevisionRequest: {
             revision: number | string;
+        };
+        RuleDetail: {
+            rule: components["schemas"]["RuleView"];
+            firings: components["schemas"]["FiringView"][];
+        };
+        RulePreview: {
+            description: string;
+        };
+        RuleRequest: {
+            name: null | string;
+            source: null | string;
+            condition: null | components["schemas"]["ConditionRequest"];
+            regions: null | string[];
+            category: null | string;
+            cooldownHours: null | number | string;
+        };
+        RuleResults: {
+            fired: number | string;
+            created: number | string;
+            joined: number | string;
+            accepted: number | string;
+            lift: null | number | string;
+        };
+        RuleView: {
+            id: string;
+            name: string;
+            source: string;
+            condition: components["schemas"]["ConditionView"];
+            regions: components["schemas"]["PlaceView"][];
+            category: string;
+            cooldownHours: number | string;
+            status: string;
+            origin: string;
+            evidence: null | string;
+            description: string;
+            lastFiredAt: null | string;
+            lastCheckedAt: null | string;
+            lastCheckOutcome: null | string;
+            results: components["schemas"]["RuleResults"];
+            createdAt: string;
+            updatedAt: string;
         };
         SalesColumns: {
             date: string;
@@ -3471,12 +4139,46 @@ export interface components {
             month: string;
             searches: number | string;
         };
+        TriggerOptions: {
+            regions: components["schemas"]["PlaceView"][];
+            categories: string[];
+            weatherKinds: components["schemas"]["WeatherKindView"][];
+            defaultWithinDays: number | string;
+            maxWithinDays: number | string;
+            defaultDaysBefore: number | string;
+            maxDaysBefore: number | string;
+            defaultCooldownHours: number | string;
+            maxCooldownHours: number | string;
+            maxRegions: number | string;
+        };
+        TriggerRegionView: {
+            id: string;
+            name: string;
+        };
+        TriggerView: {
+            firingId: string;
+            ruleId: string;
+            ruleName: string;
+            source: string;
+            summary: string;
+            regions: components["schemas"]["TriggerRegionView"][];
+            firedAt: string;
+            conditionEndsAt: string;
+            ended: boolean;
+        };
         UpdateWorkspaceRequest: {
             name: null | string;
             timeZone: null | string;
         };
         VersionOrigin: "manual" | "drafted" | "restored";
         VersionStatus: "draft" | "approved" | "superseded" | "discarded";
+        WeatherKindView: {
+            kind: string;
+            unit: string;
+            default: number | string;
+            min: number | string;
+            max: number | string;
+        };
         WorkspaceDetails: {
             id: string;
             handle: string;

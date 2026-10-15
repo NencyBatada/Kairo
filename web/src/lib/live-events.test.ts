@@ -59,3 +59,8 @@ test("opportunity refreshes, decisions and topic changes refresh the opportunity
   expect(WORKSPACE_LIVE_EVENTS).toContain("opportunity.changed");
   expect(WORKSPACE_LIVE_EVENTS).toContain("opportunity_topics.changed");
 });
+
+test("trigger rule and festival changes refresh the trigger screens", () => {
+  expect(WORKSPACE_LIVE_EVENTS).toContain("trigger_rules.changed");
+  expect(WORKSPACE_LIVE_EVENTS).toContain("festivals.changed");
+});
