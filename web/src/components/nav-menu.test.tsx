@@ -34,3 +34,9 @@ test("marks the area the current page belongs to", () => {
   expect(screen.getByRole("link", { name: "Campaigns" }).getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("link", { name: "Today" }).getAttribute("aria-current")).toBeNull();
 });
+
+test("the Brand Kit area exposes Catalogue without adding an eighth main area", () => {
+  navigation.pathname = "/acme/brand-kit";
+  render(<NavMenu workspace="acme" />);
+  expect(screen.getByRole("link", { name: "Catalogue" }).getAttribute("href")).toBe("/acme/brand-kit/catalogue");
+});
