@@ -102,7 +102,7 @@ public sealed class OpportunityRefreshTests(SqlServer sqlServer) : IAsyncLifetim
         Assert.Equal("agent", entry.GetProperty("actorType").GetString());
         Assert.Equal("Sense agent", entry.GetProperty("actorName").GetString());
         var alerts = (await NotificationRows.NotificationsAsync(_database, brand.BrandId)).Where(row => row.Kind == "opportunities.ready").ToList();
-        Assert.Equal([brand.Admin.UserId, brand.Marketer.UserId], alerts.Select(row => row.UserId).Order());
+        Assert.Equal(new[] { brand.Admin.UserId, brand.Marketer.UserId }.Order(), alerts.Select(row => row.UserId).Order());
         var alert = alerts[0];
         Assert.True(alert.AwaitsDigest);
         Assert.Equal("1 new opportunity", alert.Title);
