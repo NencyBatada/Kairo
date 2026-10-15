@@ -84,8 +84,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Campaign lifecycle**: Moves each campaign through its states from brief draft to closed, handles send-backs and discards, and logs every action.
-- [ ] **Agent jobs**: Queues each stage's work for the agent service and saves what it returns to the campaign room.
+- [/] **Campaign lifecycle**: Moves each campaign through its states from brief draft to closed, handles send-backs and discards, and logs every action.
+- [/] **Agent jobs**: Queues each stage's work for the agent service and saves what it returns to the campaign room.
 
 ### Nency (web app)
 
