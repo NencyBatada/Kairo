@@ -51,7 +51,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Operational database | Cloud SQL for SQL Server | Brands, users, Brand Kits, catalogue, campaign rooms, approvals, trigger rules, Brand Memory and the audit log |
 | Analytics | BigQuery, loaded nightly by the core worker from the Google Ads API, the GA4 Data API, sales uploads and the brand's own tables | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
-| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
+| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
@@ -155,7 +155,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | --- | --- | --- |
 | Access | Brand, User, Session, Membership, Invitation, ApprovalDuty, BudgetLimit, Connection | Sessions kept server-side; Connection rows live in the brands schema; OAuth refresh tokens encrypted with Cloud KMS |
 | Brand Kit | KitVersion, KitFile, DraftRun | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage; DraftRun records each drafting run's pages, ads, model and prompt version |
-| Catalogue | Product, StockEvent, FeedImport | Current stock on Product; full history in BigQuery |
+| Catalogue | Product, Source, Import, StockEvent | Current details, stock and fixes on Product; every stock change in StockEvent; each import's counts and first 50 problems in Import |
 | Opportunities | Opportunity, WatchTopic | Evidence and sources stored as JSON |
 | Triggers | TriggerRule, TriggerFiring | Conditions stored as JSON; cooldown per rule and region |
 | Campaign rooms | CampaignRoom, StageRun, Brief, ProofPlan, Asset, CheckResult | Briefs are versioned; each StageRun records model, prompt version, tokens, cost and timing |
@@ -178,7 +178,7 @@ Each brand gets its own datasets, starting with `brand_<brand ID>` for these fee
 
 ### Cloud Storage
 
-Separate buckets hold brand files (`{project}-brand-files`), catalogue imports, generated media and reports. Brand files are private and reach the browser only through the core, as attachments. Other files are served through short-lived signed URLs. Draft media that is never approved expires under a lifecycle rule, and retention for everything else is set per brand.
+Separate buckets hold brand files (`{project}-brand-files`), catalogue imports (`{project}-catalogue-imports`, deleted after 30 days), generated media and reports. Brand files are private and reach the browser only through the core, as attachments. Other files are served through short-lived signed URLs. Draft media that is never approved expires under a lifecycle rule, and retention for everything else is set per brand.
 
 ## 7. Integrations
 

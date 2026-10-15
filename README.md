@@ -131,6 +131,20 @@ Brand Kit drafting reads the website and Google Ads in the core, then asks Gemin
 
 Your Google account needs Vertex AI User on the project. Without the parameter, drafting runs fail with "Kairo couldn't draft the Brand Kit this time." Set `KAIRO_BRAND_KIT_MODEL` on the agent service to try another Gemini model; the default is `gemini-3.5-flash`.
 
+## Try the catalogue locally
+
+The catalogue takes product data in Google's Merchant Center format: CSV, TSV, or RSS and Atom XML, optionally gzipped, up to 50 MB and 50,000 products.
+
+- **From a file.** Post it as the `file` field to `/api/brands/{brandId}/catalogue/imports`. Locally, the raw files are kept in the `kairo-files` folder in your temp folder.
+- **From a feed link.** Kairo reads only public `http` and `https` addresses on the usual ports, so a file served from `localhost` is refused. To try a feed, use a file hosted somewhere public.
+- **The hourly refresh.** In Cloud Run, Cloud Scheduler calls the worker every hour. Locally, call it yourself, for every brand with a feed or with `?brandId=<id>` for one:
+
+  ```bash
+  curl -X POST http://localhost:5200/jobs/catalogue/refresh
+  ```
+
+Three failed refreshes in a row send admins a "Your product feed isn't refreshing" notification.
+
 ## Run everything locally
 
 From the repository root:

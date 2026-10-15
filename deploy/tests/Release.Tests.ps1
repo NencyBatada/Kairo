@@ -191,6 +191,25 @@ Describe 'Invoke-KairoDeploy' {
             Should -BeLike '*--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com*'
     }
 
+    It 'creates the hourly catalogue job when it is missing' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $calls | Should -Contain ('scheduler jobs create http kairo-catalogue-hourly --schedule 0 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/catalogue/refresh --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
+    It 'updates the hourly catalogue job when it already exists' {
+        $script:scheduleExists = $true
+
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        @($calls | Where-Object { $_ -like 'scheduler jobs create http kairo-catalogue-hourly *' }).Count | Should -Be 0
+        @($calls | Where-Object { $_ -like 'scheduler jobs update http kairo-catalogue-hourly *' }).Count | Should -Be 1
+    }
+
     It 'tells the API and the worker which key encrypts connection tokens' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

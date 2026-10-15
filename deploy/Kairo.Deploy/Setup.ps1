@@ -7,7 +7,8 @@ $script:Apis = @(
     'aiplatform.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
-$script:FileBuckets = @('brand-files')
+$script:FileBuckets = @('brand-files', 'catalogue-imports')
+$script:BucketLifecycles = @{ 'catalogue-imports' = 'catalogue-imports-lifecycle.json' }
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
 $script:MailRedirectUri = 'http://localhost:8765/'
 $script:GmailSendScope = 'https://www.googleapis.com/auth/gmail.send'
@@ -220,6 +221,11 @@ function Initialize-KairoBuckets {
 
         foreach ($service in 'kairo-api', 'kairo-worker') {
             Add-KairoBinding -ArgumentList (@('storage', 'buckets', 'add-iam-policy-binding', $bucket, '--member', "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $service)", '--role', 'roles/storage.objectAdmin') + $scope)
+        }
+
+        if ($script:BucketLifecycles.ContainsKey($name)) {
+            $rules = Join-Path $PSScriptRoot $script:BucketLifecycles[$name]
+            Invoke-Gcloud -ArgumentList (@('storage', 'buckets', 'update', $bucket, "--lifecycle-file=$rules") + $scope)
         }
     }
 }
