@@ -1512,6 +1512,136 @@
         }
       }
     },
+    "/api/brands/{brandId}/catalogue/source": {
+      "get": {
+        "tags": [
+          "SourceEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceView"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/catalogue/feed": {
+      "put": {
+        "tags": [
+          "SourceEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedSetView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SourceEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/catalogue/feed/refresh": {
+      "post": {
+        "tags": [
+          "SourceEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -2756,6 +2886,35 @@
             "items": {
               "$ref": "#/components/schemas/EmailSetting"
             }
+          }
+        }
+      },
+      "FeedRequest": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "FeedSetView": {
+        "required": [
+          "source",
+          "import"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/SourceView"
+          },
+          "import": {
+            "$ref": "#/components/schemas/ImportView"
           }
         }
       },
@@ -4170,6 +4329,59 @@
           "ad"
         ]
       },
+      "SourceView": {
+        "required": [
+          "kind",
+          "feedUrl",
+          "setBy",
+          "setAt",
+          "lastCheckedAt",
+          "lastSucceededAt",
+          "failuresInRow"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "feedUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "setBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastCheckedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "lastSucceededAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "failuresInRow": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SseItemOfstring": {
         "type": "object",
         "properties": {
@@ -4336,6 +4548,9 @@
     },
     {
       "name": "ImportEndpoints"
+    },
+    {
+      "name": "SourceEndpoints"
     },
     {
       "name": "FeedEndpoints"

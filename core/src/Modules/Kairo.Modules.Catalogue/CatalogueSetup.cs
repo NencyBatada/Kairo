@@ -7,6 +7,8 @@ internal static class CatalogueSetup
     public static void AddCatalogue(this IServiceCollection services)
     {
         services.AddScoped<CatalogueImporter>();
+        services.AddScoped<FeedFetcher>();
+        services.AddScoped<FeedRefresher>();
     }
 
     public static void MapCatalogue(this IEndpointRouteBuilder api)
@@ -21,5 +23,11 @@ internal static class CatalogueSetup
             .DisableAntiforgery();
         imports.MapGet("", ImportEndpoints.ListAsync);
         imports.MapGet("/{importId:guid}", ImportEndpoints.GetAsync);
+
+        catalogue.MapGet("/source", SourceEndpoints.GetAsync);
+        var feed = catalogue.MapGroup("/feed").RequireBrandRole(BrandRoles.Admin);
+        feed.MapPut("", SourceEndpoints.SetFeedAsync);
+        feed.MapDelete("", SourceEndpoints.RemoveFeedAsync);
+        feed.MapPost("/refresh", SourceEndpoints.RefreshAsync);
     }
 }

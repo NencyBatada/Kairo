@@ -1578,6 +1578,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/catalogue/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SourceView"];
+                    };
+                };
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FeedRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FeedSetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/feed/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -2252,6 +2396,13 @@ export interface components {
         EmailSettings: {
             kinds: components["schemas"]["EmailSetting"][];
         };
+        FeedRequest: {
+            url: null | string;
+        };
+        FeedSetView: {
+            source: components["schemas"]["SourceView"];
+            import: components["schemas"]["ImportView"];
+        };
         FeedStatusView: {
             feed: string;
             state: string;
@@ -2522,6 +2673,15 @@ export interface components {
             kinds: null | components["schemas"]["EmailSettingChange"][];
         };
         SourceKind: "page" | "ad";
+        SourceView: {
+            kind: string;
+            feedUrl: null | string;
+            setBy: string;
+            setAt: string;
+            lastCheckedAt: null | string;
+            lastSucceededAt: null | string;
+            failuresInRow: number | string;
+        };
         SseItemOfstring: {
             data?: null | string;
             eventType?: null | string;

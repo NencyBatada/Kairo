@@ -89,3 +89,24 @@ internal sealed record ImportDetailView(
         import.FinishedAt,
         ImportProblems.Read(import.Problems));
 }
+
+internal sealed record SourceView(
+    string Kind,
+    string? FeedUrl,
+    Guid SetBy,
+    DateTimeOffset SetAt,
+    DateTimeOffset? LastCheckedAt,
+    DateTimeOffset? LastSucceededAt,
+    int FailuresInRow)
+{
+    public static SourceView Of(CatalogueSource source) => new(
+        source.Kind,
+        source.FeedUrl,
+        source.SetBy,
+        source.SetAt,
+        source.LastCheckedAt,
+        source.LastSucceededAt,
+        source.FailuresInRow);
+}
+
+internal sealed record FeedSetView(SourceView Source, ImportView Import);
