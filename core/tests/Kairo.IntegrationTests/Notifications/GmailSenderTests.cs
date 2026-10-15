@@ -8,7 +8,7 @@ namespace Kairo.IntegrationTests.Notifications;
 
 public sealed class GmailSenderTests(SqlServer sqlServer) : IAsyncDisposable
 {
-    public const string Sender = "evolixgcpadmin@gmail.com";
+    public const string Sender = "kairo-alerts@acme.example";
     public const string SenderRefreshToken = "sender-refresh-token";
 
     private readonly KairoApiFactory _api = new(sqlServer.KairoConnectionString, settings: SenderSettings);
