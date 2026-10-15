@@ -68,7 +68,70 @@ internal sealed class Opportunity : IBrandOwned
 
     public Guid? RoomId { get; set; }
 
+    public List<OpportunityTrigger> Triggers { get; set; } = [];
+
+    public OpportunityBrief? Brief { get; set; }
+
+    public string? BriefStatus { get; set; }
+
     public bool IsOpen => Status is OpportunityStatuses.New or OpportunityStatuses.Saved;
+
+    public OpportunityTrigger? ActiveTrigger => Triggers.Where(trigger => !trigger.Ended).MaxBy(trigger => trigger.FiredAt);
+}
+
+internal sealed class OpportunityTrigger
+{
+    public Guid FiringId { get; set; }
+
+    public Guid RuleId { get; set; }
+
+    public string RuleName { get; set; } = "";
+
+    public string Source { get; set; } = "";
+
+    public string Summary { get; set; } = "";
+
+    public List<TriggerPlace> Regions { get; set; } = [];
+
+    public DateTimeOffset FiredAt { get; set; }
+
+    public DateTimeOffset ConditionEndsAt { get; set; }
+
+    public bool Ended { get; set; }
+}
+
+internal sealed class TriggerPlace
+{
+    public string Id { get; set; } = "";
+
+    public string Name { get; set; } = "";
+}
+
+internal sealed class OpportunityBrief
+{
+    public string Title { get; set; } = "";
+
+    public string Goal { get; set; } = "";
+
+    public string Audience { get; set; } = "";
+
+    public string KeyMessage { get; set; } = "";
+
+    public string? Offer { get; set; }
+
+    public List<string> Regions { get; set; } = [];
+
+    public List<Guid> ProductIds { get; set; } = [];
+
+    public List<string> Channels { get; set; } = [];
+
+    public string Timing { get; set; } = "";
+
+    public string? Model { get; set; }
+
+    public string? PromptVersion { get; set; }
+
+    public DateTimeOffset DraftedAt { get; set; }
 }
 
 internal sealed class ScoreBreakdown
@@ -134,6 +197,7 @@ internal static class OpportunityStatuses
 internal static class OpportunitySources
 {
     public const string Radar = "radar";
+    public const string Trigger = "trigger";
 }
 
 internal static class ReasonsStatuses
@@ -141,6 +205,13 @@ internal static class ReasonsStatuses
     public const string Sourced = "sourced";
     public const string Unsourced = "unsourced";
     public const string Unavailable = "unavailable";
+    public const string Trigger = "trigger";
+}
+
+internal static class BriefStatuses
+{
+    public const string Drafted = "drafted";
+    public const string Failed = "failed";
 }
 
 internal static class DismissReasons

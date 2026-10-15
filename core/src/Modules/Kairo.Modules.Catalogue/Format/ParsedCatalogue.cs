@@ -17,7 +17,8 @@ internal sealed record ProductOffer(
     string? GoogleCategory,
     string? Brand,
     string? Gtin,
-    string? ItemGroupId);
+    string? ItemGroupId,
+    int? Quantity);
 
 internal sealed record ParsedCatalogue(
     IReadOnlyList<ProductOffer> Offers,

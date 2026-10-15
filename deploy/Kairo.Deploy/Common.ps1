@@ -12,6 +12,7 @@ $script:ScheduledJobs = @(
     @{ Name = 'kairo-notifications-due'; Schedule = '*/15 * * * *'; Path = '/jobs/notifications/due'; Deadline = '600s' }
     @{ Name = 'kairo-catalogue-hourly'; Schedule = '0 * * * *'; Path = '/jobs/catalogue/refresh'; Deadline = '1800s' }
     @{ Name = 'kairo-opportunities-hourly'; Schedule = '30 * * * *'; Path = '/jobs/opportunities/refresh'; Deadline = '1800s' }
+    @{ Name = 'kairo-triggers-check'; Schedule = '5,20,35,50 * * * *'; Path = '/jobs/triggers/check'; Deadline = '840s' }
 )
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'

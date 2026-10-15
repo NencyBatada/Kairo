@@ -32,7 +32,7 @@ Describe 'Initialize-KairoProject' {
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
-                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com --project kairo-test')
+                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {

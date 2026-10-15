@@ -54,6 +54,7 @@ internal static class ProductRows
         var brand = ProductValues.Text(row.First(Attributes.Brand), ProductValues.MaxBrandLength, Attributes.Brand, warn);
         var gtin = ProductValues.Gtin(row.First(Attributes.Gtin), warn);
         var itemGroupId = ProductValues.Text(row.First(Attributes.ItemGroupId), ProductValues.MaxItemGroupIdLength, Attributes.ItemGroupId, warn);
+        var quantity = ProductValues.Quantity(Attributes.QuantityNames.Select(row.First).FirstOrDefault(value => value is not null), warn);
         return new ProductOffer(
             id,
             title,
@@ -69,7 +70,8 @@ internal static class ProductRows
             googleCategory,
             brand,
             gtin,
-            itemGroupId);
+            itemGroupId,
+            quantity);
     }
 
     private static Money? SalePrice(Money? sale, Money? price, Action<string, string> warn)

@@ -34,6 +34,10 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
                     b.Property<Guid>("BrandId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("BriefStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<DateTimeOffset?>("ClosedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -233,6 +237,116 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
 
             modelBuilder.Entity("Kairo.Modules.Opportunities.Radar.Opportunity", b =>
                 {
+                    b.OwnsOne("Kairo.Modules.Opportunities.Radar.OpportunityBrief", "Brief", b1 =>
+                        {
+                            b1.Property<Guid>("OpportunityId");
+
+                            b1.Property<string>("Audience")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Channels")
+                                .IsRequired();
+
+                            b1.Property<DateTimeOffset>("DraftedAt");
+
+                            b1.Property<string>("Goal")
+                                .IsRequired();
+
+                            b1.Property<string>("KeyMessage")
+                                .IsRequired();
+
+                            b1.Property<string>("Model");
+
+                            b1.Property<string>("Offer");
+
+                            b1.PrimitiveCollection<string>("ProductIds")
+                                .IsRequired();
+
+                            b1.Property<string>("PromptVersion");
+
+                            b1.PrimitiveCollection<string>("Regions")
+                                .IsRequired();
+
+                            b1.Property<string>("Timing")
+                                .IsRequired();
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.HasKey("OpportunityId");
+
+                            b1.ToTable("Opportunities", "opportunities");
+
+                            b1
+                                .ToJson("Brief")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OpportunityId");
+                        });
+
+                    b.OwnsMany("Kairo.Modules.Opportunities.Radar.OpportunityTrigger", "Triggers", b1 =>
+                        {
+                            b1.Property<Guid>("OpportunityId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<DateTimeOffset>("ConditionEndsAt");
+
+                            b1.Property<bool>("Ended");
+
+                            b1.Property<DateTimeOffset>("FiredAt");
+
+                            b1.Property<Guid>("FiringId");
+
+                            b1.Property<Guid>("RuleId");
+
+                            b1.Property<string>("RuleName")
+                                .IsRequired();
+
+                            b1.Property<string>("Source")
+                                .IsRequired();
+
+                            b1.Property<string>("Summary")
+                                .IsRequired();
+
+                            b1.HasKey("OpportunityId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Opportunities", "opportunities");
+
+                            b1
+                                .ToJson("Triggers")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OpportunityId");
+
+                            b1.OwnsMany("Kairo.Modules.Opportunities.Radar.TriggerPlace", "Regions", b2 =>
+                                {
+                                    b2.Property<Guid>("OpportunityTriggerOpportunityId");
+
+                                    b2.Property<int>("OpportunityTrigger__synthesizedOrdinal");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Id");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired();
+
+                                    b2.HasKey("OpportunityTriggerOpportunityId", "OpportunityTrigger__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Opportunities", "opportunities");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("OpportunityTriggerOpportunityId", "OpportunityTrigger__synthesizedOrdinal");
+                                });
+
+                            b1.Navigation("Regions");
+                        });
+
                     b.OwnsMany("Kairo.Modules.Opportunities.Radar.RegionDemand", "Regions", b1 =>
                         {
                             b1.Property<Guid>("OpportunityId");
@@ -367,11 +481,15 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
                     b.Navigation("Breakdown")
                         .IsRequired();
 
+                    b.Navigation("Brief");
+
                     b.Navigation("Reasons");
 
                     b.Navigation("Regions");
 
                     b.Navigation("Trend");
+
+                    b.Navigation("Triggers");
                 });
 #pragma warning restore 612, 618
         }

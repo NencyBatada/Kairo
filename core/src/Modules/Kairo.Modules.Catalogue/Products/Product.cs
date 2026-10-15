@@ -38,6 +38,8 @@ internal sealed class Product : IBrandOwned
 
     public string? ItemGroupId { get; set; }
 
+    public int? Quantity { get; set; }
+
     public ProductFixes Fixes { get; set; } = new();
 
     public MissingDetails Missing { get; set; }
@@ -78,7 +80,8 @@ internal sealed class Product : IBrandOwned
             || GoogleCategory != offer.GoogleCategory
             || Brand != offer.Brand
             || Gtin != offer.Gtin
-            || ItemGroupId != offer.ItemGroupId;
+            || ItemGroupId != offer.ItemGroupId
+            || Quantity != offer.Quantity;
 
         OfferId = offer.OfferId;
         Title = offer.Title;
@@ -95,6 +98,7 @@ internal sealed class Product : IBrandOwned
         Brand = offer.Brand;
         Gtin = offer.Gtin;
         ItemGroupId = offer.ItemGroupId;
+        Quantity = offer.Quantity;
         Status = ProductStatuses.Active;
         RemovedAt = null;
         changed |= Fixes.DropSupplied(this);
