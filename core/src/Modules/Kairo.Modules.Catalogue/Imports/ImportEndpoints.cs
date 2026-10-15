@@ -63,7 +63,7 @@ internal static class ImportEndpoints
 
     public static async Task<Ok<ImportView[]>> ListAsync(CatalogueDbContext db, CancellationToken cancellationToken)
     {
-        var imports = await db.Imports.AsNoTracking()
+        var imports = await db.BrandImports.AsNoTracking()
             .OrderByDescending(import => import.StartedAt)
             .ThenByDescending(import => import.Number)
             .Take(Listed)
@@ -73,7 +73,7 @@ internal static class ImportEndpoints
 
     public static async Task<Results<Ok<ImportDetailView>, NotFound>> GetAsync(Guid importId, CatalogueDbContext db, CancellationToken cancellationToken)
     {
-        if (await db.Imports.AsNoTracking().SingleOrDefaultAsync(import => import.Id == importId, cancellationToken) is not { } import)
+        if (await db.BrandImports.AsNoTracking().SingleOrDefaultAsync(import => import.Id == importId, cancellationToken) is not { } import)
         {
             return TypedResults.NotFound();
         }
@@ -86,7 +86,7 @@ internal static class ImportEndpoints
 
     private static async Task UseFileAsync(CatalogueDbContext db, CurrentMember member, TimeProvider time, CancellationToken cancellationToken)
     {
-        var source = await db.Sources.SingleOrDefaultAsync(cancellationToken);
+        var source = await db.BrandSources.SingleOrDefaultAsync(cancellationToken);
         if (source is null)
         {
             source = new CatalogueSource { BrandId = member.BrandId };

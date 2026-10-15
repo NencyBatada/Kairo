@@ -34,7 +34,7 @@ internal sealed class CatalogueImporter(
     {
         var import = Start(input);
         import.ContentHash = Convert.ToHexStringLower(SHA256.HashData(body));
-        var last = await db.Imports.AsNoTracking()
+        var last = await db.BrandImports.AsNoTracking()
             .Where(i => i.Status == ImportStatuses.Succeeded)
             .OrderByDescending(i => i.StartedAt)
             .ThenByDescending(i => i.Number)
@@ -72,7 +72,7 @@ internal sealed class CatalogueImporter(
 
     private async Task ApplyAsync(CatalogueImport import, IReadOnlyList<ProductOffer> offers, ImportInput input, CancellationToken cancellationToken)
     {
-        var existing = await db.Products.AsNoTracking().ToListAsync(cancellationToken);
+        var existing = await db.BrandProducts.AsNoTracking().ToListAsync(cancellationToken);
         var byOffer = existing.ToDictionary(product => product.OfferId, StringComparer.OrdinalIgnoreCase);
         var offered = offers.Select(offer => offer.OfferId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var active = existing.Count(product => product.Status == ProductStatuses.Active);

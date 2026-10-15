@@ -43,7 +43,8 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Imports", x => x.Id);
+                    table.PrimaryKey("PK_Imports", x => x.Id)
+                        .Annotation("SqlServer:Clustered", false);
                 });
 
             migrationBuilder.CreateTable(
@@ -78,7 +79,8 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_Products", x => x.Id)
+                        .Annotation("SqlServer:Clustered", false);
                 });
 
             migrationBuilder.CreateTable(
@@ -115,21 +117,24 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StockEvents", x => x.Id);
+                    table.PrimaryKey("PK_StockEvents", x => x.Id)
+                        .Annotation("SqlServer:Clustered", false);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Imports_BrandId_StartedAt",
                 schema: "catalogue",
                 table: "Imports",
-                columns: new[] { "BrandId", "StartedAt" });
+                columns: new[] { "BrandId", "StartedAt" })
+                .Annotation("SqlServer:Clustered", true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_BrandId_OfferId",
                 schema: "catalogue",
                 table: "Products",
                 columns: new[] { "BrandId", "OfferId" },
-                unique: true);
+                unique: true)
+                .Annotation("SqlServer:Clustered", true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_BrandId_Status_Missing",
@@ -141,8 +146,13 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
                 name: "IX_StockEvents_BrandId_ProductId_At",
                 schema: "catalogue",
                 table: "StockEvents",
-                columns: new[] { "BrandId", "ProductId", "At" });
+                columns: new[] { "BrandId", "ProductId", "At" })
+                .Annotation("SqlServer:Clustered", true);
 
+            migrationBuilder.Sql("ALTER TABLE catalogue.Products SET (LOCK_ESCALATION = DISABLE);");
+            migrationBuilder.Sql("ALTER TABLE catalogue.StockEvents SET (LOCK_ESCALATION = DISABLE);");
+            migrationBuilder.Sql("ALTER INDEX ALL ON catalogue.Products SET (ALLOW_PAGE_LOCKS = OFF);");
+            migrationBuilder.Sql("ALTER INDEX ALL ON catalogue.StockEvents SET (ALLOW_PAGE_LOCKS = OFF);");
             migrationBuilder.CreateBrandAccessPredicate("catalogue");
             migrationBuilder.AddBrandSeparation("catalogue", "Products");
             migrationBuilder.AddBrandSeparation("catalogue", "Sources");

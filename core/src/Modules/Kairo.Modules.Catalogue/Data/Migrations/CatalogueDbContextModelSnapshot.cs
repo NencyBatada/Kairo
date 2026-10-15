@@ -107,7 +107,11 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
 
                     b.HasKey("Id");
 
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
                     b.HasIndex("BrandId", "StartedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "StartedAt"));
 
                     b.ToTable("Imports", "catalogue");
                 });
@@ -237,8 +241,12 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
 
                     b.HasKey("Id");
 
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
                     b.HasIndex("BrandId", "OfferId")
                         .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "OfferId"));
 
                     b.HasIndex("BrandId", "Status", "Missing");
 
@@ -273,7 +281,11 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
 
                     b.HasKey("Id");
 
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
                     b.HasIndex("BrandId", "ProductId", "At");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "ProductId", "At"));
 
                     b.ToTable("StockEvents", "catalogue");
                 });

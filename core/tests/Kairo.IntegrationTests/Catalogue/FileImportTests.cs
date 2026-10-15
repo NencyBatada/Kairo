@@ -158,6 +158,20 @@ public sealed class FileImportTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task A_large_import_in_another_workspace_does_not_hold_this_one_up()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Catalogues.ImportAsync(admin.Browser, brandId, Catalogues.Csv(Catalogues.Row("SKU-1")));
+        await using var other = await CatalogueLocks.WriteWithoutCommittingAsync(ConnectionString, Guid.NewGuid(), 6000);
+        var clock = Stopwatch.StartNew();
+
+        var import = await Catalogues.ImportAsync(admin.Browser, brandId, Catalogues.Csv(Catalogues.Row("SKU-1", "out_of_stock"), Catalogues.Row("SKU-2")));
+
+        Assert.Equal("succeeded", import.GetProperty("status").GetString());
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(10), $"The import took {clock.Elapsed}.");
+    }
+
+    [Fact]
     public async Task The_same_file_again_is_unchanged_and_stored_once()
     {
         var (admin, brandId) = await WorkspaceAsync();
