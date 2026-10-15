@@ -1,5 +1,6 @@
 using Kairo.Modules.Catalogue.Imports;
 using Kairo.Modules.Catalogue.Products;
+using Kairo.Modules.Catalogue.Refresh;
 
 namespace Kairo.Modules.Catalogue;
 
@@ -10,6 +11,7 @@ internal static class CatalogueSetup
         services.AddScoped<CatalogueImporter>();
         services.AddScoped<FeedFetcher>();
         services.AddScoped<FeedRefresher>();
+        services.AddSingleton<RefreshRunner>();
     }
 
     public static void MapCatalogue(this IEndpointRouteBuilder api)

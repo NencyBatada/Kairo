@@ -1,4 +1,5 @@
 using Kairo.Modules.Catalogue.Data;
+using Kairo.Modules.Catalogue.Refresh;
 
 namespace Kairo.Modules.Catalogue;
 
@@ -18,6 +19,7 @@ public sealed class CatalogueModule : IModule
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
+        jobs.MapCatalogueJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

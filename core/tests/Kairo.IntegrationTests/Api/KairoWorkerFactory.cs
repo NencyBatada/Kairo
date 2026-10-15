@@ -1,6 +1,8 @@
 extern alias worker;
 
+using Kairo.IntegrationTests.Web;
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.SharedKernel.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -16,10 +18,18 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
 
     public string? AnalyticsProject { get; init; } = FakeBigQuery.KairoProject;
 
+    public FakeWebsites Websites { get; } = new();
+
     public async Task<HttpResponseMessage> RunDailyAsync(Guid? brandId = null)
     {
         using var client = CreateClient();
         return await client.PostAsync(brandId is { } id ? $"/jobs/analytics/daily?brandId={id}" : "/jobs/analytics/daily", null);
+    }
+
+    public async Task<HttpResponseMessage> RefreshCatalogueAsync(Guid? brandId = null)
+    {
+        using var client = CreateClient();
+        return await client.PostAsync(brandId is { } id ? $"/jobs/catalogue/refresh?brandId={id}" : "/jobs/catalogue/refresh", null);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -38,6 +48,7 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
             services.AddSingleton<TimeProvider>(Clock);
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
+            services.AddHttpClient(SafeWebClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Websites);
             services.AddSingleton<IServiceAccessToken, FakeServiceToken>();
         });
     }
