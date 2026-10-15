@@ -53,3 +53,9 @@ test("catalogue imports and product fixes refresh product screens", () => {
   expect(WORKSPACE_LIVE_EVENTS).toContain("catalogue.imported");
   expect(WORKSPACE_LIVE_EVENTS).toContain("catalogue.product_changed");
 });
+
+test("opportunity refreshes, decisions and topic changes refresh the opportunity screens", () => {
+  expect(WORKSPACE_LIVE_EVENTS).toContain("opportunities.refreshed");
+  expect(WORKSPACE_LIVE_EVENTS).toContain("opportunity.changed");
+  expect(WORKSPACE_LIVE_EVENTS).toContain("opportunity_topics.changed");
+});
