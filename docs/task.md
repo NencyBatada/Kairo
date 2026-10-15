@@ -62,9 +62,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Opportunities screen**: Ranked cards with trend line, growth, regions, matching products, score and reason, with filters.
-- [/] **Opportunity detail**: Trend chart, regional view, matching products, sourced reasons and score breakdown, with accept, save and dismiss.
-- [/] **Watched and ignored topics**: Lets the brand pick topics to always see or never see.
+- [/] **Opportunities screen**: Ranked cards with trend line, growth, regions, matching products, score and reason, with filters. *Implemented in draft PR #6 on feature/opportunities-screen; focused tests, lint and production build pass. Verified filters, navigation and 320px reflow in the local API-contract fixture preview. Left: development-environment verification and user merge into develop.*
+- [/] **Opportunity detail**: Trend chart, regional view, matching products, sourced reasons and score breakdown, with accept, save and dismiss. *Implemented in draft PR #7 on feature/opportunity-detail; focused tests, lint and production build pass. Verified save, dismiss, accept-to-room navigation and 320px reflow in the local API-contract fixture preview. Left: development-environment verification and user merge into develop.*
+- [/] **Watched and ignored topics**: Lets the brand pick topics to always see or never see. *Implemented in draft PR #8 on feature/opportunity-topics; 21 focused tests, lint and production build pass. Verified add, duplicate validation, ignore/remove behaviour and 320px reflow in the local API-contract fixture preview. Left: development-environment verification and user merge into develop.*
 
 ## 4. Real-world triggers
 
