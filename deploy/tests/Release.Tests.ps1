@@ -243,7 +243,7 @@ Describe 'Invoke-KairoDeploy' {
 
     It 'keeps one API instance running once a sender mailbox can send' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
         $withSender.MinInstances = @{ web = 0; api = 0 }
 
         Invoke-KairoDeploy -Environment $withSender -Root $root | Out-Null
@@ -262,19 +262,19 @@ Describe 'Invoke-KairoDeploy' {
 
     It 'passes the sender mailbox to the API once it is signed in' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
 
         Invoke-KairoDeploy -Environment $withSender -Root $root | Out-Null
 
         $api = $calls | Where-Object { $_ -like 'run deploy kairo-api *' }
-        $api | Should -BeLike '*,Kairo__Notifications__Sender=kairo-alerts@acme.example*'
+        $api | Should -BeLike '*,Kairo__Notifications__Sender=khanmohdtalha3250@gmail.com*'
         $api | Should -BeLike '*--set-secrets=*,Kairo__Notifications__SenderRefreshToken=mail-sender-refresh-token:latest*'
         ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -Not -BeLike '*Notifications*'
     }
 
     It 'only logs notification emails until the sender is signed in' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -ne 'mail-sender-refresh-token' }
 
         Invoke-KairoDeploy -Environment $withSender -Root $root -WarningAction SilentlyContinue -WarningVariable warnings | Out-Null
@@ -292,7 +292,7 @@ Describe 'Invoke-KairoDeploy' {
 
     It 'leaves the sender out while Google sign-in is off, since sending needs the OAuth client' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -eq 'mail-sender-refresh-token' }
 
         Invoke-KairoDeploy -Environment $withSender -Root $root 3>$null | Out-Null

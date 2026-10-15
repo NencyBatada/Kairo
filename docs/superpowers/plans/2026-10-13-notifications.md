@@ -2139,7 +2139,7 @@ namespace Kairo.IntegrationTests.Notifications;
 
 public sealed class GmailSenderTests(SqlServer sqlServer) : IAsyncDisposable
 {
-    public const string Sender = "kairo-alerts@acme.example";
+    public const string Sender = "khanmohdtalha3250@gmail.com";
     public const string SenderRefreshToken = "sender-refresh-token";
 
     private readonly KairoApiFactory _api = new(sqlServer.KairoConnectionString, settings: SenderSettings);
@@ -3435,14 +3435,14 @@ In `deploy/tests/Setup.Tests.ps1`:
 
        BeforeEach {
            $script:sender = $environment.Clone()
-           $script:sender.MailSender = 'Kairo-Alerts@acme.example'
+           $script:sender.MailSender = 'khanmohdtalha3250@gmail.com'
            $script:consentUrl = $null
            $script:tokenRequest = $null
            $script:returnedState = $null
            $script:grant = [pscustomobject]@{
                refresh_token = 'sender-refresh-1'
                scope         = 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.send'
-               id_token      = New-TestIdToken 'kairo-alerts@acme.example' $true
+               id_token      = New-TestIdToken 'khanmohdtalha3250@gmail.com' $true
            }
            Mock -ModuleName Kairo.Deploy Get-KairoSecretValue {
                if ($Name -eq 'google-client-id') { 'client-id' } else { 'client-secret' }
@@ -3517,7 +3517,7 @@ In `deploy/tests/Setup.Tests.ps1`:
        }
 
        It 'refuses an address Google has not verified' {
-           $script:grant.id_token = New-TestIdToken 'kairo-alerts@acme.example' $false
+           $script:grant.id_token = New-TestIdToken 'khanmohdtalha3250@gmail.com' $false
 
            { Set-KairoMailSender -Environment $sender } | Should -Throw '*verified*'
            Should -Invoke -ModuleName Kairo.Deploy Set-KairoSecretValue -Times 0
@@ -3539,19 +3539,19 @@ In `deploy/tests/Release.Tests.ps1`, inside `Describe 'Invoke-KairoDeploy'`, add
 ```powershell
     It 'passes the sender mailbox to the API once it is signed in' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
 
         Invoke-KairoDeploy -Environment $withSender -Root $root | Out-Null
 
         $api = $calls | Where-Object { $_ -like 'run deploy kairo-api *' }
-        $api | Should -BeLike '*,Kairo__Notifications__Sender=kairo-alerts@acme.example*'
+        $api | Should -BeLike '*,Kairo__Notifications__Sender=khanmohdtalha3250@gmail.com*'
         $api | Should -BeLike '*--set-secrets=*,Kairo__Notifications__SenderRefreshToken=mail-sender-refresh-token:latest*'
         ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -Not -BeLike '*Notifications*'
     }
 
     It 'only logs notification emails until the sender is signed in' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -ne 'mail-sender-refresh-token' }
 
         Invoke-KairoDeploy -Environment $withSender -Root $root -WarningAction SilentlyContinue -WarningVariable warnings | Out-Null
@@ -3569,7 +3569,7 @@ In `deploy/tests/Release.Tests.ps1`, inside `Describe 'Invoke-KairoDeploy'`, add
 
     It 'leaves the sender out while Google sign-in is off, since sending needs the OAuth client' {
         $withSender = $environment.Clone()
-        $withSender.MailSender = 'kairo-alerts@acme.example'
+        $withSender.MailSender = 'khanmohdtalha3250@gmail.com'
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $Name -eq 'mail-sender-refresh-token' }
 
         Invoke-KairoDeploy -Environment $withSender -Root $root 3>$null | Out-Null
