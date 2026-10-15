@@ -70,9 +70,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Trigger checks**: Checks weather forecasts hourly, festival dates daily and stock on every catalogue update, with a cooldown per rule.
-- [/] **Triggered opportunities**: A rule that fires creates a card with a pre-drafted brief within 15 minutes, merged with any open opportunity it overlaps.
-- [/] **Rule results and suggestions**: Tracks how often each rule fired and the lift its campaigns earned, and suggests new rules from Brand Memory.
+- [x] **Trigger checks**: Checks weather forecasts hourly, festival dates daily and stock on every catalogue update, with a cooldown per rule.
+- [x] **Triggered opportunities**: A rule that fires creates a card with a pre-drafted brief within 15 minutes, merged with any open opportunity it overlaps.
+- [/] **Rule results and suggestions**: Tracks how often each rule fired and the lift its campaigns earned, and suggests new rules from Brand Memory. *Fired, created, joined and accepted counts and draft suggested rules are live in development. Left: lift from impact reports and suggestions from the Learn agent and Brand Memory (section 11).
 
 ### Nency (web app)
 
