@@ -65,3 +65,11 @@ test("shows honest missing evidence and trend fallbacks", async () => {
   expect(screen.getByText(/No rising regions reported/)).toBeTruthy();
   expect(screen.queryByText("Watched")).toBeNull();
 });
+
+test("resets filter controls when navigating back to the unfiltered route", async () => {
+  const { rerender } = render(await page({ status: "saved", minScore: "60", watched: "true" }));
+  rerender(await page());
+  expect((screen.getByLabelText("Show") as HTMLSelectElement).value).toBe("open");
+  expect((screen.getByLabelText("Topics") as HTMLSelectElement).value).toBe("");
+  expect((screen.getByLabelText("Minimum score") as HTMLInputElement).value).toBe("");
+});

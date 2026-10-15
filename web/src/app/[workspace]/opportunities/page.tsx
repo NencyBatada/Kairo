@@ -36,7 +36,7 @@ export default async function OpportunitiesPage({ params, searchParams }: { para
       <Link href={`/${handle}/opportunities?status=saved`} className="inline-flex min-h-6 items-center text-primary hover:underline pointer-coarse:min-h-11">Saved opportunities</Link>
     </div>
     {list.lastOutcome && list.lastOutcome !== "succeeded" && <Alert variant="warning">{refreshMessage(list.lastReason)}</Alert>}
-    <form action={`/${handle}/opportunities`} method="get" className="grid gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-5">
+    <form key={JSON.stringify(filters)} action={`/${handle}/opportunities`} method="get" className="grid gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-2 xl:grid-cols-5">
       <Field><label htmlFor="radar-status">Show</label><NativeSelect id="radar-status" name="status" defaultValue={filters.status}>{statuses.map((status) => <option key={status} value={status}>{status === "open" ? "All open" : status.charAt(0).toUpperCase() + status.slice(1)}</option>)}</NativeSelect></Field>
       <Field><label htmlFor="radar-category">Product category</label><Input id="radar-category" name="category" defaultValue={filters.category} maxLength={100} placeholder="All categories" /></Field>
       <Field><label htmlFor="radar-score">Minimum score</label><Input id="radar-score" name="minScore" type="number" min={0} max={100} step={1} defaultValue={filters.minScore ?? ""} placeholder="Any score" /></Field>
