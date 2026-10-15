@@ -3,9 +3,11 @@ import { expect, test, vi } from "vitest";
 
 import { NotificationInbox } from "./notification-inbox";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("../actions", () => ({
-  markNotificationRead: vi.fn(),
+  markNotificationRead: vi.fn(async () => ({ ok: true })),
   markAllNotificationsRead: vi.fn(),
 }));
 
@@ -64,4 +66,5 @@ test("marks a notification read when it is opened from the list", async () => {
   fireEvent.click(screen.getByRole("link", { name: new RegExp(item.title) }));
 
   await waitFor(() => expect(markNotificationRead).toHaveBeenCalledWith("brand-1", 9));
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/acme/settings/connections"));
 });

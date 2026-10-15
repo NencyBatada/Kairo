@@ -5,7 +5,7 @@ BeforeAll {
         SqlTier = 'db-custom-1-3840'; SqlEdition = 'SQLSERVER_2022_EXPRESS'; SqlHighAvailability = $false
         MinInstances = @{ web = 0; api = 1 }
     }
-    $script:root = 'C:\src\Kairo'
+    $script:root = Join-Path ([System.IO.Path]::GetTempPath()) 'Kairo'
 }
 
 Describe 'Invoke-KairoDeploy' {
