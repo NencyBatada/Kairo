@@ -49,8 +49,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Brand Kit screens**: Review and edit the drafted kit, upload guidelines, set rules, approve a version and restore an older one.
-- [/] **Catalogue screens**: Upload a file or add a feed link, browse the imported products and fix missing details.
+- [/] **Brand Kit screens**: Review and edit the drafted kit, upload guidelines, set rules, approve a version and restore an older one. *Implemented in draft PR #4 on feature/brand-kit-screens; 418 web tests, lint and production build pass. Left: development-environment verification, exact 320px visual check and user merge into develop.*
+- [/] **Catalogue screens**: Upload a file or add a feed link, browse the imported products and fix missing details. *Implemented against the agreed contract in draft PR #5 on feature/catalogue-screens; 411 web tests, lint and production build pass. Blocked on Catalogue import backend endpoints and generated types for integration; then verify in development and user merge into develop.*
 
 ## 3. Opportunity Radar
 
