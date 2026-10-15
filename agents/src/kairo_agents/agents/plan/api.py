@@ -8,16 +8,31 @@ from fastapi.responses import JSONResponse
 from google.genai import types
 
 from kairo_agents.agents.brand_kit.api import default_client
+from kairo_agents.agents.plan.brief import clean_proposal, clean_smart_brief
 from kairo_agents.agents.plan.models import (
+    BriefInstructionRequest,
+    BriefInstructionResponse,
     DraftedBrief,
+    DraftedSmartBrief,
+    ProposedBrief,
+    SmartBriefRequest,
+    SmartBriefResponse,
     TriggerBriefRequest,
     TriggerBriefResponse,
     Usage,
 )
-from kairo_agents.agents.plan.prompt import TRIGGER_BRIEF_PROMPT_VERSION, trigger_brief_instructions
+from kairo_agents.agents.plan.prompt import (
+    BRIEF_INSTRUCTION_PROMPT_VERSION,
+    BRIEF_PROMPT_VERSION,
+    TRIGGER_BRIEF_PROMPT_VERSION,
+    brief_instruction_instructions,
+    brief_instructions,
+    trigger_brief_instructions,
+)
 from kairo_agents.agents.sense.prompt import data_block
 
 DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_BRIEF_MODEL = "gemini-3.5-pro"
 CHANNELS = ("search", "shopping", "demand_gen")
 MAX_PRODUCTS = 6
 MAX_TITLE = 120
@@ -30,6 +45,10 @@ router = APIRouter()
 
 def model_name() -> str:
     return os.environ.get("KAIRO_PLAN_MODEL") or DEFAULT_MODEL
+
+
+def brief_model_name() -> str:
+    return os.environ.get("KAIRO_PLAN_BRIEF_MODEL") or DEFAULT_BRIEF_MODEL
 
 
 def client_source() -> Callable[[], Any]:
@@ -64,6 +83,61 @@ async def trigger_brief(request: TriggerBriefRequest, clients: ClientSource) -> 
         brief=brief,
         model=model,
         prompt_version=TRIGGER_BRIEF_PROMPT_VERSION,
+        usage=usage_of(response),
+    )
+
+
+@router.post("/plan/brief", response_model=SmartBriefResponse)
+async def smart_brief(request: SmartBriefRequest, clients: ClientSource) -> Any:
+    model = brief_model_name()
+    try:
+        response = await clients().aio.models.generate_content(
+            model=model,
+            contents=data_block(request),
+            config=types.GenerateContentConfig(
+                system_instruction=brief_instructions(),
+                response_mime_type="application/json",
+                response_schema=DraftedSmartBrief,
+                temperature=0.3,
+            ),
+        )
+        drafted = DraftedSmartBrief.model_validate_json(response.text or "")
+    except Exception:
+        logger.exception("Plan couldn't draft the brief.")
+        return JSONResponse(status_code=502, content={"error": "model_failed"})
+    brief = clean_smart_brief(drafted, request)
+    if brief is None:
+        return JSONResponse(status_code=502, content={"error": "model_failed"})
+    return SmartBriefResponse(
+        brief=brief,
+        model=model,
+        prompt_version=BRIEF_PROMPT_VERSION,
+        usage=usage_of(response),
+    )
+
+
+@router.post("/plan/brief-instruction", response_model=BriefInstructionResponse)
+async def brief_instruction(request: BriefInstructionRequest, clients: ClientSource) -> Any:
+    model = model_name()
+    try:
+        response = await clients().aio.models.generate_content(
+            model=model,
+            contents=data_block(request),
+            config=types.GenerateContentConfig(
+                system_instruction=brief_instruction_instructions(),
+                response_mime_type="application/json",
+                response_schema=ProposedBrief,
+                temperature=0.2,
+            ),
+        )
+        proposed = ProposedBrief.model_validate_json(response.text or "")
+    except Exception:
+        logger.exception("Plan couldn't follow the brief instruction.")
+        return JSONResponse(status_code=502, content={"error": "model_failed"})
+    return BriefInstructionResponse(
+        changes=clean_proposal(proposed, request),
+        model=model,
+        prompt_version=BRIEF_INSTRUCTION_PROMPT_VERSION,
         usage=usage_of(response),
     )
 
