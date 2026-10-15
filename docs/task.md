@@ -49,7 +49,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Brand Kit screens**: Review and edit the drafted kit, upload guidelines, set rules, approve a version and restore an older one.
+- [/] **Brand Kit screens**: Review and edit the drafted kit, upload guidelines, set rules, approve a version and restore an older one.
 - [ ] **Catalogue screens**: Upload a file or add a feed link, browse the imported products and fix missing details.
 
 ## 3. Opportunity Radar
