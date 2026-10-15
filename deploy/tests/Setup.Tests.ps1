@@ -140,6 +140,21 @@ Describe 'Initialize-KairoProject' {
             }
             ($calls | Where-Object { $_ -like 'storage buckets add-iam-policy-binding gs://kairo-test-brand-files *kairo-web@*' }) | Should -BeNullOrEmpty
         }
+
+        It 'creates a private bucket for catalogue imports that deletes files after 30 days' {
+            $calls | Should -Contain 'storage buckets create gs://kairo-test-catalogue-imports --location asia-south1 --uniform-bucket-level-access --public-access-prevention --project kairo-test'
+            foreach ($name in 'kairo-api', 'kairo-worker') {
+                $calls | Should -Contain "storage buckets add-iam-policy-binding gs://kairo-test-catalogue-imports --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/storage.objectAdmin --project kairo-test"
+            }
+
+            $update = @($calls | Where-Object { $_ -like 'storage buckets update gs://kairo-test-catalogue-imports --lifecycle-file=* --project kairo-test' })
+            $update.Count | Should -Be 1
+            $file = $update[0] -replace '^.*--lifecycle-file=(\S+) .*$', '$1'
+            $rules = Get-Content -Raw -Path $file | ConvertFrom-Json
+            $rules.rule[0].action.type | Should -Be 'Delete'
+            $rules.rule[0].condition.age | Should -Be 30
+            ($calls | Where-Object { $_ -like 'storage buckets update gs://kairo-test-brand-files *' }) | Should -BeNullOrEmpty
+        }
     }
 
     Context 'in a project that is already set up' {

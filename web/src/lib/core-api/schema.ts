@@ -1463,6 +1463,451 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/catalogue/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    } & {
+                        allowLargeRemoval?: boolean;
+                    };
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/imports/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    importId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportDetailView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SourceView"];
+                    };
+                };
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CatalogueSummary"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["FeedRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FeedSetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/feed/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    page?: number | string;
+                    pageSize?: number | string;
+                    search?: string;
+                    category?: string;
+                    availability?: string;
+                    missing?: string;
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductPage"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/products/{productId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductDetailView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/catalogue/products/{productId}/fixes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    productId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["JsonObject"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProductView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -2059,6 +2504,20 @@ export interface components {
             draft: null | components["schemas"]["KitVersionView"];
         };
         BrandRole: "admin" | "marketer" | "approver";
+        CatalogueSummary: {
+            products: number | string;
+            active: number | string;
+            inStock: number | string;
+            outOfStock: number | string;
+            missing: components["schemas"]["MissingCounts"];
+            categories: components["schemas"]["CategoryCount"][];
+            lastImport: null | components["schemas"]["ImportView"];
+            source: null | components["schemas"]["SourceView"];
+        };
+        CategoryCount: {
+            name: string;
+            products: number | string;
+        };
         ChangeRolesRequest: {
             roles: components["schemas"]["BrandRole"][];
         };
@@ -2137,6 +2596,13 @@ export interface components {
         EmailSettings: {
             kinds: components["schemas"]["EmailSetting"][];
         };
+        FeedRequest: {
+            url: null | string;
+        };
+        FeedSetView: {
+            source: components["schemas"]["SourceView"];
+            import: components["schemas"]["ImportView"];
+        };
         FeedStatusView: {
             feed: string;
             state: string;
@@ -2149,6 +2615,14 @@ export interface components {
             dataset: string;
             feeds: components["schemas"]["FeedStatusView"][];
         };
+        FixesView: {
+            title: null | string;
+            price: null | number | string;
+            currency: null | string;
+            link: null | string;
+            imageLink: null | string;
+            category: null | string;
+        };
         HttpValidationProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -2160,6 +2634,50 @@ export interface components {
             };
         };
         IFormFile: string;
+        ImportDetailView: {
+            id: string;
+            kind: string;
+            fileName: null | string;
+            feedUrl: null | string;
+            status: string;
+            rows: number | string;
+            valid: number | string;
+            invalid: number | string;
+            added: number | string;
+            updated: number | string;
+            removed: number | string;
+            unchanged: number | string;
+            errorCode: null | string;
+            errorMessage: null | string;
+            startedBy: null | string;
+            startedAt: string;
+            finishedAt: string;
+            problems: components["schemas"]["ImportProblem"][];
+        };
+        ImportProblem: {
+            row: number | string;
+            attribute: string;
+            message: string;
+        };
+        ImportView: {
+            id: string;
+            kind: string;
+            fileName: null | string;
+            feedUrl: null | string;
+            status: string;
+            rows: number | string;
+            valid: number | string;
+            invalid: number | string;
+            added: number | string;
+            updated: number | string;
+            removed: number | string;
+            unchanged: number | string;
+            errorCode: null | string;
+            errorMessage: null | string;
+            startedBy: null | string;
+            startedAt: string;
+            finishedAt: string;
+        };
         InviteRequest: {
             email: string;
             roles: components["schemas"]["BrandRole"][];
@@ -2169,6 +2687,7 @@ export interface components {
             handle: string;
         };
         JsonNode: unknown;
+        JsonObject: Record<string, never>;
         KitCategory: {
             name?: string;
             sources?: components["schemas"]["KitSource"][];
@@ -2274,6 +2793,14 @@ export interface components {
             email: string;
             pictureUrl: null | string;
         };
+        MissingCounts: {
+            title: number | string;
+            price: number | string;
+            link: number | string;
+            image: number | string;
+            stock: number | string;
+            any: number | string;
+        };
         MyInvitation: {
             id: string;
             workspaceName: string;
@@ -2308,6 +2835,58 @@ export interface components {
             id: string;
             name: string;
             managerId?: null | string;
+        };
+        ProductDetailView: {
+            fixes: components["schemas"]["FixesView"];
+            stockEvents: components["schemas"]["StockEventView"][];
+            id?: string;
+            offerId?: string;
+            title?: null | string;
+            description?: null | string;
+            link?: null | string;
+            imageLink?: null | string;
+            additionalImageLinks?: string[];
+            price?: null | number | string;
+            salePrice?: null | number | string;
+            currency?: null | string;
+            availability?: null | string;
+            category?: null | string;
+            googleCategory?: null | string;
+            brand?: null | string;
+            gtin?: null | string;
+            itemGroupId?: null | string;
+            fixed?: string[];
+            missing?: string[];
+            status?: string;
+            updatedAt?: string;
+        };
+        ProductPage: {
+            items: components["schemas"]["ProductView"][];
+            page: number | string;
+            pageSize: number | string;
+            total: number | string;
+        };
+        ProductView: {
+            id: string;
+            offerId: string;
+            title: null | string;
+            description: null | string;
+            link: null | string;
+            imageLink: null | string;
+            additionalImageLinks: string[];
+            price: null | number | string;
+            salePrice: null | number | string;
+            currency: null | string;
+            availability: null | string;
+            category: null | string;
+            googleCategory: null | string;
+            brand: null | string;
+            gtin: null | string;
+            itemGroupId: null | string;
+            fixed: string[];
+            missing: string[];
+            status: string;
+            updatedAt: string;
         };
         RevisionRequest: {
             revision: number | string;
@@ -2363,11 +2942,26 @@ export interface components {
             kinds: null | components["schemas"]["EmailSettingChange"][];
         };
         SourceKind: "page" | "ad";
+        SourceView: {
+            kind: string;
+            feedUrl: null | string;
+            setBy: string;
+            setAt: string;
+            lastCheckedAt: null | string;
+            lastSucceededAt: null | string;
+            failuresInRow: number | string;
+        };
         SseItemOfstring: {
             data?: null | string;
             eventType?: null | string;
             eventId?: null | string;
             reconnectionInterval?: null | string;
+        };
+        StockEventView: {
+            from: null | string;
+            to: null | string;
+            importId: string;
+            at: string;
         };
         UpdateWorkspaceRequest: {
             name: null | string;
