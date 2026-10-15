@@ -51,7 +51,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Operational database | Cloud SQL for SQL Server | Brands, users, Brand Kits, catalogue, campaign rooms, approvals, trigger rules, Brand Memory and the audit log |
 | Analytics | BigQuery, loaded nightly by the core worker from the Google Ads API, the GA4 Data API, sales uploads and the brand's own tables | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
-| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh and `kairo-opportunities-hourly` Radar refresh), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
+| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh and `kairo-opportunities-hourly` Radar refresh, and the `kairo-triggers-check` run every 15 minutes), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
@@ -71,7 +71,7 @@ The core is one .NET codebase deployed twice: the API serves the web app and the
 | Brand Kit | Brand Kit versions, rules, guideline files, best ads | Version and approve the kit; serve the approved version to agents |
 | Catalogue | Products, stock levels, feed imports | Import files and feeds; detect stock changes and publish stock events |
 | Opportunities | Opportunity cards, scores, evidence, watched and ignored topics | Run the daily refresh; save Sense output; handle accept, save and dismiss |
-| Triggers | Trigger rules, firings, cooldowns | Check weather, festival and stock conditions; create triggered opportunities |
+| Triggers | Trigger rules, firings, cooldowns, festival calendars, cached forecasts | Check weather, festival and stock conditions; create or join triggered opportunities |
 | Campaign rooms | Rooms, states, stage runs, briefs, proof plans, assets, checks | Run the lifecycle state machine and queue each stage for the agent service |
 | Approvals | Gate requests, decisions, approval tokens | Route approvals, enforce the budget limit and bind each approval to the exact plan |
 | Launch | Launch records, Google Ads and YouTube IDs, product-to-ad mapping | Upload videos, build campaigns paused, turn them on together, and apply approved changes and stock pauses |
@@ -138,7 +138,7 @@ Approvals happen in the core, which binds each one to the exact plan. Any change
 ### Other flows
 
 1. **Daily opportunity refresh.** Cloud Scheduler starts each brand's refresh before 07:00 local time. The worker pulls keyword volumes and trends from Google Ads for the brand's categories, then queues a Sense run that scores, matches and explains each opportunity and saves the cards.
-2. **Triggered opportunity.** The worker checks weather rules hourly against the Weather API forecast, festival rules daily and stock rules on every catalogue update. A rule that fires passes the cooldown and duplicate checks, then Sense and Plan run, so a card with a draft brief is ready within 15 minutes.
+2. **Triggered opportunity.** The worker checks weather rules hourly against the Weather API forecast, festival rules daily and stock rules on every catalogue update. A rule that fires passes the cooldown and duplicate checks, joins an open opportunity that sells the same products or creates a new card, and Plan drafts a short brief with one Gemini Flash call, so the card is ready within 15 minutes. The full brief and proof plan come later, when the opportunity is accepted.
 3. **Stock pause and resume.** Each catalogue update is compared with the last one. For products now out of stock, the worker checks that the feed is fresh and that no more than 30% of a campaign's ads would pause; the Launch module then pauses the mapped Search and Demand Gen ads and logs it. Restocked products are resumed the same way.
 4. **Health and pacing checks.** The worker checks each campaign 24 hours after launch for ad approvals and delivery, then daily for pacing against plan, and raises alerts.
 5. **Test end and impact report.** When a test window closes, the core queues a Prove run. It reads Google Ads, sales and GA4 data from BigQuery, estimates lift against the holdout regions and drafts recommendations. Learn then saves the lessons to Brand Memory.
@@ -157,7 +157,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Brand Kit | KitVersion, KitFile, DraftRun | Kit content, rules included, stored as JSON in each version; at most one draft and one approved version; guideline and logo files in Cloud Storage; DraftRun records each drafting run's pages, ads, model and prompt version |
 | Catalogue | Product, Source, Import, StockEvent | Current details, stock and fixes on Product; every stock change in StockEvent; each import's counts and first 50 problems in Import |
 | Opportunities | Opportunity, WatchTopic, RefreshRun | Evidence and sources stored as JSON |
-| Triggers | TriggerRule, TriggerFiring | Conditions stored as JSON; cooldown per rule and region |
+| Triggers | TriggerRules, TriggerFirings, FestivalEvents, WeatherForecasts | Conditions stored as JSON; cooldown per rule and region; each brand keeps its own festival calendar; forecasts are shared by every brand and kept for two days |
 | Campaign rooms | CampaignRoom, StageRun, Brief, ProofPlan, Asset, CheckResult | Briefs are versioned; each StageRun records model, prompt version, tokens, cost and timing |
 | Approvals and launch | Approval, LaunchRecord, ProductAdMap | Approval holds the plan hash; ProductAdMap links products to ads for stock pauses |
 | Care and results | Recommendation, ImpactReport, ImpactLabAnalysis | Results and model diagnostics stored as JSON |
@@ -189,7 +189,7 @@ The core connects to every Google service that holds the brand's ads or data; th
 | Google Ads API | Keyword metrics, performance and recommendations, nightly performance reports; creating campaigns, pausing and resuming ads, budgets and bid targets | The Google Ads REST API from the core, with each brand's OAuth consent through Kairo's OAuth client. Since 9 September 2026 access levels belong to the Google Cloud project behind the OAuth client, and no developer token is sent. | Keyword planning needs Basic access or above, which the `kairo2` project has. Basic allows 15,000 operations a day; Standard has no daily cap. |
 | YouTube Data API | Uploading approved videos as unlisted | Google API .NET client in the core, with the brand's channel consent | Uploads have their own limit of 100 a day per project |
 | Merchant API | Checking the Merchant Center link and product status, and updating titles if chosen | The Merchant API v1 REST endpoints from the core, with the brand's consent. The Content API for Shopping it replaces was sunset on 18 August 2026. | Shopping needs the Merchant Center account linked to Google Ads |
-| Google Maps Platform Weather API | Hourly and daily forecasts for trigger rules | REST from the core worker, with a server-only API key | Billed per call, so forecasts are cached by region and hour |
+| Google Maps Platform Weather API | Hourly and daily forecasts for trigger rules | REST from the core worker, signed in as the worker's service account | Billed per call, so forecasts are cached by region and hour |
 | Google Analytics 4 | Outcome data for measurement and Impact Lab | The GA4 Data API from the core worker, with the brand's consent, nightly by region and day | Totals only; raw events need the brand's own BigQuery export, which Kairo doesn't read |
 | Gemini Enterprise Agent Platform | Gemini, Imagen, Veo and Google Search grounding | Google Gen AI SDK in the agent service | Per-model quotas; Veo and Imagen run in fewer regions than Gemini |
 | Cloud Text-to-Speech | Voiceover in each language | Client library in the agent service | Voice choice varies by language |

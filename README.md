@@ -159,6 +159,21 @@ Opportunity Radar turns rising Google searches into ranked opportunities the bra
 - **Market.** Keyword data and rising regions come from one country and language, set with `Kairo:Opportunities:CountryCode` (default `IN`) and `Kairo:Opportunities:Language` (a Google Ads language constant, default `1000` for English).
 - **Accepting** an opportunity opens a campaign room with the evidence copied in.
 
+## Try triggers locally
+
+Trigger rules turn a weather forecast, a festival date or a stock level into an opportunity card with a short brief already drafted. Admins manage rules and the festival calendar; nothing a trigger creates spends money until someone accepts it and the usual approvals pass.
+
+- **The check.** Cloud Scheduler calls the worker every 15 minutes. Weather rules are checked hourly, festival rules once a day in the brand's time zone, and stock rules after every catalogue import. Locally, call it yourself. `force=true` checks every active rule straight away:
+
+  ```bash
+  curl -X POST "http://localhost:5200/jobs/triggers/check?brandId=<id>&force=true"
+  ```
+
+- **Weather.** Forecasts come from the Google Maps Platform Weather API, signed in with Application Default Credentials. Enable `weather.googleapis.com` in the Google Cloud project, run `gcloud auth application-default login`, and set `Parameters:ai-project` for the AppHost so the worker bills the forecast calls to that project. Each city's forecast is fetched at most once an hour and shared by every brand.
+- **Festivals.** Each brand's calendar starts with Kairo's list of Indian festivals and shopping days for 2026 and 2027. Lunar festival dates move each year, so check them and edit or add events for your market.
+- **Stock.** Stock rules need unit counts. Add a `quantity` (or `stock_quantity` or `sell_on_google_quantity`) column to the catalogue file or feed.
+- **When a rule fires.** Kairo matches in-stock products in the rule's category. If an open opportunity already sells them, the trigger is added to it; otherwise a new card appears, marked with what triggered it. The Plan agent drafts a short brief, marketers get a notification, and the rule waits out its cooldown before firing again in the same region. A card nobody accepts expires when its condition ends.
+
 ## Run everything locally
 
 From the repository root:
