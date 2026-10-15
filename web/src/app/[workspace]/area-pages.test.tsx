@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import type { ComponentType } from "react";
 import { expect, test } from "vitest";
 
-import BrandKitPage from "./brand-kit/page";
 import AssetsPage from "./campaigns/[id]/assets/page";
 import BriefPage from "./campaigns/[id]/brief/page";
 import EvidencePage from "./campaigns/[id]/evidence/page";
@@ -22,7 +21,6 @@ test.each([
   ["Campaigns", CampaignsPage, "No campaigns yet"],
   ["Triggers", TriggersPage, "No trigger rules yet"],
   ["Impact Lab", ImpactLabPage, "No analyses yet"],
-  ["Brand Kit", BrandKitPage, "No Brand Kit yet"],
 ] as [string, ComponentType, string][])("%s has one page title and an honest empty state", (title, Page, empty) => {
   render(<Page />);
 
