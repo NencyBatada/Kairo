@@ -56,9 +56,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Daily opportunity refresh**: Every morning before 07:00, pulls rising search demand from Google Ads and runs the Sense agent.
-- [ ] **Scoring and matching**: Scores each opportunity on growth, volume and product fit, adds sourced reasons, and hides any with no product in stock.
-- [ ] **Accept, save and dismiss**: Opens a campaign room on accept, keeps saved items, and uses dismiss reasons and watched or ignored topics in the ranking.
+- [/] **Daily opportunity refresh**: Every morning before 07:00, pulls rising search demand from Google Ads and runs the Sense agent.
+- [/] **Scoring and matching**: Scores each opportunity on growth, volume and product fit, adds sourced reasons, and hides any with no product in stock.
+- [/] **Accept, save and dismiss**: Opens a campaign room on accept, keeps saved items, and uses dismiss reasons and watched or ignored topics in the ranking.
 
 ### Nency (web app)
 
