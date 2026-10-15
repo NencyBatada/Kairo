@@ -1,5 +1,6 @@
 using Kairo.Contracts.Catalogue;
 using Kairo.Modules.Catalogue.Data;
+using Kairo.Modules.Catalogue.Imports;
 
 namespace Kairo.Modules.Catalogue.Products;
 
@@ -79,6 +80,26 @@ internal sealed class CatalogueReader(CatalogueDbContext db) : ICatalogue
         var ids = productIds.Distinct().ToList();
         var products = await InStock().Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
         return products.Select(Of).ToList();
+    }
+
+    public async Task<CatalogueUpdate?> LatestImportAsync(CancellationToken cancellationToken)
+    {
+        var latest = await db.BrandImports.AsNoTracking()
+            .Where(import => import.Status == ImportStatuses.Succeeded)
+            .OrderByDescending(import => import.Number)
+            .Select(import => new { import.Id, import.FinishedAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        return latest is null ? null : new CatalogueUpdate(latest.Id, latest.FinishedAt);
+    }
+
+    public async Task<CategoryStock> GetCategoryStockAsync(string category, CancellationToken cancellationToken)
+    {
+        var quantities = await InStock()
+            .Where(p => (p.Category ?? p.Fixes.Category) == category)
+            .Select(p => p.Quantity)
+            .ToListAsync(cancellationToken);
+        var known = quantities.OfType<int>().ToList();
+        return new CategoryStock(quantities.Count, known.Count, known.Sum(quantity => (long)quantity));
     }
 
     private IQueryable<Product> InStock() =>

@@ -3,6 +3,7 @@ extern alias worker;
 using Kairo.IntegrationTests.Agents;
 using Kairo.IntegrationTests.Web;
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.Modules.Triggers.Weather;
 using Kairo.SharedKernel.Agents;
 using Kairo.SharedKernel.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -36,6 +37,13 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
         return await client.PostAsync(brandId is { } id ? $"/jobs/catalogue/refresh?brandId={id}" : "/jobs/catalogue/refresh", null);
     }
 
+    public async Task<HttpResponseMessage> CheckTriggersAsync(Guid? brandId = null, bool force = false)
+    {
+        using var client = CreateClient();
+        var query = string.Join('&', new[] { brandId is { } id ? $"brandId={id}" : null, force ? "force=true" : null }.OfType<string>());
+        return await client.PostAsync(query.Length > 0 ? $"/jobs/triggers/check?{query}" : "/jobs/triggers/check", null);
+    }
+
     public async Task<HttpResponseMessage> RefreshOpportunitiesAsync(Guid? brandId = null)
     {
         using var client = CreateClient();
@@ -49,6 +57,7 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
         builder.UseSetting("Authentication:Google:ClientSecret", FakeGoogleApis.ClientSecret);
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
         builder.UseSetting(AgentClient.UrlSetting, "http://agents.test");
+        builder.UseSetting("Kairo:Triggers:WeatherProject", "kairo-test");
         if (AnalyticsProject is not null)
         {
             builder.UseSetting("Kairo:Analytics:Project", AnalyticsProject);
@@ -60,9 +69,11 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-opportunities-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
+            services.AddHttpClient("kairo-triggers-weather").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Agents);
             services.AddHttpClient(SafeWebClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Websites);
             services.AddSingleton<IServiceAccessToken, FakeServiceToken>();
+            services.AddSingleton<IWeatherToken, FakeWeatherToken>();
         });
     }
 }

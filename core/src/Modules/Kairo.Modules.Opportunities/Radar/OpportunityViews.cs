@@ -46,6 +46,64 @@ internal sealed record ReasonView(string Text, ReasonSourceView[] Sources)
         new(reason.Text, reason.Sources.Select(source => new ReasonSourceView(source.Title, source.Url)).ToArray());
 }
 
+internal sealed record TriggerRegionView(string Id, string Name);
+
+internal sealed record TriggerView(
+    Guid FiringId,
+    Guid RuleId,
+    string RuleName,
+    string Source,
+    string Summary,
+    TriggerRegionView[] Regions,
+    DateTimeOffset FiredAt,
+    DateTimeOffset ConditionEndsAt,
+    bool Ended)
+{
+    public static TriggerView? Of(OpportunityTrigger? trigger) => trigger is null
+        ? null
+        : new TriggerView(
+            trigger.FiringId,
+            trigger.RuleId,
+            trigger.RuleName,
+            trigger.Source,
+            trigger.Summary,
+            trigger.Regions.Select(region => new TriggerRegionView(region.Id, region.Name)).ToArray(),
+            trigger.FiredAt,
+            trigger.ConditionEndsAt,
+            trigger.Ended);
+}
+
+internal sealed record BriefView(
+    string Title,
+    string Goal,
+    string Audience,
+    string KeyMessage,
+    string? Offer,
+    string[] Regions,
+    Guid[] ProductIds,
+    string[] Channels,
+    string Timing,
+    string? Model,
+    string? PromptVersion,
+    DateTimeOffset DraftedAt)
+{
+    public static BriefView? Of(OpportunityBrief? brief) => brief is null
+        ? null
+        : new BriefView(
+            brief.Title,
+            brief.Goal,
+            brief.Audience,
+            brief.KeyMessage,
+            brief.Offer,
+            [.. brief.Regions],
+            [.. brief.ProductIds],
+            [.. brief.Channels],
+            brief.Timing,
+            brief.Model,
+            brief.PromptVersion,
+            brief.DraftedAt);
+}
+
 internal sealed record ScoreBreakdownView(
     int Total,
     double Growth,
@@ -81,7 +139,8 @@ internal sealed record OpportunityCard(
     bool Available,
     DateTimeOffset FirstSeenAt,
     DateTimeOffset LastSeenAt,
-    DateTimeOffset? SavedAt)
+    DateTimeOffset? SavedAt,
+    TriggerView? Trigger)
 {
     public const int CardTrendMonths = 12;
     public const int CardRegions = 3;
@@ -107,7 +166,8 @@ internal sealed record OpportunityCard(
         inStock.Count > 0,
         opportunity.FirstSeenAt,
         opportunity.LastSeenAt,
-        opportunity.SavedAt);
+        opportunity.SavedAt,
+        TriggerView.Of(opportunity.ActiveTrigger));
 
     public static string? Headline(Opportunity opportunity) => opportunity.Reasons.FirstOrDefault()?.Text ?? opportunity.FitReason;
 }
@@ -142,7 +202,11 @@ internal sealed record OpportunityDetail(
     string? DismissNote,
     Guid? RoomId,
     string? Model,
-    string? PromptVersion)
+    string? PromptVersion,
+    TriggerView? Trigger,
+    TriggerView[] Triggers,
+    BriefView? Brief,
+    string? BriefStatus)
 {
     public static OpportunityDetail Of(Opportunity opportunity, IReadOnlyList<CatalogueProduct> inStock, bool watched)
     {
@@ -190,7 +254,11 @@ internal sealed record OpportunityDetail(
             opportunity.DismissNote,
             opportunity.RoomId,
             opportunity.Model,
-            opportunity.PromptVersion);
+            opportunity.PromptVersion,
+            TriggerView.Of(opportunity.ActiveTrigger),
+            opportunity.Triggers.OrderByDescending(trigger => trigger.FiredAt).Select(trigger => TriggerView.Of(trigger)!).ToArray(),
+            BriefView.Of(opportunity.Brief),
+            opportunity.BriefStatus);
     }
 }
 

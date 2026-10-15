@@ -11,7 +11,15 @@ public interface ICatalogue
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<CatalogueProduct>> GetInStockAsync(IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken);
+
+    Task<CatalogueUpdate?> LatestImportAsync(CancellationToken cancellationToken);
+
+    Task<CategoryStock> GetCategoryStockAsync(string category, CancellationToken cancellationToken);
 }
+
+public sealed record CatalogueUpdate(Guid ImportId, DateTimeOffset FinishedAt);
+
+public sealed record CategoryStock(int InStockProducts, int ProductsWithQuantity, long Units);
 
 public sealed record CatalogueCategory(string Name, int InStock, IReadOnlyList<string> SampleTitles);
 

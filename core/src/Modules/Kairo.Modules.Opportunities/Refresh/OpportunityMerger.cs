@@ -93,7 +93,7 @@ internal static class OpportunityMerger
         }
 
         var expired = 0;
-        foreach (var opportunity in existing.Where(o => o.IsOpen && !seen.Contains(o.Id)))
+        foreach (var opportunity in existing.Where(o => o.IsOpen && o.Source == OpportunitySources.Radar && !seen.Contains(o.Id)))
         {
             opportunity.MissedRefreshes++;
             if (opportunity.MissedRefreshes >= OpportunityOptions.ExpireAfterMissed)

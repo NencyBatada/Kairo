@@ -56,6 +56,7 @@ if (builder.Configuration["Parameters:ai-project"] is { Length: > 0 } aiProject)
 {
     agents.WithEnvironment("GOOGLE_CLOUD_PROJECT", aiProject)
         .WithEnvironment("GOOGLE_CLOUD_LOCATION", "global");
+    worker.WithEnvironment("Kairo__Triggers__WeatherProject", aiProject);
 }
 
 var web = builder.AddNextJsApp("web", "../../../web")
