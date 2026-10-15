@@ -96,8 +96,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Brief drafting**: The Plan agent drafts the full brief in under a minute, with the reason for each field, and redrafts from plain-language instructions.
-- [ ] **Holdout and test design**: Matches holdout regions, works out the test window, the smallest detectable lift and the cost of the holdout, and warns when data is thin.
+- [/] **Brief drafting**: The Plan agent drafts the full brief in under a minute, with the reason for each field, and redrafts from plain-language instructions.
+- [/] **Holdout and test design**: Matches holdout regions, works out the test window, the smallest detectable lift and the cost of the holdout, and warns when data is thin.
 - [ ] **Brief approval and lock**: Applies the budget limit, routes gate 1 to the right approver, and locks the proof plan at launch.
 
 ### Nency (web app)
