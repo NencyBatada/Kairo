@@ -1889,7 +1889,12 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    before?: number | string;
+                    action?: string[];
+                    actor?: string;
+                    actorType?: string;
+                    from?: string;
+                    to?: string;
+                    before?: string;
                     limit?: number | string;
                 };
                 header?: never;
@@ -1906,6 +1911,100 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AuditLogPage"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/audit-log/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    action?: string[];
+                    actor?: string;
+                    actorType?: string;
+                    from?: string;
+                    to?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/csv": string;
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/audit-log/actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuditActionOption"][];
                     };
                 };
             };
@@ -1930,12 +2029,18 @@ export interface components {
             budgetLimit: null | number | string;
             currency: string;
         };
+        AuditActionOption: {
+            action: string;
+            label: string;
+        };
+        AuditActorType: "user" | "agent" | "system";
         AuditEntryResponse: {
             id: number | string;
             occurredAt: string;
-            actorType: string;
+            actorType: components["schemas"]["AuditActorType"];
             actorId: null | string;
             actorName: string;
+            actorEmail: null | string;
             action: string;
             targetType: string;
             targetId: string;

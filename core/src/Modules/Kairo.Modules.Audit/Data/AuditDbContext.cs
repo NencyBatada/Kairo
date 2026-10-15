@@ -18,6 +18,7 @@ internal sealed class AuditDbContext(DbContextOptions<AuditDbContext> options, K
             entry.Property(e => e.ActorType).HasMaxLength(20);
             entry.Property(e => e.ActorId).HasMaxLength(64);
             entry.Property(e => e.ActorName).HasMaxLength(200);
+            entry.Property(e => e.ActorEmail).HasMaxLength(320);
             entry.Property(e => e.Action).HasMaxLength(100);
             entry.Property(e => e.TargetType).HasMaxLength(50);
             entry.Property(e => e.TargetId).HasMaxLength(64);

@@ -31,6 +31,8 @@ public sealed class PermissionTests(SqlServer sqlServer) : IAsyncDisposable
             (HttpMethod.Get, $"{brand}/approval-settings", null, false),
             (HttpMethod.Put, $"{brand}/approval-settings", emptyDuties, true),
             (HttpMethod.Get, $"{brand}/audit-log", null, true),
+            (HttpMethod.Get, $"{brand}/audit-log/export", null, true),
+            (HttpMethod.Get, $"{brand}/audit-log/actions", null, true),
             (HttpMethod.Get, $"{brand}/connections", null, false),
             (HttpMethod.Get, $"{brand}/connections/google-ads/connect", null, true),
             (HttpMethod.Get, $"{brand}/connections/google-ads/accounts", null, true),

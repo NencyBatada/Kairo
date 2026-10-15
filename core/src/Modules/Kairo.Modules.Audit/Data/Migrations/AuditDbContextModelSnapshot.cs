@@ -35,6 +35,10 @@ namespace Kairo.Modules.Audit.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("ActorEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
                     b.Property<string>("ActorId")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
