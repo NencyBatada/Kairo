@@ -7,5 +7,5 @@ export const opportunity: components["schemas"]["OpportunityCard"] = {
   regions: [{ id: "region-1", name: "Maharashtra", lastMonthSearches: 7000, growth: 0.4, rising: true }],
   products: [{ id: "product-1", offerId: "trainer-1", title: "Rain runner", category: "Trainers", link: "https://shop.example/rain-runner", imageLink: "https://shop.example/rain-runner.jpg", price: "2499", salePrice: null, currency: "INR" }],
   productCount: 1, reason: "Search demand is rising ahead of the rains.", watched: true, available: true,
-  firstSeenAt: "2026-10-14T00:00:00Z", lastSeenAt: "2026-10-15T01:00:00Z", savedAt: null,
+  firstSeenAt: "2026-10-14T00:00:00Z", lastSeenAt: "2026-10-15T01:00:00Z", savedAt: null, trigger: null,
 };
