@@ -1,0 +1,161 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Kairo.Contracts.Audit;
+using Kairo.Contracts.CampaignRooms;
+using Kairo.IntegrationTests.Api;
+using Kairo.IntegrationTests.Live;
+using Kairo.IntegrationTests.Opportunities;
+using Kairo.IntegrationTests.Triggers;
+using Kairo.Modules.CampaignRooms.Stages;
+using Kairo.SharedKernel.Persistence;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Kairo.IntegrationTests.CampaignRooms;
+
+public sealed class CampaignWorld : IAsyncDisposable
+{
+    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakePlan plan)
+    {
+        Database = database;
+        Api = api;
+        Worker = worker;
+        Brand = brand;
+        Approver = approver;
+        Plan = plan;
+    }
+
+    public string Database { get; }
+
+    public KairoApiFactory Api { get; }
+
+    public KairoWorkerFactory Worker { get; }
+
+    public RadarBrand Brand { get; }
+
+    public Member Approver { get; }
+
+    public FakePlan Plan { get; }
+
+    public Guid BrandId => Brand.BrandId;
+
+    public HttpClient Marketer => Brand.Marketer.Browser;
+
+    public HttpClient Admin => Brand.Admin.Browser;
+
+    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null)
+    {
+        var database = await IsolatedDatabase.CreateAsync(sqlServer);
+        var api = new KairoApiFactory(database);
+        var worker = new KairoWorkerFactory(database, api.GoogleApis, api.Clock.GetUtcNow());
+        var sense = new FakeSense();
+        sense.Attach(worker.Agents);
+        var plan = new FakePlan();
+        plan.Attach(api.Agents);
+        plan.Attach(worker.Agents);
+        Radar.PlanDemand(api.GoogleApis.Keywords);
+        demand?.Invoke(sense, api.GoogleApis.Keywords);
+        var brand = await Radar.BrandAsync(api);
+        var approver = await Workspaces.JoinAsync(api, brand.Admin.Browser, brand.BrandId, "approver");
+        await Radar.RefreshAsync(worker);
+        var world = new CampaignWorld(database, api, worker, brand, approver, plan);
+        await world.AssignApproversAsync(approver.UserId, approver.UserId, approver.UserId);
+        return world;
+    }
+
+    public async Task<Guid> OpportunityAsync() =>
+        (await Radar.OnlyCardAsync(Marketer, BrandId)).GetProperty("id").GetGuid();
+
+    public async Task<Guid> AcceptAsync(Guid? opportunityId = null)
+    {
+        var id = opportunityId ?? await OpportunityAsync();
+        using var response = await Radar.DecideAsync(Marketer, BrandId, id, "accept");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token)).GetProperty("roomId").GetGuid();
+    }
+
+    public async Task<Guid> OpenWithBriefAsync()
+    {
+        var roomId = await AcceptAsync();
+        Assert.Equal(1, await RunStagesAsync());
+        return roomId;
+    }
+
+    public async Task<int> RunStagesAsync()
+    {
+        await using var scope = Api.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<StageDispatcher>().RunDueAsync(Campaigns.Token);
+    }
+
+    public async Task<CampaignAdvance> SignalAsync(Guid roomId, string signal)
+    {
+        await using var scope = Api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(BrandId, Campaigns.Token);
+        return await scope.ServiceProvider.GetRequiredService<ICampaignLifecycle>()
+            .AdvanceAsync(roomId, signal, AuditActor.Agent("Check agent", "check"), Campaigns.Token);
+    }
+
+    public async Task AssignApproversAsync(Guid brief, Guid assets, Guid launch)
+    {
+        using var response = await Admin.PutAsJsonAsync($"/api/brands/{BrandId}/approval-settings", new
+        {
+            briefApprovers = new[] { brief },
+            assetApprovers = new[] { assets },
+            launchApprovers = new[] { launch },
+            budgetOwners = new[] { brief },
+            budgetMoveApprovers = new[] { brief },
+            targetChangeApprovers = new[] { brief },
+            googleSuggestionApprovers = new[] { brief },
+            budgetLimit = 200000m,
+        }, Campaigns.Token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    public async Task<JsonElement> ApproveBriefAsync(Guid roomId)
+    {
+        var detail = await Campaigns.DetailAsync(Marketer, BrandId, roomId);
+        using var requested = await Campaigns.PostAsync(Marketer, BrandId, roomId, "approval-requests", new { gate = "brief", version = Campaigns.Version(detail) });
+        Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
+        var pending = await requested.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+        using var approved = await Campaigns.PostAsync(Approver.Browser, BrandId, roomId, "approve", new { gate = "brief", version = Campaigns.Version(pending) });
+        Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
+        return await approved.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Worker.DisposeAsync();
+        await Api.DisposeAsync();
+    }
+}
+
+internal static class Campaigns
+{
+    public static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    public static string Base(Guid brandId) => $"/api/brands/{brandId}/campaigns";
+
+    public static Task<JsonElement> DetailAsync(HttpClient browser, Guid brandId, Guid roomId) =>
+        browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}", Token);
+
+    public static async Task<JsonElement> ListAsync(HttpClient browser, Guid brandId, string query = "") =>
+        await browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}{query}", Token);
+
+    public static async Task<JsonElement[]> CardsAsync(HttpClient browser, Guid brandId, string query = "") =>
+        [.. (await ListAsync(browser, brandId, query)).GetProperty("campaigns").EnumerateArray()];
+
+    public static Task<HttpResponseMessage> PostAsync(HttpClient browser, Guid brandId, Guid roomId, string action, object body) =>
+        browser.PostAsJsonAsync($"{Base(brandId)}/{roomId}/{action}", body, Token);
+
+    public static async Task<JsonElement> ActivityAsync(HttpClient browser, Guid brandId, Guid roomId, string query = "") =>
+        await browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/activity{query}", Token);
+
+    public static int Version(JsonElement detail) => detail.GetProperty("version").GetInt32();
+
+    public static string Stage(JsonElement detail) => detail.GetProperty("stage").GetString()!;
+
+    public static string Status(JsonElement detail) => detail.GetProperty("status").GetString()!;
+
+    public static async Task<string?> TitleAsync(HttpResponseMessage response) =>
+        (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("title").GetString();
+}

@@ -2851,6 +2851,419 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Stage?: string;
+                    Status?: string;
+                    Owner?: string;
+                    From?: string;
+                    To?: string;
+                    Q?: string;
+                    Before?: string;
+                    Limit?: number | string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignPage"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    before?: string;
+                };
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignActivityPage"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/approval-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApprovalRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/send-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendBackRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DiscardRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/stage-runs/{runId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    runId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -3413,6 +3826,10 @@ export interface components {
             roomId: string;
             opportunity: components["schemas"]["OpportunityDetail"];
         };
+        ApprovalRequest: {
+            gate: null | string;
+            version: null | number | string;
+        };
         ApprovalSettings: {
             briefApprovers: string[];
             assetApprovers: string[];
@@ -3423,6 +3840,11 @@ export interface components {
             googleSuggestionApprovers: string[];
             budgetLimit: null | number | string;
             currency: string;
+        };
+        ApproveRequest: {
+            gate: null | string;
+            version: null | number | string;
+            comment: null | string;
         };
         AuditActionOption: {
             action: string;
@@ -3464,6 +3886,128 @@ export interface components {
             model: null | string;
             promptVersion: null | string;
             draftedAt: string;
+        };
+        CampaignActionsView: {
+            requestApproval: null | string;
+            approve: null | string;
+            sendBackTo: string[];
+            discard: boolean;
+            retryRun: null | string;
+        };
+        CampaignActivityPage: {
+            entries: components["schemas"]["CampaignActivityView"][];
+            nextBefore: null | string;
+        };
+        CampaignActivityView: {
+            id: number | string;
+            occurredAt: string;
+            actorType: string;
+            actorName: string;
+            action: string;
+            label: string;
+            details: null | components["schemas"]["JsonElement"];
+        };
+        CampaignApprovalView: {
+            gate: string;
+            label: string;
+            approvers: components["schemas"]["CampaignPersonView"][];
+            requestedBy: null | components["schemas"]["CampaignPersonView"];
+            requestedAt: string;
+        };
+        CampaignBriefView: {
+            version: number | string;
+            origin: string;
+            title: string;
+            goal: string;
+            audience: string;
+            keyMessage: string;
+            offer: null | string;
+            regions: string[];
+            productIds: string[];
+            channels: string[];
+            timing: string;
+            model: null | string;
+            promptVersion: null | string;
+            createdAt: string;
+        };
+        CampaignCard: {
+            id: string;
+            title: string;
+            stage: string;
+            status: string;
+            owner: components["schemas"]["CampaignPersonView"];
+            pendingGate: null | string;
+            products: components["schemas"]["CampaignProductView"][];
+            openedAt: string;
+            stageEnteredAt: string;
+            updatedAt: string;
+        };
+        CampaignDetail: {
+            id: string;
+            title: string;
+            stage: string;
+            status: string;
+            version: number | string;
+            owner: components["schemas"]["CampaignPersonView"];
+            opportunityId: string;
+            openedAt: string;
+            updatedAt: string;
+            tracker: components["schemas"]["CampaignTrackerView"];
+            pendingApproval: null | components["schemas"]["CampaignApprovalView"];
+            lastSendBack: null | components["schemas"]["CampaignSendBackView"];
+            discardReason: null | string;
+            evidence: components["schemas"]["JsonElement"];
+            brief: null | components["schemas"]["CampaignBriefView"];
+            runs: components["schemas"]["CampaignRunView"][];
+            actions: components["schemas"]["CampaignActionsView"];
+        };
+        CampaignPage: {
+            campaigns: components["schemas"]["CampaignCard"][];
+            nextBefore: null | string;
+        };
+        CampaignPersonView: {
+            id: string;
+            name: string;
+        };
+        CampaignProductView: {
+            id: string;
+            title: string;
+        };
+        CampaignRunView: {
+            id: string;
+            stage: string;
+            agent: string;
+            kind: string;
+            status: string;
+            attempts: number | string;
+            queuedAt: string;
+            startedAt: null | string;
+            finishedAt: null | string;
+            model: null | string;
+            promptVersion: null | string;
+            inputTokens: null | number | string;
+            outputTokens: null | number | string;
+            error: null | string;
+        };
+        CampaignSendBackView: {
+            from: string;
+            to: string;
+            comment: string;
+            by: components["schemas"]["CampaignPersonView"];
+            at: string;
+        };
+        CampaignStageStepView: {
+            stage: string;
+            label: string;
+            progress: string;
+        };
+        CampaignTrackerView: {
+            stages: components["schemas"]["CampaignStageStepView"][];
+            current: string;
+            ownerKind: string;
+            owner: string;
+            nextAction: string;
+            enteredAt: string;
         };
         CatalogueSummary: {
             products: number | string;
@@ -3530,6 +4074,10 @@ export interface components {
             handle: string;
             timeZone: string;
             currency: string;
+        };
+        DiscardRequest: {
+            reason: null | string;
+            version: null | number | string;
         };
         DismissRequest: {
             reason: null | string;
@@ -3695,6 +4243,7 @@ export interface components {
             id: string;
             handle: string;
         };
+        JsonElement: unknown;
         JsonNode: unknown;
         JsonObject: Record<string, never>;
         KitCategory: {
@@ -4102,6 +4651,11 @@ export interface components {
             fitReason: null | string;
             feedback: number | string;
             feedbackReasons: string[];
+        };
+        SendBackRequest: {
+            to: null | string;
+            comment: null | string;
+            version: null | number | string;
         };
         SourceKind: "page" | "ad";
         SourceView: {

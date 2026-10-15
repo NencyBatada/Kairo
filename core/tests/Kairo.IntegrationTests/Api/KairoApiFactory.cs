@@ -93,6 +93,7 @@ public sealed class KairoApiFactory(
 
         builder.UseSetting("Kairo:Notifications:DeliveryLoop", "off");
         builder.UseSetting("Kairo:BrandKit:DraftingLoop", "off");
+        builder.UseSetting("Kairo:CampaignRooms:StageLoop", "off");
         builder.UseSetting(AgentClient.UrlSetting, "http://agents.test");
         foreach (var (key, value) in settings ?? new Dictionary<string, string>())
         {

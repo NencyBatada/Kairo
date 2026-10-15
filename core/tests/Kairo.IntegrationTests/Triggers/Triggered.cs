@@ -15,6 +15,8 @@ public sealed class FakePlan
 
     public List<JsonElement> Requests { get; } = [];
 
+    public Action? WhileDrafting { get; set; }
+
     public void Attach(FakeAgents agents)
     {
         var previous = agents.Respond;
@@ -36,6 +38,8 @@ public sealed class FakePlan
                 Drafts++;
             }
 
+            WhileDrafting?.Invoke();
+
             var regions = body.GetProperty("trigger").GetProperty("regions").EnumerateArray().Select(region => region.GetString()).ToArray();
             return FakeAgents.Json(new
             {
@@ -53,6 +57,7 @@ public sealed class FakePlan
                 },
                 model = "gemini-test",
                 promptVersion = "plan-trigger-brief/1",
+                usage = new { inputTokens = 812, outputTokens = 240 },
             });
         };
     }

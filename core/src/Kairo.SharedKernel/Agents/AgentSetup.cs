@@ -12,6 +12,7 @@ public static class AgentSetup
         services.AddHttpClient(AgentClient.ClientName, client => client.Timeout = MaxTimeout).RemoveAllResilienceHandlers();
         services.TryAddSingleton<IAgentIdentity, GoogleAgentIdentity>();
         services.TryAddSingleton<AgentClient>();
+        services.TryAddSingleton<PlanAgent>();
         return services;
     }
 }

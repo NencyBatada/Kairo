@@ -11,6 +11,8 @@ public sealed class OpportunitiesTableTests(SqlServer sqlServer)
     [InlineData("opportunities.WatchTopics")]
     [InlineData("opportunities.RefreshRuns")]
     [InlineData("campaign_rooms.Rooms")]
+    [InlineData("campaign_rooms.StageRuns")]
+    [InlineData("campaign_rooms.Briefs")]
     [InlineData("triggers.TriggerRules")]
     [InlineData("triggers.TriggerFirings")]
     [InlineData("triggers.FestivalEvents")]

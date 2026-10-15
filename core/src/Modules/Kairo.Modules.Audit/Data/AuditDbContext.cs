@@ -15,6 +15,7 @@ internal sealed class AuditDbContext(DbContextOptions<AuditDbContext> options, K
         {
             entry.ToTable("Entries", table => table.HasTrigger("Entries_PreventChanges"));
             entry.HasIndex(e => new { e.BrandId, e.Id });
+            entry.HasIndex(e => new { e.BrandId, e.TargetType, e.TargetId, e.Id });
             entry.Property(e => e.ActorType).HasMaxLength(20);
             entry.Property(e => e.ActorId).HasMaxLength(64);
             entry.Property(e => e.ActorName).HasMaxLength(200);

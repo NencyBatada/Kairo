@@ -10,6 +10,7 @@ public sealed class AuditModule : IModule
         services.AddDbContext<AuditDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, AuditDbContext.SchemaName));
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<IAuditTrail, AuditTrail>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)

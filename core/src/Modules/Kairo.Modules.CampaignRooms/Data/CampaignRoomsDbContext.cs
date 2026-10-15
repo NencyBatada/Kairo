@@ -1,4 +1,6 @@
+using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Rooms;
+using Kairo.Modules.CampaignRooms.Stages;
 
 namespace Kairo.Modules.CampaignRooms.Data;
 
@@ -8,6 +10,10 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
     public const string SchemaName = "campaign_rooms";
 
     public DbSet<Room> Rooms => Set<Room>();
+
+    public DbSet<StageRun> StageRuns => Set<StageRun>();
+
+    public DbSet<Brief> Briefs => Set<Brief>();
 
     protected override string Schema => SchemaName;
 
@@ -19,8 +25,45 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             room.HasKey(r => r.Id).IsClustered(false);
             room.HasIndex(r => new { r.BrandId, r.CreatedAt }).IsClustered();
             room.HasIndex(r => new { r.BrandId, r.OpportunityId }).IsUnique();
+            room.HasIndex(r => new { r.BrandId, r.State });
+            room.HasIndex(r => new { r.BrandId, r.Status });
             room.Property(r => r.Title).HasMaxLength(200);
             room.Property(r => r.State).HasMaxLength(20);
+            room.Property(r => r.Status).HasMaxLength(20);
+            room.Property(r => r.PendingGate).HasMaxLength(20);
+            room.Property(r => r.RunStatus).HasMaxLength(20);
+            room.Property(r => r.DiscardedFrom).HasMaxLength(20);
+            room.Property(r => r.DiscardReason).HasMaxLength(RoomLimits.MaxReasonLength);
+            room.OwnsMany(r => r.Products, product => product.ToJson());
+            room.OwnsOne(r => r.LastSendBack, sendBack => sendBack.ToJson());
+        });
+
+        modelBuilder.Entity<StageRun>(run =>
+        {
+            run.ToTable("StageRuns");
+            run.HasKey(r => r.Id).IsClustered(false);
+            run.HasIndex(r => new { r.BrandId, r.RoomId, r.QueuedAt }).IsClustered();
+            run.HasIndex(r => new { r.Status, r.NextAttemptAt });
+            run.Property(r => r.Stage).HasMaxLength(20);
+            run.Property(r => r.Agent).HasMaxLength(20);
+            run.Property(r => r.Kind).HasMaxLength(40);
+            run.Property(r => r.Status).HasMaxLength(20);
+            run.Property(r => r.Model).HasMaxLength(100);
+            run.Property(r => r.PromptVersion).HasMaxLength(100);
+            run.Property(r => r.ErrorCode).HasMaxLength(40);
+            run.Property(r => r.ErrorMessage).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Brief>(brief =>
+        {
+            brief.ToTable("Briefs");
+            brief.HasKey(b => b.Id).IsClustered(false);
+            brief.HasIndex(b => new { b.BrandId, b.RoomId, b.Version }).IsUnique().IsClustered();
+            brief.Property(b => b.Origin).HasMaxLength(20);
+            brief.Property(b => b.Model).HasMaxLength(100);
+            brief.Property(b => b.PromptVersion).HasMaxLength(100);
+            brief.OwnsOne(b => b.Content, content => content.ToJson());
+            brief.Navigation(b => b.Content).IsRequired();
         });
     }
 }

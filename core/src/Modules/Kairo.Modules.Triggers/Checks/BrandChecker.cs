@@ -57,7 +57,7 @@ internal sealed class BrandChecker(
     public const string Market = "India";
     public const string AuditTarget = "trigger_rule";
     public const int MaxBriefRetries = 3;
-    public const int MaxBriefProducts = 12;
+    public const int MaxBriefProducts = PlanAgent.MaxBriefProducts;
 
     public static readonly TimeSpan Hourly = TimeSpan.FromMinutes(55);
 
@@ -442,7 +442,7 @@ internal sealed class BrandChecker(
         try
         {
             var products = (await catalogue.GetInStockAsync(state.ProductIds, cancellationToken)).Take(MaxBriefProducts).ToList();
-            var keyed = products.Select((product, index) => (Key: $"p{index + 1}", Product: product)).ToList();
+            var keyed = products.Select((product, index) => (Key: PlanAgent.ProductKey(index), Product: product)).ToList();
             var regions = firing.Regions.Select(IndiaRegions.NameOf).ToList();
             var kit = await brandKit.GetApprovedAsync(cancellationToken);
             var answer = await plan.DraftAsync(
@@ -479,55 +479,22 @@ internal sealed class BrandChecker(
         return brief is not null;
     }
 
-    public static TriggerBrief? BriefOf(TriggerBriefAnswer answer, IReadOnlyList<(string Key, Guid Id)> products, IReadOnlyList<string> regions, DateTimeOffset now)
-    {
-        if (answer.Brief is not { } drafted
-            || Text(drafted.Title, 120) is not { } title
-            || Text(drafted.Goal, 500) is not { } goal
-            || Text(drafted.Audience, 500) is not { } audience
-            || Text(drafted.KeyMessage, 500) is not { } keyMessage
-            || Text(drafted.Timing, 300) is not { } timing)
-        {
-            return null;
-        }
-
-        var chosenRegions = (drafted.Regions ?? []).OfType<string>()
-            .Select(region => regions.FirstOrDefault(known => string.Equals(known, region.Trim(), StringComparison.OrdinalIgnoreCase)))
-            .OfType<string>()
-            .Distinct()
-            .ToList();
-        var chosenProducts = (drafted.ProductIds ?? []).OfType<string>()
-            .Select(key => products.FirstOrDefault(product => product.Key == key.Trim()))
-            .Where(product => product.Key is not null)
-            .Select(product => product.Id)
-            .Distinct()
-            .ToList();
-        var channels = (drafted.Channels ?? []).OfType<string>()
-            .Select(channel => channel.Trim())
-            .Where(channel => channel.Length is > 0 and <= 40)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(5)
-            .ToList();
-        return new TriggerBrief(
-            title,
-            goal,
-            audience,
-            keyMessage,
-            Text(drafted.Offer, 300),
-            chosenRegions.Count > 0 ? chosenRegions : [.. regions],
-            chosenProducts.Count > 0 ? chosenProducts : products.Take(3).Select(product => product.Id).ToList(),
-            channels,
-            timing,
-            answer.Model,
-            answer.PromptVersion,
-            now);
-    }
-
-    private static string? Text(string? value, int length)
-    {
-        var trimmed = value?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed.Length > length ? trimmed[..length] : trimmed;
-    }
+    public static TriggerBrief? BriefOf(TriggerBriefAnswer answer, IReadOnlyList<(string Key, Guid Id)> products, IReadOnlyList<string> regions, DateTimeOffset now) =>
+        PlanAgent.Clean(answer, products, regions) is { } clean
+            ? new TriggerBrief(
+                clean.Title,
+                clean.Goal,
+                clean.Audience,
+                clean.KeyMessage,
+                clean.Offer,
+                clean.Regions,
+                clean.ProductIds,
+                clean.Channels,
+                clean.Timing,
+                answer.Model,
+                answer.PromptVersion,
+                now)
+            : null;
 
     private static Notification Fired(BrandSummary brand, TriggerRule rule, TriggerFiring firing)
     {

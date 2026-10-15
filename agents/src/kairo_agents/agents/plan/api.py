@@ -8,7 +8,12 @@ from fastapi.responses import JSONResponse
 from google.genai import types
 
 from kairo_agents.agents.brand_kit.api import default_client
-from kairo_agents.agents.plan.models import DraftedBrief, TriggerBriefRequest, TriggerBriefResponse
+from kairo_agents.agents.plan.models import (
+    DraftedBrief,
+    TriggerBriefRequest,
+    TriggerBriefResponse,
+    Usage,
+)
 from kairo_agents.agents.plan.prompt import TRIGGER_BRIEF_PROMPT_VERSION, trigger_brief_instructions
 from kairo_agents.agents.sense.prompt import data_block
 
@@ -56,7 +61,29 @@ async def trigger_brief(request: TriggerBriefRequest, clients: ClientSource) -> 
     if brief is None:
         return JSONResponse(status_code=502, content={"error": "model_failed"})
     return TriggerBriefResponse(
-        brief=brief, model=model, prompt_version=TRIGGER_BRIEF_PROMPT_VERSION
+        brief=brief,
+        model=model,
+        prompt_version=TRIGGER_BRIEF_PROMPT_VERSION,
+        usage=usage_of(response),
+    )
+
+
+def usage_of(response: Any) -> Usage | None:
+    metadata = getattr(response, "usage_metadata", None)
+    if metadata is None:
+        return None
+    output = [
+        count
+        for count in (
+            getattr(metadata, "candidates_token_count", None),
+            getattr(metadata, "thoughts_token_count", None),
+        )
+        if isinstance(count, int)
+    ]
+    prompt = getattr(metadata, "prompt_token_count", None)
+    return Usage(
+        input_tokens=prompt if isinstance(prompt, int) else None,
+        output_tokens=sum(output) if output else None,
     )
 
 

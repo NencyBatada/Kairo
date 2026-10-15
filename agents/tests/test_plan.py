@@ -45,12 +45,13 @@ class FakeModels:
         self.text: str = json.dumps(ANSWER)
         self.error: Exception | None = None
         self.calls: list[dict] = []
+        self.usage: object | None = None
 
     async def generate_content(self, **kwargs):
         self.calls.append(kwargs)
         if self.error is not None:
             raise self.error
-        return SimpleNamespace(text=self.text, candidates=[])
+        return SimpleNamespace(text=self.text, candidates=[], usage_metadata=self.usage)
 
 
 @pytest.fixture
@@ -84,6 +85,7 @@ def test_trigger_brief_makes_one_structured_call_and_keeps_only_known_choices(
         },
         "model": "gemini-test",
         "promptVersion": TRIGGER_BRIEF_PROMPT_VERSION,
+        "usage": None,
     }
     [call] = models.calls
     assert call["model"] == "gemini-test"
@@ -91,6 +93,24 @@ def test_trigger_brief_makes_one_structured_call_and_keeps_only_known_choices(
     assert call["config"].response_mime_type == "application/json"
     assert call["config"].system_instruction == trigger_brief_instructions()
     assert call["contents"] == data_block(TriggerBriefRequest.model_validate(REQUEST))
+
+
+def test_trigger_brief_reports_the_tokens_it_used(models) -> None:
+    models.usage = SimpleNamespace(
+        prompt_token_count=812, candidates_token_count=240, thoughts_token_count=60
+    )
+
+    response = TestClient(app).post("/plan/trigger-brief", json=REQUEST)
+
+    assert response.json()["usage"] == {"inputTokens": 812, "outputTokens": 300}
+
+
+def test_trigger_brief_leaves_out_token_counts_the_model_did_not_send(models) -> None:
+    models.usage = SimpleNamespace(prompt_token_count=None, candidates_token_count=None)
+
+    response = TestClient(app).post("/plan/trigger-brief", json=REQUEST)
+
+    assert response.json()["usage"] == {"inputTokens": None, "outputTokens": None}
 
 
 def test_trigger_brief_uses_a_current_flash_model_by_default(models, monkeypatch) -> None:

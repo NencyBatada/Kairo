@@ -4,6 +4,7 @@ using Kairo.Modules.Triggers.Festivals;
 using Kairo.Modules.Triggers.Regions;
 using Kairo.Modules.Triggers.Rules;
 using Kairo.Modules.Triggers.Weather;
+using Kairo.SharedKernel.Agents;
 
 namespace Kairo.IntegrationTests.Triggers;
 

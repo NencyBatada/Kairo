@@ -83,6 +83,8 @@ namespace Kairo.Modules.Audit.Data.Migrations
 
                     b.HasIndex("BrandId", "Id");
 
+                    b.HasIndex("BrandId", "TargetType", "TargetId", "Id");
+
                     b.ToTable("Entries", "audit", t =>
                         {
                             t.HasTrigger("Entries_PreventChanges");

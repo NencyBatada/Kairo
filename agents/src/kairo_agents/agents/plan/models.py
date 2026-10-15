@@ -42,7 +42,13 @@ class DraftedBrief(CamelModel):
     timing: str
 
 
+class Usage(CamelModel):
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+
+
 class TriggerBriefResponse(CamelModel):
     brief: DraftedBrief
     model: str
     prompt_version: str
+    usage: Usage | None = None

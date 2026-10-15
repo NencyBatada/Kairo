@@ -1,6 +1,5 @@
-using Kairo.Contracts.CampaignRooms;
 using Kairo.Modules.CampaignRooms.Data;
-using Kairo.Modules.CampaignRooms.Rooms;
+using Kairo.Modules.CampaignRooms.Stages;
 
 namespace Kairo.Modules.CampaignRooms;
 
@@ -10,15 +9,17 @@ public sealed class CampaignRoomsModule : IModule
     {
         services.AddDbContext<CampaignRoomsDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, CampaignRoomsDbContext.SchemaName));
-        services.AddScoped<ICampaignRooms, RoomOpener>();
+        services.AddCampaignRooms();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
+        api.MapCampaignRooms();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
+        jobs.MapStageJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

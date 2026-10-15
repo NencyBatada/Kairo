@@ -14,7 +14,6 @@ internal static class TriggersSetup
         services.AddSingleton<TriggerSettings>();
         services.AddSingleton<IWeatherToken, ApplicationDefaultWeatherToken>();
         services.AddSingleton<WeatherClient>();
-        services.AddSingleton<PlanAgent>();
         services.AddSingleton<CheckRunner>();
         services.AddScoped<ForecastCache>();
         services.AddScoped<FestivalCalendar>();

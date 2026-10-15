@@ -174,6 +174,20 @@ Trigger rules turn a weather forecast, a festival date or a stock level into an 
 - **Stock.** Stock rules need unit counts. Add a `quantity` (or `stock_quantity` or `sell_on_google_quantity`) column to the catalogue file or feed.
 - **When a rule fires.** Kairo matches in-stock products in the rule's category. If an open opportunity already sells them, the trigger is added to it; otherwise a new card appears, marked with what triggered it. The Plan agent drafts a short brief, marketers get a notification, and the rule waits out its cooldown before firing again in the same region. A card nobody accepts expires when its condition ends.
 
+## Try a campaign room locally
+
+Accepting an opportunity opens a campaign room. The room moves through brief draft, creating, asset review, ready to launch, launching, live, results ready and closed, and every move is in the room's activity log.
+
+- **Agent work.** Each stage queues its agent work as a stage run. The core API picks runs up within a few seconds, and the worker sweeps any left behind every 5 minutes. Locally the API does it, or call the sweep yourself:
+
+  ```bash
+  curl -X POST "http://localhost:5200/jobs/campaigns/stage-runs"
+  ```
+
+- **The starter brief.** Accepting queues the Plan agent, which drafts a first brief from the opportunity's evidence, or reuses the brief drafted when a trigger fired. Smart Brief replaces it with the full brief later.
+- **Gates.** A marketer asks for brief and launch approval, and asset approval is asked for when the checked assets arrive. Only the approvers chosen for that gate in Settings can approve or send work back, with a comment. A marketer can discard a room before launch.
+- **Failures.** A failed agent run is retried twice, after 30 seconds and 2 minutes. After that the room shows "needs attention" and a marketer can try again.
+
 ## Run everything locally
 
 From the repository root:

@@ -44,6 +44,12 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
         return await client.PostAsync(query.Length > 0 ? $"/jobs/triggers/check?{query}" : "/jobs/triggers/check", null);
     }
 
+    public async Task<HttpResponseMessage> RunStageRunsAsync()
+    {
+        using var client = CreateClient();
+        return await client.PostAsync("/jobs/campaigns/stage-runs", null);
+    }
+
     public async Task<HttpResponseMessage> RefreshOpportunitiesAsync(Guid? brandId = null)
     {
         using var client = CreateClient();

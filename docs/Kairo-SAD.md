@@ -51,7 +51,7 @@ Everything runs on Google Cloud, and each part uses the latest stable release of
 | Operational database | Cloud SQL for SQL Server | Brands, users, Brand Kits, catalogue, campaign rooms, approvals, trigger rules, Brand Memory and the audit log |
 | Analytics | BigQuery, loaded nightly by the core worker from the Google Ads API, the GA4 Data API, sales uploads and the brand's own tables | Performance, sales and stock history, and measurement results |
 | Files | Cloud Storage | Brand files, catalogue imports, generated images, video and audio, and report PDFs |
-| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh and `kairo-opportunities-hourly` Radar refresh, and the `kairo-triggers-check` run every 15 minutes), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
+| Jobs and events | Cloud Scheduler (including the nightly `kairo-analytics-daily` run and the hourly `kairo-catalogue-hourly` feed refresh and `kairo-opportunities-hourly` Radar refresh, the `kairo-triggers-check` run every 15 minutes and the `kairo-stage-runs` sweep every 5 minutes), Cloud Tasks, Pub/Sub | Scheduled refreshes and checks, rate-limited and retried jobs, and events between modules |
 | Live updates | A SQL Server outbox, streamed as Server-Sent Events | Agent progress and status changes, pushed to the browser within about a second |
 | Identity and secrets | Google OAuth 2.0 client (Google sign-in and account connections), Secret Manager, Cloud KMS | User sign-in, each brand's consent to its Google accounts, API keys, and encrypted OAuth tokens |
 | AI safety | Model Armor | Screening untrusted text for prompt injection and malicious links |
@@ -110,7 +110,7 @@ The agent service is a stateless Python app built with ADK, running on Cloud Run
 
 ## 5. Key flows
 
-The core drives every flow: it moves the campaign room between states, queues agent work through Cloud Tasks and is the only part that calls Google Ads.
+The core drives every flow: it moves the campaign room between states, queues agent work as stage runs in SQL Server and is the only part that calls Google Ads.
 
 ```mermaid
 sequenceDiagram
@@ -158,7 +158,7 @@ SQL Server holds everything the app reads and writes, BigQuery holds history and
 | Catalogue | Product, Source, Import, StockEvent | Current details, stock and fixes on Product; every stock change in StockEvent; each import's counts and first 50 problems in Import |
 | Opportunities | Opportunity, WatchTopic, RefreshRun | Evidence and sources stored as JSON |
 | Triggers | TriggerRules, TriggerFirings, FestivalEvents, WeatherForecasts | Conditions stored as JSON; cooldown per rule and region; each brand keeps its own festival calendar; forecasts are shared by every brand and kept for two days |
-| Campaign rooms | CampaignRoom, StageRun, Brief, ProofPlan, Asset, CheckResult | Briefs are versioned; each StageRun records model, prompt version, tokens, cost and timing |
+| Campaign rooms | CampaignRoom, StageRun, Brief, ProofPlan, Asset, CheckResult | Briefs are versioned; each StageRun records model, prompt version, tokens, cost and timing, and the StageRuns table is also the agent job queue |
 | Approvals and launch | Approval, LaunchRecord, ProductAdMap | Approval holds the plan hash; ProductAdMap links products to ads for stock pauses |
 | Care and results | Recommendation, ImpactReport, ImpactLabAnalysis | Results and model diagnostics stored as JSON |
 | Memory and chat | MemoryEntry, MemoryUse, Conversation, Message | MemoryUse records which entries shaped which output |
@@ -224,14 +224,14 @@ Kairo runs in three Google Cloud projects (development, staging and production),
 | Core worker | Cloud Run service | Scales to zero; 60-minute request timeout; triggered by Cloud Scheduler, Cloud Tasks and Pub/Sub |
 | Agent service | Cloud Run service | Internal access only; long request timeout for video jobs |
 | Database | Cloud SQL for SQL Server | Express edition for the prototype; Standard with high availability in production; automated backups and point-in-time recovery |
-| Queues | Cloud Tasks | Separate queues for agent runs and Google Ads changes, each with its own rate limit. Notification emails go through an outbox in SQL Server, sent by the core API, so they need no queue. |
+| Queues | SQL Server and Cloud Tasks | Agent runs are StageRuns rows, written in the same transaction as the room's state change, claimed with a 10-minute lease by a loop in the core API and swept by the worker every 5 minutes; a failed run is retried twice with backoff. Google Ads changes use a Cloud Tasks queue with its own rate limit. Notification emails go through an outbox in SQL Server, sent by the core API, so they need no queue. |
 
 - **Region.** The app and its data run in asia-south1 (Mumbai), close to Indian brands. Gemini calls can use the global endpoint, while Veo and Imagen run in the nearest region that offers them.
 - **Delivery.** `deploy.bat` deploys Kairo with the gcloud CLI, taking the target environment (development, staging or production) as an argument; `deploy/environments.psd1` maps each to its project. It runs the tests, builds each service's container image with Cloud Build into Artifact Registry, runs the Migrator as a Cloud Run job inside the VPC to apply EF Core migrations, then deploys the services to Cloud Run. Shared resources such as the network, database, secrets and service accounts are created once per project by `deploy/setup.ps1`. The development project has no load balancer: the web app forwards `/api/*` to the core with a Google identity token.
 
 ## 10. Observability and operations
 
-One trace follows each request from the web app through the core, Cloud Tasks and the agent service, so a slow or failed stage can be pinned to its exact step.
+One trace follows each request from the web app through the core, its stage runs and the agent service, so a slow or failed stage can be pinned to its exact step.
 
 - **Tracing.** OpenTelemetry in all three parts sends traces to Cloud Trace.
 - **Logs.** Structured JSON logs carry the brand, campaign room, stage run and trace IDs.
@@ -268,6 +268,7 @@ Each BRD target maps to a specific design choice.
 | AD-8 Stock pauses | Rule-based code | A model's judgement | Predictable, testable and auditable |
 | AD-9 Live updates | Server-Sent Events fed by a SQL Server outbox | SignalR with a Memorystore backplane; Firestore listeners | Events commit with the change they describe, the worker publishes the same way as the API, several API instances need no backplane, and plain HTTP passes through the development project's web proxy and the load balancer |
 | AD-10 Model use | Prompting, structured output, grounding and evaluation | Fine-tuning models | No training data needed; the Brand Kit and Brand Memory carry each brand's style |
+| AD-11 Agent job queue | A StageRuns table in SQL Server with leases | Cloud Tasks | A run is queued in the same transaction as the state change that needs it, a run whose room moved on is dropped before it saves, and it needs no extra infrastructure or IAM; Brand Kit drafting already works this way |
 
 ## 13. Risks and open questions
 
