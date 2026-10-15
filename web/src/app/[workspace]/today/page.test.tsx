@@ -29,5 +29,6 @@ test("loads current workspace notifications for Today", async () => {
     params: { path: { brandId: "brand-1" }, query: { limit: 5 } },
   });
   expect(getNotifications).toHaveBeenCalledWith("/api/brands/{brandId}", { params: { path: { brandId: "brand-1" } } });
+  expect(getNotifications).toHaveBeenCalledWith("/api/brands/{brandId}/opportunities", { params: { path: { brandId: "brand-1" }, query: { status: "open", triggered: true } } });
   expect(screen.getByRole("heading", { name: "No recent updates" })).toBeTruthy();
 });

@@ -8,6 +8,7 @@ export function opportunityFilters(params: Record<string, string | string[] | un
   return {
     status: (statuses.includes(status as Status) ? status : "open") as Status,
     category: single("category").slice(0, 100),
+    triggered: ["true", "false"].includes(single("triggered")) ? single("triggered") === "true" : undefined,
     watched: single("watched") === "true" ? true : undefined,
     minScore: /^\d{1,3}$/.test(minimum) && Number(minimum) <= 100 ? Number(minimum) : undefined,
   };

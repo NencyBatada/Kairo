@@ -2,6 +2,7 @@ import { ExternalLink, Eye, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { TriggerEvidence } from "@/components/opportunities/trigger-evidence";
 import { growth, number, webUrl } from "@/components/opportunities/format";
 import { OpportunityProducts } from "@/components/opportunities/products";
 import { OpportunityTrend } from "@/components/opportunities/trend";
@@ -35,6 +36,7 @@ export default async function OpportunityPage({ params }: { params: Promise<{ wo
   return <div className="flex flex-col gap-8">
     <PageHeader eyebrow="Opportunity Radar" title={item.topic} description="The demand, products and evidence behind this opportunity." actions={<Link href={`/${handle}/opportunities`} className="text-small text-primary hover:underline">All opportunities</Link>} />
     <div className="flex flex-wrap gap-2"><Badge variant={item.status === "accepted" ? "success" : "neutral"}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Badge>{item.watched && <Badge><Eye className="size-3" aria-hidden="true" />Watched</Badge>}<p className="text-small text-muted-foreground">Last seen {dates.format(new Date(item.lastSeenAt))}</p></div>
+    {(item.triggers.length > 0 || item.trigger) && <TriggerEvidence triggers={item.triggers.length ? item.triggers : item.trigger ? [item.trigger] : []} brief={item.brief} briefStatus={item.briefStatus} handle={handle} timeZone={details.timeZone} />}
     <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">{[["Score / 100", number(item.score)], ["Month-on-month growth", growth(item.mom)], ["Year-on-year growth", growth(item.yoy)], ["Last month’s searches", number(item.lastMonthSearches)]].map(([label, value]) => <div key={label} className="min-w-0 rounded-lg border border-border bg-card p-4"><dt className="text-small text-muted-foreground">{label}</dt><dd className="mt-2 font-display text-display-md tabular-nums">{value}</dd></div>)}</dl>
     <OpportunityDecisions key={`${item.status}:${item.available}`} status={item.status} available={item.available} canDecide={workspace.roles.includes("marketer")} roomHref={item.roomId ? `/${handle}/campaigns/${item.roomId}` : undefined} accept={acceptOpportunity.bind(null, workspace.id, id, handle)} save={saveOpportunity.bind(null, workspace.id, id)} unsave={unsaveOpportunity.bind(null, workspace.id, id)} dismiss={dismissOpportunity.bind(null, workspace.id, id)} />
     <div className="grid items-start gap-5 xl:grid-cols-2">

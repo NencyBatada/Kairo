@@ -1,4 +1,6 @@
-import { Activity, Bell, ClipboardCheck, TrendingUp } from "lucide-react";
+import { Activity, Bell, ClipboardCheck, Zap } from "lucide-react";
+import Link from "next/link";
+import { OpportunityCard } from "@/components/opportunities/opportunity-card";
 import { EmptyState } from "@/components/empty-state";
 import { NotificationLink } from "@/components/notification-link";
 import { PageHeader } from "@/components/page-header";
@@ -18,11 +20,6 @@ const futureSections = [
     icon: ClipboardCheck,
   },
   {
-    title: "Top opportunities",
-    description: "Rising demand for your products will appear here when Opportunity Radar is available.",
-    icon: TrendingUp,
-  },
-  {
     title: "Live tests",
     description: "Campaign results and pacing will appear here when campaigns are live.",
     icon: Activity,
@@ -34,15 +31,20 @@ type TodayOverviewProps = {
   workspace: string;
   brandId: string;
   timeZone: string;
+  triggered?: components["schemas"]["OpportunityCard"][];
 };
 
-export function TodayOverview({ items, workspace, brandId, timeZone }: TodayOverviewProps) {
+export function TodayOverview({ items, workspace, brandId, timeZone, triggered = [] }: TodayOverviewProps) {
   const format = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone });
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader title="Today" description="What needs you this morning." />
       <TodayAgentJobs />
+      <section aria-labelledby="triggered-title" className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="triggered-title" className="text-base font-semibold">Triggered opportunities</h2><Link href={`/${workspace}/opportunities?triggered=true`} className="inline-flex min-h-8 items-center text-small text-primary hover:underline pointer-coarse:min-h-11">View triggered opportunities</Link></div>
+        {triggered.length ? <div className="grid items-start gap-5 xl:grid-cols-2">{triggered.map((item) => <OpportunityCard key={item.id} item={item} handle={workspace} heading="h3" />)}</div> : <EmptyState icon={Zap} as="h3" title="No triggered opportunities" description="When a weather, festival or stock rule fires, an opportunity to review appears here. Campaigns still need approval." className="py-10 md:py-12" />}
+      </section>
       <section aria-labelledby="recent-updates-title" className="flex flex-col gap-3">
         <h2 id="recent-updates-title" className="font-display text-display-sm text-foreground">
           Recent updates

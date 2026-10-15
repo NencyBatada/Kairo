@@ -3,6 +3,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 import { detail } from "./fixtures.test-data";
 import OpportunityPage from "./page";
+import { trigger, brief } from "@/components/opportunities/triggers.test-data";
 
 const { getWorkspace, coreApi, unwrap, get } = vi.hoisted(() => ({ getWorkspace: vi.fn(), coreApi: vi.fn(), unwrap: vi.fn(), get: vi.fn() }));
 vi.mock("@/lib/core-api/queries", () => ({ getWorkspace }));
@@ -18,6 +19,14 @@ beforeEach(() => {
   unwrap.mockImplementation(async (result) => result.data);
 });
 const page = () => OpportunityPage({ params: Promise.resolve({ workspace: "acme", id: "opp-1" }) });
+
+test("renders triggers on search opportunities that were joined and the suggested brief", async () => {
+  item = { ...item, source: "search", trigger, triggers: [trigger], brief, briefStatus: "drafted" };
+  render(await page());
+  expect(screen.getByRole("heading", { name: "What triggered this opportunity" })).toBeTruthy();
+  expect(screen.getByText(brief.title)).toBeTruthy();
+  expect(screen.getByRole("link", { name: /View rule/ })).toBeTruthy();
+});
 
 test("shows workspace-scoped evidence, all growth comparisons, regional demand and weighted score factors", async () => {
   render(await page());

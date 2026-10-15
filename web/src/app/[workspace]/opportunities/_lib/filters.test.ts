@@ -2,8 +2,15 @@ import { expect, test } from "vitest";
 
 import { opportunityFilters } from "./filters";
 
+test("accepts a triggered source filter without treating repeated or unknown values as false", () => {
+  expect(opportunityFilters({ triggered: "true" }).triggered).toBe(true);
+  expect(opportunityFilters({ triggered: "false" }).triggered).toBe(false);
+  expect(opportunityFilters({ triggered: ["true", "false"] }).triggered).toBeUndefined();
+  expect(opportunityFilters({ triggered: "bad" }).triggered).toBeUndefined();
+});
+
 test("accepts only supported filters and trims a category", () => {
-  expect(opportunityFilters({ status: "saved", category: " Trainers ", watched: "true", minScore: "70" })).toEqual({ status: "saved", category: "Trainers", watched: true, minScore: 70 });
+  expect(opportunityFilters({ status: "saved", category: " Trainers ", watched: "true", minScore: "70" })).toEqual({ status: "saved", category: "Trainers", triggered: undefined, watched: true, minScore: 70 });
 });
 
 test.each(["-1", "101", "NaN", "1.5", "1e2", ""] )("does not send an invalid minimum score %s to the service", (minScore) => {
@@ -11,7 +18,7 @@ test.each(["-1", "101", "NaN", "1.5", "1e2", ""] )("does not send an invalid min
 });
 
 test("ignores repeated query values and unsupported status values", () => {
-  expect(opportunityFilters({ status: ["new", "saved"], watched: "false", category: ["Shoes"], minScore: ["80"] })).toEqual({ status: "open", category: "", watched: undefined, minScore: undefined });
+  expect(opportunityFilters({ status: ["new", "saved"], watched: "false", category: ["Shoes"], minScore: ["80"] })).toEqual({ status: "open", category: "", triggered: undefined, watched: undefined, minScore: undefined });
   expect(opportunityFilters({ status: "anything" }).status).toBe("open");
   expect(opportunityFilters({ minScore: "0" }).minScore).toBe(0);
 });
