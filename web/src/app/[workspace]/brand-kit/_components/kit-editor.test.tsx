@@ -59,3 +59,12 @@ test("unsafe source references never become clickable links", () => {
   render(<KitEditor {...props} version={{ ...version, content: { voice: { sources: [{ kind: "page", ref: "javascript:alert(1)" }] } } }} />);
   expect(screen.queryByRole("link", { name: /javascript/ })).toBeNull();
 });
+
+test("validation errors identify the affected control for assistive technology", async () => {
+  const save = vi.fn(async () => ({ status: "error" as const, fieldErrors: { "content.colours[0].hex": ["Use a colour code like #E4572E."] } }));
+  render(<KitEditor {...props} save={save} />);
+  fireEvent.click(screen.getByRole("button", { name: "Save draft" }));
+  await waitFor(() => expect(screen.getByLabelText("Colour code 1").getAttribute("aria-invalid")).toBe("true"));
+  const id = screen.getByLabelText("Colour code 1").getAttribute("aria-describedby")!;
+  expect(document.getElementById(id)?.textContent).toContain("Use a colour code");
+});
