@@ -34,6 +34,13 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Instruction")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Model")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -66,6 +73,66 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "Version"));
 
                     b.ToTable("Briefs", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.BriefProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AppliedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.PrimitiveCollection<string>("Fields")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Instruction")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "CreatedAt"));
+
+                    b.ToTable("BriefProposals", "campaign_rooms");
                 });
 
             modelBuilder.Entity("Kairo.Modules.CampaignRooms.ProofPlans.ProofPlan", b =>
@@ -310,13 +377,36 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                             b1.Property<string>("Audience")
                                 .IsRequired();
 
+                            b1.PrimitiveCollection<string>("Audiences")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("CampaignTypes")
+                                .IsRequired();
+
                             b1.PrimitiveCollection<string>("Channels")
                                 .IsRequired();
+
+                            b1.Property<DateOnly?>("EndDate");
 
                             b1.Property<string>("Goal")
                                 .IsRequired();
 
                             b1.Property<string>("KeyMessage")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("KeyMessages")
+                                .IsRequired();
+
+                            b1.Property<string>("Kpi")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("LandingPages")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Languages")
+                                .IsRequired();
+
+                            b1.Property<string>("Objective")
                                 .IsRequired();
 
                             b1.Property<string>("Offer");
@@ -326,6 +416,8 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
 
                             b1.PrimitiveCollection<string>("Regions")
                                 .IsRequired();
+
+                            b1.Property<DateOnly?>("StartDate");
 
                             b1.Property<string>("Timing")
                                 .IsRequired();
@@ -343,6 +435,217 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
 
                             b1.WithOwner()
                                 .HasForeignKey("BriefId");
+
+                            b1.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefBudget", "Budget", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefId");
+
+                                    b2.Property<decimal>("Amount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefId");
+
+                                    b2.ToTable("Briefs", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefId");
+                                });
+
+                            b1.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefReason", "Reasons", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Field")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Reason")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Briefs", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefId");
+
+                                    b2.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefEvidence", "Evidence", b3 =>
+                                        {
+                                            b3.Property<Guid>("BriefReasonBriefContentBriefId");
+
+                                            b3.Property<int>("BriefReason__synthesizedOrdinal");
+
+                                            b3.Property<int>("__synthesizedOrdinal")
+                                                .ValueGeneratedOnAddOrUpdate();
+
+                                            b3.Property<string>("Label")
+                                                .IsRequired();
+
+                                            b3.Property<string>("Source");
+
+                                            b3.Property<string>("Value")
+                                                .IsRequired();
+
+                                            b3.HasKey("BriefReasonBriefContentBriefId", "BriefReason__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                            b3.ToTable("Briefs", "campaign_rooms");
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("BriefReasonBriefContentBriefId", "BriefReason__synthesizedOrdinal");
+                                        });
+
+                                    b2.Navigation("Evidence");
+                                });
+
+                            b1.Navigation("Budget");
+
+                            b1.Navigation("Reasons");
+                        });
+
+                    b.Navigation("Content")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.BriefProposal", b =>
+                {
+                    b.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefContent", "Content", b1 =>
+                        {
+                            b1.Property<Guid>("BriefProposalId");
+
+                            b1.Property<string>("Audience")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Audiences")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("CampaignTypes")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Channels")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("EndDate");
+
+                            b1.Property<string>("Goal")
+                                .IsRequired();
+
+                            b1.Property<string>("KeyMessage")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("KeyMessages")
+                                .IsRequired();
+
+                            b1.Property<string>("Kpi")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("LandingPages")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Languages")
+                                .IsRequired();
+
+                            b1.Property<string>("Objective")
+                                .IsRequired();
+
+                            b1.Property<string>("Offer");
+
+                            b1.PrimitiveCollection<string>("ProductIds")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Regions")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("StartDate");
+
+                            b1.Property<string>("Timing")
+                                .IsRequired();
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.HasKey("BriefProposalId");
+
+                            b1.ToTable("BriefProposals", "campaign_rooms");
+
+                            b1
+                                .ToJson("Content")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BriefProposalId");
+
+                            b1.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefBudget", "Budget", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefProposalId");
+
+                                    b2.Property<decimal>("Amount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefProposalId");
+
+                                    b2.ToTable("BriefProposals", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefProposalId");
+                                });
+
+                            b1.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefReason", "Reasons", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefProposalId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Field")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Reason")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefProposalId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("BriefProposals", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefProposalId");
+
+                                    b2.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefEvidence", "Evidence", b3 =>
+                                        {
+                                            b3.Property<Guid>("BriefReasonBriefContentBriefProposalId");
+
+                                            b3.Property<int>("BriefReason__synthesizedOrdinal");
+
+                                            b3.Property<int>("__synthesizedOrdinal")
+                                                .ValueGeneratedOnAddOrUpdate();
+
+                                            b3.Property<string>("Label")
+                                                .IsRequired();
+
+                                            b3.Property<string>("Source");
+
+                                            b3.Property<string>("Value")
+                                                .IsRequired();
+
+                                            b3.HasKey("BriefReasonBriefContentBriefProposalId", "BriefReason__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                            b3.ToTable("BriefProposals", "campaign_rooms");
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("BriefReasonBriefContentBriefProposalId", "BriefReason__synthesizedOrdinal");
+                                        });
+
+                                    b2.Navigation("Evidence");
+                                });
+
+                            b1.Navigation("Budget");
+
+                            b1.Navigation("Reasons");
                         });
 
                     b.Navigation("Content")

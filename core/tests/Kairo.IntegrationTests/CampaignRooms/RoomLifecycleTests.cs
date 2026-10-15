@@ -95,7 +95,7 @@ public sealed class RoomLifecycleTests
     public void The_tracker_names_the_agent_while_it_works_and_the_owner_when_it_fails()
     {
         var room = new Room { State = RoomStates.BriefDraft };
-        var working = new StageRun { Agent = StageAgents.Plan, Kind = StageKinds.StarterBrief, Status = StageRunStatuses.Running };
+        var working = new StageRun { Agent = StageAgents.Plan, Kind = StageKinds.Brief, Status = StageRunStatuses.Running };
 
         var busy = CampaignReader.Tracker(room, working, null, "Asha");
         var stuck = CampaignReader.Tracker(room, new StageRun { Agent = StageAgents.Plan, Status = StageRunStatuses.Failed }, null, "Asha");

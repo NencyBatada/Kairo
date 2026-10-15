@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -17,6 +18,7 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
     public DbSet<Brief> Briefs => Set<Brief>();
 
     public DbSet<ProofPlan> ProofPlans => Set<ProofPlan>();
+    public DbSet<BriefProposal> BriefProposals => Set<BriefProposal>();
 
     protected override string Schema => SchemaName;
 
@@ -65,7 +67,8 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             brief.Property(b => b.Origin).HasMaxLength(20);
             brief.Property(b => b.Model).HasMaxLength(100);
             brief.Property(b => b.PromptVersion).HasMaxLength(100);
-            brief.OwnsOne(b => b.Content, content => content.ToJson());
+            brief.Property(b => b.Instruction).HasMaxLength(BriefLimits.Instruction);
+            brief.OwnsOne(b => b.Content, Content);
             brief.Navigation(b => b.Content).IsRequired();
         });
 
@@ -76,5 +79,25 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             plan.HasIndex(p => new { p.BrandId, p.RoomId, p.Version }).IsUnique().IsClustered();
             plan.Property(p => p.Method).HasMaxLength(100);
         });
+        modelBuilder.Entity<BriefProposal>(proposal =>
+        {
+            proposal.ToTable("BriefProposals");
+            proposal.HasKey(p => p.Id).IsClustered(false);
+            proposal.HasIndex(p => new { p.BrandId, p.RoomId, p.CreatedAt }).IsClustered();
+            proposal.Property(p => p.Instruction).HasMaxLength(BriefLimits.Instruction);
+            proposal.Property(p => p.Summary).HasMaxLength(500);
+            proposal.Property(p => p.Model).HasMaxLength(100);
+            proposal.Property(p => p.PromptVersion).HasMaxLength(100);
+            proposal.OwnsOne(p => p.Content, Content);
+            proposal.Navigation(p => p.Content).IsRequired();
+        });
+    }
+
+    private static void Content<TOwner>(OwnedNavigationBuilder<TOwner, BriefContent> content)
+        where TOwner : class
+    {
+        content.ToJson();
+        content.OwnsOne(c => c.Budget);
+        content.OwnsMany(c => c.Reasons, reason => reason.OwnsMany(r => r.Evidence));
     }
 }

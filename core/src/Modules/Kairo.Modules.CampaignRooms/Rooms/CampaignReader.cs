@@ -146,7 +146,7 @@ internal sealed class CampaignReader(
 
     private static string Working(StageRun run) => run.Kind switch
     {
-        StageKinds.StarterBrief => "The Plan agent is drafting the brief.",
+        StageKinds.Brief or StageKinds.StarterBrief => "The Plan agent is drafting the brief.",
         _ => $"The {StageProgress.ActorName(run.Agent)} is working on this stage.",
     };
 
@@ -177,21 +177,28 @@ internal sealed class CampaignReader(
             marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null);
     }
 
-    private static CampaignBriefView BriefView(Brief brief) => new(
-        brief.Version,
-        brief.Origin,
-        brief.Content.Title,
-        brief.Content.Goal,
-        brief.Content.Audience,
-        brief.Content.KeyMessage,
-        brief.Content.Offer,
-        [.. brief.Content.Regions],
-        [.. brief.Content.ProductIds],
-        [.. brief.Content.Channels],
-        brief.Content.Timing,
-        brief.Model,
-        brief.PromptVersion,
-        brief.CreatedAt);
+    public static CampaignBriefView BriefView(Brief brief)
+    {
+        var content = brief.Content.Normalized();
+        var timing = content.StartDate is { } start && content.EndDate is { } end
+            ? $"{BriefChecks.Day(start)} to {BriefChecks.Day(end)}"
+            : content.Timing ?? "";
+        return new CampaignBriefView(
+            brief.Version,
+            brief.Origin,
+            content.Title,
+            content.Objective,
+            string.Join("; ", content.Audiences ?? []),
+            content.KeyMessages?.FirstOrDefault() ?? "",
+            content.Offer,
+            [.. content.Regions ?? []],
+            [.. content.ProductIds ?? []],
+            [.. content.CampaignTypes ?? []],
+            timing,
+            brief.Model,
+            brief.PromptVersion,
+            brief.CreatedAt);
+    }
 
     private static CampaignRunView RunView(StageRun run) => new(
         run.Id,

@@ -2,7 +2,9 @@ using System.Text.Json;
 
 namespace Kairo.Modules.CampaignRooms.Rooms;
 
-internal sealed record EvidenceRegion(string? Id, string? Name);
+internal sealed record EvidenceRegion(string? Id, string? Name, long? LastMonthSearches = null, double? Growth = null);
+
+internal sealed record EvidenceBids(decimal Low, decimal High);
 
 internal sealed record EvidenceProduct(Guid Id, string? Title);
 
@@ -28,7 +30,11 @@ internal sealed record RoomEvidence(
     EvidenceRegion[]? Regions,
     EvidenceProduct[]? Products,
     EvidenceTrigger? Trigger,
-    EvidenceBrief? Brief)
+    EvidenceBrief? Brief,
+    string[]? Keywords = null,
+    long? LastMonthSearches = null,
+    double? Growth = null,
+    EvidenceBids? Bids = null)
 {
     public static RoomEvidence Read(string json)
     {
@@ -52,10 +58,12 @@ internal sealed record RoomEvidence(
             .ToList();
 
     public IReadOnlyList<string> RegionNames() =>
+        RegionsInPlay().Select(region => region.Name!).ToList();
+
+    public IReadOnlyList<EvidenceRegion> RegionsInPlay() =>
         (Trigger?.Regions is { Length: > 0 } triggered ? triggered : Regions ?? [])
-            .Select(region => region.Name?.Trim())
-            .OfType<string>()
-            .Where(name => name.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(region => !string.IsNullOrWhiteSpace(region.Name))
+            .Select(region => region with { Name = region.Name!.Trim() })
+            .DistinctBy(region => region.Name!, StringComparer.OrdinalIgnoreCase)
             .ToList();
 }

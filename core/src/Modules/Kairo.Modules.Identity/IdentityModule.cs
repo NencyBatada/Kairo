@@ -25,6 +25,7 @@ public sealed class IdentityModule : IModule
         services.AddScoped<ISessionDirectory, SessionDirectory>();
         services.AddScoped<IBrandMembers, BrandMembers>();
         services.AddScoped<IApprovers, Approvers>();
+        services.AddScoped<IBudgetLimit, BudgetLimits>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)

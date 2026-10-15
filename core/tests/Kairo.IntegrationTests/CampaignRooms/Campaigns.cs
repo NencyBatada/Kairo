@@ -15,7 +15,7 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 
 public sealed class CampaignWorld : IAsyncDisposable
 {
-    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakePlan plan, FakeProof proof)
+    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof)
     {
         Proof = proof;
         Database = database;
@@ -36,7 +36,7 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public Member Approver { get; }
 
-    public FakePlan Plan { get; }
+    public FakeBriefPlan Plan { get; }
 
     public FakeProof Proof { get; }
 
@@ -53,13 +53,15 @@ public sealed class CampaignWorld : IAsyncDisposable
         var worker = new KairoWorkerFactory(database, api.GoogleApis, api.Clock.GetUtcNow());
         var sense = new FakeSense();
         sense.Attach(worker.Agents);
-        var plan = new FakePlan();
+        var plan = new FakeBriefPlan();
         plan.Attach(api.Agents);
         plan.Attach(worker.Agents);
         var proof = new FakeProof();
         proof.Attach(api.Agents);
         proof.Attach(worker.Agents);
         Radar.PlanDemand(api.GoogleApis.Keywords);
+        api.GoogleApis.Keywords.Bids["rain boots"] = (10_000_000, 30_000_000);
+        api.GoogleApis.Keywords.Bids["waterproof shoes"] = (14_000_000, 42_000_000);
         demand?.Invoke(sense, api.GoogleApis.Keywords);
         var brand = await Radar.BrandAsync(api);
         var approver = await Workspaces.JoinAsync(api, brand.Admin.Browser, brand.BrandId, "approver");
@@ -158,6 +160,12 @@ internal static class Campaigns
         await browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/activity{query}", Token);
 
     public static int Version(JsonElement detail) => detail.GetProperty("version").GetInt32();
+
+    public static Task<JsonElement> BriefAsync(HttpClient browser, Guid brandId, Guid roomId) =>
+        browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/brief", Token);
+
+    public static Task<HttpResponseMessage> EditBriefAsync(HttpClient browser, Guid brandId, Guid roomId, object body) =>
+        browser.PatchAsJsonAsync($"{Base(brandId)}/{roomId}/brief", body, Token);
 
     public static string Stage(JsonElement detail) => detail.GetProperty("stage").GetString()!;
 

@@ -37,18 +37,19 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         var drafted = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal("in_progress", Campaigns.Status(drafted));
         var brief = drafted.GetProperty("brief");
-        Assert.Equal((1, "starter", "Monsoon runners"), (brief.GetProperty("version").GetInt32(), brief.GetProperty("origin").GetString(), brief.GetProperty("title").GetString()));
-        Assert.Equal(("gemini-test", "plan-trigger-brief/1"), (brief.GetProperty("model").GetString(), brief.GetProperty("promptVersion").GetString()));
+        Assert.Equal((1, "drafted", "Monsoon runners"), (brief.GetProperty("version").GetInt32(), brief.GetProperty("origin").GetString(), brief.GetProperty("title").GetString()));
+        Assert.Equal(("gemini-test", "plan-brief/1"), (brief.GetProperty("model").GetString(), brief.GetProperty("promptVersion").GetString()));
         Assert.Single(brief.GetProperty("productIds").EnumerateArray());
         var run = drafted.GetProperty("runs")[1];
-        Assert.Equal(("plan", "starter_brief", "succeeded", 1), (run.GetProperty("agent").GetString(), run.GetProperty("kind").GetString(), run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));
+        Assert.Equal(("plan", "brief", "succeeded", 1), (run.GetProperty("agent").GetString(), run.GetProperty("kind").GetString(), run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));
         Assert.Equal((812, 240), (run.GetProperty("inputTokens").GetInt32(), run.GetProperty("outputTokens").GetInt32()));
         Assert.Equal("brief", drafted.GetProperty("actions").GetProperty("requestApproval").GetString());
 
         var request = Assert.Single(_world.Plan.Requests);
-        Assert.Equal("radar", request.GetProperty("trigger").GetProperty("source").GetString());
-        Assert.StartsWith("Searches for Monsoon footwear are rising.", request.GetProperty("trigger").GetProperty("summary").GetString());
-        Assert.Equal("Shoes > Rain", request.GetProperty("category").GetString());
+        var opportunity = request.GetProperty("opportunity");
+        Assert.Equal("radar", opportunity.GetProperty("source").GetString());
+        Assert.StartsWith("Searches for Monsoon footwear are rising.", opportunity.GetProperty("summary").GetString());
+        Assert.Equal("Shoes > Rain", opportunity.GetProperty("category").GetString());
         Assert.Equal(2, request.GetProperty("products").GetArrayLength());
 
         var activity = await Campaigns.ActivityAsync(_world.Marketer, _world.BrandId, roomId);
@@ -145,21 +146,28 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_trigger_brief_is_reused_without_asking_the_agent_again()
+    public async Task A_trigger_brief_seeds_the_full_brief_and_the_dates_stay_inside_the_moment()
     {
         var roomId = await _world.AcceptAsync();
-        await SetEvidenceAsync(_world.Database, roomId, """
-            {"topic":"Heavy rain in Mumbai","products":[],"brief":{"title":"Rain brief","goal":"Sell","audience":"Commuters","keyMessage":"Stay dry","offer":null,"regions":["Mumbai"],"productIds":["6f9619ff-8b86-d011-b42d-00c04fc964ff"],"channels":["search"],"timing":"This week","model":"gemini-trigger","promptVersion":"plan-trigger-brief/1"}}
+        var ends = _world.Api.Clock.GetUtcNow().AddDays(3).ToString("O");
+        await AddTriggerAsync(_world.Database, roomId, $$"""
+            {"source":"weather","summary":"Heavy rain in Mumbai","regions":[{"id":"mumbai","name":"Mumbai"}],"conditionEndsAt":"{{ends}}"}
+            """, """
+            {"title":"Rain brief","goal":"Sell","audience":"Commuters","keyMessage":"Stay dry","offer":null,"regions":["Mumbai"],"productIds":[],"channels":["search"],"timing":"This week","model":"gemini-trigger","promptVersion":"plan-trigger-brief/1"}
             """);
 
         Assert.Equal(1, await _world.RunStagesAsync());
 
-        var room = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
-        var brief = room.GetProperty("brief");
-        Assert.Equal(("trigger", "Rain brief", "gemini-trigger"), (brief.GetProperty("origin").GetString(), brief.GetProperty("title").GetString(), brief.GetProperty("model").GetString()));
-        Assert.Equal(["6f9619ff-8b86-d011-b42d-00c04fc964ff"], brief.GetProperty("productIds").EnumerateArray().Select(id => id.GetString()));
-        Assert.Equal(JsonValueKind.Null, room.GetProperty("runs")[0].GetProperty("inputTokens").ValueKind);
-        Assert.Empty(_world.Plan.Requests);
+        var request = Assert.Single(_world.Plan.Requests);
+        Assert.Equal("weather", request.GetProperty("opportunity").GetProperty("source").GetString());
+        Assert.Equal(["Mumbai"], request.GetProperty("opportunity").GetProperty("regions").EnumerateArray().Select(region => region.GetProperty("name").GetString()));
+        Assert.Equal("Rain brief", request.GetProperty("seed").GetProperty("title").GetString());
+        var latest = request.GetProperty("dates").GetProperty("latestEnd").GetString();
+        Assert.Equal(latest, request.GetProperty("dates").GetProperty("suggestedEnd").GetString());
+
+        var brief = (await Campaigns.BriefAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("brief");
+        Assert.Equal(("drafted", latest), (brief.GetProperty("origin").GetString(), brief.GetProperty("endDate").GetString()));
+        Assert.Equal(["Mumbai"], brief.GetProperty("regions").EnumerateArray().Select(region => region.GetString()));
     }
 
     [Fact]
@@ -218,6 +226,23 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
             """;
         command.Parameters.AddWithValue("@room", roomId);
         command.Parameters.AddWithValue("@evidence", evidence);
+        await command.ExecuteNonQueryAsync(Token);
+    }
+
+    private static async Task AddTriggerAsync(string database, Guid roomId, string trigger, string brief)
+    {
+        await using var connection = new SqlConnection(database);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            UPDATE campaign_rooms.Rooms
+            SET Evidence = JSON_MODIFY(JSON_MODIFY(Evidence, '$.trigger', JSON_QUERY(@trigger)), '$.brief', JSON_QUERY(@brief))
+            WHERE Id = @room;
+            """;
+        command.Parameters.AddWithValue("@room", roomId);
+        command.Parameters.AddWithValue("@trigger", trigger);
+        command.Parameters.AddWithValue("@brief", brief);
         await command.ExecuteNonQueryAsync(Token);
     }
 

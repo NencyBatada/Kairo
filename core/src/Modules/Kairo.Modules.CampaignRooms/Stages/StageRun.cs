@@ -60,4 +60,5 @@ internal static class StageKinds
 {
     public const string StarterBrief = "starter_brief";
     public const string ProofPlan = "proof_plan";
+    public const string Brief = "brief";
 }

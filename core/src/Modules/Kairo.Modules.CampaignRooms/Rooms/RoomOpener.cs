@@ -29,7 +29,7 @@ internal sealed class RoomOpener(CampaignRoomsDbContext db, StageQueue stages, R
         };
         db.Rooms.Add(room);
         await db.SaveChangesAsync(cancellationToken);
-        var run = await stages.EnqueueAsync(room, StageKinds.StarterBrief, opening.OpenedBy, cancellationToken);
+        var run = await stages.EnqueueAsync(room, StageKinds.Brief, opening.OpenedBy, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await audit.RecordAsync(
             new AuditRecord("campaign_room.opened", AuditTarget, room.Id.ToString(), After: new { room.Title, room.State, room.OpportunityId, runId = run.Id }),
