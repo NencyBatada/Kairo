@@ -40,6 +40,7 @@ if (!string.IsNullOrWhiteSpace(mailSender) && !string.IsNullOrWhiteSpace(mailSen
 var worker = builder.AddProject<Projects.Kairo_Worker>("worker")
     .WithReference(sql).WaitFor(sql)
     .WithReference(agents)
+    .WithEnvironment("Kairo__Agents__Url", agents.GetEndpoint("http"))
     .WaitForCompletion(migrator)
     .WithEnvironment("Authentication__Google__ClientId", googleClientId)
     .WithEnvironment("Authentication__Google__ClientSecret", googleClientSecret)

@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Kairo.IntegrationTests.Opportunities;
 using Kairo.Modules.Measurement.Feeds;
 using Microsoft.AspNetCore.WebUtilities;
 using MimeKit;
@@ -32,6 +33,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public ConcurrentQueue<string> Revoked { get; } = new();
 
     public FakeBigQuery BigQuery { get; } = new();
+
+    public FakeKeywordPlanner Keywords { get; } = new();
 
     public bool RevocationFails { get; set; }
 
@@ -254,6 +257,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             ("googleads.googleapis.com", "/v25/customers:listAccessibleCustomers") =>
                 Json(HttpStatusCode.OK, new { resourceNames = new[] { "customers/1111111111", "customers/2222222222", "customers/3333333333" } }),
             ("googleads.googleapis.com", _) when !AdsReachable(path, login) => new HttpResponseMessage(HttpStatusCode.Forbidden),
+            ("googleads.googleapis.com", _) when Keywords.Handle(path, body) is { } planned => planned,
             ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:searchStream", StringComparison.Ordinal) => AdsStream(path, body, login),
             ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:search", StringComparison.Ordinal) =>
                 body.Contains("FROM customer_client", StringComparison.Ordinal) ? AdsClients(path) : AdsCustomer(path),
