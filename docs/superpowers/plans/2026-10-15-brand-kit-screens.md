@@ -51,3 +51,12 @@ Files: `page.tsx`, `page.test.tsx`, `_components/drafting-form.tsx`, `drafting-f
 - [ ] Inspect the running screen at desktop and phone widths using representative data; check keyboard labels, overflow and confirmation behaviour.
 - [ ] Request a focused code review, fix important findings with regression tests and rerun affected checks.
 - [ ] Commit and push `feature/brand-kit-screens`. Keep the branch and worktree for user merge; leave task status in progress until integration is confirmed.
+
+## Verification record
+
+- 418 web tests passed across 67 files, including 36 Brand Kit regression tests; ESLint and production build passed.
+- Local browser QA against a contract mock verified saving a voice edit, retained source evidence, save feedback and opening/cancelling approval with focus initially on Cancel.
+- Browser preview showed no horizontal overflow at the observed narrow viewport (page 406 px, viewport 427 px). The in-app browser returned blank captures during explicit viewport overrides; exact 320 px visual verification remains to be done in development.
+- Read-only code review found a changed-draft discard confirmation and unassociated field errors. Both were reproduced in failing tests and fixed; focused tests and the full suite passed afterward.
+- The existing core DELETE draft endpoint has no revision precondition. The screen invalidates open confirmations when received live state changes; atomic protection against changes before event delivery requires a future core contract change.
+- Full development-environment verification and user merge into develop remain outstanding. The task stays in progress.
