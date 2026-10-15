@@ -15,6 +15,7 @@ internal static partial class ProductValues
     public const int MaxUrlLength = 2000;
     public const int MaxAdditionalImages = 10;
     public const decimal MaxAmount = 999_999_999_999_999m;
+    public const int MaxQuantity = 100_000_000;
 
     private static readonly string[] Availabilities = ["in_stock", "out_of_stock", "preorder", "backorder"];
 
@@ -116,6 +117,24 @@ internal static partial class ProductValues
         }
 
         warn(Attributes.Gtin, "The GTIN isn't 8 to 14 digits, so it was left empty.");
+        return null;
+    }
+
+    public static int? Quantity(string? value, Action<string, string> warn)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        if (decimal.TryParse(value.Replace(",", ""), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number)
+            && number == decimal.Truncate(number)
+            && number <= MaxQuantity)
+        {
+            return (int)number;
+        }
+
+        warn(Attributes.Quantity, "The quantity isn't a whole number of units from 0 up, so it was left empty.");
         return null;
     }
 

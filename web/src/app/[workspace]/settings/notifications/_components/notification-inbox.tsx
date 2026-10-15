@@ -18,10 +18,9 @@ type NotificationInboxProps = {
   workspace: string;
   page: NotificationPage;
   timeZone: string;
-  olderHref: (before: string) => string;
 };
 
-export function NotificationInbox({ brandId, workspace, page, timeZone, olderHref }: NotificationInboxProps) {
+export function NotificationInbox({ brandId, workspace, page, timeZone }: NotificationInboxProps) {
   const format = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone });
   const unreadCount = Number(page.unreadCount);
 
@@ -78,7 +77,7 @@ export function NotificationInbox({ brandId, workspace, page, timeZone, olderHre
         </ul>
       </Card>
       {page.nextBefore !== null && page.nextBefore !== undefined && (
-        <Link href={olderHref(String(page.nextBefore))} className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "self-start")}>
+        <Link href={`/${workspace}/settings/notifications?before=${encodeURIComponent(String(page.nextBefore))}`} className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "self-start")}>
           Older notifications
         </Link>
       )}

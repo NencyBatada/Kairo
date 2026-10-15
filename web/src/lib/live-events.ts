@@ -13,6 +13,8 @@ export const WORKSPACE_LIVE_EVENTS = [
   "opportunities.refreshed",
   "opportunity.changed",
   "opportunity_topics.changed",
+  "trigger_rules.changed",
+  "festivals.changed",
   "notification.created",
   "notifications.read",
 ] as const;

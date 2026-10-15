@@ -45,7 +45,6 @@ export default async function NotificationsPage({
           workspace={handle}
           page={page}
           timeZone={details.timeZone}
-          olderHref={(cursor) => `/${handle}/settings/notifications?before=${encodeURIComponent(cursor)}`}
         />
       </section>
       <section aria-labelledby="email-settings-title" className="flex flex-col gap-4">

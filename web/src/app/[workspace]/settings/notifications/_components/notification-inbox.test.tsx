@@ -27,7 +27,6 @@ test("lists notifications with links and an unread count", () => {
       brandId="brand-1"
       workspace="acme"
       timeZone="Asia/Kolkata"
-      olderHref={() => "/acme/settings/notifications?before=1"}
       page={{ items: [item], unreadCount: 1, nextBefore: null }}
     />,
   );
@@ -43,7 +42,6 @@ test("shows an empty state when there are no notifications", () => {
       brandId="brand-1"
       workspace="acme"
       timeZone="UTC"
-      olderHref={() => "/acme/settings/notifications"}
       page={{ items: [], unreadCount: 0, nextBefore: null }}
     />,
   );
@@ -58,7 +56,6 @@ test("marks a notification read when it is opened from the list", async () => {
       brandId="brand-1"
       workspace="acme"
       timeZone="Asia/Kolkata"
-      olderHref={() => "/acme/settings/notifications"}
       page={{ items: [item], unreadCount: 1, nextBefore: null }}
     />,
   );
@@ -67,4 +64,17 @@ test("marks a notification read when it is opened from the list", async () => {
 
   await waitFor(() => expect(markNotificationRead).toHaveBeenCalledWith("brand-1", 9));
   await waitFor(() => expect(push).toHaveBeenCalledWith("/acme/settings/connections"));
+});
+
+test("links to older notifications when there are more", () => {
+  render(
+    <NotificationInbox
+      brandId="brand-1"
+      workspace="acme"
+      timeZone="UTC"
+      page={{ items: [item], unreadCount: 1, nextBefore: 5 }}
+    />,
+  );
+
+  expect(screen.getByRole("link", { name: "Older notifications" }).getAttribute("href")).toBe("/acme/settings/notifications?before=5");
 });

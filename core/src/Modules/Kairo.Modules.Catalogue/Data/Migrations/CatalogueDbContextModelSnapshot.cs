@@ -220,6 +220,9 @@ namespace Kairo.Modules.Catalogue.Data.Migrations
                         .HasPrecision(19, 4)
                         .HasColumnType("decimal(19,4)");
 
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset?>("RemovedAt")
                         .HasColumnType("datetimeoffset");
 

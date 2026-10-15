@@ -16,6 +16,9 @@ internal static class Attributes
     public const string Brand = "brand";
     public const string Gtin = "gtin";
     public const string ItemGroupId = "item_group_id";
+    public const string Quantity = "quantity";
+
+    public static readonly string[] QuantityNames = [Quantity, "stock_quantity", "sell_on_google_quantity"];
 
     public static readonly string[] ListValued = [AdditionalImageLink, ProductType];
 

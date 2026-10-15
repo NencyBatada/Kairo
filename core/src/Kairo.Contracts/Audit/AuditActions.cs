@@ -45,6 +45,17 @@ public static class AuditActions
         new("opportunity_topic.added", "Added a watched or ignored topic"),
         new("opportunity_topic.removed", "Removed a watched or ignored topic"),
         new("campaign_room.opened", "Opened a campaign room"),
+        new("trigger_rule.created", "Created a trigger rule"),
+        new("trigger_rule.updated", "Changed a trigger rule"),
+        new("trigger_rule.paused", "Paused a trigger rule"),
+        new("trigger_rule.resumed", "Resumed a trigger rule"),
+        new("trigger_rule.activated", "Turned on a suggested trigger rule"),
+        new("trigger_rule.deleted", "Deleted a trigger rule"),
+        new("trigger_rule.suggested", "Suggested a trigger rule"),
+        new("trigger.fired", "Fired a trigger rule"),
+        new("festival.added", "Added a festival or event"),
+        new("festival.updated", "Changed a festival or event"),
+        new("festival.removed", "Removed a festival or event"),
     ];
 
     private static readonly Dictionary<string, string> Labels = All.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);

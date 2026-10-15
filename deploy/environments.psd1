@@ -6,7 +6,7 @@
         SqlEdition          = 'SQLSERVER_2022_EXPRESS'
         SqlHighAvailability = $false
         MinInstances        = @{ web = 0; api = 0 }
-        MailSender          = ''
+        MailSender          = 'evolixgcpadmin@gmail.com'
     }
     staging     = @{ Project = '' }
     production  = @{ Project = '' }

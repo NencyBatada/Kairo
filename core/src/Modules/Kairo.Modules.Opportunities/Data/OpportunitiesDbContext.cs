@@ -52,6 +52,13 @@ internal sealed class OpportunitiesDbContext(DbContextOptions<OpportunitiesDbCon
                 reasons.ToJson();
                 reasons.OwnsMany(r => r.Sources);
             });
+            opportunity.OwnsMany(o => o.Triggers, triggers =>
+            {
+                triggers.ToJson();
+                triggers.OwnsMany(t => t.Regions);
+            });
+            opportunity.OwnsOne(o => o.Brief, brief => brief.ToJson());
+            opportunity.Property(o => o.BriefStatus).HasMaxLength(20);
         });
 
         modelBuilder.Entity<WatchTopic>(topic =>
