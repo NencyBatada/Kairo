@@ -20,9 +20,18 @@ beforeEach(() => {
 });
 const page = (query = {}) => OpportunitiesPage({ params: Promise.resolve({ workspace: "acme" }), searchParams: Promise.resolve(query) });
 
+test("applies and clears the triggered source filter", async () => {
+  const view = render(await page({ triggered: "true" }));
+  expect((screen.getByLabelText("Source") as HTMLSelectElement).value).toBe("true");
+  expect(get.mock.calls[0][1].params.query.triggered).toBe(true);
+  expect(screen.getByRole("link", { name: "Clear filters" })).toBeTruthy();
+  view.rerender(await page());
+  expect((screen.getByLabelText("Source") as HTMLSelectElement).value).toBe("");
+});
+
 test("loads ranked live opportunities with workspace-scoped filters and local refresh time", async () => {
-  render(await page({ status: "saved", minScore: "60", category: "Trainers", watched: "true" }));
-  expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/opportunities", { params: { path: { brandId: "brand-1" }, query: { status: "saved", category: "Trainers", watched: true, minScore: 60 } } });
+  render(await page({ status: "saved", minScore: "60", category: "Trainers", triggered: undefined, watched: "true" }));
+  expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/opportunities", { params: { path: { brandId: "brand-1" }, query: { status: "saved", category: "Trainers", triggered: undefined, watched: true, minScore: 60 } } });
   expect(screen.getByRole("heading", { level: 1, name: "Opportunities" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Waterproof trainers" }).getAttribute("href")).toBe("/acme/opportunities/opportunity-1");
   expect(screen.getByText("+42.0%")).toBeTruthy();

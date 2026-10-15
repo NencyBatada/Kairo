@@ -1,0 +1,3 @@
+import type { components } from "@/lib/core-api/schema";
+export const trigger: components["schemas"]["TriggerView"] = { firingId: "firing-1", ruleId: "rule-1", ruleName: "Rain in Mumbai", source: "weather", summary: "Heavy rain is forecast within three days.", regions: [{ id: "mumbai", name: "Mumbai" }], firedAt: "2026-10-15T01:00:00Z", conditionEndsAt: "2026-10-18T01:00:00Z", ended: false };
+export const brief: components["schemas"]["BriefView"] = { title: "Ready for rain", goal: "Introduce waterproof trainers", audience: "Mumbai commuters", keyMessage: "Keep your feet dry.", offer: null, regions: ["Mumbai"], productIds: ["product-1"], channels: ["Search"], timing: "Before the rain arrives", model: null, promptVersion: null, draftedAt: "2026-10-15T01:05:00Z" };

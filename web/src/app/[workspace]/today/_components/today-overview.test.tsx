@@ -5,6 +5,8 @@ import { expect, test, vi } from "vitest";
 import { useLiveDispatch, WorkspaceLiveProvider } from "@/components/workspace-live-provider";
 
 import { TodayOverview } from "./today-overview";
+import { opportunity } from "@/components/opportunities/fixtures.test-data";
+import { trigger } from "@/components/opportunities/triggers.test-data";
 
 const { markNotificationRead } = vi.hoisted(() => ({ markNotificationRead: vi.fn() }));
 
@@ -20,6 +22,15 @@ const notification = {
   createdAt: "2026-10-14T09:30:00Z",
   readAt: null,
 };
+
+test("Today shows triggered cards with links to the detail and filtered Radar", () => {
+  render(<TodayOverview items={[]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" triggered={[{ ...opportunity, trigger }]} />);
+  expect(screen.getByRole("heading", { level: 3, name: opportunity.topic })).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 4, name: /Matching products/ })).toBeTruthy();
+  expect(screen.getByText("Weather trigger")).toBeTruthy();
+  expect(screen.getByRole("link", { name: "View triggered opportunities" }).getAttribute("href")).toBe("/acme/opportunities?triggered=true");
+  expect(screen.queryByText("No triggered opportunities")).toBeNull();
+});
 
 test("shows real recent updates without pretending they are pending approvals", () => {
   render(<TodayOverview items={[notification]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" />);
@@ -37,11 +48,12 @@ test("shows real recent updates without pretending they are pending approvals", 
 test("explains unavailable feeds and has a distinct empty updates state", () => {
   render(<TodayOverview items={[]} workspace="acme" brandId="brand-1" timeZone="Asia/Kolkata" />);
 
-  for (const title of ["No recent updates", "Approvals", "Top opportunities", "Live tests"]) {
+  for (const title of ["No recent updates", "Approvals", "Triggered opportunities", "Live tests"]) {
     expect(screen.getByRole("heading", { name: title })).toBeTruthy();
   }
   expect(screen.getByText(/when campaign approvals are available/i)).toBeTruthy();
-  expect(screen.getByText(/when Opportunity Radar is available/i)).toBeTruthy();
+  expect(screen.getByText(/When a weather, festival or stock rule fires/)).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 3, name: "No triggered opportunities" })).toBeTruthy();
   expect(screen.getByText(/when campaigns are live/i)).toBeTruthy();
 });
 
