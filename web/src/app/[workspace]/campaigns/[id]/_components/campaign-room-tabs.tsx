@@ -12,5 +12,5 @@ const tabs = [
 export function CampaignRoomTabs({ workspace, roomId }: { workspace: string; roomId: string }) {
   const base = `/${workspace}/campaigns/${encodeURIComponent(roomId)}`;
 
-  return <LinkTabs label="Campaign room" className="mt-6" tabs={tabs.map((tab) => ({ href: `${base}/${tab.segment}`, label: tab.label }))} />;
+  return <LinkTabs label="Campaign room" tabs={[{ href: base, label: "Overview", exact: true }, ...tabs.map((tab) => ({ href: `${base}/${tab.segment}`, label: tab.label }))]} />;
 }

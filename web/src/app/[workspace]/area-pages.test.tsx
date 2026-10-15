@@ -4,9 +4,7 @@ import { expect, test } from "vitest";
 
 import AssetsPage from "./campaigns/[id]/assets/page";
 import BriefPage from "./campaigns/[id]/brief/page";
-import EvidencePage from "./campaigns/[id]/evidence/page";
 import LaunchPage from "./campaigns/[id]/launch/page";
-import CampaignRoomPage from "./campaigns/[id]/page";
 import PerformancePage from "./campaigns/[id]/performance/page";
 import ResultsPage from "./campaigns/[id]/results/page";
 import CampaignsPage from "./campaigns/page";
@@ -24,8 +22,6 @@ test.each([
 });
 
 test.each([
-  ["the room overview", CampaignRoomPage, "Nothing here yet"],
-  ["Evidence", EvidencePage, "No evidence yet"],
   ["Brief", BriefPage, "No brief yet"],
   ["Assets", AssetsPage, "No assets yet"],
   ["Launch", LaunchPage, "Not ready to launch"],
