@@ -45,6 +45,8 @@ public sealed partial class FakeBigQuery
 
     public List<SalesTableRow> SalesTableRows { get; } = [];
 
+    public ConcurrentDictionary<string, List<string?[]>> Selects { get; } = new();
+
     public int SalesPageSize { get; set; } = 2;
 
     public int Count(string call) => Calls.Count(entry => entry == call);
@@ -191,6 +193,19 @@ public sealed partial class FakeBigQuery
             return Json(HttpStatusCode.BadRequest, new { error = new { message = "Quota exceeded" } });
         }
 
+        if (sql.TrimStart().StartsWith("SELECT", StringComparison.Ordinal))
+        {
+            var source = SelectSource().Match(sql);
+            return source.Success && Selects.TryGetValue(source.Groups["table"].Value, out var answer)
+                ? Json(HttpStatusCode.OK, new
+                {
+                    jobComplete = true,
+                    jobReference = new { projectId = KairoProject, jobId = $"select_{Guid.NewGuid():N}" },
+                    rows = answer.Select(row => new { f = row.Select(cell => new { v = cell }).ToArray() }).ToArray(),
+                })
+                : Json(HttpStatusCode.NotFound, new { error = new { message = "Not found: Table" } });
+        }
+
         var target = DeleteTarget().Match(sql);
         if (!target.Success)
         {
@@ -290,4 +305,7 @@ public sealed partial class FakeBigQuery
 
     [GeneratedRegex(@"FROM `[^.`]+\.[^.`]+\.(?<table>_staging_[^`]+)`;")]
     private static partial Regex StagingSource();
+
+    [GeneratedRegex(@"FROM `[^.`]+\.[^.`]+\.(?<table>[^`]+)`")]
+    private static partial Regex SelectSource();
 }

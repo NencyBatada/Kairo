@@ -1,5 +1,7 @@
+using Kairo.Contracts.Measurement;
 using Kairo.Modules.Measurement.Data;
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.Modules.Measurement.History;
 
 namespace Kairo.Modules.Measurement;
 
@@ -10,6 +12,7 @@ public sealed class MeasurementModule : IModule
         services.AddDbContext<MeasurementDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, MeasurementDbContext.SchemaName));
         services.AddFeeds();
+        services.AddScoped<IRegionHistory, RegionHistoryReader>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
