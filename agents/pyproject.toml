@@ -7,8 +7,11 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi>=0.141.1",
     "google-adk>=2.11.0",
+    "google-cloud-texttospeech>=2.38.0",
     "google-genai>=2.29.0",
+    "imageio-ffmpeg>=0.6.0",
     "numpy>=2.5.4",
+    "pillow>=12.3.0",
     "uvicorn[standard]>=0.54.0",
 ]
 
