@@ -31,7 +31,7 @@ internal sealed class LiftMeasurer(
     ILogger<LiftMeasurer> logger)
 {
     public const int EarlyAfterDays = 7;
-    public static readonly TimeSpan FinalWait = TimeSpan.FromDays(7);
+    public const int FinalWaitDays = 7;
     public static readonly AuditActor Actor = AuditActor.Agent("Prove agent", "prove");
 
     public static LiveEvent Changed(Guid roomId) => new("measurement.lift_changed", new { campaignId = roomId }, LiveAudience.Everyone);
@@ -79,7 +79,7 @@ internal sealed class LiftMeasurer(
         var covered = await coverage.ThroughAsync(Kpi(test.Kpi), cancellationToken);
         DateOnly through;
         if (covered is { } date && date >= last) through = last;
-        else if (today.DayNumber > last.DayNumber + (int)FinalWait.TotalDays) through = covered is { } some && some < last ? some : last;
+        else if (today.DayNumber > last.DayNumber + FinalWaitDays) through = covered is { } some && some < last ? some : last;
         else return false;
         return await MeasureAsync(brand.Id, test, false, start, through, end, cancellationToken);
     }
@@ -112,7 +112,8 @@ internal sealed class LiftMeasurer(
         var unit = plan.Unit == "state" ? RegionUnit.State : RegionUnit.City;
         var series = (await history.DailyAsync(brandId, unit, from, reading.ThroughDate, cancellationToken))
             .Regions.ToDictionary(region => region.Id, StringComparer.Ordinal);
-        var places = plan.TestRegions.Select(region => (Region: region, Test: true)).Concat(plan.Holdouts.Select(region => (Region: region, Test: false))).ToList();
+        var places = plan.TestRegions.Select(region => (Region: region, Test: true)).Concat(plan.Holdouts.Select(region => (Region: region, Test: false)))
+            .DistinctBy(place => place.Region.Id, StringComparer.Ordinal).ToList();
         if (places.All(place => !place.Test) || places.All(place => place.Test))
         {
             reading.Reason = LiftReasons.NoData;
