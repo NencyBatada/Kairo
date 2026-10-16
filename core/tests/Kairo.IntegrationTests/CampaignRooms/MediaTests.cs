@@ -14,7 +14,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
     public async Task Images_follow_the_copy_in_each_size_the_campaign_needs()
@@ -22,6 +22,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
         var roomId = await _world.OpenWithBriefAsync();
         await _world.ApproveBriefAsync(roomId);
 
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
@@ -67,6 +68,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
 
         var shots = Assert.Single(_world.Media.ImageRequests).GetProperty("shots").EnumerateArray().ToList();
@@ -101,6 +103,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
     {
         var roomId = await DemandGenRoomAsync();
 
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
@@ -142,9 +145,11 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, skipped.StatusCode);
         var detail = await skipped.Content.ReadFromJsonAsync<JsonElement>(Token);
-        Assert.Equal("in_progress", Campaigns.Status(detail));
+        Assert.Equal("agent_working", Campaigns.Status(detail));
         Assert.False(detail.GetProperty("actions").GetProperty("continueWithoutVideo").GetBoolean());
         Assert.Equal(JsonValueKind.Null, detail.GetProperty("actions").GetProperty("retryRun").ValueKind);
+        Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Equal("in_progress", Campaigns.Status(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)));
         Assert.NotEmpty(Images(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId)));
         var actions = (await Campaigns.ActivityAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("entries").EnumerateArray().Select(entry => entry.GetProperty("action").GetString());
         Assert.Contains("asset.video_skipped", actions);
@@ -229,7 +234,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
     {
         await ConnectYouTubeAsync();
         var roomId = await DemandGenRoomAsync();
-        for (var run = 0; run < 3; run++)
+        for (var run = 0; run < 4; run++)
         {
             Assert.Equal(1, await _world.RunStagesAsync());
         }
@@ -238,6 +243,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
         _world.Media.Generation = 2;
         using var warmer = await Campaigns.AssetActionAsync(_world.Marketer, _world.BrandId, roomId, film.GetProperty("id").GetGuid(), "regenerate", new { version = 1, instruction = "Make the voiceover warmer" });
         Assert.Equal(HttpStatusCode.OK, warmer.StatusCode);
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
 
         Assert.Single(_world.Media.FootageRequests);
@@ -316,6 +322,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
     {
         var roomId = await _world.OpenWithBriefAsync();
         await _world.ApproveBriefAsync(roomId);
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         return roomId;

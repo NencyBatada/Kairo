@@ -7,7 +7,6 @@ using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.Live;
 using Kairo.IntegrationTests.Opportunities;
 using Kairo.IntegrationTests.Triggers;
-using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,10 +64,10 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public HttpClient Admin => Brand.Admin.Browser;
 
-    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null, bool holdChecks = false)
+    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null)
     {
         var database = await IsolatedDatabase.CreateAsync(sqlServer);
-        var api = new KairoApiFactory(database, holdChecks ? WithoutChecks : null);
+        var api = new KairoApiFactory(database);
         var worker = new KairoWorkerFactory(database, api.GoogleApis, api.Clock.GetUtcNow());
         var sense = new FakeSense();
         sense.Attach(worker.Agents);
@@ -99,14 +98,6 @@ public sealed class CampaignWorld : IAsyncDisposable
         var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof, create, media, check);
         await world.AssignApproversAsync(approver.UserId, approver.UserId, approver.UserId);
         return world;
-    }
-
-    private static void WithoutChecks(IServiceCollection services)
-    {
-        foreach (var work in services.Where(service => service.ServiceType == typeof(IStageWork) && (service.ImplementationType == typeof(CheckWork) || service.ImplementationType == typeof(CheckFixWork))).ToList())
-        {
-            services.Remove(work);
-        }
     }
 
     public async Task<Guid> OpportunityAsync() =>

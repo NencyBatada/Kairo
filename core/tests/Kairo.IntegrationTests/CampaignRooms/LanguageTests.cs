@@ -12,7 +12,7 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
     public async Task Every_brief_language_gets_its_own_ads_and_shopping_titles_stay_in_the_feed_language()
@@ -105,7 +105,11 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
             Assert.Equal(1, await _world.RunStagesAsync());
         }
 
-        Assert.Equal(0, await _world.RunStagesAsync());
+        while (await _world.RunStagesAsync() > 0)
+        {
+        }
+
+        Assert.All(Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId)), asset => Assert.Equal("passed", asset.GetProperty("checkState").GetString()));
         Assert.Single(_world.Media.FootageRequests);
         Assert.Equal(["en", "hi"], _world.Media.VideoRequests.Select(request => request.GetProperty("language").GetString()).Order());
         Assert.All(_world.Media.VideoRequests, request => Assert.Equal(Convert.ToBase64String(FakeMedia.ClipBytes(0, 1)), request.GetProperty("clips")[0].GetProperty("data").GetString()));
@@ -235,7 +239,7 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
     {
         await Connections.ConnectAsync(_world.Api, _world.Admin, _world.BrandId, "youtube");
         var roomId = await ApprovedAsync(["en"], ["search", "demand_gen"]);
-        for (var run = 0; run < 3; run++)
+        for (var run = 0; run < 4; run++)
         {
             Assert.Equal(1, await _world.RunStagesAsync());
         }

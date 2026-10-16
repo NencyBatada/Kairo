@@ -142,7 +142,7 @@ internal sealed class CampaignReader(
         return room.State switch
         {
             RoomStates.BriefDraft => ("person", ownerName, "Review the brief and ask for approval."),
-            RoomStates.Creating => ("agent", StageProgress.ActorName(StageAgents.Create), "The Create agent makes the ads, images and video."),
+            RoomStates.Creating => ("person", ownerName, "Review the checked assets and request asset approval."),
             RoomStates.AssetReview => ("person", ownerName, "Review the assets."),
             RoomStates.ReadyToLaunch => ("person", ownerName, "Check the launch summary and ask for launch approval."),
             RoomStates.Launching => ("agent", "Kairo", "Kairo is building the campaign in Google Ads."),
@@ -175,14 +175,18 @@ internal sealed class CampaignReader(
         var route = room.PendingGate is { } pending ? await workflow.RouteAsync(room, pending, cancellationToken) : BriefRoute.Approvers;
         var mayApprove = gate is not null && await workflow.MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken);
         var maySendBack = gate is not null && (mayApprove || await workflow.MaySendBackAsync(room, gate, member, cancellationToken));
-        var stateGate = RoomLifecycle.GateFor(room.State);
+        var stateGate = RoomLifecycle.RequestFrom(room.State);
         var canRequest = marketer
             && stateGate is not null
-            && RoomLifecycle.MarketerRequests(stateGate)
             && room.PendingGate is null
-            && room.Status != RoomStatuses.AgentWorking
+            && (stateGate == RoomGates.Assets || room.Status != RoomStatuses.AgentWorking)
             && (stateGate != RoomGates.Brief || hasBrief);
-        var blocker = canRequest && stateGate == RoomGates.Brief ? (await briefGate.CheckAsync(room, cancellationToken)).Problem : null;
+        var blocker = !canRequest ? null : stateGate switch
+        {
+            RoomGates.Brief => (await briefGate.CheckAsync(room, cancellationToken)).Problem,
+            RoomGates.Assets => await assetApproval.RequestBlockerAsync(room, cancellationToken),
+            _ => null,
+        };
         var approveBlocker = room.PendingGate == RoomGates.Assets && mayApprove ? await assetApproval.BlockerAsync(room.Id, cancellationToken) : null;
         var requestCheck = marketer
             && CheckReview.CheckBlocker(room) is null

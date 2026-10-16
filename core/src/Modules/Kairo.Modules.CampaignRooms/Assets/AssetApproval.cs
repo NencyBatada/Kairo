@@ -1,4 +1,5 @@
 using Kairo.Modules.CampaignRooms.Data;
+using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.SharedKernel.Files;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,31 @@ internal sealed class AssetApproval(
     public const int CopiesAtOnce = 4;
     public const string MissingFile = "A media file in this set is missing. Send the assets back so Kairo can make it again.";
     public const string StorageFailed = "Kairo couldn't keep the approved media files. Try approving again.";
+
+    public async Task<string?> RequestBlockerAsync(Room room, CancellationToken cancellationToken)
+    {
+        if (room.RunStatus is { } status && StageRunStatuses.IsActive(status))
+        {
+            return "Wait for the agents to finish before asking for asset approval.";
+        }
+
+        var states = await db.Assets
+            .Where(asset => asset.RoomId == room.Id && asset.Status == AssetStatuses.Active && !asset.Hidden)
+            .Select(asset => asset.CheckState)
+            .ToListAsync(cancellationToken);
+        if (states.Count == 0)
+        {
+            return "There are no assets to send for approval yet.";
+        }
+
+        var waiting = states.Count(state => state == AssetCheckStates.Unchecked);
+        return waiting switch
+        {
+            0 => null,
+            1 => "1 asset hasn't been checked by Brand Guardian yet. Run the checks before asking for approval.",
+            _ => $"{waiting} assets haven't been checked by Brand Guardian yet. Run the checks before asking for approval.",
+        };
+    }
 
     public async Task<string?> BlockerAsync(Guid roomId, CancellationToken cancellationToken)
     {

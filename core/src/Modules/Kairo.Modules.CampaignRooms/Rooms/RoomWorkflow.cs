@@ -123,7 +123,7 @@ internal sealed class RoomWorkflow(
             return opened;
         }
 
-        if (!RoomLifecycle.MarketerRequests(gate) || RoomLifecycle.GateFor(room.State) != gate)
+        if (!RoomLifecycle.MarketerRequests(gate) || RoomLifecycle.RequestFrom(room.State) != gate)
         {
             return MoveResult.Failed(MoveError.NotAllowed, "This campaign isn't at that approval step.");
         }
@@ -149,6 +149,18 @@ internal sealed class RoomWorkflow(
         }
 
         var before = Snapshot(room);
+        if (gate == RoomGates.Assets)
+        {
+            if (await assetApproval.RequestBlockerAsync(room, cancellationToken) is { } blocker)
+            {
+                return MoveResult.Failed(MoveError.NotAllowed, blocker);
+            }
+
+            await EnterAsync(room, RoomStates.AssetReview, cancellationToken, requestedBy: member.UserId);
+            await FinishAsync(room, new AuditRecord("campaign_room.approval_requested", AuditTarget, room.Id.ToString(), before, After(room, new { gate, from = RoomStates.Creating })), cancellationToken);
+            return MoveResult.Done(room);
+        }
+
         room.GateRoute = check?.Route.Route;
         room.GateBriefVersion = check?.BriefVersion;
         room.GatePlanVersion = check?.PlanVersion;
@@ -364,23 +376,6 @@ internal sealed class RoomWorkflow(
         return MoveResult.Done(room);
     }
 
-    public async Task<bool> SignalLockedAsync(Room room, string signal, AuditActor actor, Guid runId, CancellationToken cancellationToken)
-    {
-        if (RoomLifecycle.Signal(signal) is not { } move || room.State != move.From)
-        {
-            return false;
-        }
-
-        var before = Snapshot(room);
-        if (move.To != move.From)
-        {
-            await EnterAsync(room, move.To, cancellationToken, exceptRunId: runId);
-        }
-
-        await audit.RecordAsync(new AuditRecord("campaign_room.advanced", AuditTarget, room.Id.ToString(), before, After(room, new { signal }), actor), cancellationToken);
-        return true;
-    }
-
     public async Task<MoveResult> SendBackAssetsAsync(Guid roomId, IReadOnlyCollection<Guid> assetIds, string comment, int version, CurrentMember member, CancellationToken cancellationToken)
     {
         if (await OpenAsync(roomId, version, cancellationToken) is not { Room: { } room } opened)
@@ -477,16 +472,16 @@ internal sealed class RoomWorkflow(
             : MoveResult.Done(room);
     }
 
-    private async Task EnterAsync(Room room, string state, CancellationToken cancellationToken, bool startCreate = true, Guid? exceptRunId = null)
+    private async Task EnterAsync(Room room, string state, CancellationToken cancellationToken, bool startCreate = true, Guid? requestedBy = null)
     {
         var leaving = room.State;
         room.State = state;
         room.StateEnteredAt = time.GetUtcNow();
         room.RunStatus = null;
-        await CancelRunsAsync(room.Id, leaving, exceptRunId, cancellationToken);
+        await CancelRunsAsync(room.Id, leaving, cancellationToken);
         if (state == RoomStates.AssetReview)
         {
-            await RequestGateAsync(room, RoomGates.Assets, null, BriefRoute.Approvers, cancellationToken);
+            await RequestGateAsync(room, RoomGates.Assets, requestedBy, BriefRoute.Approvers, cancellationToken);
         }
 
         if (state == RoomStates.Creating && startCreate && queue.Find(StageKinds.CreateCopy) is not null)
@@ -497,12 +492,11 @@ internal sealed class RoomWorkflow(
         Touch(room);
     }
 
-    private async Task CancelRunsAsync(Guid roomId, string stage, Guid? exceptRunId, CancellationToken cancellationToken)
+    private async Task CancelRunsAsync(Guid roomId, string stage, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
-        var kept = exceptRunId ?? Guid.Empty;
         await db.StageRuns
-            .Where(run => run.RoomId == roomId && run.Stage == stage && run.Id != kept && (run.Status == StageRunStatuses.Queued || run.Status == StageRunStatuses.Running))
+            .Where(run => run.RoomId == roomId && run.Stage == stage && (run.Status == StageRunStatuses.Queued || run.Status == StageRunStatuses.Running))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(run => run.Status, StageRunStatuses.Cancelled)

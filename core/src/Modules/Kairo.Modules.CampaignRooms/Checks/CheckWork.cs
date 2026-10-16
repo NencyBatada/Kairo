@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Kairo.Contracts.Audit;
-using Kairo.Contracts.CampaignRooms;
 using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Media;
@@ -21,8 +20,6 @@ internal sealed class CheckOutcome
     public int FixAttempts { get; init; }
 
     public string? Next { get; set; }
-
-    public bool Done { get; set; }
 }
 
 internal sealed partial class CheckWork(
@@ -51,10 +48,7 @@ internal sealed partial class CheckWork(
 
     public string Stage => RoomStates.Creating;
 
-    public string? NextKind(StageRun run, StageOutcome outcome) => outcome.Output is CheckOutcome { Done: false, Next: { } next } ? next : null;
-
-    public string? SignalAfterSave(StageRun run, StageOutcome outcome) =>
-        outcome.Output is CheckOutcome { Done: true } ? CampaignSignals.AssetsChecked : null;
+    public string? NextKind(StageRun run, StageOutcome outcome) => outcome.Output is CheckOutcome { Next: { } next } ? next : null;
 
     public async Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken)
     {
@@ -190,7 +184,7 @@ internal sealed partial class CheckWork(
                     failed = saved.Count(item => !item.Passed),
                     rules = saved.SelectMany(item => item.Issues).Select(issue => issue.Rule).Distinct().Order(StringComparer.Ordinal).ToArray(),
                     settingsVersion = checkedSet.SettingsVersion,
-                    next = checkedSet.Done ? "review" : checkedSet.Next,
+                    next = checkedSet.Next,
                 },
                 AuditActor.Agent(StageProgress.ActorName(Agent), Agent)),
             cancellationToken);
@@ -203,7 +197,6 @@ internal sealed partial class CheckWork(
             cancellationToken);
         if (earlier + 1 >= CheckResultLimits.MaxChecksPerEntry)
         {
-            outcome.Done = true;
             return;
         }
 
@@ -220,10 +213,7 @@ internal sealed partial class CheckWork(
         if (fixable.Any(asset => attempts[asset.Id] < outcome.FixAttempts))
         {
             outcome.Next = StageKinds.CheckFix;
-            return;
         }
-
-        outcome.Done = true;
     }
 
     private void AddTextCalls(

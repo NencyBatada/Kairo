@@ -15,7 +15,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
     public async Task Generated_copy_records_the_agent_call_the_products_and_the_brief()
@@ -51,7 +51,6 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     public async Task An_edit_records_who_changed_which_fields_from_which_version()
     {
         var roomId = await CreatedAsync();
-        Assert.Equal(1, await _world.RunStagesAsync());
         var ad = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId), "search_ad");
         using var edited = await Campaigns.EditAssetAsync(_world.Marketer, _world.BrandId, roomId, ad.GetProperty("id").GetGuid(), new { version = 1, path1 = "shoes" });
         Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
@@ -74,7 +73,6 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     public async Task Images_record_their_catalogue_photos_and_carry_the_google_ads_ai_label()
     {
         var roomId = await CreatedAsync();
-        Assert.Equal(1, await _world.RunStagesAsync());
         var image = Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId))
             .First(asset => asset.GetProperty("kind").GetString() == "image");
 
@@ -97,7 +95,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     {
         await Connections.ConnectAsync(_world.Api, _world.Admin, _world.BrandId, "youtube");
         var roomId = await DemandGenRoomAsync();
-        Assert.Equal(3, await RunAllAsync());
+        Assert.Equal(4, await RunAllAsync());
         var set = await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId);
         var video = Campaigns.Asset(set, "video");
 
@@ -128,7 +126,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     {
         await Connections.ConnectAsync(_world.Api, _world.Admin, _world.BrandId, "youtube");
         var roomId = await DemandGenRoomAsync();
-        Assert.Equal(3, await RunAllAsync());
+        Assert.Equal(4, await RunAllAsync());
         var video = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId), "video");
         _world.Media.Generation = 2;
         using var regenerate = await Campaigns.AssetActionAsync(_world.Marketer, _world.BrandId, roomId, video.GetProperty("id").GetGuid(), "regenerate", new { version = 1, instruction = "Say it warmer" });
@@ -147,10 +145,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task Approving_the_assets_records_the_approver_and_keeps_the_media_out_of_drafts()
     {
-        await CheckedWorldAsync();
         var roomId = await CreatedAsync();
-        Assert.Equal(1, await _world.RunStagesAsync());
-        Assert.Equal(1, await _world.RunStagesAsync());
         var before = await CurrentAsync(roomId);
         var image = before.First(asset => asset.Kind == "image");
         Assert.StartsWith("drafts/", image.File!.Key);
@@ -178,10 +173,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task A_missing_media_file_stops_asset_approval_without_changing_anything()
     {
-        await CheckedWorldAsync();
         var roomId = await CreatedAsync();
-        Assert.Equal(1, await _world.RunStagesAsync());
-        Assert.Equal(1, await _world.RunStagesAsync());
         var image = (await CurrentAsync(roomId)).First(asset => asset.Kind == "image");
         File.Delete(PathOf(image.File!.Key));
 
@@ -199,7 +191,6 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     public async Task The_contract_reads_the_current_set_and_any_earlier_version()
     {
         var roomId = await CreatedAsync();
-        Assert.Equal(1, await _world.RunStagesAsync());
         var ad = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId), "search_ad");
         var id = ad.GetProperty("id").GetGuid();
         using var edited = await Campaigns.EditAssetAsync(_world.Marketer, _world.BrandId, roomId, id, new { version = 1, path1 = "shoes" });
@@ -223,16 +214,12 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();
 
-    private async Task CheckedWorldAsync()
-    {
-        await _world.DisposeAsync();
-        _world = await CampaignWorld.CreateAsync(sqlServer);
-    }
-
     private async Task<Guid> CreatedAsync()
     {
         var roomId = await _world.OpenWithBriefAsync();
         await _world.ApproveBriefAsync(roomId);
+        Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         return roomId;
     }
@@ -263,6 +250,9 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
 
     private async Task<HttpResponseMessage> ApproveAssetsAsync(Guid roomId)
     {
+        var ready = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        using var requested = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "approval-requests", new { gate = "assets", version = Campaigns.Version(ready) });
+        Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
         var review = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
         return await Campaigns.PostAsync(_world.Approver.Browser, _world.BrandId, roomId, "approve", new { gate = "assets", version = Campaigns.Version(review) });
     }

@@ -13,7 +13,7 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
     public async Task Approving_the_brief_writes_the_ads_in_the_brief_language()
@@ -23,6 +23,7 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
         var approved = await _world.ApproveBriefAsync(roomId);
 
         Assert.Equal(("creating", "agent_working"), (Campaigns.Stage(approved), Campaigns.Status(approved)));
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
@@ -44,7 +45,7 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
             set.GetProperty("groups").EnumerateArray().Select(group => (group.GetProperty("campaignType").GetString(), group.GetProperty("language").GetString(), group.GetProperty("languageName").GetString())));
         Assert.Equal(["keyword_set", "search_ad", "shopping_title"], Campaigns.TextAssets(set).Select(asset => asset.GetProperty("kind").GetString()));
         var ad = Campaigns.Asset(set, "search_ad");
-        Assert.Equal(("Rain runners", 1, "generated", "unchecked", false), (ad.GetProperty("adGroup").GetString(), ad.GetProperty("version").GetInt32(), ad.GetProperty("origin").GetString(), ad.GetProperty("checkState").GetString(), ad.GetProperty("locked").GetBoolean()));
+        Assert.Equal(("Rain runners", 1, "generated", "passed", false), (ad.GetProperty("adGroup").GetString(), ad.GetProperty("version").GetInt32(), ad.GetProperty("origin").GetString(), ad.GetProperty("checkState").GetString(), ad.GetProperty("locked").GetBoolean()));
         Assert.StartsWith("https://acme.example/p/", ad.GetProperty("content").GetProperty("finalUrl").GetString());
         Assert.Equal(JsonValueKind.Null, ad.GetProperty("mediaUrl").ValueKind);
         var productId = Assert.Single(ad.GetProperty("productIds").EnumerateArray()).GetString();
@@ -310,6 +311,7 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
     {
         var roomId = await _world.OpenWithBriefAsync();
         await _world.ApproveBriefAsync(roomId);
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         return roomId;

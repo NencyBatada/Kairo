@@ -16,12 +16,15 @@ public sealed class RoomLifecycleTests
     }
 
     [Fact]
-    public void Each_approval_stage_has_its_own_gate_and_only_brief_and_launch_are_requested_by_the_marketer()
+    public void Each_approval_stage_has_its_own_gate_and_the_marketer_requests_every_gate()
     {
         Assert.Equal(
             ["brief", null, "assets", "launch", null, null, null, null],
             RoomStates.Stages.Select(RoomLifecycle.GateFor));
-        Assert.Equal([true, false, true], RoomGates.All.Select(RoomLifecycle.MarketerRequests));
+        Assert.Equal([true, true, true], RoomGates.All.Select(RoomLifecycle.MarketerRequests));
+        Assert.Equal(
+            ["brief", "assets", null, "launch", null, null, null, null],
+            RoomStates.Stages.Select(RoomLifecycle.RequestFrom));
     }
 
     [Theory]

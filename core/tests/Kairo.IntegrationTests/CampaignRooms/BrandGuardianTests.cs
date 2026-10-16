@@ -14,6 +14,7 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
 {
     private const string Claim = "Claims more than the product can do.";
+    private const string Unchecked = "1 asset hasn't been checked by Brand Guardian yet. Run the checks before asking for approval.";
 
     private CampaignWorld _world = null!;
 
@@ -22,14 +23,24 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
-    public async Task Checked_assets_reach_review_with_gate_two_open()
+    public async Task Checked_assets_wait_in_creating_until_the_marketer_requests_gate_two()
     {
         var roomId = await ApprovedAsync();
 
         Assert.Equal(3, await RunAllAsync());
 
+        var waiting = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.Equal(("creating", "in_progress"), (Campaigns.Stage(waiting), Campaigns.Status(waiting)));
+        Assert.Equal("assets", waiting.GetProperty("actions").GetProperty("requestApproval").GetString());
+        Assert.Equal(JsonValueKind.Null, waiting.GetProperty("actions").GetProperty("requestApprovalBlocker").ValueKind);
+        Assert.Equal(("person", "Review the checked assets and request asset approval."), (waiting.GetProperty("tracker").GetProperty("ownerKind").GetString(), waiting.GetProperty("tracker").GetProperty("nextAction").GetString()));
+        Assert.Equal(JsonValueKind.Null, (await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)).GetProperty("actions").GetProperty("requestApproval").ValueKind);
+
+        var requested = await RequestAssetsAsync(roomId);
+
+        Assert.Equal(("asset_review", "waiting_approval"), (Campaigns.Stage(requested), Campaigns.Status(requested)));
+        Assert.Equal(("assets", _world.Brand.Marketer.UserId), (requested.GetProperty("pendingApproval").GetProperty("gate").GetString(), requested.GetProperty("pendingApproval").GetProperty("requestedBy").GetProperty("id").GetGuid()));
         var detail = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
-        Assert.Equal(("asset_review", "waiting_approval"), (Campaigns.Stage(detail), Campaigns.Status(detail)));
         Assert.Equal("assets", detail.GetProperty("actions").GetProperty("approve").GetString());
         Assert.Equal(JsonValueKind.Null, detail.GetProperty("actions").GetProperty("approveBlocker").ValueKind);
         var set = await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId);
@@ -57,6 +68,61 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Asking_for_asset_approval_waits_for_the_agents_and_for_every_edit_to_be_checked()
+    {
+        var roomId = await ApprovedAsync();
+        var working = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        using var early = await PostRequestAsync(roomId);
+
+        Assert.Equal(HttpStatusCode.Conflict, early.StatusCode);
+        Assert.Equal(JsonValueKind.Null, working.GetProperty("actions").GetProperty("requestApproval").ValueKind);
+        Assert.Equal("Wait for the agents to finish before asking for asset approval.", working.GetProperty("actions").GetProperty("requestApprovalBlocker").GetString());
+
+        Assert.Equal(3, await RunAllAsync());
+        var ad = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId), "search_ad");
+        using var edited = await Campaigns.EditAssetAsync(_world.Marketer, _world.BrandId, roomId, Id(ad), new { version = 1, path1 = "shoes" });
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+
+        var pending = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        using var refused = await PostRequestAsync(roomId);
+
+        Assert.Equal(Unchecked, pending.GetProperty("actions").GetProperty("requestApprovalBlocker").GetString());
+        Assert.True(pending.GetProperty("actions").GetProperty("requestCheck").GetBoolean());
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(Unchecked, await Campaigns.TitleAsync(refused));
+
+        var images = _world.Check.CallsTo("/check/image").Count;
+        using var check = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "assets/check", new { version = Campaigns.Version(pending) });
+        Assert.Equal(HttpStatusCode.OK, check.StatusCode);
+        Assert.Equal(1, await RunAllAsync());
+
+        var rechecked = Assert.Single(_world.Check.CallsTo("/check/copy").Skip(1));
+        Assert.Equal(Id(ad).ToString(), Assert.Single(rechecked.Body.GetProperty("assets").EnumerateArray()).GetProperty("id").GetString());
+        Assert.Equal(images, _world.Check.CallsTo("/check/image").Count);
+        Assert.Equal("asset_review", Campaigns.Stage(await RequestAssetsAsync(roomId)));
+    }
+
+    [Fact]
+    public async Task Checking_again_with_nothing_unchecked_rechecks_every_asset_with_the_new_settings()
+    {
+        var roomId = await ApprovedAsync();
+        await RunAllAsync();
+        var images = _world.Check.CallsTo("/check/image").Count;
+        using var saved = await SaveSettingsAsync(new { version = 0, rules = (object?)null, customRules = (object?)null, passScore = 90, fixAttempts = 3 });
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        _world.Api.Clock.Advance(TimeSpan.FromMinutes(1));
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+
+        using var check = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "assets/check", new { version = Campaigns.Version(detail) });
+
+        Assert.Equal(HttpStatusCode.OK, check.StatusCode);
+        Assert.Equal(1, await RunAllAsync());
+        Assert.Equal(2 * images, _world.Check.CallsTo("/check/image").Count);
+        var set = await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.All(Campaigns.AllAssets(set), asset => Assert.Equal(("passed", 1), (Check(asset).GetProperty("state").GetString(), Check(asset).GetProperty("settingsVersion").GetInt32())));
+    }
+
+    [Fact]
     public async Task A_failing_asset_is_fixed_and_checked_again_with_a_before_and_after_view()
     {
         _world.Check.Findings = (path, assetId, body) => FlagOriginalHeadline(path, assetId, body);
@@ -77,7 +143,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         var instruction = Assert.Single(_world.Create.Instructions).GetProperty("instruction").GetString();
         Assert.Contains(Claim, instruction);
         Assert.Contains("asset.fixed", await ActionsAsync(roomId));
-        Assert.Equal("asset_review", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
+        Assert.Equal("creating", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
     }
 
     [Fact]
@@ -113,6 +179,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         var roomId = await ApprovedAsync();
 
         await RunAllAsync();
+        await RequestAssetsAsync(roomId);
 
         var set = await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId);
         var ad = Campaigns.Asset(set, "search_ad");
@@ -181,6 +248,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         var roomId = await ApprovedAsync();
 
         await RunAllAsync();
+        await RequestAssetsAsync(roomId);
 
         var images = Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId))
             .Where(asset => asset.GetProperty("kind").GetString() == "image")
@@ -215,6 +283,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, locked.StatusCode);
 
         await RunAllAsync();
+        await RequestAssetsAsync(roomId);
 
         ad = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId), "search_ad");
         var issue = Assert.Single(Check(ad).GetProperty("issues").EnumerateArray());
@@ -241,8 +310,9 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
         Assert.Equal("agent_working", Campaigns.Status(await requested.Content.ReadFromJsonAsync<JsonElement>(Token)));
         Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Single(Assert.Single(_world.Check.CallsTo("/check/copy").Skip(1)).Body.GetProperty("assets").EnumerateArray());
 
-        var detail = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
+        var detail = await RequestAssetsAsync(roomId);
         Assert.Equal("asset_review", Campaigns.Stage(detail));
         Assert.All(Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId)), asset => Assert.Equal("passed", Check(asset).GetProperty("state").GetString()));
         Assert.Contains("assets.check_requested", await ActionsAsync(roomId));
@@ -253,6 +323,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     {
         var roomId = await ApprovedAsync();
         await RunAllAsync();
+        await RequestAssetsAsync(roomId);
         var set = await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId);
         var ad = Campaigns.Asset(set, "search_ad");
 
@@ -269,8 +340,9 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(1, Campaigns.Asset(after, "keyword_set").GetProperty("version").GetInt32());
         Assert.Equal("Mention quick-dry.", Assert.Single(_world.Create.Instructions).GetProperty("instruction").GetString());
         Assert.Single(_world.Create.Requests);
-        Assert.Equal("asset_review", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
+        Assert.Equal("creating", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
         Assert.Contains("campaign_room.sent_back", await ActionsAsync(roomId));
+        Assert.Equal("asset_review", Campaigns.Stage(await RequestAssetsAsync(roomId)));
     }
 
     [Fact]
@@ -280,6 +352,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         _world.Check.Findings = (path, assetId, body) => FlagAd(path, assetId, body, "policy.ads", Claim);
         var roomId = await ApprovedAsync();
         await RunAllAsync();
+        await RequestAssetsAsync(roomId);
         var set = await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId);
         var ad = Campaigns.Asset(set, "search_ad");
         var keywords = Campaigns.Asset(set, "keyword_set");
@@ -310,7 +383,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task A_fix_that_fails_counts_as_an_attempt_and_the_room_still_reaches_review()
+    public async Task A_fix_that_fails_counts_as_an_attempt_and_the_room_carries_on()
     {
         await SaveSettingsAsync(new { version = 0, rules = (object?)null, customRules = (object?)null, passScore = 80, fixAttempts = 1 });
         _world.Check.Findings = (path, assetId, body) => FlagAd(path, assetId, body, "policy.ads", Claim);
@@ -321,7 +394,7 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(4, await RunAllAsync());
 
         var detail = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
-        Assert.Equal(("asset_review", "waiting_approval"), (Campaigns.Stage(detail), Campaigns.Status(detail)));
+        Assert.Equal(("creating", "in_progress"), (Campaigns.Stage(detail), Campaigns.Status(detail)));
         var ad = Campaigns.Asset(await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId), "search_ad");
         Assert.Equal((1, "failed", 1), (ad.GetProperty("version").GetInt32(), Check(ad).GetProperty("state").GetString(), Check(ad).GetProperty("fixAttempts").GetInt32()));
         Assert.Single(_world.Create.Instructions);
@@ -349,11 +422,11 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal((2, "passed"), (ad.GetProperty("version").GetInt32(), Check(ad).GetProperty("state").GetString()));
         Assert.Equal(2, _world.Check.CallsTo("/check/copy").Count);
         Assert.Single(_world.Check.CallsTo("/check/copy")[1].Body.GetProperty("assets").EnumerateArray());
-        Assert.Equal("asset_review", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
+        Assert.Equal("creating", Campaigns.Stage(await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId)));
     }
 
     [Fact]
-    public async Task Checks_stop_after_twenty_runs_and_leave_unchecked_assets_for_the_reviewer()
+    public async Task Checks_stop_after_twenty_runs_and_the_unchecked_asset_blocks_the_request()
     {
         _world.Check.Findings = (path, assetId, body) =>
         {
@@ -369,9 +442,13 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         await RunAllAsync();
 
         Assert.Equal(20, _world.Check.CallsTo("/check/copy").Count);
-        var detail = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
-        Assert.Equal("asset_review", Campaigns.Stage(detail));
-        Assert.Equal("1 asset hasn't been checked by Brand Guardian yet. Send it back so it can be checked.", detail.GetProperty("actions").GetProperty("approveBlocker").GetString());
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.Equal(("creating", "in_progress"), (Campaigns.Stage(detail), Campaigns.Status(detail)));
+        Assert.Equal(JsonValueKind.Null, detail.GetProperty("actions").GetProperty("requestApproval").ValueKind);
+        Assert.Equal(Unchecked, detail.GetProperty("actions").GetProperty("requestApprovalBlocker").GetString());
+        using var refused = await PostRequestAsync(roomId);
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(Unchecked, await Campaigns.TitleAsync(refused));
     }
 
     [Fact]
@@ -438,6 +515,19 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         }
 
         return total;
+    }
+
+    private async Task<JsonElement> RequestAssetsAsync(Guid roomId)
+    {
+        using var response = await PostRequestAsync(roomId);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadFromJsonAsync<JsonElement>(Token);
+    }
+
+    private async Task<HttpResponseMessage> PostRequestAsync(Guid roomId)
+    {
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        return await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "approval-requests", new { gate = "assets", version = Campaigns.Version(detail) });
     }
 
     private Task<HttpResponseMessage> SaveSettingsAsync(object body) =>

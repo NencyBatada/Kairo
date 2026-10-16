@@ -60,7 +60,15 @@ internal static class RoomLifecycle
         _ => null,
     };
 
-    public static bool MarketerRequests(string gate) => gate is RoomGates.Brief or RoomGates.Launch;
+    public static bool MarketerRequests(string gate) => gate is RoomGates.Brief or RoomGates.Assets or RoomGates.Launch;
+
+    public static string? RequestFrom(string state) => state switch
+    {
+        RoomStates.BriefDraft => RoomGates.Brief,
+        RoomStates.Creating => RoomGates.Assets,
+        RoomStates.ReadyToLaunch => RoomGates.Launch,
+        _ => null,
+    };
 
     public static IReadOnlyList<string> SendBackTargets(string state, string? pendingGate) => state switch
     {

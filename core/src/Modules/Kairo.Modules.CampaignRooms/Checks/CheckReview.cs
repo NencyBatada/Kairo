@@ -116,16 +116,20 @@ internal sealed class CheckReview(
             return MoveResult.Failed(MoveError.NotAllowed, NothingToCheck);
         }
 
-        foreach (var asset in assets)
+        var recheck = assets.All(asset => asset.CheckState != AssetCheckStates.Unchecked);
+        if (recheck)
         {
-            asset.CheckState = AssetCheckStates.Unchecked;
+            foreach (var asset in assets)
+            {
+                asset.CheckState = AssetCheckStates.Unchecked;
+            }
         }
 
         var run = await queue.EnqueueAsync(room, StageKinds.Check, member.UserId, cancellationToken);
         workflow.Touch(room);
         await db.SaveChangesAsync(cancellationToken);
         await audit.RecordAsync(
-            new AuditRecord("assets.check_requested", RoomWorkflow.AuditTarget, room.Id.ToString(), null, new { runId = run.Id, assets = assets.Count }),
+            new AuditRecord("assets.check_requested", RoomWorkflow.AuditTarget, room.Id.ToString(), null, new { runId = run.Id, assets = recheck ? assets.Count : assets.Count(asset => asset.CheckState == AssetCheckStates.Unchecked), recheck }),
             cancellationToken);
         await workflow.PublishAsync(room, cancellationToken);
         return MoveResult.Done(room);
