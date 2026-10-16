@@ -3,7 +3,6 @@ import type { ComponentType } from "react";
 import { expect, test } from "vitest";
 
 import AssetsPage from "./campaigns/[id]/assets/page";
-import BriefPage from "./campaigns/[id]/brief/page";
 import LaunchPage from "./campaigns/[id]/launch/page";
 import PerformancePage from "./campaigns/[id]/performance/page";
 import ResultsPage from "./campaigns/[id]/results/page";
@@ -20,7 +19,6 @@ test.each([
 });
 
 test.each([
-  ["Brief", BriefPage, "No brief yet"],
   ["Assets", AssetsPage, "No assets yet"],
   ["Launch", LaunchPage, "Not ready to launch"],
   ["Performance", PerformancePage, "No performance yet"],
