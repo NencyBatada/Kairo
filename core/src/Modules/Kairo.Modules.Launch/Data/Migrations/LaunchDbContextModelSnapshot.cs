@@ -22,6 +22,79 @@ namespace Kairo.Modules.Launch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kairo.Modules.Launch.Data.AdPause", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdResource")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid?>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CampaignResource")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CampaignType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("DecidedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("LaunchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("PausedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ProductIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("ResumedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId", "AdResource")
+                        .IsUnique()
+                        .HasFilter("[State] IN (N'held', N'paused')");
+
+                    b.HasIndex("BrandId", "BatchId");
+
+                    b.HasIndex("BrandId", "RoomId", "CreatedAt");
+
+                    b.ToTable("AdPauses", "launch");
+                });
+
             modelBuilder.Entity("Kairo.Modules.Launch.Data.LaunchHealth", b =>
                 {
                     b.Property<Guid>("Id")
@@ -246,6 +319,38 @@ namespace Kairo.Modules.Launch.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("ProductAds", "launch");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Launch.Data.StockWatch", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CheckedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ClaimToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ClaimedUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("FeedUpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("NextCheckAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("StaleSince")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("BrandId");
+
+                    b.HasIndex("NextCheckAt");
+
+                    b.ToTable("StockWatches", "launch");
                 });
 #pragma warning restore 612, 618
         }

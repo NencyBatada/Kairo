@@ -65,6 +65,7 @@ internal sealed class LaunchLoop(LaunchLoopSwitch loopSwitch, IServiceScopeFacto
                 await using var scope = scopes.CreateAsyncScope();
                 await scope.ServiceProvider.GetRequiredService<LaunchDispatcher>().RunDueAsync(stoppingToken);
                 await scope.ServiceProvider.GetRequiredService<LaunchHealthCheck>().RunDueAsync(stoppingToken);
+                await scope.ServiceProvider.GetRequiredService<StockPauser>().RunDueAsync(stoppingToken);
                 await Task.Delay(TimeSpan.FromSeconds(2), time, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
