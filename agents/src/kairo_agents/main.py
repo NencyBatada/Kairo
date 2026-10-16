@@ -8,6 +8,7 @@ from kairo_agents.agents.learn.api import router as learn_router
 from kairo_agents.agents.plan.api import router as plan_router
 from kairo_agents.agents.plan.proof_api import router as proof_router
 from kairo_agents.agents.prove.api import router as prove_router
+from kairo_agents.agents.prove.lab_api import router as prove_lab_router
 from kairo_agents.agents.prove.report_api import router as prove_report_router
 from kairo_agents.agents.sense.api import router as sense_router
 
@@ -21,6 +22,7 @@ app.include_router(create_media_router)
 app.include_router(check_router)
 app.include_router(prove_router)
 app.include_router(prove_report_router)
+app.include_router(prove_lab_router)
 app.include_router(learn_router)
 
 
