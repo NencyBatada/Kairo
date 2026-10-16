@@ -30,6 +30,10 @@ type ApprovalPanelProps = {
   status: ApprovalStatus;
   approver: string;
   canDecide: boolean;
+  approveDisabled?: boolean;
+  sendBack?: { label: string; confirmLabel: string; description: string; disabled: boolean; summary?: ReactNode };
+  contextKey?: string;
+  reasonMaxLength?: number;
   facts?: ApprovalFact[];
   children?: ReactNode;
   approveLabel?: string;
@@ -48,6 +52,10 @@ export function ApprovalPanel({
   status,
   approver,
   canDecide,
+  approveDisabled = false,
+  sendBack,
+  contextKey,
+  reasonMaxLength = 2000,
   facts = [],
   children,
   approveLabel = `Approve ${subject}`,
@@ -71,14 +79,26 @@ export function ApprovalPanel({
   const confirmRef = useRef<HTMLButtonElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const [decisionContext, setDecisionContext] = useState(contextKey);
+  const [conflict, setConflict] = useState(false);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const shownStatus = decided ?? status;
   const canAct = canDecide && shownStatus === "waiting";
   const view = mode ?? lastMode;
   const copy = sheetCopy(view, { subject, approveLabel, consequence, override });
+  const changed = mode !== null && (decisionContext !== contextKey || conflict);
+  const decisionDisabled = !canAct || changed || (view === "approve" && approveDisabled) || (view === "send-back" && sendBack?.disabled);
+  if (view === "send-back" && sendBack) {
+    copy.title = `${sendBack.confirmLabel}?`;
+    copy.description = sendBack.description;
+    copy.confirm = sendBack.confirmLabel;
+  }
 
   function open(kind: DecisionKind, event: MouseEvent<HTMLButtonElement>) {
     returnFocus.current = event.currentTarget;
+    setDecisionContext(contextKey);
+    setConflict(false);
     setError(null);
     setReasonError(null);
     setLastMode(kind);
@@ -96,7 +116,7 @@ export function ApprovalPanel({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!mode || pending) {
+    if (!mode || pending || decisionDisabled) {
       return;
     }
 
@@ -121,12 +141,14 @@ export function ApprovalPanel({
     setPending(false);
 
     if (result.status === "error") {
+      if ("conflict" in result && result.conflict === true) setConflict(true);
       const fieldError = result.fieldErrors?.reason?.join(" ");
       if (fieldError && mode !== "approve") {
         setReasonError(fieldError);
         reasonRef.current?.focus();
       } else {
         setError(result.message ?? failure);
+        requestAnimationFrame(() => errorRef.current?.focus());
       }
       return;
     }
@@ -192,11 +214,11 @@ export function ApprovalPanel({
           data-slot="approval-actions"
           className="sticky bottom-0 z-30 -mx-4 grid grid-cols-2 gap-2 border-t border-border bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:flex sm:flex-wrap md:-mx-6 md:px-6 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
         >
-          <Button className="col-span-2 max-lg:h-11" onClick={(event) => open("approve", event)}>
+          <Button className="col-span-2 max-lg:h-11" disabled={approveDisabled} onClick={(event) => open("approve", event)}>
             {approveLabel}
           </Button>
-          <Button variant="secondary" className={cn("max-lg:h-11", !override && "col-span-2")} onClick={(event) => open("send-back", event)}>
-            Send back
+          <Button variant="secondary" disabled={sendBack?.disabled} className={cn("max-lg:h-11 max-sm:whitespace-normal", !override && "col-span-2")} onClick={(event) => open("send-back", event)}>
+            {sendBack?.label ?? "Send back"}
           </Button>
           {override && (
             <Button variant="secondary" className="max-lg:h-11 max-sm:whitespace-normal" onClick={(event) => open("override", event)}>
@@ -217,6 +239,7 @@ export function ApprovalPanel({
                 <SheetTitle className="wrap-anywhere">{copy.title}</SheetTitle>
                 <SheetDescription className="wrap-anywhere">{copy.description}</SheetDescription>
               </div>
+              {view === "send-back" && sendBack?.summary}
               {view !== "approve" && (
                 <Field>
                   <Label htmlFor={reasonId}>{copy.reasonLabel}</Label>
@@ -226,7 +249,7 @@ export function ApprovalPanel({
                     id={reasonId}
                     name="reason"
                     required
-                    maxLength={2000}
+                    maxLength={reasonMaxLength}
                     value={drafts[view]}
                     onChange={(event) => {
                       const value = event.target.value;
@@ -239,12 +262,13 @@ export function ApprovalPanel({
                   <FieldError id={`${reasonId}-error`} errors={reasonError ? [reasonError] : undefined} />
                 </Field>
               )}
-              {error && <FormStatus state={{ status: "error", message: error }} />}
+              {changed && <Alert variant="warning">The saved work changed. Your comment is kept. Close this sheet, reload and review the current version before deciding.</Alert>}
+              {error && <div ref={errorRef} tabIndex={-1} className="outline-none"><FormStatus state={{ status: "error", message: error }} /></div>}
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button variant="secondary" className="max-lg:h-11 max-sm:w-full" disabled={pending} onClick={close}>
                   Cancel
                 </Button>
-                <Button ref={confirmRef} type="submit" className="max-lg:h-11 max-sm:w-full" pending={pending}>
+                <Button ref={confirmRef} type="submit" disabled={!!decisionDisabled} className="max-lg:h-11 max-sm:w-full" pending={pending}>
                   {copy.confirm}
                 </Button>
               </div>

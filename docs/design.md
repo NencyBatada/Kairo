@@ -307,7 +307,7 @@ Primitives live in `web/src/components/ui/`. They come from shadcn/ui on Base UI
 | LinkTabs | Underlined route links for sub-pages. The current one gets `aria-current="page"` and a 2px terracotta underline; hovering another tab previews its underline in `border-strong`. They scroll sideways on phones. They are links, not ARIA tabs, because they change the URL. |
 | EmptyState | An icon tile, a serif title, one line of explanation and optional actions. It never offers an action that doesn't work yet. |
 | FormStatus | The result of a form, next to its main action: a tick and `success-strong` text with `role="status"`, or an alert icon and `destructive-strong` text with `role="alert"` |
-| ApprovalPanel | Every approval: the gate badge, the approval status, the title and named approver, a summary slot, the key facts and the decision actions (section 9.5). Each decision is confirmed in a bottom sheet and handed to an `onDecision` callback. People who can't decide see a read-only note naming the approver. Lives in `components/approval/` with ApprovalFacts and ApprovalStatusBadge. |
+| ApprovalPanel | Every approval: the gate badge, the approval status, the title and named approver, a summary slot, the key facts and the decision actions (section 9.5). Each decision is confirmed in a bottom sheet and handed to an `onDecision` callback. Approval can be blocked independently of send-back. Selected-asset send-back shows its exact selection and consequences inside the sheet. When the saved work changes, the open sheet keeps its comment and blocks submission until the current version is reviewed. People who can't decide see a read-only note naming the approver. Lives in `components/approval/` with ApprovalFacts and ApprovalStatusBadge. |
 
 ## 9. Patterns
 

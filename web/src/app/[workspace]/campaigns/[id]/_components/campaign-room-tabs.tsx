@@ -4,6 +4,7 @@ const tabs = [
   { segment: "evidence", label: "Evidence" },
   { segment: "brief", label: "Brief" },
   { segment: "assets", label: "Assets" },
+  { segment: "review", label: "Brand Guardian" },
   { segment: "launch", label: "Launch" },
   { segment: "performance", label: "Performance" },
   { segment: "results", label: "Results" },

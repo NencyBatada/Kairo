@@ -14,7 +14,7 @@ function tabLinks() {
     .map((link) => [link.textContent, link.getAttribute("href")]);
 }
 
-test("links to overview and the six stage tabs inside its workspace", () => {
+test("links to overview and the stage tabs inside its workspace", () => {
   render(<CampaignRoomTabs workspace="acme" roomId="42" />);
 
   expect(tabLinks()).toEqual([
@@ -22,6 +22,7 @@ test("links to overview and the six stage tabs inside its workspace", () => {
     ["Evidence", "/acme/campaigns/42/evidence"],
     ["Brief", "/acme/campaigns/42/brief"],
     ["Assets", "/acme/campaigns/42/assets"],
+    ["Brand Guardian", "/acme/campaigns/42/review"],
     ["Launch", "/acme/campaigns/42/launch"],
     ["Performance", "/acme/campaigns/42/performance"],
     ["Results", "/acme/campaigns/42/results"],
