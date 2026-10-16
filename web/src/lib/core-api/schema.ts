@@ -3877,6 +3877,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    version?: number | string;
+                };
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/skip-video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -4475,6 +4556,7 @@ export interface components {
             title: null | string;
             currentTitle: null | string;
             offerId: null | string;
+            script: null | components["schemas"]["AssetScriptLineView"][];
         };
         AssetEditRequest: {
             version: null | number | string;
@@ -4508,6 +4590,12 @@ export interface components {
         AssetRegenerationView: {
             runId: string;
             asset: components["schemas"]["AssetView"];
+        };
+        AssetScriptLineView: {
+            voiceover: string;
+            caption: string;
+            start: number | string;
+            end: number | string;
         };
         AssetSetView: {
             campaignId: string;
@@ -4688,6 +4776,7 @@ export interface components {
             discard: boolean;
             retryRun: null | string;
             requestApprovalBlocker: null | string;
+            continueWithoutVideo: boolean;
         };
         CampaignActivityPage: {
             entries: components["schemas"]["CampaignActivityView"][];

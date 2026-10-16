@@ -4124,6 +4124,99 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/file": {
+      "get": {
+        "tags": [
+          "MediaEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/skip-video": {
+      "post": {
+        "tags": [
+          "MediaEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -4937,7 +5030,8 @@
           "callToAction",
           "title",
           "currentTitle",
-          "offerId"
+          "offerId",
+          "script"
         ],
         "type": "object",
         "properties": {
@@ -5024,6 +5118,15 @@
               "null",
               "string"
             ]
+          },
+          "script": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AssetScriptLineView"
+            }
           }
         }
       },
@@ -5214,6 +5317,39 @@
           },
           "asset": {
             "$ref": "#/components/schemas/AssetView"
+          }
+        }
+      },
+      "AssetScriptLineView": {
+        "required": [
+          "voiceover",
+          "caption",
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "voiceover": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          },
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -6209,7 +6345,8 @@
           "sendBackTo",
           "discard",
           "retryRun",
-          "requestApprovalBlocker"
+          "requestApprovalBlocker",
+          "continueWithoutVideo"
         ],
         "type": "object",
         "properties": {
@@ -6246,6 +6383,9 @@
               "null",
               "string"
             ]
+          },
+          "continueWithoutVideo": {
+            "type": "boolean"
           }
         }
       },
@@ -11618,6 +11758,9 @@
     },
     {
       "name": "AssetEndpoints"
+    },
+    {
+      "name": "MediaEndpoints"
     },
     {
       "name": "FeedEndpoints"
