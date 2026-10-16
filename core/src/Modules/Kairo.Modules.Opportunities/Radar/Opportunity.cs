@@ -149,6 +149,12 @@ internal sealed class ScoreBreakdown
     public double Feedback { get; set; } = 1;
 
     public List<string> FeedbackReasons { get; set; } = [];
+
+    public double? Memory { get; set; }
+
+    public List<string>? MemoryReasons { get; set; }
+
+    public List<Guid>? MemoryEntryIds { get; set; }
 }
 
 internal sealed class TrendPoint

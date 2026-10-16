@@ -89,7 +89,7 @@ internal sealed class ImagesWork(
 
         var answer = await agent.ImagesAsync(
             new ImagesRequest(
-                MediaDesk.Brief(context),
+                desk.BriefFor(context),
                 context.BrandKit,
                 [.. products.Where(entry => shots.Any(shot => shot.ProductId == entry.Product.Key)).Select(Reference)],
                 shots,

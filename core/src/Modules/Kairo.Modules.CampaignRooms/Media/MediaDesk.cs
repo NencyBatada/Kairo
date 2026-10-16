@@ -37,7 +37,13 @@ internal sealed class MediaDesk(
     public static MediaBrief Brief(CopyContext context)
     {
         var data = context.BriefData();
-        return new MediaBrief(data.Title, data.Objective, data.KeyMessages, data.Audiences);
+        return new MediaBrief(data.Title, data.Objective, data.KeyMessages, data.Audiences, context.MemoryData());
+    }
+
+    public MediaBrief BriefFor(CopyContext context)
+    {
+        trail.Memory(context.Memory);
+        return Brief(context);
     }
 
     public async Task<bool> VideoWantedAsync(CopyContext context, CancellationToken cancellationToken) =>

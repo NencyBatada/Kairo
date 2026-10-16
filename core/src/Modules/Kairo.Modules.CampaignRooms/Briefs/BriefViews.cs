@@ -47,6 +47,8 @@ internal sealed record BriefOptionsView(
 
 internal sealed record BriefVersionView(int Version, string Origin, CampaignPersonView? By, string? Instruction, DateTimeOffset CreatedAt);
 
+internal sealed record BriefMemoryView(Guid Id, string Kind, string Outcome, string Title, bool Removed);
+
 internal sealed record BriefDetail(
     Guid CampaignId,
     int CampaignVersion,
@@ -55,7 +57,8 @@ internal sealed record BriefDetail(
     BriefWarningView[] Warnings,
     BriefBudgetView? BudgetLimit,
     BriefOptionsView Options,
-    BriefVersionView[] History);
+    BriefVersionView[] History,
+    BriefMemoryView[] Memory);
 
 internal sealed record BriefChangeView(string Field, string Label, string Before, string After, string Reason);
 

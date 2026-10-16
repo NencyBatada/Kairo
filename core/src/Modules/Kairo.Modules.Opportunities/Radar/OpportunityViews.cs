@@ -117,7 +117,9 @@ internal sealed record ScoreBreakdownView(
     double FitWeight,
     string? FitReason,
     double Feedback,
-    string[] FeedbackReasons);
+    string[] FeedbackReasons,
+    double Memory,
+    string[] MemoryReasons);
 
 internal sealed record OpportunityCard(
     Guid Id,
@@ -248,7 +250,9 @@ internal sealed record OpportunityDetail(
                 OpportunityScoring.FitWeight,
                 opportunity.FitReason,
                 breakdown.Feedback,
-                [.. breakdown.FeedbackReasons]),
+                [.. breakdown.FeedbackReasons],
+                breakdown.Memory ?? 1,
+                [.. breakdown.MemoryReasons ?? []]),
             opportunity.ClosedAt,
             opportunity.DismissReason,
             opportunity.DismissNote,

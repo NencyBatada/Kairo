@@ -17,7 +17,7 @@ public sealed class MediaAgentTests
     private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 9];
     private static readonly byte[] Webp = [.. "RIFF"u8, 0, 0, 0, 0, .. "WEBP"u8, 7];
 
-    private static readonly MediaBrief Brief = new("Monsoon runners", "Sell waterproof shoes", ["Dries in an hour"], ["Commuters"]);
+    private static readonly MediaBrief Brief = new("Monsoon runners", "Sell waterproof shoes", ["Dries in an hour"], ["Commuters"], []);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 

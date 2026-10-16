@@ -23,6 +23,8 @@ internal sealed record SmartDateGuide(string Today, string SuggestedStart, strin
 
 internal sealed record SmartSeed(string? Title, string? Goal, string? Audience, string? KeyMessage, string? Offer);
 
+internal sealed record SmartMemory(string Id, string Text);
+
 internal sealed record SmartBriefRequest(
     string Brand,
     string Market,
@@ -32,7 +34,7 @@ internal sealed record SmartBriefRequest(
     SmartDateGuide Dates,
     IReadOnlyList<string> Languages,
     SmartSeed? Seed,
-    IReadOnlyList<string> Memory,
+    IReadOnlyList<SmartMemory> Memory,
     JsonElement? BrandKit);
 
 internal sealed record SmartReasons(
@@ -76,7 +78,8 @@ internal sealed record SmartDraft(
     IReadOnlyList<string?>? KeyMessages,
     IReadOnlyList<string?>? ProductIds,
     IReadOnlyList<string?>? Languages,
-    SmartReasons? Reasons);
+    SmartReasons? Reasons,
+    IReadOnlyList<string?>? MemoryUsed = null);
 
 internal sealed record SmartBriefAnswer(SmartDraft? Brief, string? Model, string? PromptVersion, AgentUsage? Usage = null);
 

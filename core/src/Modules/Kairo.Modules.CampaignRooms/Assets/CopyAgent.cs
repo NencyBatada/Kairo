@@ -33,7 +33,8 @@ internal sealed record CopyRequest(
     IReadOnlyList<CopyProductData> Products,
     IReadOnlyList<string> Keywords,
     IReadOnlyList<LockedCopyData> Locked,
-    JsonElement? BrandKit);
+    JsonElement? BrandKit,
+    IReadOnlyList<string> Memory);
 
 internal sealed record CopyKeyword(string? Text, string? Match);
 

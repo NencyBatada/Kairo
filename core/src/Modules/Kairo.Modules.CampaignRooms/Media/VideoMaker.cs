@@ -79,7 +79,7 @@ internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent, ProvenanceTra
         var frames = await FramesAsync(room, context, cancellationToken);
         var planned = await agent.FootageAsync(
             new FootageRequest(
-                MediaDesk.Brief(context),
+                desk.BriefFor(context),
                 context.BrandKit,
                 [.. context.Products.Take(6).Select(entry => new FootageProduct(entry.Key, CopyDesk.Cut(entry.Product.Title, 300)))],
                 frames,
@@ -121,7 +121,7 @@ internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent, ProvenanceTra
     }
 
     public async Task<VideoSetting> SettingAsync(CopyContext context, CancellationToken cancellationToken) =>
-        new(MediaDesk.Brief(context), context.BrandKit, await desk.LogoAsync(context.BrandKit, cancellationToken), MediaDesk.Background(context.BrandKit));
+        new(desk.BriefFor(context), context.BrandKit, await desk.LogoAsync(context.BrandKit, cancellationToken), MediaDesk.Background(context.BrandKit));
 
     public async Task<ComposedVideo> ComposeAsync(
         Room room,

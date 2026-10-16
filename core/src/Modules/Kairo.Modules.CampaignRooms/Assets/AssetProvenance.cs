@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Kairo.Contracts.BrandMemory;
 
 namespace Kairo.Modules.CampaignRooms.Assets;
 
@@ -68,6 +69,7 @@ internal sealed class ProvenanceTrail
     private readonly List<AgentCallRecord> _calls = [];
     private readonly Dictionary<string, List<string>> _photos = new(StringComparer.Ordinal);
     private readonly List<AssetInput> _inputs = [];
+    private readonly List<MemoryNote> _memory = [];
     private int? _brandKitVersion;
 
     public static string Digest<T>(T request) =>
@@ -107,6 +109,22 @@ internal sealed class ProvenanceTrail
         lock (_gate)
         {
             _brandKitVersion = version ?? _brandKitVersion;
+        }
+    }
+
+    public void Memory(IEnumerable<MemoryNote> notes)
+    {
+        lock (_gate)
+        {
+            _memory.AddRange(notes.Where(note => _memory.All(known => known.Id != note.Id)));
+        }
+    }
+
+    public IReadOnlyList<Guid> MemoryIds()
+    {
+        lock (_gate)
+        {
+            return [.. _memory.Select(note => note.Id)];
         }
     }
 
@@ -170,6 +188,7 @@ internal sealed class ProvenanceTrail
             BriefVersion = asset.BriefVersion,
             PreviousVersion = previousVersion is > 0 ? previousVersion : null,
             ChangedFields = [.. changedFields ?? []],
+            MemoryUses = [.. _memory.Select(note => note.Title)],
         };
     }
 
