@@ -1,8 +1,9 @@
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import type { ReactNode } from "react";
 import { day, money, percent, type ProofResult } from "../_lib/model";
 
-export function ProofSummary({ result }: { result: ProofResult }) {
+export function ProofSummary({ result, children }: { result: ProofResult; children?: ReactNode }) {
   const plan = result.plan;
   return <section id="proof-plan" aria-labelledby="proof-title" className="space-y-5 rounded-lg border bg-card p-5 sm:p-6">
     <div className="space-y-1"><p className="text-small text-muted-foreground">Proof by design</p><h2 id="proof-title" className="text-xl font-semibold">Test plan</h2></div>
@@ -19,5 +20,6 @@ export function ProofSummary({ result }: { result: ProofResult }) {
       {plan.changeReason && <Alert variant="warning"><p>Reason for the change after launch: {plan.changeReason}</p></Alert>}
       {plan.warnings.map((warning, index) => <Alert key={`${warning.code}-${index}`} variant="warning"><p>{warning.message}</p></Alert>)}
     </>}
+    {children}
   </section>;
 }

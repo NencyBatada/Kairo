@@ -5,7 +5,7 @@ import { coreApi, unwrap } from "@/lib/core-api/client";
 import { getWorkspace } from "@/lib/core-api/queries";
 import { getRoom } from "../_lib/room";
 import { BriefWorkspace } from "./_components/brief-workspace";
-import { ProofSummary } from "./_components/proof-summary";
+import { RegionsPlan } from "./_components/regions-plan";
 
 export default async function BriefPage({ params }: PageProps<"/[workspace]/campaigns/[id]/brief">) {
   const { workspace: handle, id } = await params;
@@ -23,5 +23,5 @@ export default async function BriefPage({ params }: PageProps<"/[workspace]/camp
       description="Kairo drafts the brief here, with the reasoning for each field, the budget against your limit, and the test and holdout regions."
     />
   );
-  return <BriefWorkspace detail={detail} room={room} proof={proof} brandId={brandId} canEdit={workspace.roles.includes("marketer")} timeZone={timeZone} now={now}><ProofSummary result={proof} /></BriefWorkspace>;
+  return <BriefWorkspace detail={detail} room={room} proof={proof} brandId={brandId} canEdit={workspace.roles.includes("marketer")} timeZone={timeZone} now={now}><RegionsPlan result={proof} brandId={brandId} campaignId={id} campaignVersion={String(room.version)} canEdit={workspace.roles.includes("marketer")} /></BriefWorkspace>;
 }
