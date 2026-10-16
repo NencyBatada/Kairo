@@ -123,7 +123,6 @@ internal sealed class LabWork(MeasurementDbContext db, IEnumerable<ILabSource> s
         analysis.PromptVersion = null;
         analysis.Problem = null;
         analysis.FinishedAt = null;
-        analysis.MemoryEntryId = null;
     }
 
     public static string ConnectFirst(ConnectedProduct product) => $"Connect {Name(product)} before loading this data.";

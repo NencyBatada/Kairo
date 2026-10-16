@@ -386,6 +386,14 @@ public sealed class ImpactLabTests(SqlServer sqlServer) : IAsyncLifetime
         using var twice = await PostAsync($"{Base}/{id}/memory", Version(view));
         Assert.Equal(HttpStatusCode.Conflict, twice.StatusCode);
         Assert.Equal(LabEndpoints.AlreadySaved, Text(await twice.Content.ReadFromJsonAsync<JsonElement>(Token), "title"));
+
+        await PostAsync($"{Base}/{id}/run", Version(view));
+        await DispatchAsync();
+        var rerun = await GetAsync(id);
+        Assert.Equal(entryId, rerun.GetProperty("memoryEntryId").GetGuid());
+        using var again = await PostAsync($"{Base}/{id}/memory", Version(rerun));
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+        Assert.Single((await _admin.Browser.GetFromJsonAsync<JsonElement>($"/api/brands/{_brandId}/brand-memory", Token)).GetProperty("entries").EnumerateArray());
     }
 
     [Fact]
@@ -430,6 +438,10 @@ public sealed class ImpactLabTests(SqlServer sqlServer) : IAsyncLifetime
     public async Task Stale_or_running_analyses_cannot_be_changed()
     {
         var (id, ready) = await ReadyToRunAsync();
+
+        using var unversioned = await PostAsync($"{Base}/{id}/run", new { });
+        Assert.Equal(HttpStatusCode.BadRequest, unversioned.StatusCode);
+        Assert.Equal(LabEndpoints.NeedsVersion, Text(await unversioned.Content.ReadFromJsonAsync<JsonElement>(Token), "title"));
 
         using var stale = await _admin.Browser.PutAsJsonAsync($"{Base}/{id}", Setup(FileSource(), version: 1), Token);
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);

@@ -21,6 +21,7 @@ internal static class LabEndpoints
     public const string NotConclusive = "Only a conclusive result can be saved to Brand Memory.";
     public const string AlreadySaved = "This result is already in Brand Memory.";
     public const string NotFile = "This analysis doesn't use an uploaded file.";
+    public const string NeedsVersion = "Send the analysis version from when you opened it.";
 
     public static string LockName(Guid analysisId) => $"impact-lab:{analysisId:N}";
 
@@ -87,7 +88,7 @@ internal static class LabEndpoints
         var (spec, errors) = Validate(request, time);
         if (request.Version is not { } version || version < 1)
         {
-            errors["version"] = ["Send the analysis version from when you opened it."];
+            errors["version"] = [NeedsVersion];
         }
 
         if (errors.Count > 0)
@@ -582,6 +583,11 @@ internal static class LabEndpoints
 
     private static ProblemHttpResult? Refuse(LabAnalysis analysis, int? version)
     {
+        if (version is null)
+        {
+            return TypedResults.Problem(statusCode: StatusCodes.Status400BadRequest, title: NeedsVersion);
+        }
+
         if (analysis.State == LabStates.Running)
         {
             return Conflict(Busy);
