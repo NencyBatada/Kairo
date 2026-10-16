@@ -4,6 +4,7 @@ using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandMemory;
 using Kairo.Contracts.CampaignRooms;
 using Kairo.Contracts.Live;
+using Kairo.Contracts.Measurement;
 using Kairo.Modules.BrandMemory.Data;
 using Kairo.Modules.BrandMemory.Memory;
 using Kairo.SharedKernel.Agents;
@@ -15,11 +16,7 @@ internal sealed record LearnInput(Guid RoomId, Guid? ReportId, LearnRequest Requ
 
 internal static class ReportOutcomes
 {
-    public const string Worked = "worked";
-    public const string NoEffect = "no_effect";
-    public const string Inconclusive = "inconclusive";
-
-    public static bool Proven(string? outcome) => outcome is Worked or NoEffect;
+    public static bool Proven(string? outcome) => outcome is ImpactOutcomes.Worked or ImpactOutcomes.NoEffect;
 }
 
 internal sealed partial class LearnWork(
@@ -91,7 +88,7 @@ internal sealed partial class LearnWork(
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var testRegions = request.Regions.Where(region => region.Test).Select(region => region.Name).ToList();
         var known = request.Regions.Select(region => region.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var expected = request.Result.Outcome == ReportOutcomes.Worked ? MemoryOutcomes.Worked : MemoryOutcomes.DidntWork;
+        var expected = request.Result.Outcome == ImpactOutcomes.Worked ? MemoryOutcomes.Worked : MemoryOutcomes.DidntWork;
         var ads = request.Ads.GroupBy(ad => ad.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var entries = new List<MemoryEntry>();
         foreach (var lesson in (lessons ?? []).OfType<LearnedLesson>())

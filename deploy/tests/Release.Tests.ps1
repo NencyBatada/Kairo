@@ -291,6 +291,11 @@ Describe 'Invoke-KairoDeploy' {
             '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
             '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
             '--location asia-south1 --project kairo-test')
+        $calls | Should -Contain ('scheduler jobs create http kairo-brand-memory-learn --schedule 50 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/brand-memory/learn --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
     }
 
     It 'updates the hourly catalogue job when it already exists' {

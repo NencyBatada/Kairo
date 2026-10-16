@@ -342,7 +342,7 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
             new LearnCampaign("Monsoon runners", "orders", "Sell waterproof shoes.", ["Commuters"], ["Dries in minutes."], ["en"],
                 [new LearnProduct("p-1", "Monsoon Waterproof Runner", Radar.RainCategory)]),
             new LearnResult(outcome, 0.12, 0.06, 0.18, 420, 210, 630, 310, 130_200, 3900),
-            [new LearnRegion("Mumbai", true, 2400, 2100), new LearnRegion("Pune", true, 1500, 1380), new LearnRegion("Nagpur", false, null, null)],
+            [new LearnRegion("Mumbai", true, true, 0.14, 0.05, 0.23, 300), new LearnRegion("Pune", true, false, 0.08, -0.04, 0.2, 120), new LearnRegion("Nagpur", false, false, null, null, null, null)],
             [
                 new LearnAd("ad:search:1", "search", "en", ["Dries in minutes"], [], null, 20_000, 1000, 60, 9000),
                 new LearnAd("ad:search:2", "search", "en", ["Lowest prices"], [], null, 2000, 40, 1, 400),

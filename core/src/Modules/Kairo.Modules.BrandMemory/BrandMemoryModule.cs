@@ -13,6 +13,7 @@ public sealed class BrandMemoryModule : IModule
         services.AddScoped<IBrandMemory, BrandMemoryReader>();
         services.AddScoped<LearnAgent>();
         services.AddScoped<LearnWork>();
+        services.AddScoped<LearnSweeper>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
@@ -26,6 +27,7 @@ public sealed class BrandMemoryModule : IModule
 
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
+        jobs.MapLearnJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

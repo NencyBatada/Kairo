@@ -40,8 +40,11 @@ class LearnResult(CamelModel):
 class LearnRegion(CamelModel):
     name: str = Field(max_length=100)
     test: bool
-    actual: float | None = None
-    expected: float | None = None
+    conclusive: bool = False
+    lift: float | None = None
+    low: float | None = None
+    high: float | None = None
+    extra: float | None = None
 
 
 class LearnAd(CamelModel):

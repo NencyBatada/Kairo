@@ -60,6 +60,7 @@ internal static class CampaignRoomsSetup
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
         services.AddScoped<ICampaignTests, CampaignTests>();
+        services.AddScoped<ICampaignBriefs, CampaignBriefs>();
         services.AddScoped<TestEnds>();
         services.AddScoped<IProofPlans, ProofPlanDirectory>();
         services.AddScoped<IAssets, AssetDirectory>();

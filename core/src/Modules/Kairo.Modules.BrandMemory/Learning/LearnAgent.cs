@@ -26,7 +26,7 @@ internal sealed record LearnResult(
     decimal Spend,
     double Results);
 
-internal sealed record LearnRegion(string Name, bool Test, double? Actual, double? Expected);
+internal sealed record LearnRegion(string Name, bool Test, bool Conclusive, double? Lift, double? Low, double? High, double? Extra);
 
 internal sealed record LearnAd(
     string Id,

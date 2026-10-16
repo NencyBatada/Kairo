@@ -21,6 +21,7 @@ $script:ScheduledJobs = @(
     @{ Name = 'kairo-test-ends'; Schedule = '10 * * * *'; Path = '/jobs/campaigns/test-ends'; Deadline = '600s' }
     @{ Name = 'kairo-recommendations'; Schedule = '25 * * * *'; Path = '/jobs/care/recommendations'; Deadline = '1800s' }
     @{ Name = 'kairo-lift-readings'; Schedule = '40 * * * *'; Path = '/jobs/measurement/lift'; Deadline = '1800s' }
+    @{ Name = 'kairo-brand-memory-learn'; Schedule = '50 * * * *'; Path = '/jobs/brand-memory/learn'; Deadline = '1800s' }
 )
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'

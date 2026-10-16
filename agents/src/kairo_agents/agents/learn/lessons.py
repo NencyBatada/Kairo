@@ -1,7 +1,13 @@
 import math
 from typing import Any
 
-from kairo_agents.agents.learn.models import DraftLesson, LearnAd, LearnRequest, Lesson
+from kairo_agents.agents.learn.models import (
+    DraftLesson,
+    LearnAd,
+    LearnRegion,
+    LearnRequest,
+    Lesson,
+)
 
 KINDS = ("message", "visual", "audience", "region")
 OUTCOMES = ("worked", "didnt_work")
@@ -116,6 +122,10 @@ def clean_lessons(drafted: list[DraftLesson], request: LearnRequest) -> list[Les
             ]
             if kind == "region" and not named:
                 continue
+            if kind == "region" and not all(
+                region_fits(regions[name.casefold()], outcome) for name in named
+            ):
+                continue
         lessons.append(
             Lesson(
                 kind=kind,
@@ -131,6 +141,13 @@ def clean_lessons(drafted: list[DraftLesson], request: LearnRequest) -> list[Les
         if len(lessons) == MAX_LESSONS:
             break
     return lessons
+
+
+def region_fits(region: LearnRegion, outcome: str) -> bool:
+    if region.lift is None:
+        return False
+    proven_gain = region.conclusive and region.lift > 0
+    return proven_gain if outcome == "worked" else not proven_gain
 
 
 def languages(cited: list[LearnAd], request: LearnRequest) -> list[str]:
@@ -170,7 +187,14 @@ def evidence(
     if named:
         wanted = {name.casefold() for name in named}
         found["regions"] = [
-            {"name": region.name, "actual": region.actual, "expected": region.expected}
+            {
+                "name": region.name,
+                "conclusive": region.conclusive,
+                "lift": region.lift,
+                "low": region.low,
+                "high": region.high,
+                "extra": region.extra,
+            }
             for region in request.regions
             if region.name.casefold() in wanted
         ]

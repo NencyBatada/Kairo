@@ -36,8 +36,23 @@ REQUEST = {
         "results": 3900,
     },
     "regions": [
-        {"name": "Mumbai", "test": True, "actual": 2400, "expected": 2100},
-        {"name": "Pune", "test": True, "actual": 1500, "expected": 1380},
+        {
+            "name": "Mumbai",
+            "test": True,
+            "conclusive": True,
+            "lift": 0.14,
+            "low": 0.05,
+            "high": 0.23,
+            "extra": 300,
+        },
+        {
+            "name": "Pune",
+            "test": True,
+            "conclusive": False,
+            "lift": 0.08,
+            "low": -0.04,
+            "high": 0.2,
+        },
         {"name": "Nagpur", "test": False},
     ],
     "ads": [
@@ -182,7 +197,14 @@ def test_lessons_make_one_structured_call_and_keep_the_supported_lessons(
     assert body["lessons"][2]["languages"] == ["hi"]
     assert body["lessons"][3]["regions"] == ["Mumbai"]
     assert body["lessons"][3]["evidence"]["regions"] == [
-        {"name": "Mumbai", "actual": 2400.0, "expected": 2100.0}
+        {
+            "name": "Mumbai",
+            "conclusive": True,
+            "lift": 0.14,
+            "low": 0.05,
+            "high": 0.23,
+            "extra": 300.0,
+        }
     ]
     assert body["lessons"][4]["languages"] == ["en", "hi"]
     [call] = models.calls
@@ -314,3 +336,24 @@ def test_a_gap_that_could_be_chance_is_not_a_lesson() -> None:
     ]
 
     assert clean_lessons(drafts, request(ads=ads)) == []
+
+
+def test_region_lessons_must_match_that_regions_own_lift() -> None:
+    drafts = [
+        draft(title="Pune worked", kind="region", regions=["Pune"]),
+        draft(title="Mumbai worked", kind="region", regions=["Mumbai"]),
+        draft(title="Nagpur worked", kind="region", regions=["Nagpur"]),
+    ]
+
+    lessons = clean_lessons(drafts, request())
+
+    assert [lesson.title for lesson in lessons] == ["Mumbai worked"]
+    no_effect = {**REQUEST["result"], "outcome": "no_effect"}
+    failed = clean_lessons(
+        [
+            draft(title="Mumbai failed", kind="region", outcome="didnt_work", regions=["Mumbai"]),
+            draft(title="Pune failed", kind="region", outcome="didnt_work", regions=["Pune"]),
+        ],
+        request(result=no_effect),
+    )
+    assert [lesson.title for lesson in failed] == ["Pune failed"]
