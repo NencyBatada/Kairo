@@ -55,6 +55,13 @@ public sealed class PacingRulesTests
         Assert.Contains("missed 45% of eligible searches", strict.Text, StringComparison.Ordinal);
         Assert.Equal("learning", Cause(PacingStates.Under, reasons: ["BIDDING_STRATEGY_LEARNING"], rank: 0.1m).Kind);
         Assert.Equal("low_demand", Cause(PacingStates.Under, reasons: ["SEARCH_VOLUME_LIMITED"]).Kind);
+        var stock = Cause(PacingStates.Under, blocked: 1, stock: 1, reasons: ["BIDDING_STRATEGY_LIMITED"]);
+        Assert.Equal("stock_paused", stock.Kind);
+        Assert.Contains("Kairo paused 1 of 4 ads because their products sold out", stock.Text, StringComparison.Ordinal);
+        Assert.Equal("campaign_stopped", Cause(PacingStates.Under, reasons: ["CAMPAIGN_ENDED"], stock: 4).Kind);
+        var mixed = Cause(PacingStates.Under, blocked: 3, stock: 0);
+        Assert.DoesNotContain("for stock", mixed.Text, StringComparison.Ordinal);
+        Assert.Equal("high_demand", Cause(PacingStates.Over, stock: 4).Kind);
     }
 
     [Fact]
@@ -68,6 +75,6 @@ public sealed class PacingRulesTests
         Assert.All(new[] { costlier, Cause(PacingStates.Under) }, cause => Assert.NotEmpty(cause.Fix));
     }
 
-    private static PacingCause Cause(string status, string[]? reasons = null, int blocked = 0, decimal? rank = null, decimal? recent = null, decimal? earlier = null) =>
-        PacingRules.Cause(status, new PacingSignals(reasons ?? [], 4, blocked, rank, recent, earlier));
+    private static PacingCause Cause(string status, string[]? reasons = null, int blocked = 0, decimal? rank = null, decimal? recent = null, decimal? earlier = null, int stock = 0) =>
+        PacingRules.Cause(status, new PacingSignals(reasons ?? [], 4, blocked, rank, recent, earlier, stock));
 }

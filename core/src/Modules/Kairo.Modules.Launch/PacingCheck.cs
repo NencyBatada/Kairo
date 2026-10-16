@@ -21,7 +21,7 @@ internal static class PacingStates
 
 internal sealed record CampaignDay(decimal Spend, decimal Conversions, decimal ConversionValue, long Impressions, long Clicks);
 
-internal sealed record PacingSignals(string[] Reasons, int Ads, int BlockedAds, decimal? RankLostShare, decimal? RecentCpc, decimal? EarlierCpc);
+internal sealed record PacingSignals(string[] Reasons, int Ads, int BlockedAds, decimal? RankLostShare, decimal? RecentCpc, decimal? EarlierCpc, int StockPausedAds = 0);
 
 internal sealed record PacingCause(string Kind, string Text, string Fix);
 
@@ -68,8 +68,13 @@ internal static class PacingRules
         if (Has("CAMPAIGN_PAUSED", "CAMPAIGN_ENDED", "CAMPAIGN_REMOVED"))
             return new("campaign_stopped", "The campaign is paused or has ended in Google Ads, so it can't spend its plan.",
                 "Resume the campaign in Kairo or Google Ads if it should still be running.");
+        if (signals.StockPausedAds > 0 && (signals.Ads == 0 || signals.StockPausedAds * 4 >= signals.Ads))
+            return new("stock_paused", signals.Ads > 0
+                    ? $"Kairo paused {signals.StockPausedAds} of {signals.Ads} ads because their products sold out, so fewer ads can serve."
+                    : "Kairo paused this campaign's ads because their products sold out, so fewer ads can serve.",
+                "The ads resume automatically when stock returns. Undo a pause from the stock pause log if the product can still be sold.");
         if (signals.Ads > 0 && signals.BlockedAds * 4 >= signals.Ads)
-            return new("ads_unavailable", $"{signals.BlockedAds} of {signals.Ads} ads are paused or disapproved, so fewer ads can serve.",
+            return new("ads_unavailable", $"{signals.BlockedAds} of {signals.Ads} ads are paused or disapproved" + (signals.StockPausedAds > 0 ? $" ({signals.StockPausedAds} paused by Kairo for stock)" : "") + ", so fewer ads can serve.",
                 "Check stock pauses and disapproved ads, and fix or replace the ads that can't serve.");
         if (Has("AD_GROUP_ADS_PAUSED", "NO_AD_GROUP_ADS", "HAS_ADS_DISAPPROVED", "MOST_ADS_UNDER_REVIEW"))
             return new("ads_unavailable", "Most of the campaign's ads are paused, disapproved or still under review.",
@@ -166,7 +171,7 @@ internal sealed class PacingWorker(LaunchDbContext db, KairoDatabase database, L
         foreach (var row in added.Where(row => row.AlertedAt is not null && !alerts.Contains(row))) row.AlertedAt = null;
         if (alerts.Length > 0)
         {
-            var signals = await SignalsAsync(plan.GoogleAdsAccountId!, campaigns, alerts, history.Concat(added).ToArray(), cancellationToken);
+            var signals = await SignalsAsync(id, plan.GoogleAdsAccountId!, campaigns, alerts, history.Concat(added).ToArray(), cancellationToken);
             foreach (var row in alerts)
             {
                 var cause = PacingRules.Cause(row.Status, signals[row.CampaignType]);
@@ -234,7 +239,7 @@ internal sealed class PacingWorker(LaunchDbContext db, KairoDatabase database, L
         return days;
     }
 
-    private async Task<Dictionary<string, PacingSignals>> SignalsAsync(string account, Dictionary<string, string> campaigns, PacingDay[] alerts, PacingDay[] days, CancellationToken cancellationToken)
+    private async Task<Dictionary<string, PacingSignals>> SignalsAsync(Guid launchId, string account, Dictionary<string, string> campaigns, PacingDay[] alerts, PacingDay[] days, CancellationToken cancellationToken)
     {
         var names = alerts.Select(row => campaigns[row.CampaignType]).ToArray();
         var statuses = await google.SearchAsync(account, $"SELECT campaign.resource_name, campaign.primary_status, campaign.primary_status_reasons FROM campaign WHERE campaign.resource_name IN ({Filter(names)})", cancellationToken);
@@ -242,6 +247,8 @@ internal sealed class PacingWorker(LaunchDbContext db, KairoDatabase database, L
         var searchable = alerts.Where(row => row.CampaignType is "search" or "shopping").ToArray();
         var ranks = searchable.Length == 0 ? [] : await google.SearchAsync(account,
             $"SELECT campaign.resource_name, metrics.search_rank_lost_impression_share FROM campaign WHERE campaign.resource_name IN ({Filter(searchable.Select(row => campaigns[row.CampaignType]))}) AND segments.date BETWEEN '{Iso(searchable.Min(row => row.Date).AddDays(1 - PacingRules.StreakDays))}' AND '{Iso(searchable.Max(row => row.Date))}'", cancellationToken);
+        var stockPaused = await db.AdPauses.AsNoTracking().Where(pause => pause.LaunchId == launchId && pause.State == PauseStates.Paused)
+            .GroupBy(pause => pause.CampaignType).Select(group => new { group.Key, Count = group.Count() }).ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
         var signals = new Dictionary<string, PacingSignals>();
         foreach (var row in alerts)
         {
@@ -256,8 +263,8 @@ internal sealed class PacingWorker(LaunchDbContext db, KairoDatabase database, L
                 .Select(item => (decimal?)Number(item.GetProperty("metrics"), "searchRankLostImpressionShare")).FirstOrDefault();
             var streakStart = row.Date.AddDays(1 - PacingRules.StreakDays);
             var campaignDays = days.Where(day => day.CampaignType == row.CampaignType).ToArray();
-            signals[row.CampaignType] = new PacingSignals(reasons, campaignAds.Length, blocked, rank,
-                Cpc(campaignDays.Where(day => day.Date >= streakStart && day.Date <= row.Date)), Cpc(campaignDays.Where(day => day.Date < streakStart)));
+            signals[row.CampaignType] = new PacingSignals(reasons, Math.Max(campaignAds.Length, stockPaused.GetValueOrDefault(row.CampaignType)), Math.Max(blocked, stockPaused.GetValueOrDefault(row.CampaignType)), rank,
+                Cpc(campaignDays.Where(day => day.Date >= streakStart && day.Date <= row.Date)), Cpc(campaignDays.Where(day => day.Date < streakStart)), stockPaused.GetValueOrDefault(row.CampaignType));
         }
         return signals;
     }

@@ -248,7 +248,7 @@ Each live launch gets one pacing row per campaign per day, in the brand's time z
 A campaign is off pace when it spends more than 20% over or under that plan. After two days in a row off pace in the same direction, Kairo sends one `pacing.alert` to marketers and the budget owners (or every approver if no budget owner is assigned). It records `launch.pacing_alerted` in the audit log, then waits for the streak to end before alerting again.
 
 The likely cause comes from fixed rules over Google Ads status:
-- **Spending too little:** the campaign is paused or ended; at least a quarter of its ads are paused or disapproved; the bid target is too strict; the bid strategy is still learning; or demand is lower than planned.
+- **Spending too little:** the campaign is paused or ended; Kairo paused at least a quarter of its ads because their products sold out (from the stock pause log); at least a quarter of its ads are paused or disapproved for other reasons; the bid target is too strict; the bid strategy is still learning; or demand is lower than planned.
 - **Spending too much:** clicks now cost at least 20% more than earlier in the campaign, or demand is higher than planned.
 
 `GET /api/brands/{brandId}/campaigns/{campaignId}/pacing` returns daily spend against plan, results, each campaign's status, and the current alert with its cause and suggested fix. New rows publish `launch.pacing_changed`.

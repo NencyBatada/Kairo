@@ -106,6 +106,34 @@ public sealed class PacingTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Under_pace_from_Kairo_stock_pauses_says_so()
+    {
+        var record = await RecordAsync();
+        await using (var scope = await ScopeAsync())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LaunchDbContext>();
+            foreach (var (type, campaign) in _google.Campaigns)
+                foreach (var index in Enumerable.Range(0, 2))
+                    db.AdPauses.Add(new AdPause { Id = Guid.NewGuid(), RoomId = _room, LaunchId = record.Id, CampaignType = type, CampaignResource = campaign,
+                        AdResource = $"{campaign}/ads/{index}", State = "paused", CreatedAt = _world.Api.Clock.GetUtcNow(), PausedAt = _world.Api.Clock.GetUtcNow() });
+            db.AdPauses.Add(new AdPause { Id = Guid.NewGuid(), RoomId = _room, LaunchId = record.Id, CampaignType = _google.Campaigns.Keys.First(), CampaignResource = "held",
+                AdResource = "held/ads/9", State = "held", CreatedAt = _world.Api.Clock.GetUtcNow() });
+            await db.SaveChangesAsync(Token);
+        }
+        _google.PausedAds = 2;
+        var first = FirstDay();
+        Spend(first, 0.5m);
+        Spend(first.AddDays(1), 0.5m);
+        At(first.AddDays(2), 7);
+        Assert.Equal(1, await PacingAsync());
+        var alerts = await AlertsAsync();
+        Assert.NotEmpty(alerts);
+        Assert.All(alerts, row => Assert.Contains("Kairo paused 2 of 4 ads because their products sold out", row.Body, StringComparison.Ordinal));
+        var alert = (await ViewAsync()).GetProperty("campaigns")[0].GetProperty("alert");
+        Assert.Equal("stock_paused", alert.GetProperty("causeKind").GetString());
+    }
+
+    [Fact]
     public async Task Alerts_go_to_marketers_and_budget_owners_only()
     {
         var bystander = await Workspaces.JoinAsync(_world.Api, _world.Admin, _world.BrandId, "approver");
@@ -187,7 +215,7 @@ public sealed class PacingTests(SqlServer sqlServer) : IAsyncLifetime
         await using (var scope = await ScopeAsync())
         {
             var migrator = scope.ServiceProvider.GetRequiredService<LaunchDbContext>().GetService<IMigrator>();
-            await migrator.MigrateAsync("20261016114802_LaunchRetryHealth", Token);
+            await migrator.MigrateAsync("20261016123611_StockPauses", Token);
             await migrator.MigrateAsync(cancellationToken: Token);
         }
         var record = await RecordAsync();
