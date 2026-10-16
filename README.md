@@ -264,7 +264,7 @@ A live campaign's test ends when its proof-plan window closes. `POST /jobs/campa
 - **Drafts Kairo's recommendations once per finished test**, using fixed rules and the Google Ads results for the test window. Only campaigns still running with at least two days left and 15 conversions count.
   - **Budget move:** when one campaign's cost per result (or return, for revenue tests) is at least 25% better than another's, Kairo suggests moving a quarter of the weaker campaign's remaining budget to it. Total spend stays the same.
   - **Target change:** when a target CPA or ROAS is more than 20% away from what the test achieved, Kairo suggests that value as the new target.
-- **Refreshes Google Ads' own recommendations** for live and finished campaigns. While a test runs, only types that cannot widen targeting are shown: keywords, ad text, assets, budget and bidding opt-ins. Network and geo expansion types, and any unknown type, stay hidden.
+- **Refreshes Google Ads' own recommendations** for live and finished campaigns. While a test runs, only types that cannot widen targeting are shown: keywords, ad text, assets, budget and bidding opt-ins. Network and geo expansion types, and any unknown type, stay hidden. Once every campaign has passed its end date in the brand's time zone, Kairo stops refreshing them and expires any still open.
 - **Notifies approvers.** `report.ready` goes out when drafts are ready. Each visible recommendation sends `approval.needed` to the approvers assigned to its type.
 
 The recommendation endpoints are:

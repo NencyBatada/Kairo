@@ -20,6 +20,7 @@ public sealed partial class FakeCareGoogle(FakeLaunchGoogle launch)
     public List<string> Applied { get; } = [];
     public bool FailWrites { get; set; }
     public int TransientReads { get; set; }
+    public int SuggestionReads { get; private set; }
 
     public HttpResponseMessage? Respond(Uri uri, string body) => Handle(uri, body) ?? launch.Respond(uri, body);
 
@@ -68,7 +69,7 @@ public sealed partial class FakeCareGoogle(FakeLaunchGoogle launch)
             || query.Contains("metrics.conversions_value", StringComparison.Ordinal) && query.Contains("segments.date,", StringComparison.Ordinal);
         if (!mine) return null;
         if (TransientReads > 0) { TransientReads--; return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable); }
-        if (query.Contains("FROM recommendation", StringComparison.Ordinal))
+        if (query.Contains("FROM recommendation", StringComparison.Ordinal) && ++SuggestionReads > 0)
             return Json(new
             {
                 results = Suggestions.Select(suggestion => new

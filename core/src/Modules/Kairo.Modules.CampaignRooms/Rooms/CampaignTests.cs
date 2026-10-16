@@ -33,7 +33,8 @@ internal sealed class CampaignTests(CampaignRoomsDbContext db) : ICampaignTests
     {
         var plan = (await ProofPlanReader.LatestAsync(db, room.Id, cancellationToken))?.Read();
         var ended = RoomStates.Order(room.State) >= RoomStates.Order(RoomStates.ResultsReady) ? room.StateEnteredAt : (DateTimeOffset?)null;
-        return new CampaignTest(room.Id, room.Title, room.State, plan?.Kpi ?? "orders", plan?.StartDate, plan?.EndDate, ended, room.TestEndedEarly);
+        var brief = await db.Briefs.AsNoTracking().Where(row => row.RoomId == room.Id).OrderByDescending(row => row.Version).FirstOrDefaultAsync(cancellationToken);
+        return new CampaignTest(room.Id, room.Title, room.State, plan?.Kpi ?? "orders", plan?.StartDate, plan?.EndDate, ended, room.TestEndedEarly, brief?.Content.EndDate);
     }
 }
 

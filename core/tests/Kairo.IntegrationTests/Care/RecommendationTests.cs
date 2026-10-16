@@ -2,12 +2,14 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Kairo.Contracts.Audit;
 using Kairo.Contracts.CampaignRooms;
 using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.CampaignRooms;
 using Kairo.IntegrationTests.Launch;
 using Kairo.IntegrationTests.Notifications;
 using Kairo.Modules.Care.Data;
+using Kairo.Modules.Care.Recommendations;
 using Kairo.Modules.Launch;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -246,6 +248,29 @@ public sealed class RecommendationTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Google_suggestions_stop_refreshing_and_expire_once_the_campaigns_have_ended()
+    {
+        var (room, _) = await LiveAsync();
+        var end = DateOnly.Parse(Text((await Campaigns.BriefAsync(_world.Marketer, _world.BrandId, room)).GetProperty("brief"), "endDate"), CultureInfo.InvariantCulture);
+        _google.Suggestions.Add(new CareSuggestion("31", "KEYWORD", "search"));
+        await AdvanceToAsync(end);
+        await RunJobAsync("/jobs/care/recommendations");
+        Assert.Equal(RecommendationStates.Proposed, (await StoredAsync(room)).Single().State);
+        var reads = _google.SuggestionReads;
+
+        await AdvanceToAsync(end.AddDays(1));
+        await RunJobAsync("/jobs/care/recommendations");
+        await RunJobAsync("/jobs/care/recommendations");
+        var expired = (await StoredAsync(room)).Single();
+        Assert.Equal((RecommendationStates.Expired, "The campaign has ended."), (expired.State, expired.Problem));
+        Assert.Equal(reads, _google.SuggestionReads);
+        await using var scope = _world.Api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(_world.BrandId, Token);
+        var trail = await scope.ServiceProvider.GetRequiredService<IAuditTrail>().ForTargetAsync("recommendation", expired.Id.ToString(), null, 10, Token);
+        Assert.Single(trail.Entries, entry => entry.Action == "care.recommendation_expired");
+    }
+
+    [Fact]
     public async Task A_Google_budget_increase_needs_a_budget_owner()
     {
         var (room, _) = await LiveAsync();
@@ -325,6 +350,13 @@ public sealed class RecommendationTests(SqlServer sqlServer) : IAsyncLifetime
             foreach (var browser in new[] { _world.Marketer, _world.Admin, _world.Approver.Browser })
                 await browser.GetAsync($"/api/brands/{_world.BrandId}", Token);
         }
+    }
+
+    private async Task<List<Recommendation>> StoredAsync(Guid room)
+    {
+        await using var scope = _world.Api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(_world.BrandId, Token);
+        return await scope.ServiceProvider.GetRequiredService<CareDbContext>().Recommendations.AsNoTracking().Where(row => row.RoomId == room).ToListAsync(Token);
     }
 
     private async Task<CampaignTest> TestAsync(Guid room)

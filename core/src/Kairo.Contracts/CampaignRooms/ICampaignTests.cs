@@ -22,7 +22,8 @@ public sealed record CampaignTest(
     DateOnly? Start,
     DateOnly? End,
     DateTimeOffset? EndedAt,
-    bool EndedEarly)
+    bool EndedEarly,
+    DateOnly? CampaignEnd = null)
 {
     public bool Running => Stage == CampaignTestStages.Live;
 }

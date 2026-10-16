@@ -178,14 +178,15 @@ internal sealed class RecommendationDesk(CareDbContext db, KairoDatabase databas
     {
         if (test.Stage is not (CampaignTestStages.Live or CampaignTestStages.ResultsReady or CampaignTestStages.Closed))
             return "The campaign is no longer running.";
+        var zone = await brands.FindTimeZoneAsync(recommendation.BrandId, cancellationToken) is { } id && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var found) ? found : TimeZoneInfo.Utc;
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime);
         if (recommendation.Source == RecommendationSources.Google)
         {
+            if (test.CampaignEnd is { } end && end < today) return "The campaign has ended.";
             var current = await changes.GoogleRecommendationsAsync(recommendation.RoomId, cancellationToken);
             return current.Any(item => item.ResourceName == recommendation.GoogleResource) ? null : "Google Ads no longer suggests this.";
         }
 
-        var zone = await brands.FindTimeZoneAsync(recommendation.BrandId, cancellationToken) is { } id && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var found) ? found : TimeZoneInfo.Utc;
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime);
         var states = await changes.ReadAsync(recommendation.RoomId, today, today, cancellationToken);
         return RecommendationRules.Drift(Read<ChangeDetails>(recommendation.Change), Read<CampaignBaseline[]>(recommendation.Baseline), states, today);
     }

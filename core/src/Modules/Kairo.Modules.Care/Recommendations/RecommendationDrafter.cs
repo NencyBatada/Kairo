@@ -89,6 +89,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
 
     private async Task<bool> RefreshGoogleAsync(BrandSummary brand, CampaignTest test, CancellationToken cancellationToken)
     {
+        if (test.CampaignEnd is { } end && end < Today(brand)) return await ExpireEndedAsync(test, cancellationToken);
         var suggestions = await changes.GoogleRecommendationsAsync(test.RoomId, cancellationToken);
         return await SaveAsync(test.RoomId, async () =>
         {
@@ -133,6 +134,20 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
             await db.SaveChangesAsync(cancellationToken);
             await live.PublishAsync(Changed(test.RoomId), cancellationToken);
             return true;
+        }, cancellationToken);
+    }
+
+    private async Task<bool> ExpireEndedAsync(CampaignTest test, CancellationToken cancellationToken)
+    {
+        if (!await db.Recommendations.AnyAsync(row => row.RoomId == test.RoomId && row.Source == RecommendationSources.Google && row.State == RecommendationStates.Proposed, cancellationToken))
+            return false;
+        return await SaveAsync(test.RoomId, async () =>
+        {
+            var open = await db.Recommendations.Where(row => row.RoomId == test.RoomId && row.Source == RecommendationSources.Google && row.State == RecommendationStates.Proposed).ToListAsync(cancellationToken);
+            foreach (var recommendation in open) await ExpireAsync(recommendation, "The campaign has ended.", Actor, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+            await live.PublishAsync(Changed(test.RoomId), cancellationToken);
+            return open.Count > 0;
         }, cancellationToken);
     }
 
