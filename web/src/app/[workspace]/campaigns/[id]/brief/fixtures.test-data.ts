@@ -2,7 +2,7 @@ import type { BriefDetail, ProofResult, Proposal } from "./_lib/model";
 import { room } from "../fixtures.test-data";
 
 export const detail: BriefDetail = {
-  campaignId: room.id, campaignVersion: 1, editable: true, budgetLimit: { amount: 100000, currency: "INR" }, warnings: [],
+  campaignId: room.id, campaignVersion: 1, editable: true, budgetLimit: { amount: 100000, currency: "INR" }, warnings: [], memory: [],
   brief: {
     version: 2, origin: "drafted", title: "Rain-ready trainers", objective: "Increase trainer orders", kpi: "orders", campaignTypes: ["search"],
     budget: { amount: 50000, currency: "INR" }, startDate: "2026-10-18", endDate: "2026-11-01", regions: ["Maharashtra"],

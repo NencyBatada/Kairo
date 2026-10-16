@@ -5491,6 +5491,198 @@
         }
       }
     },
+    "/api/brands/{brandId}/brand-memory": {
+      "get": {
+        "tags": [
+          "MemoryEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryEntryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/brand-memory/{entryId}": {
+      "get": {
+        "tags": [
+          "MemoryEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryEntryDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "MemoryEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditMemoryEntry"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryEntryDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "MemoryEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/notifications": {
       "get": {
         "tags": [
@@ -7408,7 +7600,8 @@
           "warnings",
           "budgetLimit",
           "options",
-          "history"
+          "history",
+          "memory"
         ],
         "type": "object",
         "properties": {
@@ -7460,6 +7653,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BriefVersionView"
+            }
+          },
+          "memory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BriefMemoryView"
             }
           }
         }
@@ -7661,6 +7860,34 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "BriefMemoryView": {
+        "required": [
+          "id",
+          "kind",
+          "outcome",
+          "title",
+          "removed"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "removed": {
+            "type": "boolean"
           }
         }
       },
@@ -9678,6 +9905,37 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "EditMemoryEntry": {
+        "required": [
+          "version",
+          "title",
+          "lesson"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lesson": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -12217,6 +12475,198 @@
             }
           },
           "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MemoryEntryDetail": {
+        "required": [
+          "entry",
+          "uses"
+        ],
+        "type": "object",
+        "properties": {
+          "entry": {
+            "$ref": "#/components/schemas/MemoryEntryView"
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryUseView"
+            }
+          }
+        }
+      },
+      "MemoryEntryList": {
+        "required": [
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryEntryView"
+            }
+          }
+        }
+      },
+      "MemoryEntryView": {
+        "required": [
+          "id",
+          "version",
+          "kind",
+          "outcome",
+          "title",
+          "lesson",
+          "evidence",
+          "products",
+          "categories",
+          "regions",
+          "languages",
+          "sourceCampaignId",
+          "state",
+          "createdBy",
+          "createdAt",
+          "editedBy",
+          "editedAt",
+          "removedBy",
+          "removedAt",
+          "uses"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "lesson": {
+            "type": "string"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "products": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sourceCampaignId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "editedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "removedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "removedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "uses": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "MemoryUseView": {
+        "required": [
+          "usedIn",
+          "targetId",
+          "campaignId",
+          "usedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "usedIn": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campaignId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "usedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -14769,7 +15219,9 @@
           "fitWeight",
           "fitReason",
           "feedback",
-          "feedbackReasons"
+          "feedbackReasons",
+          "memory",
+          "memoryReasons"
         ],
         "type": "object",
         "properties": {
@@ -14868,6 +15320,20 @@
             "format": "double"
           },
           "feedbackReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "memory": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "memoryReasons": {
             "type": "array",
             "items": {
               "type": "string"
@@ -15764,6 +16230,9 @@
     },
     {
       "name": "ImpactEndpoints"
+    },
+    {
+      "name": "MemoryEndpoints"
     },
     {
       "name": "InboxEndpoints"
