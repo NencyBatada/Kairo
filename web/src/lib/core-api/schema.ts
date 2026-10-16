@@ -2919,6 +2919,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LaunchPlanView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LaunchPlanUpdate"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LaunchPlanView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns": {
         parameters: {
             query?: never;
@@ -5671,6 +5745,80 @@ export interface components {
             donts?: string[];
             examples?: string[];
             sources?: components["schemas"]["KitSource"][];
+        };
+        LaunchAsset: {
+            id: string;
+            version: number | string;
+            kind: string;
+            campaignType: string;
+            language: string;
+            adGroup: null | string;
+            format: null | string;
+            productIds: string[];
+            content: components["schemas"]["JsonElement"];
+            checkState: string;
+            check: components["schemas"]["JsonElement"];
+            fileKey: null | string;
+            contentType: null | string;
+            bytes: number | string;
+            syntheticMedia: boolean;
+            disclosureBlocker: null | string;
+        };
+        LaunchChannel: {
+            campaignType: string;
+            budget: number | string;
+            biddingStrategy: string;
+            target?: null | number | string;
+        };
+        LaunchDailyBudget: {
+            campaignType: string;
+            total: number | string;
+            dailyMicros: number | string;
+        };
+        LaunchPlan: {
+            roomId: string;
+            brandId: string;
+            title: string;
+            briefVersion: number | string;
+            proofPlanVersion: number | string;
+            budget: number | string;
+            currency: string;
+            timeZone: string;
+            start: string;
+            end: string;
+            languages: string[];
+            regions: components["schemas"]["LaunchRegion"][];
+            holdouts: components["schemas"]["LaunchRegion"][];
+            googleAdsAccountId: null | string;
+            merchantAccountId: null | string;
+            youTubeChannelId: null | string;
+            productIds: string[];
+            landingPages: string[];
+            settings: components["schemas"]["LaunchSettings"];
+            assets: components["schemas"]["LaunchAsset"][];
+        };
+        LaunchPlanUpdate: {
+            version: number | string;
+            settings: components["schemas"]["LaunchSettings"];
+        };
+        LaunchPlanView: {
+            version: number | string;
+            plan: null | components["schemas"]["LaunchPlan"];
+            hash: null | string;
+            blocker: null | string;
+            dailyBudgets: components["schemas"]["LaunchDailyBudget"][];
+        };
+        LaunchRegion: {
+            id: string;
+            name: string;
+        };
+        LaunchSettings: {
+            channels: components["schemas"]["LaunchChannel"][];
+            audienceIds?: null | string[];
+            salesCountry?: null | string;
+            geoTargetIds?: null | {
+                [key: string]: string;
+            };
         };
         MatchedProductView: {
             id: string;

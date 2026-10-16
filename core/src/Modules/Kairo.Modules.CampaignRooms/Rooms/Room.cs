@@ -32,6 +32,8 @@ internal sealed class Room : IBrandOwned
 
     public string? GateRoute { get; set; }
 
+    public string? GateHash { get; set; }
+
     public int? GateBriefVersion { get; set; }
 
     public int? GatePlanVersion { get; set; }

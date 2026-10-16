@@ -129,6 +129,7 @@ public sealed class CampaignLifecycleTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task Assets_are_reviewed_then_sent_back_or_approved_through_to_launch()
     {
+        _world.LoadCityHistory();
         var roomId = await _world.OpenWithBriefAsync();
         await _world.ApproveBriefAsync(roomId);
 
@@ -140,12 +141,14 @@ public sealed class CampaignLifecycleTests(SqlServer sqlServer) : IAsyncLifetime
 
         using var back = await Campaigns.PostAsync(_world.Approver.Browser, _world.BrandId, roomId, "send-back", new { to = "creating", comment = "The video is too long.", version = Campaigns.Version(review) });
         Assert.Equal("creating", Campaigns.Stage(await back.Content.ReadFromJsonAsync<JsonElement>(Token)));
+        for (var i = 0; i < 10 && await _world.RunStagesAsync() > 0; i++) { }
         Assert.Equal(CampaignAdvance.Moved, await _world.SignalAsync(roomId, CampaignSignals.AssetsChecked));
         var again = await Campaigns.DetailAsync(_world.Approver.Browser, _world.BrandId, roomId);
         using var assets = await Campaigns.PostAsync(_world.Approver.Browser, _world.BrandId, roomId, "approve", new { gate = "assets", version = Campaigns.Version(again) });
         var ready = await assets.Content.ReadFromJsonAsync<JsonElement>(Token);
         Assert.Equal("ready_to_launch", Campaigns.Stage(ready));
-        Assert.Equal("launch", (await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("actions").GetProperty("requestApproval").GetString());
+        ready = await _world.ConfigureLaunchAsync(roomId);
+        Assert.Equal("launch", ready.GetProperty("actions").GetProperty("requestApproval").GetString());
 
         using var launchRequest = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, roomId, "approval-requests", new { gate = "launch", version = Campaigns.Version(ready) });
         var waiting = await launchRequest.Content.ReadFromJsonAsync<JsonElement>(Token);

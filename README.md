@@ -215,6 +215,14 @@ Open Kairo at **http://localhost:8000**.
 
 The first run takes several minutes. It fetches the Aspire CLI bundle, installs the web and Python dependencies, and pulls the SQL Server and Redis images. If Docker isn't running, the API and worker stay in "Waiting" in the dashboard.
 
+## Launch approval contract
+
+Each gate stores an immutable approval snapshot in the `approvals` schema. Brief approval binds the brief and proof-plan versions, asset approval binds the current visible asset versions and Guardian decisions, and launch approval binds the complete launch plan. Sending work back appends invalidations. Old rooms without approval evidence must repeat the relevant gates before launching.
+
+After asset approval, a marketer reads `GET /api/brands/{brandId}/campaigns/{campaignId}/launch-plan` and saves settings with `PUT` to the same route. Send the current campaign `version` and `settings`: `channels` contains a `campaignType`, total `budget`, `biddingStrategy`, and an optional positive `target` for each approved channel. Supported strategies are `maximize_clicks`, `target_cpa` and `target_roas`; Shopping excludes target CPA. Target CPA uses the account currency; target ROAS is a ratio (2 means 200%). Allocations must equal the brief budget. `salesCountry` is required for Shopping. Optional `audienceIds` are Google Ads user-list IDs, and `geoTargetIds` maps proof-plan region IDs to Google Ads geographic IDs. Unresolved regions block approval.
+
+The response contains the complete plan, its hash, approval blockers, and each channel's derived average daily budget in micros. Daily budgets are derived from the inclusive campaign dates; they are Google Ads average daily budgets, not guaranteed lifetime spend caps. The existing `approval-requests` and `approve` endpoints handle gate 3. Settings cannot change during a pending approval or after launch approval. The launch worker must verify the current plan against the approval evidence before executing it.
+
 ## Run the tests
 
 From the repository root:

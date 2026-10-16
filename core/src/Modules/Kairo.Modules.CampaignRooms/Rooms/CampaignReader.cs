@@ -5,6 +5,7 @@ using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Stages;
+using Kairo.Modules.CampaignRooms.LaunchPlans;
 
 namespace Kairo.Modules.CampaignRooms.Rooms;
 
@@ -13,6 +14,7 @@ internal sealed class CampaignReader(
     RoomWorkflow workflow,
     BriefGate briefGate,
     AssetApproval assetApproval,
+    LaunchPlanDesk launchPlans,
     IBrandMembers members,
     CurrentMember member)
 {
@@ -185,6 +187,7 @@ internal sealed class CampaignReader(
         {
             RoomGates.Brief => (await briefGate.CheckAsync(room, cancellationToken)).Problem,
             RoomGates.Assets => await assetApproval.RequestBlockerAsync(room, cancellationToken),
+            RoomGates.Launch => await launchPlans.BlockerAsync(room.Id, cancellationToken),
             _ => null,
         };
         var approveBlocker = room.PendingGate == RoomGates.Assets && mayApprove ? await assetApproval.BlockerAsync(room.Id, cancellationToken) : null;

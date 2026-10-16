@@ -2991,6 +2991,96 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch-plan": {
+      "get": {
+        "tags": [
+          "LaunchPlanEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchPlanView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "LaunchPlanEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaunchPlanUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchPlanView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/campaigns": {
       "get": {
         "tags": [
@@ -10027,6 +10117,422 @@
           }
         }
       },
+      "LaunchAsset": {
+        "required": [
+          "id",
+          "version",
+          "kind",
+          "campaignType",
+          "language",
+          "adGroup",
+          "format",
+          "productIds",
+          "content",
+          "checkState",
+          "check",
+          "fileKey",
+          "contentType",
+          "bytes",
+          "syntheticMedia",
+          "disclosureBlocker"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "campaignType": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "adGroup": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "format": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "checkState": {
+            "type": "string"
+          },
+          "check": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "fileKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "contentType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "syntheticMedia": {
+            "type": "boolean"
+          },
+          "disclosureBlocker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "LaunchChannel": {
+        "required": [
+          "campaignType",
+          "budget",
+          "biddingStrategy"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignType": {
+            "type": "string"
+          },
+          "budget": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "biddingStrategy": {
+            "type": "string"
+          },
+          "target": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "LaunchDailyBudget": {
+        "required": [
+          "campaignType",
+          "total",
+          "dailyMicros"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignType": {
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "dailyMicros": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        }
+      },
+      "LaunchPlan": {
+        "required": [
+          "roomId",
+          "brandId",
+          "title",
+          "briefVersion",
+          "proofPlanVersion",
+          "budget",
+          "currency",
+          "timeZone",
+          "start",
+          "end",
+          "languages",
+          "regions",
+          "holdouts",
+          "googleAdsAccountId",
+          "merchantAccountId",
+          "youTubeChannelId",
+          "productIds",
+          "landingPages",
+          "settings",
+          "assets"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "brandId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "briefVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "proofPlanVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "budget": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchRegion"
+            }
+          },
+          "holdouts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchRegion"
+            }
+          },
+          "googleAdsAccountId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "merchantAccountId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "youTubeChannelId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "landingPages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LaunchSettings"
+          },
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchAsset"
+            }
+          }
+        }
+      },
+      "LaunchPlanUpdate": {
+        "required": [
+          "version",
+          "settings"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/LaunchSettings"
+          }
+        }
+      },
+      "LaunchPlanView": {
+        "required": [
+          "version",
+          "plan",
+          "hash",
+          "blocker",
+          "dailyBudgets"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "plan": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LaunchPlan"
+              }
+            ]
+          },
+          "hash": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "blocker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "dailyBudgets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchDailyBudget"
+            }
+          }
+        }
+      },
+      "LaunchRegion": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "LaunchSettings": {
+        "required": [
+          "channels"
+        ],
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchChannel"
+            }
+          },
+          "audienceIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "salesCountry": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "geoTargetIds": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "MatchedProductView": {
         "required": [
           "id",
@@ -13079,6 +13585,9 @@
     },
     {
       "name": "CheckSettingsEndpoints"
+    },
+    {
+      "name": "LaunchPlanEndpoints"
     },
     {
       "name": "CampaignEndpoints"
