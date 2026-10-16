@@ -32,6 +32,7 @@ internal sealed class ImpactReporter(
     public const int MaxAttempts = 3;
     public const string ReadyKind = "report.ready";
     public const string ProblemKind = "connection.problem";
+    public const int MaxFlagDetail = 300;
 
     public static LiveEvent Changed(Guid roomId) => new("measurement.report_changed", new { campaignId = roomId }, LiveAudience.Everyone);
 
@@ -191,7 +192,7 @@ internal sealed class ImpactReporter(
         if (await AccountSpendAsync(brand, reading, campaigns, cancellationToken) is { Changed: true } spend)
             flags.Add(new ImpactFlag(ImpactFlags.AccountChange,
                 $"Spend on the account's other campaigns moved from about {decimal.Round(spend.BeforePerDay)} to {decimal.Round(spend.DuringPerDay)} a day during the test, which may have influenced the result."));
-        return flags;
+        return [.. flags.Select(flag => flag with { Detail = Cut(flag.Detail, MaxFlagDetail) })];
     }
 
     private async Task<AccountSpend?> AccountSpendAsync(BrandSummary brand, LiftReading reading, IReadOnlyList<CampaignState> campaigns, CancellationToken cancellationToken)

@@ -66,7 +66,7 @@ class ReportRequest(CamelModel):
     target_cost: Amount | None = None
     flags: list[ReportFlag] = Field(default=[], max_length=10)
     next_test: NextTest | None = None
-    regions: list[ReportRegion] = Field(default=[], max_length=60)
+    regions: list[ReportRegion] = Field(default=[], max_length=120)
 
 
 class DraftedReport(CamelModel):
