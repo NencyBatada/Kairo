@@ -187,8 +187,10 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
 
-        var second = _world.Media.ImageRequests[1].GetProperty("shots").EnumerateArray().ToList();
-        Assert.Equal("landscape", string.Join(",", second[0].GetProperty("formats").EnumerateArray().Select(format => format.GetString())));
+        var asked = _world.Media.ImageRequests[1].GetProperty("shots").EnumerateArray()
+            .SelectMany(shot => shot.GetProperty("formats").EnumerateArray().Select(format => format.GetString()))
+            .ToList();
+        Assert.Equal(["landscape", "landscape", "square"], asked.Order());
         var images = Images(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId));
         Assert.Equal(4, images.Length);
         var kept = images.Single(image => image.GetProperty("id").GetGuid() == square.GetProperty("id").GetGuid());
