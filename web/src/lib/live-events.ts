@@ -3,6 +3,7 @@ export const WORKSPACE_LIVE_EVENTS = [
   "team.changed",
   "invitations.changed",
   "approval_settings.changed",
+  "check_settings.changed",
   "connection.changed",
   "feeds.changed",
   "brand_kit.changed",
