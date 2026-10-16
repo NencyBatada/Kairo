@@ -299,6 +299,21 @@ The agent service's `POST /prove/lift` measures lift with the same placebo diffe
 
 `GET /api/brands/{brandId}/campaigns/{campaignId}/lift` returns the readings with their per-region results and daily actual-against-expected series, plus the final reading and the latest early one. New readings record `measurement.lift_measured` and publish `measurement.lift_changed`.
 
+## Impact reports
+
+The same `POST /jobs/measurement/lift` run writes the impact report once a campaign's final reading exists.
+
+- **Numbers, in code:** spend and attributed results come from Google Ads over the test days. Cost per extra result is spend divided by extra results, with its range; it is empty when there are no extra results.
+- **Outcome and next step, in code:**
+  - A conclusive rise **worked**. It scales up when each extra result costs no more than the campaign's target CPA, or when there is no target, and needs a change otherwise.
+  - A conclusive fall, or a range inside the proof plan's smallest detectable lift, is **no effect** and stops.
+  - Anything else is **inconclusive** and asks for a retest. The report gives the next test's length, scaled from the placebo spread and capped at 56 days, and says when more regions are needed.
+- **Flags:** a proof plan changed after launch, a test approved with warnings, an early end, fewer data days than planned, and spend on the account's other campaigns moving more than 50% from the 28 days before the test.
+- **Wording:** the agent service's `POST /prove/report` asks Gemini Pro to write the summary, the next-step reasoning and, for inconclusive results, why and what would make the next test conclusive. It works only from the computed facts, and a draft containing a number that isn't in the facts is rejected.
+- **When it's ready:** marketers and approvers get `report.ready`, linked to the campaign's Results tab, with audit `measurement.report_ready` and live event `measurement.report_changed`. If the report can't be written, it retries on the next run. After 3 failures it is marked failed, admins get `connection.problem`, and audit `measurement.report_failed` is recorded.
+
+`GET /api/brands/{brandId}/campaigns/{campaignId}/impact-report` returns the report state (`measuring`, `writing`, `ready` or `failed`), the report and the final reading. Brand Memory reads finished reports through `IImpactReports`.
+
 ## Run the tests
 
 From the repository root:
