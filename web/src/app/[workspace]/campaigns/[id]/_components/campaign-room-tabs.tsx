@@ -7,6 +7,7 @@ const tabs = [
   { segment: "review", label: "Brand Guardian" },
   { segment: "launch", label: "Launch" },
   { segment: "performance", label: "Performance" },
+  { segment: "recommendations", label: "Recommendations" },
   { segment: "results", label: "Results" },
 ];
 
