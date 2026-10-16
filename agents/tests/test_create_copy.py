@@ -207,6 +207,7 @@ def test_guard_drops_banned_words_competitors_and_unsupported_claims() -> None:
     assert rules.allows("Runners at ₹2,499")
     assert rules.allows("Boots now ₹1,499 in the sale")
     assert rules.allows("Free delivery over ₹999")
+    assert rules.allows("We offer a great deal of comfort")
     assert not rules.allows("Cheap rain shoes")
     assert not rules.allows("Better than rival brands")
     assert not rules.allows("Runners at Rs. 1999")
@@ -236,6 +237,8 @@ def test_keywords_are_lower_case_unique_and_valid() -> None:
             DraftKeyword(text="shoes!!!", match="exact"),
             DraftKeyword(text="one two three four five six seven eight nine ten eleven", match=""),
             DraftKeyword(text="cheap boots", match="phrase"),
+            DraftKeyword(text="बारिश के जूते", match="phrase"),
+            DraftKeyword(text="rain (boots)", match="phrase"),
         ],
         guard(),
     )
@@ -243,6 +246,7 @@ def test_keywords_are_lower_case_unique_and_valid() -> None:
     assert [(keyword.text, keyword.match) for keyword in kept] == [
         ("waterproof shoes", "exact"),
         ("rain boots", "phrase"),
+        ("बारिश के जूते", "phrase"),
     ]
 
 
@@ -250,6 +254,8 @@ def test_paths_names_and_calls_to_action_are_cleaned() -> None:
     assert path("rain shoes") == "rain-shoes"
     assert path("a-very-long-path-name") is None
     assert path("  ") is None
+    assert path("जूते/बारिश") == "जूते-बारिश"
+    assert path("rain, shoes!") == "rain-shoes"
     assert business_name("Acme Shoes") == "Acme Shoes"
     assert business_name("Acme Waterproof Footwear Company of India") == "Acme Waterproof Footwear"
     assert call_to_action("Learn More") == "learn_more"

@@ -41,12 +41,10 @@ CLAIMS = (
     "next day delivery",
     "next-day delivery",
     "sale",
-    "offer",
-    "deal",
     "coupon",
 )
-KEYWORD_TEXT = re.compile(r"^[\w\s'&.+\-]+$")
-PATH_TEXT = re.compile(r"[^\w\-]+")
+SYMBOLS = re.compile(r"[!@%,*=;:?\^`<>{}\[\]|~\"#$()/]")
+GAPS = re.compile(r"[\s/]+")
 
 
 @dataclass
@@ -153,7 +151,8 @@ def keywords(drafts: Iterable[DraftKeyword | Keyword], guard: Guard) -> list[Key
             not text
             or len(text) > limits.KEYWORD
             or len(text.split()) > limits.KEYWORD_WORDS
-            or not KEYWORD_TEXT.match(text)
+            or SYMBOLS.search(text)
+            or emoji(text)
             or not guard.allows(text)
         ):
             continue
@@ -165,7 +164,7 @@ def keywords(drafts: Iterable[DraftKeyword | Keyword], guard: Guard) -> list[Key
 
 
 def path(text: str | None) -> str | None:
-    value = PATH_TEXT.sub("-", tidy(text)).strip("-")
+    value = SYMBOLS.sub("", GAPS.sub("-", tidy(text))).strip("-")
     if not value:
         return None
     return value if limits.length(value) <= limits.SEARCH_PATH else None
