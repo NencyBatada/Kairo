@@ -1,0 +1,15 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { brandId, campaignId, list, members, room, settings } from "./fixtures.test-data";
+const { get, getRoom, getWorkspace } = vi.hoisted(() => ({ get: vi.fn(), getRoom: vi.fn(), getWorkspace: vi.fn() }));
+vi.mock("../_lib/room", () => ({ getRoom }));
+vi.mock("@/lib/core-api/queries", () => ({ getWorkspace }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown; response: Response }) => { if (!result.response.ok) throw new Error(`API ${result.response.status}`); return result.data; } }));
+vi.mock("./actions", () => ({ decideRecommendation: vi.fn(), endTest: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ room: room(), brandId, timeZone: "Asia/Kolkata" }); getWorkspace.mockResolvedValue({ roles: ["marketer"] }); get.mockImplementation(async (path: string) => ({ response: new Response(), data: path.endsWith("/recommendations") ? list() : path.endsWith("/approval-settings") ? settings : path.endsWith("/members") ? members.map(member => ({ userId: member.id, name: member.name, roles: ["approver"] })) : { currency: "INR" } })); });
+const params = Promise.resolve({ workspace: "acme", id: "route-alias" });
+test("loads recommendations for the resolved room and names the configured approver", async () => { render(await Page({ params })); expect(getRoom).toHaveBeenCalledWith("acme", "route-alias"); expect(get.mock.calls[0][1]).toEqual({ params: { path: { brandId, campaignId } } }); expect(get).toHaveBeenCalledTimes(4); expect(screen.getByText("Approver: Priya Shah")).toBeTruthy(); expect(screen.getByRole("button", { name: "Dismiss recommendation" })).toBeTruthy(); });
+test("read-only roles cannot dismiss or end tests", async () => { getWorkspace.mockResolvedValue({ roles: [] }); render(await Page({ params })); expect(screen.queryByRole("button", { name: "Dismiss recommendation" })).toBeNull(); expect(screen.queryByRole("button", { name: "End test early" })).toBeNull(); });
+test.each([401, 403, 404, 500])("API failures propagate instead of displaying an empty list (%s)", async status => { get.mockResolvedValueOnce({ response: new Response(null, { status }) }); await expect(Page({ params })).rejects.toThrow(`API ${status}`); });

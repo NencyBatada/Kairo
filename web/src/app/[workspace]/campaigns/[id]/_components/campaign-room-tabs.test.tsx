@@ -25,6 +25,7 @@ test("links to overview and the stage tabs inside its workspace", () => {
     ["Brand Guardian", "/acme/campaigns/42/review"],
     ["Launch", "/acme/campaigns/42/launch"],
     ["Performance", "/acme/campaigns/42/performance"],
+    ["Recommendations", "/acme/campaigns/42/recommendations"],
     ["Results", "/acme/campaigns/42/results"],
   ]);
 });
