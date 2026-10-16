@@ -2851,6 +2851,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/check-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CheckSettingsView"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveCheckSettingsRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CheckSettingsView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns": {
         parameters: {
             query?: never;
@@ -5029,6 +5097,25 @@ export interface components {
             connection: components["schemas"]["ConnectionView"];
             problem: null | string;
         };
+        CheckRuleView: {
+            id: string;
+            name: string;
+            description: string;
+            appliesTo: string[];
+            severity: string;
+            defaultSeverity: string;
+            adjustable: boolean;
+            overridable: boolean;
+        };
+        CheckSettingsView: {
+            version: number | string;
+            rules: components["schemas"]["CheckRuleView"][];
+            customRules: components["schemas"]["CustomCheckRuleView"][];
+            passScore: number | string;
+            fixAttempts: number | string;
+            updatedBy: null | string;
+            updatedAt: null | string;
+        };
         ChooseAccountRequest: {
             externalId: null | string;
         };
@@ -5073,6 +5160,18 @@ export interface components {
             handle: string;
             timeZone: string;
             currency: string;
+        };
+        CustomCheckRuleRequest: {
+            id: null | string;
+            text: null | string;
+            appliesTo: null | string;
+            severity: null | string;
+        };
+        CustomCheckRuleView: {
+            id: string;
+            text: string;
+            appliesTo: string;
+            severity: string;
         };
         DiscardRequest: {
             reason: null | string;
@@ -5701,6 +5800,15 @@ export interface components {
             targetChangeApprovers: string[];
             googleSuggestionApprovers: string[];
             budgetLimit: null | number | string;
+        };
+        SaveCheckSettingsRequest: {
+            version: null | number | string;
+            rules: null | {
+                [key: string]: string;
+            };
+            customRules: null | components["schemas"]["CustomCheckRuleRequest"][];
+            passScore: null | number | string;
+            fixAttempts: null | number | string;
         };
         SaveDraftRequest: {
             content: null | components["schemas"]["KitContent"];

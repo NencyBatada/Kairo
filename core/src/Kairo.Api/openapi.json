@@ -2915,6 +2915,82 @@
         }
       }
     },
+    "/api/brands/{brandId}/check-settings": {
+      "get": {
+        "tags": [
+          "CheckSettingsEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckSettingsView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CheckSettingsEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveCheckSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckSettingsView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/campaigns": {
       "get": {
         "tags": [
@@ -7526,6 +7602,112 @@
           }
         }
       },
+      "CheckRuleView": {
+        "required": [
+          "id",
+          "name",
+          "description",
+          "appliesTo",
+          "severity",
+          "defaultSeverity",
+          "adjustable",
+          "overridable"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "appliesTo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "severity": {
+            "type": "string"
+          },
+          "defaultSeverity": {
+            "type": "string"
+          },
+          "adjustable": {
+            "type": "boolean"
+          },
+          "overridable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CheckSettingsView": {
+        "required": [
+          "version",
+          "rules",
+          "customRules",
+          "passScore",
+          "fixAttempts",
+          "updatedBy",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckRuleView"
+            }
+          },
+          "customRules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomCheckRuleView"
+            }
+          },
+          "passScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fixAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "updatedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "ChooseAccountRequest": {
         "required": [
           "externalId"
@@ -7800,6 +7982,64 @@
             "type": "string"
           },
           "currency": {
+            "type": "string"
+          }
+        }
+      },
+      "CustomCheckRuleRequest": {
+        "required": [
+          "id",
+          "text",
+          "appliesTo",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "appliesTo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "severity": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CustomCheckRuleView": {
+        "required": [
+          "id",
+          "text",
+          "appliesTo",
+          "severity"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "appliesTo": {
+            "type": "string"
+          },
+          "severity": {
             "type": "string"
           }
         }
@@ -11302,6 +11542,63 @@
           }
         }
       },
+      "SaveCheckSettingsRequest": {
+        "required": [
+          "version",
+          "rules",
+          "customRules",
+          "passScore",
+          "fixAttempts"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rules": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "customRules": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CustomCheckRuleRequest"
+            }
+          },
+          "passScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fixAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SaveDraftRequest": {
         "required": [
           "content",
@@ -12172,6 +12469,9 @@
     },
     {
       "name": "FestivalEndpoints"
+    },
+    {
+      "name": "CheckSettingsEndpoints"
     },
     {
       "name": "CampaignEndpoints"
