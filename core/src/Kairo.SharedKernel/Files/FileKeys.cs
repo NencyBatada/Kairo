@@ -4,7 +4,11 @@ namespace Kairo.SharedKernel.Files;
 
 public static partial class FileKeys
 {
+    public const string DraftPrefix = "drafts";
+
     public static string For(Guid brandId, string area, Guid id) => $"{brandId:N}/{area}/{id:N}";
+
+    public static string Draft(Guid brandId, string area, Guid id) => $"{DraftPrefix}/{For(brandId, area, id)}";
 
     internal static void EnsureValid(string bucket, string key)
     {

@@ -38,13 +38,14 @@ internal sealed class StageRunner(
             return;
         }
 
-        if (run.Attempts > MaxAttempts)
+        var work = queue.Find(run.Kind);
+        if (run.Attempts > (work?.MaxAttempts ?? MaxAttempts))
         {
             await FailAsync(run, lease, StageFailure.Crashed, FailedMessage, cancellationToken);
             return;
         }
 
-        if (queue.Find(run.Kind) is not { } work)
+        if (work is null)
         {
             await FailAsync(run, lease, StageFailure.UnknownKind, FailedMessage, cancellationToken);
             return;
@@ -64,7 +65,7 @@ internal sealed class StageRunner(
         catch (AgentCallException exception)
         {
             logger.LogWarning(exception, "Stage run {RunId} ({Kind}) failed on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
-            if (exception.Code == AgentCallException.NotConfigured || run.Attempts >= MaxAttempts)
+            if (exception.Code == AgentCallException.NotConfigured || run.Attempts >= work.MaxAttempts)
             {
                 await FailAsync(run, lease, exception.Code, FailedMessage, cancellationToken);
             }
@@ -79,7 +80,7 @@ internal sealed class StageRunner(
         {
             logger.LogError(exception, "Stage run {RunId} ({Kind}) stopped unexpectedly on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
             db.ChangeTracker.Clear();
-            if (run.Attempts >= MaxAttempts)
+            if (run.Attempts >= work.MaxAttempts)
             {
                 await FailAsync(run, lease, StageFailure.Crashed, FailedMessage, cancellationToken);
             }

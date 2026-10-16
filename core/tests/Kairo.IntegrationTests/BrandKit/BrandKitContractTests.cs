@@ -68,6 +68,43 @@ public sealed class BrandKitContractTests(SqlServer sqlServer) : IAsyncDisposabl
     }
 
     [Fact]
+    public async Task Agents_can_read_a_kit_files_bytes()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var logo = await BrandKits.UploadAsync(admin.Browser, brandId, BrandKits.Png, "logo.png", "logo");
+
+        var file = await OpenAsync(brandId, logo);
+
+        Assert.NotNull(file);
+        Assert.Equal(logo, file.Id);
+        Assert.Equal("logo", file.Kind);
+        Assert.Equal("image/png", file.ContentType);
+        Assert.Equal(BrandKits.Png, file.Content);
+    }
+
+    [Fact]
+    public async Task A_deleted_file_can_still_be_read_for_the_approved_version()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var logo = await BrandKits.UploadAsync(admin.Browser, brandId, BrandKits.Png, "logo.png", "logo");
+        await BrandKits.ApproveNewAsync(admin.Browser, brandId, new { logo = new { fileId = logo } });
+        (await admin.Browser.DeleteAsync($"{BrandKits.Kit(brandId)}/files/{logo}", Token)).EnsureSuccessStatusCode();
+
+        Assert.Equal(BrandKits.Png, (await OpenAsync(brandId, logo))!.Content);
+    }
+
+    [Fact]
+    public async Task Another_workspaces_file_or_an_unknown_one_reads_as_nothing()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        var logo = await BrandKits.UploadAsync(admin.Browser, brandId, BrandKits.Png, "logo.png", "logo");
+        var (_, otherBrandId) = await WorkspaceAsync();
+
+        Assert.Null(await OpenAsync(otherBrandId, logo));
+        Assert.Null(await OpenAsync(brandId, Guid.NewGuid()));
+    }
+
+    [Fact]
     public async Task Each_workspace_gets_only_its_own_kit()
     {
         var (admin, brandId) = await WorkspaceAsync();
@@ -84,6 +121,13 @@ public sealed class BrandKitContractTests(SqlServer sqlServer) : IAsyncDisposabl
         await using var scope = _api.Services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(brandId, Token);
         return await scope.ServiceProvider.GetRequiredService<IBrandKit>().GetApprovedAsync(Token);
+    }
+
+    private async Task<BrandKitFileContent?> OpenAsync(Guid brandId, Guid fileId)
+    {
+        await using var scope = _api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(brandId, Token);
+        return await scope.ServiceProvider.GetRequiredService<IBrandKit>().OpenFileAsync(fileId, Token);
     }
 
     private async Task<(Member Admin, Guid BrandId)> WorkspaceAsync()

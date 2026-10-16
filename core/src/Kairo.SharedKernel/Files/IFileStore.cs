@@ -11,6 +11,7 @@ public static class FileBuckets
 {
     public const string BrandFiles = "brand-files";
     public const string CatalogueImports = "catalogue-imports";
+    public const string GeneratedMedia = "generated-media";
 }
 
 public sealed class StoredFileMissingException(string bucket, string key)

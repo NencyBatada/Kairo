@@ -5,7 +5,7 @@ namespace Kairo.SharedKernel.Agents;
 
 public static class AgentSetup
 {
-    public static readonly TimeSpan MaxTimeout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan MaxTimeout = TimeSpan.FromMinutes(9);
 
     public static IServiceCollection AddKairoAgents(this IServiceCollection services)
     {

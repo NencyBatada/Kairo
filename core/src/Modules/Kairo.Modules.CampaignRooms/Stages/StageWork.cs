@@ -15,6 +15,8 @@ internal interface IStageWork
 
     string? NextKind(StageRun run, StageOutcome outcome) => FollowUp;
 
+    int MaxAttempts => StageRunner.MaxAttempts;
+
     Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken);
 
     Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken);

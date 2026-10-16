@@ -56,6 +56,20 @@ public sealed class FileStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task Draft_media_keys_start_with_the_drafts_prefix_the_lifecycle_rule_deletes()
+    {
+        var brandId = Guid.NewGuid();
+        var id = Guid.NewGuid();
+        var storage = new FakeCloudStorage();
+        var key = FileKeys.Draft(brandId, "assets", id);
+
+        await CloudStore(storage).PutAsync(FileBuckets.GeneratedMedia, key, [7], "video/mp4", Token);
+
+        Assert.Equal($"drafts/{brandId:N}/assets/{id:N}", key);
+        Assert.True(storage.Objects.ContainsKey($"kairo-test-generated-media/{key}"));
+    }
+
+    [Fact]
     public async Task With_a_project_files_go_to_the_projects_bucket_with_the_service_token()
     {
         var storage = new FakeCloudStorage();

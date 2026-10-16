@@ -1,6 +1,7 @@
 using Kairo.Contracts.CampaignRooms;
 using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Media;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -18,6 +19,8 @@ internal static class CampaignRoomsSetup
         services.AddScoped<StageDispatcher>();
         services.AddScoped<IStageWork, ProofPlanWork>();
         services.AddScoped<BriefAgent>();
+        services.AddScoped<MediaAgent>();
+        services.AddScoped<CataloguePhotos>();
         services.AddScoped<BriefDesk>();
         services.AddScoped<BriefEditor>();
         services.AddScoped<BriefGate>();
