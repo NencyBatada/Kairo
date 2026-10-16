@@ -53,4 +53,5 @@ test("shopping preview displays proposed title without invented product prices",
   const entry = asset({ kind: "shopping_title", campaignType: "shopping", content: { ...asset().content, title: "Acme everyday shoes", currentTitle: "Old catalogue title", headlines: null } });
   render(<AssetGallery {...props} set={assetSet([entry])} />);
   const card = screen.getByRole("article", { name: /Shopping title/ }); expect(within(card).getByText("Acme everyday shoes")).toBeTruthy(); expect(within(card).getByText(/No product image supplied/)).toBeTruthy();
+  expect(screen.getByRole("status").textContent).toBe("1 saved asset");
 });

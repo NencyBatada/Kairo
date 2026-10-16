@@ -13,6 +13,7 @@ import { assetName, campaignTypes, dateTime, languageName, safeUrl, type Asset, 
 export function AssetGallery({ set, brandId, campaignId, timeZone, handle, language, campaignType, controls }: { set: AssetSet; brandId: string; campaignId: string; timeZone: string; handle: string; language: string; campaignType: string; controls?: (asset: Asset) => ReactNode }) {
   const all = set.groups.flatMap((group) => group.assets);
   const groups = set.groups.filter((group) => !campaignType || group.campaignType === campaignType);
+  const count = groups.reduce((sum, group) => sum + group.assets.length, 0);
   const base = `/${handle}/campaigns/${campaignId}/assets`;
   function href(lang: string, type: string) { const query = new URLSearchParams(); if (lang) query.set("language", lang); if (type) query.set("type", type); return `${base}${query.size ? `?${query}` : ""}`; }
   return <div className="grid min-w-0 gap-8">
@@ -20,11 +21,11 @@ export function AssetGallery({ set, brandId, campaignId, timeZone, handle, langu
       <div><h2 id="studio-heading" className="text-base font-semibold">Creative Studio</h2><p className="mt-1 text-sm text-muted-foreground">Review the saved copy and creatives for each placement. Your ad platform chooses the final combinations.</p></div>
       <nav aria-label="Asset campaign types" className="flex flex-wrap gap-2">{[["", "All types"], ...Object.entries(campaignTypes)].map(([key, label]) => <FilterLink key={key} href={href(language, key)} current={campaignType === key}>{label}</FilterLink>)}</nav>
       {set.languages.length > 0 && <nav aria-label="Asset languages" className="flex flex-wrap gap-2"><FilterLink href={href("", campaignType)} current={!language}>All languages</FilterLink>{set.languages.map((code) => <FilterLink key={code} href={href(code, campaignType)} current={language === code}>{languageName(code)}</FilterLink>)}</nav>}
-      <p role="status" className="text-sm text-subtle-foreground">{groups.reduce((sum, group) => sum + group.assets.length, 0)} saved assets{language ? ` · ${languageName(language)} and shared media` : ""}</p>
+      <p role="status" className="text-sm text-subtle-foreground">{count} saved {count === 1 ? "asset" : "assets"}{language ? ` · ${languageName(language)} and shared media` : ""}</p>
       {!set.canEdit && all.length > 0 && <Alert variant="info">{set.editBlocker ?? "You have read-only access to these assets. A marketer can make changes while the campaign is creating."}</Alert>}
     </section>
     {groups.length === 0 ? <EmptyState icon={Images} title="No assets yet" description="Assets appear here as Kairo creates them after brief approval. Try another filter if generation has already finished." /> : groups.map((group) => <section key={`${group.campaignType}-${group.language}`} aria-labelledby={`group-${group.campaignType}-${group.language}`} className="grid min-w-0 gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2"><h3 id={`group-${group.campaignType}-${group.language}`} className="text-base font-semibold">{group.label} · {group.languageName ?? languageName(group.language)}</h3><span className="text-xs text-subtle-foreground">{group.assets.length} assets</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h3 id={`group-${group.campaignType}-${group.language}`} className="text-base font-semibold">{group.label} · {group.languageName ?? languageName(group.language)}</h3><span className="text-xs text-subtle-foreground">{group.assets.length} {group.assets.length === 1 ? "asset" : "assets"}</span></div>
       <div className="grid min-w-0 items-start gap-4 xl:grid-cols-2">{group.assets.map((asset) => <article key={asset.id} id={`asset-${asset.id}`} aria-label={assetName(asset)} className="grid min-w-0 gap-4 rounded-lg border border-border bg-card p-4 md:p-5">
         <div className="min-w-0"><h4 className="font-semibold wrap-anywhere">{assetName(asset)}</h4><div className="mt-2 flex flex-wrap items-center gap-2">
           {asset.locked && <Badge><LockKeyhole aria-hidden="true" className="size-3.5" />Locked</Badge>}
