@@ -286,17 +286,31 @@ def pick_inside(candidates: list[Candidate], area_size: int) -> list[str]:
     return [candidate.id for candidate in chosen]
 
 
-def placebo_lift(test: np.ndarray, holdout: np.ndarray, days: int) -> WindowLift:
+def log_lift(test: np.ndarray, holdout: np.ndarray, start: int, days: int) -> float | None:
+    if start < PRE_DAYS or start + days > min(test.size, holdout.size):
+        return None
+    pre_test = test[start - PRE_DAYS : start].sum()
+    pre_holdout = holdout[start - PRE_DAYS : start].sum()
+    win_test = test[start : start + days].sum()
+    win_holdout = holdout[start : start + days].sum()
+    if min(pre_test, pre_holdout, win_test, win_holdout) <= 0:
+        return None
+    return math.log(win_test / win_holdout) - math.log(pre_test / pre_holdout)
+
+
+def placebo_estimates(test: np.ndarray, holdout: np.ndarray, days: int) -> list[float]:
     estimates = []
     start = test.size - days
     while start >= PRE_DAYS:
-        pre_test = test[start - PRE_DAYS : start].sum()
-        pre_holdout = holdout[start - PRE_DAYS : start].sum()
-        win_test = test[start : start + days].sum()
-        win_holdout = holdout[start : start + days].sum()
-        if min(pre_test, pre_holdout, win_test, win_holdout) > 0:
-            estimates.append(math.log(win_test / win_holdout) - math.log(pre_test / pre_holdout))
+        estimate = log_lift(test, holdout, start, days)
+        if estimate is not None:
+            estimates.append(estimate)
         start -= WEEK
+    return estimates
+
+
+def placebo_lift(test: np.ndarray, holdout: np.ndarray, days: int) -> WindowLift:
+    estimates = placebo_estimates(test, holdout, days)
     if len(estimates) < MIN_PLACEBOS:
         return WindowLift(days, None, len(estimates))
     spread = float(np.std(estimates, ddof=1))
