@@ -76,7 +76,7 @@ REQUEST = {
             "headlines": ["Studio shot"],
             "visual": "The shoe on a white background",
             "impressions": 50000,
-            "clicks": 150,
+            "clicks": 300,
             "conversions": 1,
         },
     ],
@@ -277,3 +277,40 @@ def test_requests_refuse_unknown_outcomes(models) -> None:
 
     assert response.status_code == 422
     assert models.calls == []
+
+
+def search_ads(*conversions: int, clicks: int = 1000) -> list[dict]:
+    return [
+        {
+            "id": f"ad:search:{index}",
+            "campaignType": "search",
+            "impressions": clicks * 20,
+            "clicks": clicks,
+            "conversions": converted,
+        }
+        for index, converted in enumerate(conversions, start=1)
+    ]
+
+
+def test_each_ad_is_compared_with_the_rest_of_its_group_so_one_ad_cannot_win_and_lose() -> None:
+    ads = search_ads(10, 20, 40)
+    drafts = [
+        draft(title="Best", adIds=["ad:search:3"]),
+        draft(title="Worst", outcome="didnt_work", adIds=["ad:search:1"]),
+        draft(title="Middle won", adIds=["ad:search:2"]),
+        draft(title="Middle lost", outcome="didnt_work", adIds=["ad:search:2"]),
+    ]
+
+    lessons = clean_lessons(drafts, request(ads=ads))
+
+    assert [lesson.title for lesson in lessons] == ["Best", "Worst"]
+
+
+def test_a_gap_that_could_be_chance_is_not_a_lesson() -> None:
+    ads = search_ads(10, 7, clicks=100)
+    drafts = [
+        draft(title="Winner", adIds=["ad:search:1"]),
+        draft(title="Loser", outcome="didnt_work", adIds=["ad:search:2"]),
+    ]
+
+    assert clean_lessons(drafts, request(ads=ads)) == []

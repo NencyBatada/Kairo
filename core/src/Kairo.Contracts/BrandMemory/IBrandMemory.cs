@@ -6,7 +6,7 @@ public interface IBrandMemory
 
     Task RecordUsesAsync(IReadOnlyCollection<Guid> entryIds, string usedIn, Guid targetId, Guid? roomId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<MemoryNote>> UsedForRoomAsync(Guid roomId, string usedIn, CancellationToken cancellationToken);
+    Task<IReadOnlyList<MemoryNote>> UsedByAsync(string usedIn, Guid targetId, CancellationToken cancellationToken);
 }
 
 public sealed record MemoryQuery(

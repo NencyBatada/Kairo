@@ -129,6 +129,35 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Learn_waits_until_the_test_has_ended()
+    {
+        var room = await ResultsReadyAsync(endTest: false);
+
+        Assert.Null(await TryLearnAsync(Input(room, "worked")));
+        Assert.Null(await TryLearnAsync(Input(Guid.NewGuid(), "inconclusive")));
+
+        Assert.Empty(_learnRequests);
+        await using var scope = await BrandScopeAsync();
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<BrandMemoryDbContext>().LearnRuns.ToListAsync(Token));
+        Assert.Equal("live", Campaigns.Stage(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, room)));
+    }
+
+    [Fact]
+    public async Task Learn_stops_trying_after_three_failed_attempts()
+    {
+        var room = await ResultsReadyAsync();
+        _world.Api.Agents.Failures = LearnWork.MostAttempts;
+
+        for (var attempt = 0; attempt < LearnWork.MostAttempts + 1; attempt++)
+            await LearnAsync(Input(room, "worked"));
+
+        var run = await LearnAsync(Input(room, "worked"));
+        Assert.Equal((LearnOutcomes.Failed, LearnWork.MostAttempts), (run.Outcome, run.Attempts));
+        Assert.Equal(LearnWork.MostAttempts, _world.Api.Agents.Requests.Count(request => request.Url.EndsWith("/learn/lessons", StringComparison.Ordinal)));
+        Assert.Equal("results_ready", Campaigns.Stage(await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, room)));
+    }
+
+    [Fact]
     public async Task People_can_view_edit_and_remove_entries_and_removed_ones_are_no_longer_used()
     {
         var kept = await SeedAsync(MemoryKinds.Message, MemoryOutcomes.Worked, "Quick-dry beats price", categories: [Radar.RainCategory]);
@@ -249,13 +278,22 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
         using var response = await _world.Marketer.GetAsync($"{Campaigns.Base(_world.BrandId)}/{room}/assets/{ad.GetProperty("id").GetGuid()}/history", Token);
         var version = (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("versions")[0];
         Assert.Equal(["Quick-dry beats price"], version.GetProperty("memoryUses").EnumerateArray().Select(title => title.GetString()));
-        Assert.True(await UsesAsync(MemoryUsedIn.Asset) >= 1);
+        var assets = Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, room));
+        var titles = assets.Where(asset => Text(asset, "kind") == "shopping_title").Select(asset => asset.GetProperty("id").GetGuid()).ToList();
+        Assert.NotEmpty(titles);
+        using var titleResponse = await _world.Marketer.GetAsync($"{Campaigns.Base(_world.BrandId)}/{room}/assets/{titles[0]}/history", Token);
+        Assert.Empty((await titleResponse.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("versions")[0].GetProperty("memoryUses").EnumerateArray());
+        await using var scope = await BrandScopeAsync();
+        var targets = await scope.ServiceProvider.GetRequiredService<BrandMemoryDbContext>().Uses.Where(use => use.UsedIn == MemoryUsedIn.Asset).Select(use => use.TargetId).ToListAsync(Token);
+        Assert.Equal(assets.Length - titles.Count, targets.Count);
+        Assert.DoesNotContain(targets, titles.Contains);
     }
 
     [Fact]
     public async Task Opportunity_rankings_use_lessons_about_the_same_products()
     {
-        var before = await Radar.OnlyCardAsync(_world.Marketer, _world.BrandId);
+        var card = await Radar.OnlyCardAsync(_world.Marketer, _world.BrandId);
+        var before = await Radar.DetailAsync(_world.Marketer, _world.BrandId, card.GetProperty("id").GetGuid());
         var lesson = await SeedAsync(MemoryKinds.Message, MemoryOutcomes.Worked, "Quick-dry beats price", categories: [Radar.RainCategory]);
         await SeedAsync(MemoryKinds.Message, MemoryOutcomes.DidntWork, "School shoes in June", categories: ["Shoes > School"]);
 
@@ -266,7 +304,12 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
         var breakdown = after.GetProperty("scoreBreakdown");
         Assert.Equal(1.15, breakdown.GetProperty("memory").GetDouble());
         Assert.Equal(["Brand Memory: Quick-dry beats price"], breakdown.GetProperty("memoryReasons").EnumerateArray().Select(reason => reason.GetString()));
-        Assert.True(after.GetProperty("score").GetInt32() >= before.GetProperty("score").GetInt32());
+        var raw = (breakdown.GetProperty("growthWeight").GetDouble() * breakdown.GetProperty("growthScore").GetDouble())
+            + (breakdown.GetProperty("volumeWeight").GetDouble() * breakdown.GetProperty("volumeScore").GetDouble())
+            + (breakdown.GetProperty("fitWeight").GetDouble() * breakdown.GetProperty("fitScore").GetDouble());
+        var expected = (int)Math.Clamp(Math.Round(raw * breakdown.GetProperty("feedback").GetDouble() * 1.15, MidpointRounding.AwayFromZero), 0, 100);
+        Assert.Equal(expected, after.GetProperty("score").GetInt32());
+        Assert.Equal(1.0, before.GetProperty("scoreBreakdown").GetProperty("memory").GetDouble());
         var entry = await _world.Marketer.GetFromJsonAsync<JsonElement>($"{Base}/{lesson}", Token);
         var use = Assert.Single(entry.GetProperty("uses").EnumerateArray());
         Assert.Equal(("opportunity", before.GetProperty("id").GetGuid()), (Text(use, "usedIn"), use.GetProperty("targetId").GetGuid()));
@@ -305,7 +348,7 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
                 new LearnAd("ad:search:2", "search", "en", ["Lowest prices"], [], null, 2000, 40, 1, 400),
             ]));
 
-    private async Task<Guid> ResultsReadyAsync()
+    private async Task<Guid> ResultsReadyAsync(bool endTest = true)
     {
         _world.LoadCityHistory();
         _world.Api.GoogleApis.LaunchResponse = _launch.Respond;
@@ -316,12 +359,20 @@ public sealed class BrandMemoryTests(SqlServer sqlServer) : IAsyncLifetime
             await scope.ServiceProvider.GetRequiredService<LaunchDispatcher>().RunDueAsync(Token);
         var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, room);
         Assert.Equal("live", Campaigns.Stage(detail));
+        if (!endTest)
+        {
+            return room;
+        }
+
         using var ended = await Campaigns.PostAsync(_world.Marketer, _world.BrandId, room, "end-test", new { version = Campaigns.Version(detail) });
         Assert.Equal(HttpStatusCode.OK, ended.StatusCode);
         return room;
     }
 
-    private async Task<LearnRun> LearnAsync(LearnInput input)
+    private async Task<LearnRun> LearnAsync(LearnInput input) =>
+        await TryLearnAsync(input) ?? throw new InvalidOperationException("Learn didn't run.");
+
+    private async Task<LearnRun?> TryLearnAsync(LearnInput input)
     {
         await using var scope = await BrandScopeAsync();
         return await scope.ServiceProvider.GetRequiredService<LearnWork>().LearnAsync(input, Token);

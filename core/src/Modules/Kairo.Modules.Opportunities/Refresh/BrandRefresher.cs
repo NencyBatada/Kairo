@@ -189,7 +189,7 @@ internal sealed class BrandRefresher(
                 watched),
             cancellationToken);
 
-        var memory = await brandMemory.RelevantAsync(new MemoryQuery(Limit: MemoryQuery.MostEntries), cancellationToken);
+        var memory = await brandMemory.RelevantAsync(new MemoryQuery(Categories: [.. categories.Select(category => category.Name)], Limit: MemoryQuery.MostEntries), cancellationToken);
         var byText = candidates.ToDictionary(entry => entry.Idea.Text, entry => entry.Idea, StringComparer.OrdinalIgnoreCase);
         var known = categories.Select(category => category.Name).ToHashSet(StringComparer.Ordinal);
         var now = time.GetUtcNow();

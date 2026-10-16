@@ -73,10 +73,10 @@ internal sealed class BrandMemoryReader(BrandMemoryDbContext db, TimeProvider ti
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<MemoryNote>> UsedForRoomAsync(Guid roomId, string usedIn, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MemoryNote>> UsedByAsync(string usedIn, Guid targetId, CancellationToken cancellationToken)
     {
         var ids = await db.Uses.AsNoTracking()
-            .Where(row => row.RoomId == roomId && row.UsedIn == usedIn)
+            .Where(row => row.TargetId == targetId && row.UsedIn == usedIn)
             .Select(row => row.EntryId)
             .Distinct()
             .ToListAsync(cancellationToken);

@@ -1,3 +1,4 @@
+import math
 from typing import Any
 
 from kairo_agents.agents.learn.models import DraftLesson, LearnAd, LearnRequest, Lesson
@@ -12,6 +13,7 @@ MAX_NOTE = 300
 MIN_CLICKS = 100
 MIN_CONVERSIONS = 15
 CLEAR_GAP = 1.25
+CLEAR_Z = 1.96
 
 
 def proven(request: LearnRequest) -> bool:
@@ -22,38 +24,52 @@ def enough(ad: LearnAd) -> bool:
     return ad.clicks >= MIN_CLICKS or ad.conversions >= MIN_CONVERSIONS
 
 
-def rates(ads: list[LearnAd]) -> dict[str, float]:
-    found: dict[str, float] = {}
-    groups: dict[str, list[LearnAd]] = {}
+def groups(ads: list[LearnAd]) -> list[tuple[bool, list[LearnAd]]]:
+    found: dict[str, list[LearnAd]] = {}
     for ad in ads:
         if enough(ad):
-            groups.setdefault(ad.campaign_type, []).append(ad)
-    for group in groups.values():
-        by_conversions = sum(ad.conversions for ad in group) >= MIN_CONVERSIONS
+            found.setdefault(ad.campaign_type, []).append(ad)
+    return [
+        (sum(ad.conversions for ad in group) >= MIN_CONVERSIONS, group) for group in found.values()
+    ]
+
+
+def counts(ad: LearnAd, by_conversions: bool) -> tuple[float, float]:
+    return (ad.conversions, ad.clicks) if by_conversions else (ad.clicks, ad.impressions)
+
+
+def rates(ads: list[LearnAd]) -> dict[str, float]:
+    found: dict[str, float] = {}
+    for by_conversions, group in groups(ads):
         for ad in group:
-            if by_conversions and ad.clicks > 0:
-                found[ad.id] = ad.conversions / ad.clicks
-            elif not by_conversions and ad.impressions > 0:
-                found[ad.id] = ad.clicks / ad.impressions
+            hits, trials = counts(ad, by_conversions)
+            if trials > 0:
+                found[ad.id] = hits / trials
     return found
 
 
-def clear(ad: LearnAd, outcome: str, ads: list[LearnAd], rate: dict[str, float]) -> bool:
-    if ad.id not in rate:
-        return False
-    peers = [
-        rate[other.id]
-        for other in ads
-        if other.campaign_type == ad.campaign_type and other.id in rate
-    ]
-    if len(peers) < 2:
-        return False
-    best, worst = max(peers), min(peers)
-    if best <= 0 or best < worst * CLEAR_GAP:
-        return False
-    if outcome == "worked":
-        return rate[ad.id] > 0 and rate[ad.id] >= worst * CLEAR_GAP
-    return rate[ad.id] * CLEAR_GAP <= best
+def verdicts(ads: list[LearnAd]) -> dict[str, str]:
+    found: dict[str, str] = {}
+    for by_conversions, group in groups(ads):
+        if len(group) < 2:
+            continue
+        for ad in group:
+            hits, trials = counts(ad, by_conversions)
+            rest = [counts(other, by_conversions) for other in group if other is not ad]
+            rest_hits, rest_trials = sum(hit for hit, _ in rest), sum(trial for _, trial in rest)
+            if trials <= 0 or rest_trials <= 0:
+                continue
+            pooled = (hits + rest_hits) / (trials + rest_trials)
+            if pooled <= 0 or pooled >= 1:
+                continue
+            spread = math.sqrt(pooled * (1 - pooled) * (1 / trials + 1 / rest_trials))
+            mine, theirs = hits / trials, rest_hits / rest_trials
+            z = (mine - theirs) / spread
+            if z >= CLEAR_Z and mine >= theirs * CLEAR_GAP:
+                found[ad.id] = "worked"
+            elif z <= -CLEAR_Z and mine * CLEAR_GAP <= theirs:
+                found[ad.id] = "didnt_work"
+    return found
 
 
 def cut(text: str | None, length: int) -> str | None:
@@ -67,6 +83,7 @@ def clean_lessons(drafted: list[DraftLesson], request: LearnRequest) -> list[Les
     expected = "worked" if request.result.outcome == "worked" else "didnt_work"
     ads = {ad.id: ad for ad in request.ads}
     rate = rates(request.ads)
+    verdict = verdicts(request.ads)
     regions = {region.name.casefold(): region for region in request.regions}
     lessons: list[Lesson] = []
     for draft in drafted:
@@ -87,7 +104,7 @@ def clean_lessons(drafted: list[DraftLesson], request: LearnRequest) -> list[Les
                 continue
             if kind == "visual" and not all(ad.visual for ad in cited):
                 continue
-            if not all(clear(ad, outcome, request.ads, rate) for ad in cited):
+            if not all(verdict.get(ad.id) == outcome for ad in cited):
                 continue
         else:
             if outcome != expected:

@@ -66,7 +66,9 @@ internal sealed class BriefEditor(
         var content = latest?.Content.Normalized();
         var context = await desk.ReadAsync(room, content, true, cancellationToken);
         var people = await reader.MembersAsync(cancellationToken);
-        var memory = await brandMemory.UsedForRoomAsync(room.Id, MemoryUsedIn.Brief, cancellationToken);
+        var memory = briefs.FirstOrDefault(brief => brief.Origin == BriefOrigins.Drafted) is { } drafted
+            ? await brandMemory.UsedByAsync(MemoryUsedIn.Brief, drafted.Id, cancellationToken)
+            : [];
         return new BriefDetail(
             room.Id,
             room.Version,

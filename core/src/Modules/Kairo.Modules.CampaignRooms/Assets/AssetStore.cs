@@ -203,7 +203,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
             Provenance = trail.For(asset, previous, changedFields).Write(),
         };
         db.AssetVersions.Add(version);
-        if (trail.MemoryIds() is { Count: > 0 } entries)
+        if (trail.MemoryIds(asset.Kind) is { Count: > 0 } entries)
         {
             _memoryUses.Add((asset.Id, asset.RoomId, entries));
         }

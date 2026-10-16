@@ -56,7 +56,7 @@ internal sealed class AssetInput
     public string? FileKey { get; set; }
 }
 
-internal sealed record ProvenanceState(List<AgentCallRecord> Calls, Dictionary<string, List<string>> Photos, List<AssetInput> Inputs);
+internal sealed record ProvenanceState(List<AgentCallRecord> Calls, Dictionary<string, List<string>> Photos, List<AssetInput> Inputs, List<MemoryNote> Memory);
 
 internal sealed class ProvenanceTrail
 {
@@ -120,13 +120,15 @@ internal sealed class ProvenanceTrail
         }
     }
 
-    public IReadOnlyList<Guid> MemoryIds()
+    public IReadOnlyList<Guid> MemoryIds(string kind)
     {
         lock (_gate)
         {
-            return [.. _memory.Select(note => note.Id)];
+            return UsesMemory(kind) ? [.. _memory.Select(note => note.Id)] : [];
         }
     }
+
+    public static bool UsesMemory(string kind) => kind != AssetKinds.ShoppingTitle;
 
     public ProvenanceState Take()
     {
@@ -135,10 +137,12 @@ internal sealed class ProvenanceTrail
             var state = new ProvenanceState(
                 [.. _calls],
                 _photos.ToDictionary(entry => entry.Key, entry => entry.Value.ToList(), StringComparer.Ordinal),
-                [.. _inputs]);
+                [.. _inputs],
+                [.. _memory]);
             _calls.Clear();
             _photos.Clear();
             _inputs.Clear();
+            _memory.Clear();
             return state;
         }
     }
@@ -157,6 +161,8 @@ internal sealed class ProvenanceTrail
 
             _inputs.Clear();
             _inputs.AddRange(state.Inputs);
+            _memory.Clear();
+            _memory.AddRange(state.Memory);
         }
     }
 
@@ -188,7 +194,7 @@ internal sealed class ProvenanceTrail
             BriefVersion = asset.BriefVersion,
             PreviousVersion = previousVersion is > 0 ? previousVersion : null,
             ChangedFields = [.. changedFields ?? []],
-            MemoryUses = [.. _memory.Select(note => note.Title)],
+            MemoryUses = UsesMemory(asset.Kind) ? [.. _memory.Select(note => note.Title)] : [],
         };
     }
 

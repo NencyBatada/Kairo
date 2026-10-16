@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandMemory;
 using Kairo.Contracts.CampaignRooms;
@@ -21,10 +22,11 @@ internal static class ReportOutcomes
     public static bool Proven(string? outcome) => outcome is Worked or NoEffect;
 }
 
-internal sealed class LearnWork(
+internal sealed partial class LearnWork(
     BrandMemoryDbContext db,
     KairoDatabase database,
     LearnAgent agent,
+    ICampaignTests tests,
     ICampaignLifecycle lifecycle,
     IAuditLog audit,
     ILiveUpdates live,
@@ -37,16 +39,29 @@ internal sealed class LearnWork(
     public const long MinClicks = 100;
     public const double MinConversions = 15;
     public const string Creator = "learn";
+    public const int MostAds = 100;
+    public const int MostRegions = 120;
+    public const int MostProducts = 12;
+    public const int MostTexts = 6;
+    public const int MostLanguages = 12;
+    public const int MostHeadlines = 20;
+    public const int MostDescriptions = 10;
 
     public static readonly AuditActor Actor = AuditActor.Agent("Learn agent", "learn");
 
     public static string LockName(Guid roomId) => $"brand-memory-learn:{roomId:N}";
 
-    public async Task<LearnRun> LearnAsync(LearnInput input, CancellationToken cancellationToken)
+    public async Task<LearnRun?> LearnAsync(LearnInput input, CancellationToken cancellationToken)
     {
-        if (await RunAsync(input.RoomId, cancellationToken) is { Outcome: not LearnOutcomes.Failed } done)
+        if (await RunAsync(input.RoomId, cancellationToken) is { } existing
+            && (existing.Outcome != LearnOutcomes.Failed || existing.Attempts >= MostAttempts))
         {
-            return done;
+            return existing;
+        }
+
+        if (await tests.GetAsync(input.RoomId, cancellationToken) is not { Stage: CampaignTestStages.ResultsReady })
+        {
+            return null;
         }
 
         if (!ReportOutcomes.Proven(input.Request.Result.Outcome))
@@ -57,7 +72,7 @@ internal sealed class LearnWork(
         LearnAnswer answer;
         try
         {
-            answer = await agent.LearnAsync(input.Request, cancellationToken);
+            answer = await agent.LearnAsync(Fit(input.Request), cancellationToken);
         }
         catch (AgentCallException exception)
         {
@@ -130,12 +145,39 @@ internal sealed class LearnWork(
         return entries;
     }
 
+    public static LearnRequest Fit(LearnRequest request) => request with
+    {
+        Brand = Cut(request.Brand, 200) ?? "",
+        Currency = request.Currency.Length == 3 ? request.Currency : "",
+        Campaign = request.Campaign with
+        {
+            Title = Cut(request.Campaign.Title, 200) ?? "",
+            Kpi = Cut(request.Campaign.Kpi, 30) ?? "",
+            Objective = Cut(request.Campaign.Objective, 500),
+            Audiences = Texts(request.Campaign.Audiences, 300, MostTexts),
+            KeyMessages = Texts(request.Campaign.KeyMessages, 300, MostTexts),
+            Languages = Texts(request.Campaign.Languages, 8, MostLanguages),
+            Products = [.. request.Campaign.Products.Where(product => product.Id.Length <= 64).Take(MostProducts)
+                .Select(product => product with { Title = Cut(product.Title, 300) ?? "", Category = Cut(product.Category, 750) })],
+        },
+        Regions = [.. request.Regions.Where(region => Cut(region.Name, 100) is not null).Take(MostRegions)
+            .Select(region => region with { Name = Cut(region.Name, 100)! })],
+        Ads = [.. request.Ads.Where(ad => AdId().IsMatch(ad.Id)).Take(MostAds).Select(ad => ad with
+        {
+            CampaignType = Cut(ad.CampaignType, 20) ?? "",
+            Language = Cut(ad.Language, 8),
+            Headlines = Texts(ad.Headlines, 300, MostHeadlines),
+            Descriptions = Texts(ad.Descriptions, 300, MostDescriptions),
+            Visual = Cut(ad.Visual, 1000),
+        })],
+    };
+
     public static bool Enough(LearnAd ad) => ad.Clicks >= MinClicks || ad.Conversions >= MinConversions;
 
     private async Task<LearnRun?> RunAsync(Guid roomId, CancellationToken cancellationToken) =>
         await db.LearnRuns.AsNoTracking().SingleOrDefaultAsync(row => row.RoomId == roomId, cancellationToken);
 
-    private async Task<LearnRun> SaveAsync(LearnInput input, string outcome, List<MemoryEntry> entries, LearnAnswer? answer, CancellationToken cancellationToken)
+    private async Task<LearnRun?> SaveAsync(LearnInput input, string outcome, List<MemoryEntry> entries, LearnAnswer? answer, CancellationToken cancellationToken)
     {
         await database.BeginTransactionAsync(cancellationToken);
         try
@@ -178,7 +220,13 @@ internal sealed class LearnWork(
                 await live.PublishAsync(MemoryEndpoints.Changed(), cancellationToken);
             }
 
-            await lifecycle.AdvanceAsync(input.RoomId, CampaignSignals.LearningsSaved, Actor, cancellationToken);
+            if (await lifecycle.AdvanceAsync(input.RoomId, CampaignSignals.LearningsSaved, Actor, cancellationToken) != CampaignAdvance.Moved)
+            {
+                await database.RollbackAsync(cancellationToken);
+                db.ChangeTracker.Clear();
+                return null;
+            }
+
             await database.CommitAsync(cancellationToken);
             return run;
         }
@@ -220,6 +268,12 @@ internal sealed class LearnWork(
             throw;
         }
     }
+
+    [GeneratedRegex("^[A-Za-z0-9:_-]{1,80}$")]
+    private static partial Regex AdId();
+
+    private static List<string> Texts(IEnumerable<string> texts, int length, int most) =>
+        [.. texts.Select(text => Cut(text, length)).OfType<string>().Take(most)];
 
     private static string? Cut(string? text, int length)
     {
