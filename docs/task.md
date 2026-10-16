@@ -116,8 +116,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Assets screen**: Assets grouped by campaign type and language, with a preview of how each ad will look.
-- [ ] **Asset controls**: Edit inline, regenerate with an instruction, lock an asset, and compare new shopping titles with the current ones.
+- [/] **Assets screen**: Assets grouped by campaign type and language, with a preview of how each ad will look. *In progress: approved gallery, placement previews, disclosures and version history on a dedicated task branch.*
+- [/] **Asset controls**: Edit inline, regenerate with an instruction, lock an asset, and compare new shopping titles with the current ones. *In progress: approved text edits, regeneration confirmation, locking and shopping-title comparison on a separate task branch.*
 
 ## 8. Brand Guardian
 
