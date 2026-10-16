@@ -19,11 +19,13 @@ internal static class CampaignRoomsSetup
         services.AddScoped<BriefAgent>();
         services.AddScoped<BriefDesk>();
         services.AddScoped<BriefEditor>();
+        services.AddScoped<BriefGate>();
         services.AddScoped<BriefWork>();
         services.AddScoped<IStageWork>(provider => provider.GetRequiredService<BriefWork>());
         services.AddScoped<IStageWork, StarterBriefAlias>();
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
+        services.AddScoped<IProofPlans, ProofPlanDirectory>();
         services.AddSingleton<StageLoopSwitch>();
         services.AddHostedService<StageLoop>();
     }
@@ -42,6 +44,7 @@ internal static class CampaignRoomsSetup
         campaigns.MapPost("/{campaignId:guid}/stage-runs/{runId:guid}/retry", CampaignEndpoints.RetryAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("/{campaignId:guid}/proof-plan", ProofPlanEndpoints.GetAsync);
         campaigns.MapPost("/{campaignId:guid}/proof-plan/holdouts", ProofPlanEndpoints.ChooseHoldoutsAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/proof-plan/changes", ProofPlanEndpoints.ChangeAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("/{campaignId:guid}/brief", BriefEndpoints.GetAsync);
         campaigns.MapPatch("/{campaignId:guid}/brief", BriefEndpoints.EditAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapPost("/{campaignId:guid}/brief/instructions", BriefEndpoints.ProposeAsync).RequireBrandRole(BrandRoles.Marketer).WithoutRequestTransaction();

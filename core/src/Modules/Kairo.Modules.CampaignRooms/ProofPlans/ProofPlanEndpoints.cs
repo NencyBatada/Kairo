@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Kairo.Contracts.Audit;
+using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -44,11 +45,15 @@ internal sealed record ProofPlanView(
     ProofWarningView[] Warnings,
     DateTimeOffset? LockedAt,
     bool ChangedAfterLock,
+    bool ApprovedWithWarnings,
+    string? ChangeReason,
     DateTimeOffset CreatedAt);
 
-internal sealed record ProofPlanResult(ProofPlanView? Plan, bool Updating, bool CanChooseHoldouts);
+internal sealed record ProofPlanResult(ProofPlanView? Plan, bool Updating, bool CanChooseHoldouts, bool CanChangeAfterLock);
 
 internal sealed record HoldoutRequest(string[]? RegionIds, int? Version);
+
+internal sealed record ProofPlanChangeRequest(int? Version, string? Reason, string[]? HoldoutRegionIds, string? EndDate);
 
 internal static class ProofPlanReader
 {
@@ -81,6 +86,8 @@ internal static class ProofPlanReader
             [.. content.Warnings.Select(warning => new ProofWarningView(warning.Code, warning.Message))],
             plan.LockedAt,
             plan.ChangedAfterLock,
+            plan.ApprovedWithWarnings,
+            plan.ChangeReason,
             plan.CreatedAt);
     }
 
@@ -91,6 +98,7 @@ internal static class ProofPlanReader
 internal static class ProofPlanEndpoints
 {
     public const int MaxHoldouts = 10;
+    public const string ChangedAfterLock = "changed_after_lock";
 
     public static async Task<Results<Ok<ProofPlanResult>, NotFound>> GetAsync(
         Guid campaignId,
@@ -112,7 +120,8 @@ internal static class ProofPlanEndpoints
         return TypedResults.Ok(new ProofPlanResult(
             plan is null ? null : ProofPlanReader.View(plan),
             updating,
-            member.Has(BrandRoles.Marketer) && Blocker(room, plan) is null));
+            member.Has(BrandRoles.Marketer) && Blocker(room, plan) is null,
+            member.Has(BrandRoles.Marketer) && LockedBlocker(room, plan) is null));
     }
 
     public static async Task<Results<Ok<CampaignDetail>, NotFound, ProblemHttpResult, ValidationProblem>> ChooseHoldoutsAsync(
@@ -192,6 +201,156 @@ internal static class ProofPlanEndpoints
         await workflow.PublishAsync(room, cancellationToken);
         return TypedResults.Ok(await reader.DetailAsync(room, cancellationToken));
     }
+
+    public static async Task<Results<Ok<ProofPlanResult>, NotFound, ProblemHttpResult, ValidationProblem>> ChangeAsync(
+        Guid campaignId,
+        ProofPlanChangeRequest request,
+        CampaignRoomsDbContext db,
+        RoomWorkflow workflow,
+        IAuditLog audit,
+        CurrentMember member,
+        TimeProvider time,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request.Version is not { } version || version < 0)
+        {
+            errors["version"] = ["Send the campaign's version from when you opened it."];
+            version = 0;
+        }
+
+        var reason = request.Reason?.Trim() ?? "";
+        if (reason.Length is < RoomLimits.MinCommentLength or > RoomLimits.MaxReasonLength)
+        {
+            errors["reason"] = [$"Say why the test plan has to change, in {RoomLimits.MinCommentLength} to {RoomLimits.MaxReasonLength} characters."];
+        }
+
+        var chosen = request.HoldoutRegionIds is null
+            ? null
+            : request.HoldoutRegionIds.Where(id => !string.IsNullOrWhiteSpace(id)).Select(id => id.Trim()).Distinct(StringComparer.Ordinal).ToList();
+        if (chosen is { Count: 0 or > MaxHoldouts })
+        {
+            errors["holdoutRegionIds"] = [$"Choose 1 to {MaxHoldouts} holdout regions."];
+        }
+
+        DateOnly? end = null;
+        if (!string.IsNullOrWhiteSpace(request.EndDate))
+        {
+            end = BriefDesk.ParseDay(request.EndDate);
+            if (end is null)
+            {
+                errors["endDate"] = ["Use a date like 2026-10-15."];
+            }
+        }
+        else if (chosen is null)
+        {
+            errors["holdoutRegionIds"] = ["Change the holdout regions or the end date."];
+        }
+
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        if (await workflow.LockedAsync(campaignId, cancellationToken) is not { } room)
+        {
+            return TypedResults.NotFound();
+        }
+
+        if (room.Version != version)
+        {
+            return Conflict("This campaign changed since you opened it. Refresh and try again.");
+        }
+
+        var plan = await ProofPlanReader.LatestAsync(db, room.Id, cancellationToken);
+        if (LockedBlocker(room, plan) is { } blocker)
+        {
+            return Conflict(blocker);
+        }
+
+        var content = plan!.Read();
+        var holdoutsBefore = content.Holdouts.Select(region => region.Id).ToArray();
+        var endBefore = content.EndDate;
+        if (chosen is not null)
+        {
+            var known = content.TestRegions.Concat(content.Holdouts).Concat(content.Candidates)
+                .GroupBy(region => region.Id, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+            if (chosen.FirstOrDefault(id => !known.ContainsKey(id)) is { } unknown)
+            {
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["holdoutRegionIds"] = [$"{unknown} isn't one of the suggested holdout regions."] });
+            }
+
+            var tested = content.TestRegions.Concat(content.Holdouts.Where(region => region.InArea))
+                .Where(region => !chosen.Contains(region.Id))
+                .DistinctBy(region => region.Id)
+                .ToList();
+            if (tested.Count == 0)
+            {
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["holdoutRegionIds"] = ["Leave at least one region in the test."] });
+            }
+
+            content.TestRegions = tested;
+            content.Holdouts = [.. chosen.Select(id => known[id])];
+        }
+
+        if (end is { } last)
+        {
+            if (content.StartDate is { } start && last < start)
+            {
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["endDate"] = [$"Pick an end date on or after the test's start, {BriefChecks.Day(start)}."] });
+            }
+
+            content.EndDate = last;
+            content.WindowDays = content.StartDate is { } first ? last.DayNumber - first.DayNumber + 1 : content.WindowDays;
+        }
+
+        if (content.EndDate == endBefore && content.Holdouts.Select(region => region.Id).ToHashSet(StringComparer.Ordinal).SetEquals(holdoutsBefore))
+        {
+            return Conflict("Nothing in the test plan changed.");
+        }
+
+        content.Warnings.RemoveAll(warning => warning.Code == ChangedAfterLock);
+        content.Warnings.Add(new PlanWarning(ChangedAfterLock, "The test plan changed after launch, so its smallest detectable lift and holdout cost are from before the change."));
+        var latest = await db.ProofPlans.Where(row => row.RoomId == room.Id).MaxAsync(row => row.Version, cancellationToken);
+        var changed = new ProofPlan
+        {
+            Id = Guid.NewGuid(),
+            BrandId = room.BrandId,
+            RoomId = room.Id,
+            Version = latest + 1,
+            BriefVersion = plan.BriefVersion,
+            Method = plan.Method,
+            CreatedAt = time.GetUtcNow(),
+            LockedAt = plan.LockedAt,
+            ChangedAfterLock = true,
+            ApprovedWithWarnings = plan.ApprovedWithWarnings,
+            ChangeReason = reason,
+            ChangedBy = member.UserId,
+        };
+        changed.Write(content);
+        db.ProofPlans.Add(changed);
+        workflow.Touch(room);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.RecordAsync(
+            new AuditRecord(
+                "proof_plan.changed_after_lock",
+                RoomWorkflow.AuditTarget,
+                room.Id.ToString(),
+                new { version = plan.Version, holdouts = holdoutsBefore, endDate = endBefore },
+                new { version = changed.Version, holdouts = content.Holdouts.Select(region => region.Id).ToArray(), endDate = content.EndDate, reason }),
+            cancellationToken);
+        await workflow.PublishAsync(room, cancellationToken);
+        return TypedResults.Ok(new ProofPlanResult(ProofPlanReader.View(changed), false, false, true));
+    }
+
+    private static string? LockedBlocker(Room room, ProofPlan? plan) => room switch
+    {
+        _ when plan is null => "There's no test plan yet.",
+        _ when plan.LockedAt is null => "The test plan locks at launch. Until then, change the brief or choose holdout regions instead.",
+        { State: RoomStates.Closed or RoomStates.Discarded } => "This campaign is closed, so its test plan can't change.",
+        _ => null,
+    };
 
     private static string? Blocker(Room room, ProofPlan? plan) => room switch
     {

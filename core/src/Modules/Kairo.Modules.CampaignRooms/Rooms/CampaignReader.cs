@@ -9,6 +9,7 @@ namespace Kairo.Modules.CampaignRooms.Rooms;
 internal sealed class CampaignReader(
     CampaignRoomsDbContext db,
     RoomWorkflow workflow,
+    BriefGate briefGate,
     IBrandMembers members,
     CurrentMember member)
 {
@@ -49,13 +50,16 @@ internal sealed class CampaignReader(
         CampaignApprovalView? approval = null;
         if (room.PendingGate is { } gate)
         {
-            var approvers = await workflow.ApproversAsync(room.BrandId, gate, people, cancellationToken);
+            var route = await workflow.RouteAsync(room, gate, cancellationToken);
+            var approvers = await workflow.ApproversAsync(room.BrandId, gate, route.Route, people, cancellationToken);
             approval = new CampaignApprovalView(
                 gate,
                 RoomWorkflow.GateTitle(gate),
                 [.. approvers.Select(approver => new CampaignPersonView(approver.UserId, approver.Name))],
                 room.GateRequestedBy is { } requester ? Person(requester, people) : null,
-                room.GateRequestedAt ?? room.UpdatedAt);
+                room.GateRequestedAt ?? room.UpdatedAt,
+                route.Route,
+                route.Reason);
         }
 
         return new CampaignDetail(
@@ -161,7 +165,9 @@ internal sealed class CampaignReader(
     {
         var marketer = member.Has(BrandRoles.Marketer);
         var gate = room.PendingGate ?? RoomLifecycle.GateFor(room.State);
-        var mayApprove = gate is not null && await workflow.MayApproveAsync(room.BrandId, gate, member, cancellationToken);
+        var route = room.PendingGate is { } pending ? await workflow.RouteAsync(room, pending, cancellationToken) : BriefRoute.Approvers;
+        var mayApprove = gate is not null && await workflow.MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken);
+        var maySendBack = gate is not null && (mayApprove || await workflow.MaySendBackAsync(room, gate, member, cancellationToken));
         var stateGate = RoomLifecycle.GateFor(room.State);
         var canRequest = marketer
             && stateGate is not null
@@ -169,12 +175,14 @@ internal sealed class CampaignReader(
             && room.PendingGate is null
             && room.Status != RoomStatuses.AgentWorking
             && (stateGate != RoomGates.Brief || hasBrief);
+        var blocker = canRequest && stateGate == RoomGates.Brief ? (await briefGate.CheckAsync(room, cancellationToken)).Problem : null;
         return new CampaignActionsView(
-            canRequest ? stateGate : null,
+            canRequest && blocker is null ? stateGate : null,
             room.PendingGate is not null && mayApprove ? room.PendingGate : null,
-            mayApprove ? [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
+            maySendBack ? [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
             marketer && RoomLifecycle.CanDiscard(room.State),
-            marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null);
+            marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null,
+            blocker);
     }
 
     public static CampaignBriefView BriefView(Brief brief)

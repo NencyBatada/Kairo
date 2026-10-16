@@ -54,6 +54,8 @@ public static class AuditActions
         new("stage_run.failed", "An agent step failed"),
         new("stage_run.retried", "Retried an agent step"),
         new("proof_plan.holdouts_chosen", "Chose the holdout regions"),
+        new("proof_plan.locked", "Locked the test plan at launch"),
+        new("proof_plan.changed_after_lock", "Changed the test plan after launch"),
         new("brief.edited", "Edited a campaign brief"),
         new("brief.instruction_applied", "Changed a campaign brief from an instruction"),
         new("trigger_rule.created", "Created a trigger rule"),

@@ -30,6 +30,12 @@ internal sealed class Room : IBrandOwned
 
     public DateTimeOffset? GateRequestedAt { get; set; }
 
+    public string? GateRoute { get; set; }
+
+    public int? GateBriefVersion { get; set; }
+
+    public int? GatePlanVersion { get; set; }
+
     public RoomSendBack? LastSendBack { get; set; }
 
     public string? DiscardReason { get; set; }

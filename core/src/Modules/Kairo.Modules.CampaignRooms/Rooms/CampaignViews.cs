@@ -35,7 +35,9 @@ internal sealed record CampaignApprovalView(
     string Label,
     CampaignPersonView[] Approvers,
     CampaignPersonView? RequestedBy,
-    DateTimeOffset RequestedAt);
+    DateTimeOffset RequestedAt,
+    string Route,
+    string? RouteReason);
 
 internal sealed record CampaignSendBackView(string From, string To, string Comment, CampaignPersonView By, DateTimeOffset At);
 
@@ -76,7 +78,8 @@ internal sealed record CampaignActionsView(
     string? Approve,
     string[] SendBackTo,
     bool Discard,
-    Guid? RetryRun);
+    Guid? RetryRun,
+    string? RequestApprovalBlocker);
 
 internal sealed record CampaignDetail(
     Guid Id,

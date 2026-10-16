@@ -26,6 +26,12 @@ internal sealed class ProofPlan : IBrandOwned
 
     public bool ChangedAfterLock { get; set; }
 
+    public bool ApprovedWithWarnings { get; set; }
+
+    public string? ChangeReason { get; set; }
+
+    public Guid? ChangedBy { get; set; }
+
     public ProofPlanContent Read() => JsonSerializer.Deserialize<ProofPlanContent>(Content, JsonSerializerOptions.Web) ?? new ProofPlanContent();
 
     public void Write(ProofPlanContent content) => Content = JsonSerializer.Serialize(content, JsonSerializerOptions.Web);

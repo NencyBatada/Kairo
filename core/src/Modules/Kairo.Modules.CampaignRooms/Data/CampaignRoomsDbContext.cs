@@ -36,6 +36,7 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             room.Property(r => r.State).HasMaxLength(20);
             room.Property(r => r.Status).HasMaxLength(20);
             room.Property(r => r.PendingGate).HasMaxLength(20);
+            room.Property(r => r.GateRoute).HasMaxLength(20);
             room.Property(r => r.RunStatus).HasMaxLength(20);
             room.Property(r => r.DiscardedFrom).HasMaxLength(20);
             room.Property(r => r.DiscardReason).HasMaxLength(RoomLimits.MaxReasonLength);
@@ -78,6 +79,7 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             plan.HasKey(p => p.Id).IsClustered(false);
             plan.HasIndex(p => new { p.BrandId, p.RoomId, p.Version }).IsUnique().IsClustered();
             plan.Property(p => p.Method).HasMaxLength(100);
+            plan.Property(p => p.ChangeReason).HasMaxLength(RoomLimits.MaxReasonLength);
         });
         modelBuilder.Entity<BriefProposal>(proposal =>
         {

@@ -3,7 +3,9 @@ using Kairo.Contracts.Brands;
 using Kairo.Contracts.Identity;
 using Kairo.Contracts.Live;
 using Kairo.Contracts.Notifications;
+using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
+using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Stages;
 
 namespace Kairo.Modules.CampaignRooms.Rooms;
@@ -35,6 +37,7 @@ internal sealed class RoomWorkflow(
     CampaignRoomsDbContext db,
     KairoDatabase database,
     IApprovers approvers,
+    BriefGate briefGate,
     IBrandDirectory brands,
     IAuditLog audit,
     ILiveUpdates live,
@@ -62,21 +65,47 @@ internal sealed class RoomWorkflow(
         return await db.Rooms.SingleOrDefaultAsync(room => room.Id == roomId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<BrandMember>> ApproversAsync(Guid brandId, string gate, IReadOnlyList<BrandMember> members, CancellationToken cancellationToken)
+    public async Task<BriefRoute> RouteAsync(Room room, string gate, CancellationToken cancellationToken) =>
+        gate == RoomGates.Brief ? await briefGate.RouteAsync(room, cancellationToken) : BriefRoute.Approvers;
+
+    public async Task<IReadOnlyList<BrandMember>> ApproversAsync(Guid brandId, string gate, string route, IReadOnlyList<BrandMember> members, CancellationToken cancellationToken)
     {
+        if (route == ApprovalRoutes.BudgetOwner)
+        {
+            return await approvers.ForAsync(brandId, ApprovalDuty.BudgetOwner, cancellationToken);
+        }
+
         var assigned = await approvers.ForAsync(brandId, DutyOf(gate), cancellationToken);
         return assigned.Count > 0 ? assigned : members.Where(member => (member.Roles & BrandRoles.Approver) != BrandRoles.None).ToList();
     }
 
-    public async Task<bool> MayApproveAsync(Guid brandId, string gate, CurrentMember member, CancellationToken cancellationToken)
+    public async Task<bool> MayApproveAsync(Guid brandId, string gate, string route, CurrentMember member, CancellationToken cancellationToken)
     {
         if (!member.Has(BrandRoles.Approver))
         {
             return false;
         }
 
+        if (route == ApprovalRoutes.BudgetOwner)
+        {
+            var owners = await approvers.ForAsync(brandId, ApprovalDuty.BudgetOwner, cancellationToken);
+            return owners.Any(owner => owner.UserId == member.UserId);
+        }
+
         var assigned = await approvers.ForAsync(brandId, DutyOf(gate), cancellationToken);
         return assigned.Count == 0 || assigned.Any(approver => approver.UserId == member.UserId);
+    }
+
+    public async Task<bool> MaySendBackAsync(Room room, string gate, CurrentMember member, CancellationToken cancellationToken)
+    {
+        if (room.PendingGate != RoomGates.Brief || gate != RoomGates.Brief)
+        {
+            return await MayApproveAsync(room.BrandId, gate, ApprovalRoutes.Approvers, member, cancellationToken);
+        }
+
+        var route = await RouteAsync(room, gate, cancellationToken);
+        return await MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken)
+            || (room.GateRoute is { } requested && requested != route.Route && await MayApproveAsync(room.BrandId, gate, requested, member, cancellationToken));
     }
 
     public async Task<MoveResult> RequestApprovalAsync(Guid roomId, string gate, int version, CurrentMember member, CancellationToken cancellationToken)
@@ -106,15 +135,26 @@ internal sealed class RoomWorkflow(
             return MoveResult.Failed(MoveError.NotAllowed, "Wait for the agent to finish before asking for approval.");
         }
 
-        if (gate == RoomGates.Brief && !await db.Briefs.AnyAsync(brief => brief.RoomId == room.Id, cancellationToken))
+        BriefGateCheck? check = null;
+        if (gate == RoomGates.Brief)
         {
-            return MoveResult.Failed(MoveError.NotAllowed, "The brief isn't ready yet.");
+            check = await briefGate.CheckAsync(room, cancellationToken);
+            if (check.Problem is { } problem)
+            {
+                return MoveResult.Failed(MoveError.NotAllowed, problem);
+            }
         }
 
         var before = Snapshot(room);
-        await RequestGateAsync(room, gate, member.UserId, cancellationToken);
+        room.GateRoute = check?.Route.Route;
+        room.GateBriefVersion = check?.BriefVersion;
+        room.GatePlanVersion = check?.PlanVersion;
+        await RequestGateAsync(room, gate, member.UserId, check?.Route ?? BriefRoute.Approvers, cancellationToken);
         Touch(room);
-        await FinishAsync(room, new AuditRecord("campaign_room.approval_requested", AuditTarget, room.Id.ToString(), before, After(room, new { gate })), cancellationToken);
+        var details = check is null
+            ? (object)new { gate }
+            : new { gate, route = check.Route.Route, briefVersion = check.BriefVersion, proofPlanVersion = check.PlanVersion };
+        await FinishAsync(room, new AuditRecord("campaign_room.approval_requested", AuditTarget, room.Id.ToString(), before, After(room, details)), cancellationToken);
         return MoveResult.Done(room);
     }
 
@@ -135,17 +175,69 @@ internal sealed class RoomWorkflow(
             return MoveResult.Failed(MoveError.NotAllowed, "Nothing is waiting for that approval.");
         }
 
-        if (!await MayApproveAsync(room.BrandId, gate, member, cancellationToken))
+        ProofPlan? plan = null;
+        var route = BriefRoute.Approvers;
+        if (gate == RoomGates.Brief)
         {
-            return MoveResult.Failed(MoveError.NotApprover, "You aren't an approver for this step.");
+            var latestBrief = await db.Briefs.Where(brief => brief.RoomId == room.Id).MaxAsync(brief => (int?)brief.Version, cancellationToken);
+            plan = await db.ProofPlans.Where(row => row.RoomId == room.Id).OrderByDescending(row => row.Version).FirstOrDefaultAsync(cancellationToken);
+            if (room.GateBriefVersion is not null && (latestBrief != room.GateBriefVersion || plan?.Version != room.GatePlanVersion))
+            {
+                return MoveResult.Failed(MoveError.NotAllowed, "The brief or its test plan changed after approval was requested. Send it back so it can be asked for again.");
+            }
+
+            route = await briefGate.RouteAsync(room, cancellationToken);
+        }
+
+        if (!await MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken))
+        {
+            return MoveResult.Failed(MoveError.NotApprover, NotApproverMessage(room, route));
         }
 
         var before = Snapshot(room);
+        var briefVersion = room.GateBriefVersion;
+        var withWarnings = plan is not null && plan.Read().Warnings.Count > 0;
+        if (withWarnings)
+        {
+            plan!.ApprovedWithWarnings = true;
+        }
+
         ClearGate(room);
         await EnterAsync(room, next, cancellationToken);
+        var locked = next == RoomStates.Launching ? await LockPlanAsync(room.Id, cancellationToken) : null;
         await notifications.ResolveAsync(GateSubject(room.Id, gate), cancellationToken);
-        await FinishAsync(room, new AuditRecord("campaign_room.approved", AuditTarget, room.Id.ToString(), before, After(room, new { gate, comment = Trimmed(comment) })), cancellationToken);
+        var details = gate == RoomGates.Brief
+            ? (object)new { gate, comment = Trimmed(comment), route = route.Route, briefVersion, proofPlanVersion = plan?.Version, approvedWithWarnings = withWarnings }
+            : new { gate, comment = Trimmed(comment) };
+        await FinishAsync(room, new AuditRecord("campaign_room.approved", AuditTarget, room.Id.ToString(), before, After(room, details)), cancellationToken);
+        if (locked is not null)
+        {
+            await audit.RecordAsync(
+                new AuditRecord("proof_plan.locked", AuditTarget, room.Id.ToString(), null, new { version = locked.Version, lockedAt = locked.LockedAt }),
+                cancellationToken);
+        }
+
         return MoveResult.Done(room);
+    }
+
+    private static string NotApproverMessage(Room room, BriefRoute route) => route switch
+    {
+        { ToBudgetOwner: true } when room.GateRoute != ApprovalRoutes.BudgetOwner =>
+            "The budget limit changed after approval was requested, so only a budget owner can approve this brief now.",
+        { ToBudgetOwner: true } => "Only a budget owner can approve this brief, because its budget is above the limit.",
+        _ => "You aren't an approver for this step.",
+    };
+
+    private async Task<ProofPlan?> LockPlanAsync(Guid roomId, CancellationToken cancellationToken)
+    {
+        var plan = await db.ProofPlans.Where(row => row.RoomId == roomId).OrderByDescending(row => row.Version).FirstOrDefaultAsync(cancellationToken);
+        if (plan is null || plan.LockedAt is not null)
+        {
+            return null;
+        }
+
+        plan.LockedAt = time.GetUtcNow();
+        return plan;
     }
 
     public async Task<MoveResult> SendBackAsync(Guid roomId, string to, string comment, int version, CurrentMember member, CancellationToken cancellationToken)
@@ -166,7 +258,7 @@ internal sealed class RoomWorkflow(
         }
 
         var gate = room.PendingGate ?? RoomLifecycle.GateFor(room.State);
-        if (gate is null || !await MayApproveAsync(room.BrandId, gate, member, cancellationToken))
+        if (gate is null || !await MaySendBackAsync(room, gate, member, cancellationToken))
         {
             return MoveResult.Failed(MoveError.NotApprover, "You aren't an approver for this step.");
         }
@@ -292,7 +384,7 @@ internal sealed class RoomWorkflow(
         await CancelRunsAsync(room.Id, leaving, cancellationToken);
         if (state == RoomStates.AssetReview)
         {
-            await RequestGateAsync(room, RoomGates.Assets, null, cancellationToken);
+            await RequestGateAsync(room, RoomGates.Assets, null, BriefRoute.Approvers, cancellationToken);
         }
 
         Touch(room);
@@ -311,13 +403,13 @@ internal sealed class RoomWorkflow(
                 cancellationToken);
     }
 
-    private async Task RequestGateAsync(Room room, string gate, Guid? requestedBy, CancellationToken cancellationToken)
+    private async Task RequestGateAsync(Room room, string gate, Guid? requestedBy, BriefRoute route, CancellationToken cancellationToken)
     {
         room.PendingGate = gate;
         room.GateRequestedBy = requestedBy;
         room.GateRequestedAt = time.GetUtcNow();
         var brand = await BrandAsync(room.BrandId, cancellationToken);
-        var assigned = await approvers.ForAsync(room.BrandId, DutyOf(gate), cancellationToken);
+        var assigned = await approvers.ForAsync(room.BrandId, route.ToBudgetOwner ? ApprovalDuty.BudgetOwner : DutyOf(gate), cancellationToken);
         var audience = assigned.Count > 0
             ? LiveAudience.Users([.. assigned.Select(approver => approver.UserId)])
             : LiveAudience.Roles(BrandRoles.Approver);
@@ -326,7 +418,7 @@ internal sealed class RoomWorkflow(
                 ApprovalKind,
                 audience,
                 $"{GateTitle(gate)} for {room.Title}",
-                GateBody(gate),
+                route.ToBudgetOwner ? "A brief above the budget limit is ready for your approval as budget owner." : GateBody(gate),
                 Link(brand, room.Id),
                 GateSubject(room.Id, gate)),
             cancellationToken);
@@ -337,6 +429,9 @@ internal sealed class RoomWorkflow(
         room.PendingGate = null;
         room.GateRequestedBy = null;
         room.GateRequestedAt = null;
+        room.GateRoute = null;
+        room.GateBriefVersion = null;
+        room.GatePlanVersion = null;
     }
 
     private async Task FinishAsync(Room room, AuditRecord record, CancellationToken cancellationToken)
