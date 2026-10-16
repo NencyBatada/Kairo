@@ -66,6 +66,23 @@ public sealed class CatalogueContractTests(SqlServer sqlServer) : IAsyncDisposab
     }
 
     [Fact]
+    public async Task In_stock_products_carry_the_details_ads_are_written_from()
+    {
+        var (admin, brandId) = await WorkspaceAsync();
+        await Catalogues.ImportAsync(
+            admin.Browser,
+            brandId,
+            "id,title,description,brand,gtin,link,image_link,additional_image_link,price,availability,product_type\n"
+            + "A-1,Rain Boot,Waterproof rubber boot,Acme,12345678,https://acme.example/p/A-1,https://acme.example/i/A-1.jpg,https://acme.example/i/A-1-side.jpg,1499.00 INR,in_stock,Shoes\n");
+        var id = (await admin.Browser.GetFromJsonAsync<JsonElement>($"{Catalogues.Base(brandId)}/products", Token)).GetProperty("items")[0].GetProperty("id").GetGuid();
+
+        var product = Assert.Single(await WithCatalogueAsync(brandId, catalogue => catalogue.GetInStockAsync([id], Token)));
+
+        Assert.Equal(("Waterproof rubber boot", "Acme", "12345678", "in_stock"), (product.Description, product.Brand, product.Gtin, product.Availability));
+        Assert.Equal(["https://acme.example/i/A-1-side.jpg"], product.AdditionalImageLinks!);
+    }
+
+    [Fact]
     public async Task Without_a_matching_category_no_product_matches()
     {
         var (admin, brandId) = await WorkspaceAsync();

@@ -41,7 +41,7 @@ public sealed class CampaignLifecycleTests(SqlServer sqlServer) : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.OK, approved.StatusCode);
         var creating = await approved.Content.ReadFromJsonAsync<JsonElement>(Token);
-        Assert.Equal(("creating", "in_progress"), (Campaigns.Stage(creating), Campaigns.Status(creating)));
+        Assert.Equal(("creating", "agent_working"), (Campaigns.Stage(creating), Campaigns.Status(creating)));
         Assert.Equal(JsonValueKind.Null, creating.GetProperty("pendingApproval").ValueKind);
         Assert.Equal(["done", "current"], creating.GetProperty("tracker").GetProperty("stages").EnumerateArray().Take(2).Select(step => step.GetProperty("progress").GetString()));
         Assert.Equal(_world.Api.Clock.GetUtcNow(), creating.GetProperty("tracker").GetProperty("enteredAt").GetDateTimeOffset());
