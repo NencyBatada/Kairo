@@ -3610,6 +3610,273 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetSetView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetEditRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetVersionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetVersionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetRegenerateRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetRegenerationView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -4194,6 +4461,84 @@ export interface components {
             gate: null | string;
             version: null | number | string;
             comment: null | string;
+        };
+        AssetContentView: {
+            keywords: null | components["schemas"]["AssetKeywordView"][];
+            headlines: null | string[];
+            longHeadlines: null | string[];
+            descriptions: null | string[];
+            path1: null | string;
+            path2: null | string;
+            finalUrl: null | string;
+            businessName: null | string;
+            callToAction: null | string;
+            title: null | string;
+            currentTitle: null | string;
+            offerId: null | string;
+        };
+        AssetEditRequest: {
+            version: null | number | string;
+            keywords: null | components["schemas"]["AssetKeywordInput"][];
+            headlines: null | string[];
+            longHeadlines: null | string[];
+            descriptions: null | string[];
+            path1: null | string;
+            path2: null | string;
+            businessName: null | string;
+            callToAction: null | string;
+            title: null | string;
+        };
+        AssetGroupView: {
+            campaignType: string;
+            label: string;
+            assets: components["schemas"]["AssetView"][];
+        };
+        AssetKeywordInput: {
+            text: null | string;
+            match: null | string;
+        };
+        AssetKeywordView: {
+            text: string;
+            match: string;
+        };
+        AssetRegenerateRequest: {
+            version: null | number | string;
+            instruction: null | string;
+        };
+        AssetRegenerationView: {
+            runId: string;
+            asset: components["schemas"]["AssetView"];
+        };
+        AssetSetView: {
+            campaignId: string;
+            stage: string;
+            canEdit: boolean;
+            editBlocker: null | string;
+            languages: string[];
+            groups: components["schemas"]["AssetGroupView"][];
+        };
+        AssetVersionRequest: {
+            version: null | number | string;
+        };
+        AssetView: {
+            id: string;
+            kind: string;
+            campaignType: string;
+            language: string;
+            adGroup: null | string;
+            format: null | string;
+            width: null | number | string;
+            height: null | number | string;
+            durationSeconds: null | number | string;
+            productIds: string[];
+            locked: boolean;
+            checkState: string;
+            version: number | string;
+            origin: string;
+            editedByPerson: boolean;
+            mediaUrl: null | string;
+            content: components["schemas"]["AssetContentView"];
+            updatedAt: string;
         };
         AuditActionOption: {
             action: string;
