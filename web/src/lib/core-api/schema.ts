@@ -5075,6 +5075,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/impact-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImpactView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/notifications": {
         parameters: {
             query?: never;
@@ -6193,6 +6236,42 @@ export interface components {
             };
         };
         IFormFile: string;
+        ImpactFlag: {
+            code: string;
+            detail: string;
+        };
+        ImpactReportView: {
+            id: string;
+            status: string;
+            title: string;
+            kpi: string;
+            currency: string;
+            spend: number | string;
+            results: number | string;
+            costPerResult: null | number | string;
+            costPerExtra: null | number | string;
+            costPerExtraLow: null | number | string;
+            costPerExtraHigh: null | number | string;
+            targetCost: null | number | string;
+            outcome: string;
+            nextStep: string;
+            nextTest: null | components["schemas"]["NextTestPlan"];
+            flags: components["schemas"]["ImpactFlag"][];
+            summary: null | string;
+            nextStepReasoning: null | string;
+            inconclusiveReason: null | string;
+            nextTestAdvice: null | string;
+            model: null | string;
+            promptVersion: null | string;
+            readyAt: null | string;
+        };
+        ImpactView: {
+            campaignId: string;
+            stage: string;
+            state: string;
+            report: null | components["schemas"]["ImpactReportView"];
+            final: null | components["schemas"]["LiftReadingView"];
+        };
         ImportDetailView: {
             id: string;
             kind: string;
@@ -6536,6 +6615,11 @@ export interface components {
             roles: components["schemas"]["BrandRole"][];
             invitedBy: string;
             expiresAt: string;
+        };
+        NextTestPlan: {
+            days: null | number | string;
+            addRegions: boolean;
+            reasons: string[];
         };
         NotificationItem: {
             id: number | string;
