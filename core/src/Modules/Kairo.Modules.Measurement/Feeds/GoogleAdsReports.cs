@@ -27,6 +27,10 @@ internal static class AdsQueries
         $"SELECT segments.date, campaign.id, {GoogleAdsReports.CityField}, {Metrics} FROM geographic_view "
         + $"WHERE {During(window)} AND geographic_view.location_type = 'LOCATION_OF_PRESENCE'";
 
+    public static string Products(FeedWindow window, bool categories) =>
+        $"SELECT segments.date, {(categories ? "segments.product_type_l1" : "segments.product_item_id, segments.product_title")}, "
+        + $"metrics.clicks, metrics.conversions, metrics.conversions_value FROM shopping_performance_view WHERE {During(window)}";
+
     public static string GeoTargets(IEnumerable<string> resourceNames) =>
         "SELECT geo_target_constant.id, geo_target_constant.name, geo_target_constant.country_code, geo_target_constant.canonical_name FROM geo_target_constant "
         + $"WHERE geo_target_constant.resource_name IN ({string.Join(", ", resourceNames.Select(name => $"'{name}'"))})";
@@ -51,6 +55,9 @@ internal sealed class GoogleAdsReports(IHttpClientFactory http, AnalyticsOptions
             AdsRows.Text(customer, "timeZone") ?? FeedClock.IndiaTimeZone,
             AdsRows.Text(customer, "currencyCode") ?? "");
     }
+
+    public async Task<IReadOnlyList<JsonElement>> ProductsAsync(ConnectionAccess access, FeedWindow window, bool categories, CancellationToken cancellationToken) =>
+        await SearchAsync(access, AdsQueries.Products(window, categories), cancellationToken);
 
     public async Task<List<JsonObject>> CampaignsAsync(ConnectionAccess access, AdsAccount account, FeedWindow window, CancellationToken cancellationToken) =>
         (await SearchAsync(access, AdsQueries.Campaigns(window), cancellationToken)).Select(row => AdsRows.Campaign(row, account)).ToList();

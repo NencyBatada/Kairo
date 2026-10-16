@@ -33,7 +33,7 @@ internal static class Ga4Rows
         return result;
     }
 
-    private static string?[] Values(JsonElement row, string name) =>
+    public static string?[] Values(JsonElement row, string name) =>
         row.GetProperty(name).EnumerateArray().Select(value => AdsRows.Text(value, "value")).ToArray();
 
     private static long Whole(string? text) => (long)decimal.Parse(text ?? "0", NumberStyles.Float, CultureInfo.InvariantCulture);
@@ -60,20 +60,34 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
     public async Task<List<JsonObject>> DailyAsync(ConnectionAccess access, Ga4Property property, FeedWindow window, bool cities, CancellationToken cancellationToken)
     {
         string[] names = cities ? ["date", "country", "region", "city"] : ["date", "country", "region"];
+        var rows = await RowsAsync(
+            access, property.Id, window.From, window.To, names, ["sessions", "keyEvents", "transactions", "purchaseRevenue"], cancellationToken);
+        return rows.Select(row => Ga4Rows.Of(row, property, cities)).ToList();
+    }
+
+    public async Task<List<JsonElement>> RowsAsync(
+        ConnectionAccess access,
+        string propertyId,
+        DateOnly from,
+        DateOnly to,
+        string[] dimensions,
+        string[] metrics,
+        CancellationToken cancellationToken)
+    {
         var client = http.CreateClient(MeasurementHttp.ClientName);
-        var rows = new List<JsonObject>();
+        var rows = new List<JsonElement>();
         var offset = 0;
         while (true)
         {
             var page = await client.CallAsync(
                 HttpMethod.Post,
-                $"{DataUrl}/properties/{Uri.EscapeDataString(property.Id)}:runReport",
+                $"{DataUrl}/properties/{Uri.EscapeDataString(propertyId)}:runReport",
                 access.AccessToken,
                 new
                 {
-                    dateRanges = new[] { new { startDate = FeedClock.Iso(window.From), endDate = FeedClock.Iso(window.To) } },
-                    dimensions = names.Select(name => new { name }).ToArray(),
-                    metrics = new[] { new { name = "sessions" }, new { name = "keyEvents" }, new { name = "transactions" }, new { name = "purchaseRevenue" } },
+                    dateRanges = new[] { new { startDate = FeedClock.Iso(from), endDate = FeedClock.Iso(to) } },
+                    dimensions = dimensions.Select(name => new { name }).ToArray(),
+                    metrics = metrics.Select(name => new { name }).ToArray(),
                     limit = PageSize,
                     offset,
                 },
@@ -83,7 +97,7 @@ internal sealed class Ga4Reports(IHttpClientFactory http)
             {
                 foreach (var row in list.EnumerateArray())
                 {
-                    rows.Add(Ga4Rows.Of(row, property, cities));
+                    rows.Add(row);
                     read++;
                 }
             }
