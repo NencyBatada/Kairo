@@ -15,6 +15,7 @@ from kairo_agents.media.captions import (
     copy_fonts,
     document,
     family_for,
+    tagged,
     timestamp,
     wrap,
 )
@@ -124,6 +125,13 @@ def test_clean_removes_ass_override_characters() -> None:
     assert clean("  {\\b1}Bold\\N  claim ") == "(/b1)Bold/N claim"
 
 
+def test_tagged_switches_font_for_each_script_run() -> None:
+    assert tagged("Acme के जूते, 2 in 1") == (
+        r"{\fnNoto Sans}Acme {\fnNoto Sans Devanagari}के जूते, 2 {\fnNoto Sans}in 1"
+    )
+    assert tagged("2499") == "2499"
+
+
 def test_document_picks_the_font_for_the_script_and_skips_empty_lines() -> None:
     text = document(
         [
@@ -135,7 +143,10 @@ def test_document_picks_the_font_for_the_script_and_skips_empty_lines() -> None:
     )
 
     assert "Style: Caption,Noto Sans Devanagari," in text
-    assert "Dialogue: 0,0:00:00.30,0:00:02.00,Caption,,0,0,0,,बारिश में भी सूखे" in text
+    assert (
+        r"Dialogue: 0,0:00:00.30,0:00:02.00,Caption,,0,0,0,,{\fnNoto Sans Devanagari}बारिश"
+        " में भी सूखे" in text
+    )
     assert text.count("Dialogue:") == 1
     assert family_for("latin") == "Noto Sans"
     assert family_for("unknown") == "Noto Sans"
@@ -255,12 +266,14 @@ def ink_width(pixels: bytes) -> int:
     return max(columns) - min(columns)
 
 
-def test_hindi_captions_fall_back_to_latin_glyphs(tmp_path: Path) -> None:
-    capitals = asyncio.run(render(tmp_path, "KKKKK", "devanagari", "complex"))
-    rounds = asyncio.run(render(tmp_path, "ooooo", "devanagari", "complex"))
+def test_latin_words_in_hindi_captions_use_the_latin_font(tmp_path: Path) -> None:
+    mixed = asyncio.run(render(tmp_path, "Kairo", "devanagari", "complex"))
+    latin = asyncio.run(render(tmp_path, "Kairo", "latin", "complex"))
+    missing = asyncio.run(render(tmp_path, "", "latin", "complex"))
 
-    assert any(capitals)
-    assert ink_width(capitals) > ink_width(rounds) + 10
+    assert any(mixed)
+    assert ink_width(mixed) == ink_width(latin)
+    assert ink_width(missing) != ink_width(latin)
 
 
 def test_compose_makes_a_vertical_video_with_voiceover(tmp_path: Path) -> None:

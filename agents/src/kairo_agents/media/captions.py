@@ -8,6 +8,7 @@ FAMILIES = {"latin": "Noto Sans", "devanagari": "Noto Sans Devanagari"}
 WIDTH = 1080
 HEIGHT = 1920
 LINE_CHARACTERS = 24
+DEVANAGARI = ((0x0900, 0x097F), (0xA8E0, 0xA8FF), (0x1CD0, 0x1CFF))
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,27 @@ class Caption:
     start: float
     end: float
     text: str
+
+
+def is_devanagari(char: str) -> bool:
+    return any(start <= ord(char) <= end for start, end in DEVANAGARI)
+
+
+def tagged(line: str) -> str:
+    parts: list[str] = []
+    family = None
+    for char in line:
+        if is_devanagari(char):
+            wanted = FAMILIES["devanagari"]
+        elif char.isalpha():
+            wanted = FAMILIES["latin"]
+        else:
+            wanted = family
+        if wanted is not None and wanted != family:
+            parts.append("{\\fn" + wanted + "}")
+            family = wanted
+        parts.append(char)
+    return "".join(parts)
 
 
 def family_for(script: str) -> str:
@@ -83,7 +105,7 @@ def document(captions: list[Caption], script: str, size: int = 64) -> str:
     ]
     events = [
         f"Dialogue: 0,{timestamp(caption.start)},{timestamp(caption.end)},Caption,,0,0,0,,"
-        + "\\N".join(wrap(clean(caption.text)))
+        + "\\N".join(tagged(line) for line in wrap(clean(caption.text)))
         for caption in captions
         if clean(caption.text) and caption.end > caption.start
     ]
