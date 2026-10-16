@@ -4938,7 +4938,8 @@
       "AgentCallView": {
         "required": [
           "route",
-          "digest"
+          "digest",
+          "language"
         ],
         "type": "object",
         "properties": {
@@ -4947,6 +4948,12 @@
           },
           "digest": {
             "type": "string"
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

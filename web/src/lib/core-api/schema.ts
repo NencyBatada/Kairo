@@ -4577,6 +4577,7 @@ export interface components {
         AgentCallView: {
             route: string;
             digest: string;
+            language: null | string;
         };
         ApplyProposalRequest: {
             version: null | number | string;
