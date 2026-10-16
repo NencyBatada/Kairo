@@ -34,6 +34,8 @@ internal static class CampaignRoomsSetup
         services.AddScoped<ProvenanceTrail>();
         services.AddScoped<AssetStore>();
         services.AddScoped<AssetEditor>();
+        services.AddScoped<AssetApproval>();
+        services.AddScoped<AssetHistory>();
         services.AddScoped<IStageWork, CopyWork>();
         services.AddScoped<IStageWork, AssetRegenerateWork>();
         services.AddScoped<IAssetRegenerator, TextRegenerator>();
@@ -44,6 +46,7 @@ internal static class CampaignRoomsSetup
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
         services.AddScoped<IProofPlans, ProofPlanDirectory>();
+        services.AddScoped<IAssets, AssetDirectory>();
         services.AddSingleton<StageLoopSwitch>();
         services.AddHostedService<StageLoop>();
     }
@@ -73,6 +76,7 @@ internal static class CampaignRoomsSetup
         campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/unlock", AssetEndpoints.UnlockAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/regenerate", AssetEndpoints.RegenerateAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("/{campaignId:guid}/assets/{assetId:guid}/file", MediaEndpoints.FileAsync);
+        campaigns.MapGet("/{campaignId:guid}/assets/{assetId:guid}/history", AssetEndpoints.HistoryAsync);
         campaigns.MapPost("/{campaignId:guid}/assets/skip-video", MediaEndpoints.SkipVideoAsync).RequireBrandRole(BrandRoles.Marketer);
     }
 }

@@ -8,6 +8,13 @@ internal static class AssetEndpoints
         CancellationToken cancellationToken) =>
         await editor.ListAsync(campaignId, cancellationToken) is { } set ? TypedResults.Ok(set) : TypedResults.NotFound();
 
+    public static async Task<Results<Ok<AssetHistoryView>, NotFound>> HistoryAsync(
+        Guid campaignId,
+        Guid assetId,
+        AssetHistory history,
+        CancellationToken cancellationToken) =>
+        await history.ReadAsync(campaignId, assetId, cancellationToken) is { } view ? TypedResults.Ok(view) : TypedResults.NotFound();
+
     public static async Task<Results<Ok<AssetView>, NotFound, ProblemHttpResult, ValidationProblem>> EditAsync(
         Guid campaignId,
         Guid assetId,

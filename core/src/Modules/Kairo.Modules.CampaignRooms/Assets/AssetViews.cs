@@ -21,6 +21,16 @@ internal sealed record AssetContentView(
     string? OfferId,
     AssetScriptLineView[]? Script);
 
+internal sealed record PlatformLabelView(string Platform, string Setting, string Reason, string Source);
+
+internal sealed record AssetDisclosureView(
+    string Rules,
+    bool AiGenerated,
+    bool SyntheticMedia,
+    string? Watermark,
+    PlatformLabelView[] PlatformLabels,
+    string? Blocker);
+
 internal sealed record AssetView(
     Guid Id,
     string Kind,
@@ -39,6 +49,7 @@ internal sealed record AssetView(
     bool EditedByPerson,
     string? MediaUrl,
     AssetContentView Content,
+    AssetDisclosureView Disclosure,
     DateTimeOffset UpdatedAt);
 
 internal sealed record AssetGroupView(string CampaignType, string Label, AssetView[] Assets);
@@ -96,8 +107,17 @@ internal static class AssetViews
             version.Origin == AssetOrigins.Edited,
             content.Media is null ? null : MediaUrl(brandId, asset.RoomId, asset.Id, version.Version),
             Content(content),
+            Disclosure(DisclosureRules.For(asset.Kind, content)),
             asset.UpdatedAt);
     }
+
+    public static AssetDisclosureView Disclosure(AssetDisclosure disclosure) => new(
+        disclosure.Rules,
+        disclosure.AiGenerated,
+        disclosure.SyntheticMedia,
+        disclosure.Watermark,
+        [.. disclosure.PlatformLabels.Select(label => new PlatformLabelView(label.Platform, label.Setting, label.Reason, label.Source))],
+        disclosure.Blocker);
 
     public static string MediaUrl(Guid brandId, Guid roomId, Guid assetId, int version) =>
         $"/api/brands/{brandId}/campaigns/{roomId}/assets/{assetId}/file?version={version}";

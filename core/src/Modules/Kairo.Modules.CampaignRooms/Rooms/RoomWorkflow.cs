@@ -3,6 +3,7 @@ using Kairo.Contracts.Brands;
 using Kairo.Contracts.Identity;
 using Kairo.Contracts.Live;
 using Kairo.Contracts.Notifications;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.ProofPlans;
@@ -43,6 +44,7 @@ internal sealed class RoomWorkflow(
     ILiveUpdates live,
     INotifications notifications,
     StageQueue queue,
+    AssetApproval assetApproval,
     TimeProvider time)
 {
     public const string AuditTarget = "campaign_room";
@@ -195,6 +197,16 @@ internal sealed class RoomWorkflow(
             return MoveResult.Failed(MoveError.NotApprover, NotApproverMessage(room, route));
         }
 
+        ApprovedAssets? assets = null;
+        if (gate == RoomGates.Assets)
+        {
+            assets = await assetApproval.ApproveAsync(room.Id, member.UserId, cancellationToken);
+            if (assets.Problem is { } problem)
+            {
+                return MoveResult.Failed(MoveError.NotAllowed, problem);
+            }
+        }
+
         var before = Snapshot(room);
         var briefVersion = room.GateBriefVersion;
         var withWarnings = plan is not null && plan.Read().Warnings.Count > 0;
@@ -207,9 +219,12 @@ internal sealed class RoomWorkflow(
         await EnterAsync(room, next, cancellationToken);
         var locked = next == RoomStates.Launching ? await LockPlanAsync(room.Id, cancellationToken) : null;
         await notifications.ResolveAsync(GateSubject(room.Id, gate), cancellationToken);
-        var details = gate == RoomGates.Brief
-            ? (object)new { gate, comment = Trimmed(comment), route = route.Route, briefVersion, proofPlanVersion = plan?.Version, approvedWithWarnings = withWarnings }
-            : new { gate, comment = Trimmed(comment) };
+        var details = gate switch
+        {
+            RoomGates.Brief => (object)new { gate, comment = Trimmed(comment), route = route.Route, briefVersion, proofPlanVersion = plan?.Version, approvedWithWarnings = withWarnings },
+            RoomGates.Assets => new { gate, comment = Trimmed(comment), assetsApproved = assets?.Approved, mediaKept = assets?.Kept },
+            _ => new { gate, comment = Trimmed(comment) },
+        };
         await FinishAsync(room, new AuditRecord("campaign_room.approved", AuditTarget, room.Id.ToString(), before, After(room, details)), cancellationToken);
         if (locked is not null)
         {
