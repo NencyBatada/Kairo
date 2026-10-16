@@ -135,7 +135,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Approval lock**: Ties each approval to the exact plan, so any change after approval needs a new one.
+- [/] **Approval lock**: Ties each approval to the exact plan, so any change after approval needs a new one.
 - [ ] **Campaign build**: Uploads videos to YouTube, creates the Search, Shopping and Demand Gen campaigns paused and without the holdout regions, then turns everything on together.
 - [ ] **Retry and health check**: Retries a failed launch without duplicates, explains errors, and checks ad approvals and delivery the next day.
 
