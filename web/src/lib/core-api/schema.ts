@@ -3619,7 +3619,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    language?: string;
+                };
                 header?: never;
                 path: {
                     campaignId: string;
@@ -3635,6 +3637,14 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AssetSetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
                     };
                 };
                 404: {
@@ -4629,6 +4639,8 @@ export interface components {
         AssetGroupView: {
             campaignType: string;
             label: string;
+            language: string;
+            languageName: null | string;
             assets: components["schemas"]["AssetView"][];
         };
         AssetHistoryVersionView: {
