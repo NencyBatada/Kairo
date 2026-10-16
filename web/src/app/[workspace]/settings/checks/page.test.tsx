@@ -1,0 +1,12 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { settings } from "./fixtures.test-data";
+const { workspace, get } = vi.hoisted(() => ({ workspace: vi.fn(), get: vi.fn() }));
+vi.mock("@/lib/core-api/queries", () => ({ getWorkspace: workspace }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown }) => result.data }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("./actions", () => ({ saveCheckSettings: vi.fn() }));
+beforeEach(() => { vi.clearAllMocks(); workspace.mockResolvedValue({ id: "brand", roles: ["admin"] }); get.mockImplementation(async (path: string) => ({ data: path.endsWith("check-settings") ? settings : { timeZone: "Asia/Kolkata" } })); });
+test("settings and timezone reads are scoped to the resolved workspace and admins can edit", async () => { render(await Page({ params: Promise.resolve({ workspace: "acme" }) })); expect(workspace).toHaveBeenCalledWith("acme"); expect(get.mock.calls.every(call => call[1].params.path.brandId === "brand")).toBe(true); expect(screen.getByRole("button", { name: "Save check settings" })).toBeTruthy(); });
+test("members get read-only settings and failed reads reach the error boundary", async () => { workspace.mockResolvedValueOnce({ id: "brand", roles: ["marketer"] }); render(await Page({ params: Promise.resolve({ workspace: "acme" }) })); expect(screen.queryByRole("button", { name: "Save check settings" })).toBeNull(); get.mockRejectedValueOnce(new Error("offline")); await expect(Page({ params: Promise.resolve({ workspace: "acme" }) })).rejects.toThrow("offline"); });

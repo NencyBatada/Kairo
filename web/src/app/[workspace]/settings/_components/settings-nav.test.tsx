@@ -14,6 +14,7 @@ test("links to the settings pages of the workspace", () => {
     ["Connections", "/acme/settings/connections"],
     ["Team", "/acme/settings/team"],
     ["Approvals", "/acme/settings/approvals"],
+    ["Brand Guardian", "/acme/settings/checks"],
     ["Notifications", "/acme/settings/notifications"],
     ["Audit log", "/acme/settings/audit-log"],
   ]);
