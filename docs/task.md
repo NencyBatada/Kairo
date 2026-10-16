@@ -166,9 +166,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Results screen**: Lift with its range, spend, cost per extra result, summary and next step.
-- [ ] **Report PDF**: Downloads the impact report as a PDF.
-- [ ] **Brand Memory screen**: View, edit and remove memory entries.
+- [/] **Results screen**: Lift with its range, spend, cost per extra result, summary and next step. *Approved implementation in progress against Talha's impact-report API, in a dedicated task worktree.*
+- [/] **Report PDF**: Downloads the impact report as a PDF. *Approved on-demand PDF approach; implementation follows the Results merge so it can use the integrated report presentation model.*
+- [/] **Brand Memory screen**: View, edit and remove memory entries. *Approved implementation in progress against Talha's Brand Memory APIs, in a dedicated task worktree.*
 
 ## 12. Impact Lab
 
