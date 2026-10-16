@@ -61,4 +61,9 @@ internal static class StageKinds
     public const string StarterBrief = "starter_brief";
     public const string ProofPlan = "proof_plan";
     public const string Brief = "brief";
+    public const string CreateCopy = "create_copy";
+    public const string CreateImages = "create_images";
+    public const string CreateVideo = "create_video";
+    public const string AssetRegenerate = "asset_regenerate";
+    public const string Check = "check";
 }

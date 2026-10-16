@@ -42,6 +42,7 @@ internal sealed class RoomWorkflow(
     IAuditLog audit,
     ILiveUpdates live,
     INotifications notifications,
+    StageQueue queue,
     TimeProvider time)
 {
     public const string AuditTarget = "campaign_room";
@@ -385,6 +386,11 @@ internal sealed class RoomWorkflow(
         if (state == RoomStates.AssetReview)
         {
             await RequestGateAsync(room, RoomGates.Assets, null, BriefRoute.Approvers, cancellationToken);
+        }
+
+        if (state == RoomStates.Creating && queue.Find(StageKinds.CreateCopy) is not null)
+        {
+            await queue.EnqueueAsync(room, StageKinds.CreateCopy, null, cancellationToken);
         }
 
         Touch(room);

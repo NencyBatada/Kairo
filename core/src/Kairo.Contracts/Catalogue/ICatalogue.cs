@@ -32,4 +32,9 @@ public sealed record CatalogueProduct(
     string? ImageLink,
     decimal? Price,
     decimal? SalePrice,
-    string? Currency);
+    string? Currency,
+    string? Description = null,
+    string? Brand = null,
+    string? Gtin = null,
+    IReadOnlyList<string>? AdditionalImageLinks = null,
+    string? Availability = null);

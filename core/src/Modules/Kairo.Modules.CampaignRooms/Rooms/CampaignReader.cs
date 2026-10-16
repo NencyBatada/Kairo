@@ -151,6 +151,8 @@ internal sealed class CampaignReader(
     private static string Working(StageRun run) => run.Kind switch
     {
         StageKinds.Brief or StageKinds.StarterBrief => "The Plan agent is drafting the brief.",
+        StageKinds.CreateCopy => "The Create agent is writing the ads.",
+        StageKinds.AssetRegenerate => "The Create agent is rewriting an asset.",
         _ => $"The {StageProgress.ActorName(run.Agent)} is working on this stage.",
     };
 

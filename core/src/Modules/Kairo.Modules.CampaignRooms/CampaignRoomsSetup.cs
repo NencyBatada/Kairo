@@ -1,4 +1,5 @@
 using Kairo.Contracts.CampaignRooms;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -23,6 +24,13 @@ internal static class CampaignRoomsSetup
         services.AddScoped<BriefWork>();
         services.AddScoped<IStageWork>(provider => provider.GetRequiredService<BriefWork>());
         services.AddScoped<IStageWork, StarterBriefAlias>();
+        services.AddScoped<CopyAgent>();
+        services.AddScoped<CopyDesk>();
+        services.AddScoped<AssetStore>();
+        services.AddScoped<AssetEditor>();
+        services.AddScoped<IStageWork, CopyWork>();
+        services.AddScoped<IStageWork, AssetRegenerateWork>();
+        services.AddScoped<IAssetRegenerator, TextRegenerator>();
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
         services.AddScoped<IProofPlans, ProofPlanDirectory>();
@@ -49,5 +57,10 @@ internal static class CampaignRoomsSetup
         campaigns.MapPatch("/{campaignId:guid}/brief", BriefEndpoints.EditAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapPost("/{campaignId:guid}/brief/instructions", BriefEndpoints.ProposeAsync).RequireBrandRole(BrandRoles.Marketer).WithoutRequestTransaction();
         campaigns.MapPost("/{campaignId:guid}/brief/proposals/{proposalId:guid}/apply", BriefEndpoints.ApplyAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapGet("/{campaignId:guid}/assets", AssetEndpoints.ListAsync);
+        campaigns.MapPatch("/{campaignId:guid}/assets/{assetId:guid}", AssetEndpoints.EditAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/lock", AssetEndpoints.LockAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/unlock", AssetEndpoints.UnlockAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/regenerate", AssetEndpoints.RegenerateAsync).RequireBrandRole(BrandRoles.Marketer);
     }
 }

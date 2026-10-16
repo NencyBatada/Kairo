@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -19,6 +20,10 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
 
     public DbSet<ProofPlan> ProofPlans => Set<ProofPlan>();
     public DbSet<BriefProposal> BriefProposals => Set<BriefProposal>();
+
+    public DbSet<Asset> Assets => Set<Asset>();
+
+    public DbSet<AssetVersion> AssetVersions => Set<AssetVersion>();
 
     protected override string Schema => SchemaName;
 
@@ -92,6 +97,33 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             proposal.Property(p => p.PromptVersion).HasMaxLength(100);
             proposal.OwnsOne(p => p.Content, Content);
             proposal.Navigation(p => p.Content).IsRequired();
+        });
+
+        modelBuilder.Entity<Asset>(asset =>
+        {
+            asset.ToTable("Assets");
+            asset.HasKey(a => a.Id).IsClustered(false);
+            asset.HasIndex(a => new { a.BrandId, a.RoomId, a.Key }).IsUnique().IsClustered();
+            asset.Property(a => a.Key).HasMaxLength(AssetLimits.Key);
+            asset.Property(a => a.Kind).HasMaxLength(40);
+            asset.Property(a => a.CampaignType).HasMaxLength(20);
+            asset.Property(a => a.Language).HasMaxLength(10);
+            asset.Property(a => a.AdGroup).HasMaxLength(100);
+            asset.Property(a => a.Format).HasMaxLength(20);
+            asset.Property(a => a.CheckState).HasMaxLength(20);
+            asset.Property(a => a.Status).HasMaxLength(20);
+            asset.Property(a => a.DurationSeconds).HasPrecision(9, 3);
+        });
+
+        modelBuilder.Entity<AssetVersion>(version =>
+        {
+            version.ToTable("AssetVersions");
+            version.HasKey(v => v.Id).IsClustered(false);
+            version.HasIndex(v => new { v.BrandId, v.RoomId, v.AssetId, v.Version }).IsUnique().IsClustered();
+            version.Property(v => v.Origin).HasMaxLength(20);
+            version.Property(v => v.Instruction).HasMaxLength(AssetLimits.Instruction);
+            version.Property(v => v.Model).HasMaxLength(100);
+            version.Property(v => v.PromptVersion).HasMaxLength(100);
         });
     }
 

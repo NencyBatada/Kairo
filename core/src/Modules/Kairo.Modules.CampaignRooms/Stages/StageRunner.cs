@@ -122,7 +122,7 @@ internal sealed class StageRunner(
             run.OutputTokens = outcome.Usage?.OutputTokens;
             run.Output = JsonSerializer.Serialize(outcome.Output, JsonSerializerOptions.Web);
             room.RunStatus = run.Status;
-            if (work.FollowUp is { } next && queue.Find(next) is not null)
+            if (work.NextKind(run, outcome) is { } next && queue.Find(next) is not null)
             {
                 await queue.EnqueueAsync(room, next, run.RequestedBy, cancellationToken);
             }

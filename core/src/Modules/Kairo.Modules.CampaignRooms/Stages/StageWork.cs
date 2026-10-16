@@ -13,6 +13,8 @@ internal interface IStageWork
 
     string? FollowUp => null;
 
+    string? NextKind(StageRun run, StageOutcome outcome) => FollowUp;
+
     Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken);
 
     Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken);
@@ -28,6 +30,7 @@ internal sealed class StageFailure(string code, string message) : Exception(mess
     public const string Crashed = "crashed";
     public const string NoBrief = "no_brief";
     public const string Locked = "locked";
+    public const string AssetMissing = "asset_missing";
 
     public string Code { get; } = code;
 }

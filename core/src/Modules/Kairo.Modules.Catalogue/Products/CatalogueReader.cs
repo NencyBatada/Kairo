@@ -126,7 +126,12 @@ internal sealed class CatalogueReader(CatalogueDbContext db) : ICatalogue
             view.ImageLink,
             view.Price,
             view.SalePrice,
-            view.Currency);
+            view.Currency,
+            view.Description,
+            view.Brand,
+            view.Gtin,
+            view.AdditionalImageLinks,
+            view.Availability);
     }
 }
 
