@@ -321,6 +321,9 @@ public sealed class DraftingRunTests(SqlServer sqlServer) : IAsyncLifetime
 
         public Task<Stream> OpenAsync(string bucket, string key, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("The disk is full.");
+
+        public Task CopyAsync(string bucket, string fromKey, string toKey, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("The disk is full.");
     }
 
     private async Task<(Member Admin, Guid BrandId, string Handle)> WorkspaceAsync()

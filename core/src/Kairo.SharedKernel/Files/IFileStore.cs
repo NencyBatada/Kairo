@@ -5,6 +5,8 @@ public interface IFileStore
     Task PutAsync(string bucket, string key, byte[] content, string contentType, CancellationToken cancellationToken);
 
     Task<Stream> OpenAsync(string bucket, string key, CancellationToken cancellationToken);
+
+    Task CopyAsync(string bucket, string fromKey, string toKey, CancellationToken cancellationToken);
 }
 
 public static class FileBuckets

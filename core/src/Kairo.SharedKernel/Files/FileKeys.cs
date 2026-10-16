@@ -10,6 +10,10 @@ public static partial class FileKeys
 
     public static string Draft(Guid brandId, string area, Guid id) => $"{DraftPrefix}/{For(brandId, area, id)}";
 
+    public static bool IsDraft(string key) => key.StartsWith($"{DraftPrefix}/", StringComparison.Ordinal);
+
+    public static string Kept(string key) => IsDraft(key) ? key[(DraftPrefix.Length + 1)..] : key;
+
     internal static void EnsureValid(string bucket, string key)
     {
         if (!Bucket().IsMatch(bucket))

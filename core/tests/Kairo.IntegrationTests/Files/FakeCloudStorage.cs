@@ -20,6 +20,10 @@ internal sealed class FakeCloudStorage : HttpMessageHandler
 
     public HttpStatusCode? FailWith { get; set; }
 
+    public int RewriteCallsPerCopy { get; set; } = 1;
+
+    private int _rewriteCalls;
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var raw = request.RequestUri!.OriginalString;
@@ -35,6 +39,25 @@ internal sealed class FakeCloudStorage : HttpMessageHandler
             var name = QueryHelpers.ParseQuery(request.RequestUri.Query)["name"].ToString();
             Objects[$"{bucket}/{name}"] = (await request.Content!.ReadAsByteArrayAsync(cancellationToken), request.Content.Headers.ContentType!.MediaType!);
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{}") };
+        }
+
+        if (request.Method == HttpMethod.Post && path is ["", "storage", "v1", "b", var fromBucket, "o", _, "rewriteTo", "b", var toBucket, "o", _])
+        {
+            var source = Uri.UnescapeDataString(raw.Split("/o/")[1].Split("/rewriteTo/")[0]);
+            var target = Uri.UnescapeDataString(raw.Split("/o/")[2].Split('?')[0]);
+            if (!Objects.TryGetValue($"{fromBucket}/{source}", out var original))
+            {
+                return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}") };
+            }
+
+            if (++_rewriteCalls < RewriteCallsPerCopy)
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"{{\"done\":false,\"rewriteToken\":\"token-{_rewriteCalls}\"}}") };
+            }
+
+            _rewriteCalls = 0;
+            Objects[$"{toBucket}/{target}"] = original;
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"done\":true}") };
         }
 
         if (request.Method == HttpMethod.Get && path is ["", "storage", "v1", "b", var readBucket, "o", ..])

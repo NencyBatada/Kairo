@@ -92,6 +92,64 @@ public sealed class FileStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task A_draft_on_disk_is_copied_to_its_kept_key()
+    {
+        var store = DiskStore();
+        var draft = FileKeys.Draft(Guid.NewGuid(), "assets", Guid.NewGuid());
+
+        await store.PutAsync(FileBuckets.GeneratedMedia, draft, [9, 8], "image/jpeg", Token);
+        await store.CopyAsync(FileBuckets.GeneratedMedia, draft, FileKeys.Kept(draft), Token);
+        await store.CopyAsync(FileBuckets.GeneratedMedia, draft, FileKeys.Kept(draft), Token);
+
+        await using var stream = await store.OpenAsync(FileBuckets.GeneratedMedia, FileKeys.Kept(draft), Token);
+        Assert.Equal(new byte[] { 9, 8 }, await ReadAllAsync(stream));
+        await Assert.ThrowsAsync<StoredFileMissingException>(() =>
+            store.CopyAsync(FileBuckets.GeneratedMedia, FileKeys.Draft(Guid.NewGuid(), "assets", Guid.NewGuid()), FileKeys.For(Guid.NewGuid(), "assets", Guid.NewGuid()), Token));
+    }
+
+    [Fact]
+    public void Kept_keys_drop_only_the_drafts_prefix()
+    {
+        var brandId = Guid.NewGuid();
+        var id = Guid.NewGuid();
+
+        Assert.Equal(FileKeys.For(brandId, "assets", id), FileKeys.Kept(FileKeys.Draft(brandId, "assets", id)));
+        Assert.Equal(FileKeys.For(brandId, "assets", id), FileKeys.Kept(FileKeys.For(brandId, "assets", id)));
+        Assert.True(FileKeys.IsDraft(FileKeys.Draft(brandId, "assets", id)));
+        Assert.False(FileKeys.IsDraft(FileKeys.For(brandId, "assets", id)));
+    }
+
+    [Fact]
+    public async Task Cloud_copies_rewrite_in_the_bucket_until_storage_says_done()
+    {
+        var storage = new FakeCloudStorage { RewriteCallsPerCopy = 3 };
+        var store = CloudStore(storage);
+        var draft = FileKeys.Draft(Guid.NewGuid(), "assets", Guid.NewGuid());
+        await store.PutAsync(FileBuckets.GeneratedMedia, draft, [5], "video/mp4", Token);
+
+        await store.CopyAsync(FileBuckets.GeneratedMedia, draft, FileKeys.Kept(draft), Token);
+
+        var kept = storage.Objects[$"kairo-test-generated-media/{FileKeys.Kept(draft)}"];
+        Assert.Equal(new byte[] { 5 }, kept.Content);
+        Assert.Equal("video/mp4", kept.ContentType);
+        var rewrites = storage.Calls.Where(call => call.Contains("/rewriteTo/", StringComparison.Ordinal)).ToList();
+        Assert.Equal(3, rewrites.Count);
+        Assert.StartsWith(
+            $"POST https://storage.googleapis.com/storage/v1/b/kairo-test-generated-media/o/{Uri.EscapeDataString(draft)}/rewriteTo/b/kairo-test-generated-media/o/{Uri.EscapeDataString(FileKeys.Kept(draft))} Bearer",
+            rewrites[0]);
+        Assert.Contains("?rewriteToken=token-2", rewrites[2], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_cloud_copy_of_a_missing_object_is_reported()
+    {
+        var store = CloudStore(new FakeCloudStorage());
+
+        await Assert.ThrowsAsync<StoredFileMissingException>(() =>
+            store.CopyAsync(FileBuckets.GeneratedMedia, FileKeys.Draft(Guid.NewGuid(), "assets", Guid.NewGuid()), FileKeys.For(Guid.NewGuid(), "assets", Guid.NewGuid()), Token));
+    }
+
+    [Fact]
     public async Task A_missing_cloud_object_is_reported()
     {
         var store = CloudStore(new FakeCloudStorage());
