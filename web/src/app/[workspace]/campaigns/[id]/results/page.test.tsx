@@ -1,0 +1,12 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { brandId, campaignId, impact } from "./fixtures.test-data";
+const { get, getRoom } = vi.hoisted(() => ({ get: vi.fn(), getRoom: vi.fn() }));
+vi.mock("../_lib/room", () => ({ getRoom }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown; response: Response }) => { if (!result.response.ok) throw new Error(`API ${result.response.status}`); return result.data; } }));
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ room: { id: campaignId }, brandId, timeZone: "Asia/Kolkata" }); get.mockImplementation(async (path: string) => ({ data: path.endsWith("/impact-report") ? impact() : { entries: [] }, response: new Response() })); });
+const params = Promise.resolve({ workspace: "acme", id: "alias" });
+test("uses resolved campaign identity and brand-scoped report and memory endpoints", async () => { render(await Page({ params })); expect(getRoom).toHaveBeenCalledWith("acme", "alias"); expect(get.mock.calls.map(call => call[1])).toEqual([{ params: { path: { brandId, campaignId } } }, { params: { path: { brandId }, query: { state: "active" } } }]); expect(screen.getByRole("heading", { name: "Impact report" })).toBeTruthy(); });
+test.each([401, 403, 404, 500])("report read failure is not an empty successful report (%s)", async status => { get.mockResolvedValueOnce({ response: new Response(null, { status }) }); await expect(Page({ params })).rejects.toThrow(`API ${status}`); });
+test("memory failure is not represented as completed learning with no entries", async () => { get.mockImplementation(async (path: string) => { if (path.endsWith("/brand-memory")) throw new Error("offline"); return { data: impact(), response: new Response() }; }); await expect(Page({ params })).rejects.toThrow("offline"); });
