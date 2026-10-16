@@ -141,7 +141,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Launch screen**: The launch summary with ad previews and gate 3 approval, then live progress, Google Ads IDs and plain-language errors with retry. *Requirements and merged launch contracts reviewed; implementation plan prepared for approval. Implementation will use a dedicated feature/launch-screen worktree based on synced develop.*
+- [/] **Launch screen**: The launch summary with ad previews and gate 3 approval, then live progress, Google Ads IDs and plain-language errors with retry. *Implemented in PR #21 on feature/launch-screen. The full 897-test web regression suite and 74 latest focused launch/asset checks pass, alongside lint, production build and unchanged API regeneration. An isolated component browser harness verifies channel budgets/bidding and targeting, request/approve/send-back, spending confirmations, stale plans/comments, failed-save retention/retry, uncertain launch recovery, safe return for changes, IDs and health alerts, viewer access, keyboard focus, confirmed discard, navigation protection, Hindi, dark mode, reduced motion, 320px reflow, landscape, long names and 200% layout scaling. Worktree retained pending user merge confirmation. Left: user merge into develop, deployment and authenticated development verification, including actual Next.js server-action transport and real Google Ads, YouTube and media services.*
 
 ## 10. Post-launch care
 
