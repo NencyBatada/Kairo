@@ -59,6 +59,7 @@ TRANSLATED_CLAIMS = {
     "सेल": "sale",
     "कूपन": "coupon",
 }
+PUNCTUATION = ".,!?;:\"'()।-"
 SYMBOLS = re.compile(r"[!@%,*=;:?\^`<>{}\[\]|~\"#$()/]")
 GAPS = re.compile(r"[\s/]+")
 
@@ -94,9 +95,18 @@ class Guard:
             if re.search(rf"(?<!\w){re.escape(claim)}(?!\w)", lowered) and claim not in self.facts:
                 return False
         for claim, meaning in TRANSLATED_CLAIMS.items():
-            if claim in text and claim not in self.facts and meaning not in self.facts:
+            if mentions(text, claim) and claim not in self.facts and meaning not in self.facts:
                 return False
         return True
+
+
+def mentions(text: str, phrase: str) -> bool:
+    words = [word.strip(PUNCTUATION) for word in text.split()]
+    wanted = phrase.split()
+    return any(
+        words[index : index + len(wanted)] == wanted
+        for index in range(len(words) - len(wanted) + 1)
+    )
 
 
 def guard_for(

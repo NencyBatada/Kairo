@@ -310,6 +310,9 @@ def test_hindi_claims_need_the_same_support_as_english_ones() -> None:
     assert not rules.allows("आज 20% छूट")
     assert not rules.allows("सबसे सस्ते जूते")
     assert not rules.allows("कैशबैक पाएं")
+    assert not rules.allows("आज छूट, पाएं नए जूते")
+    assert rules.allows("बारिश में कोई सफर न छूटे")
+    assert rules.allows("कूपनों की ज़रूरत नहीं")
 
 
 def test_paths_names_and_calls_to_action_are_cleaned() -> None:
