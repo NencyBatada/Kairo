@@ -116,8 +116,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Assets screen**: Assets grouped by campaign type and language, with a preview of how each ad will look. *In progress: approved gallery, placement previews, disclosures and version history on a dedicated task branch.*
-- [/] **Asset controls**: Edit inline, regenerate with an instruction, lock an asset, and compare new shopping titles with the current ones. *In progress: approved text edits, regeneration confirmation, locking and shopping-title comparison on a separate task branch.*
+- [/] **Assets screen**: Assets grouped by campaign type and language, with a preview of how each ad will look. *Implemented in PR #17 on feature/creative-assets-screen. 27 focused gallery/area checks, all 781 combined web tests, lint, standalone production build and unchanged API regeneration pass. An isolated component browser harness verifies grouping, shared media, history, Hindi fonts, dark mode, reduced motion, 320px reflow, portrait/landscape and 200% layout scaling. Left: user merge into develop, deployment and authenticated development-environment verification, including real media transport.*
+- [/] **Asset controls**: Edit inline, regenerate with an instruction, lock an asset, and compare new shopping titles with the current ones. *Implemented in PR #18 on feature/creative-asset-controls, depending on PR #17; merge #17 first. All 71 Creative Studio tests and all 781 web tests pass, alongside lint, production build and unchanged API regeneration. The isolated component browser harness verifies edits, failed-save retention, stale versions, confirmed regeneration and history, lock/unlock, viewer access and keyboard focus. Unsaved drafts survive live updates and remote asset removal. Left: user merge into develop, deployment and authenticated development-environment verification of server actions and real generation services.*
 
 ## 8. Brand Guardian
 
