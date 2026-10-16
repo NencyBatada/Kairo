@@ -141,7 +141,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Launch screen**: The launch summary with ad previews and gate 3 approval, then live progress, Google Ads IDs and plain-language errors with retry.
+- [/] **Launch screen**: The launch summary with ad previews and gate 3 approval, then live progress, Google Ads IDs and plain-language errors with retry. *Requirements and merged launch contracts reviewed; implementation plan prepared for approval. Implementation will use a dedicated feature/launch-screen worktree based on synced develop.*
 
 ## 10. Post-launch care
 
