@@ -4,6 +4,8 @@ namespace Kairo.Modules.CampaignRooms.Assets;
 
 internal sealed record AssetKeywordView(string Text, string Match);
 
+internal sealed record AssetScriptLineView(string Voiceover, string Caption, decimal Start, decimal End);
+
 internal sealed record AssetContentView(
     AssetKeywordView[]? Keywords,
     string[]? Headlines,
@@ -16,7 +18,8 @@ internal sealed record AssetContentView(
     string? CallToAction,
     string? Title,
     string? CurrentTitle,
-    string? OfferId);
+    string? OfferId,
+    AssetScriptLineView[]? Script);
 
 internal sealed record AssetView(
     Guid Id,
@@ -111,7 +114,8 @@ internal static class AssetViews
         content.CallToAction,
         content.Title,
         content.CurrentTitle,
-        content.OfferId);
+        content.OfferId,
+        content.Script is null ? null : [.. content.Script.Select(line => new AssetScriptLineView(line.Voiceover, line.Caption, line.Start, line.End))]);
 
     public static AssetGroupView[] Groups(IEnumerable<AssetView> assets) =>
     [

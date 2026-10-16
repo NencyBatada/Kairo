@@ -90,6 +90,50 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
         return new SavedAssets(created, updated, removed, kept);
     }
 
+    public async Task SaveCompanionsAsync(
+        Room room,
+        Asset main,
+        IReadOnlyList<GeneratedAsset> companions,
+        StageRun run,
+        StageOutcome outcome,
+        string instruction,
+        CancellationToken cancellationToken)
+    {
+        var keys = companions.Select(item => item.Key).ToList();
+        var existing = await db.Assets
+            .Where(asset => asset.RoomId == room.Id && asset.Language == main.Language && keys.Contains(asset.Key))
+            .ToDictionaryAsync(asset => asset.Key, StringComparer.Ordinal, cancellationToken);
+        foreach (var item in companions)
+        {
+            if (existing.TryGetValue(item.Key, out var asset))
+            {
+                if (asset.Locked && asset.Status == AssetStatuses.Active)
+                {
+                    continue;
+                }
+
+                Describe(asset, item, main.BriefVersion);
+                asset.Status = AssetStatuses.Active;
+            }
+            else
+            {
+                asset = new Asset
+                {
+                    Id = Guid.NewGuid(),
+                    BrandId = room.BrandId,
+                    RoomId = room.Id,
+                    Key = item.Key,
+                    Language = main.Language,
+                    CreatedAt = time.GetUtcNow(),
+                };
+                Describe(asset, item, main.BriefVersion);
+                db.Assets.Add(asset);
+            }
+
+            AddVersion(asset, item.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, instruction);
+        }
+    }
+
     public AssetVersion AddVersion(
         Asset asset,
         AssetContent content,

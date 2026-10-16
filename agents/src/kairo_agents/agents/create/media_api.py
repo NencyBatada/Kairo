@@ -179,6 +179,7 @@ async def generate_image(
             "product": {"title": product.title, "description": product.description},
             "style": shot.style,
             "format": {"name": target.name, "aspectRatio": target.aspect},
+            "instruction": request.instruction,
             "brandKit": request.brand_kit,
         }
     )

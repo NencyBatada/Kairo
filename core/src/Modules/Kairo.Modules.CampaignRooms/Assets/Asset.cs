@@ -116,6 +116,8 @@ internal sealed class AssetContent
 
     public AssetMedia? Media { get; set; }
 
+    public List<AssetScriptLine>? Script { get; set; }
+
     public static AssetContent Parse(string json) => JsonSerializer.Deserialize<AssetContent>(json, Json) ?? new AssetContent();
 
     public string Write() => JsonSerializer.Serialize(this, Json);
@@ -139,6 +141,17 @@ internal sealed class AssetMedia
     public string ContentType { get; set; } = "";
 
     public long Bytes { get; set; }
+}
+
+internal sealed class AssetScriptLine
+{
+    public string Voiceover { get; set; } = "";
+
+    public string Caption { get; set; } = "";
+
+    public decimal Start { get; set; }
+
+    public decimal End { get; set; }
 }
 
 internal static class AssetKinds

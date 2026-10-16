@@ -184,7 +184,8 @@ internal sealed class CampaignReader(
             maySendBack ? [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
             marketer && RoomLifecycle.CanDiscard(room.State),
             marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null,
-            blocker);
+            blocker,
+            marketer && latest is { Status: StageRunStatuses.Failed, Kind: StageKinds.CreateVideo });
     }
 
     public static CampaignBriefView BriefView(Brief brief)

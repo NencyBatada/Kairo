@@ -79,7 +79,8 @@ internal sealed record CampaignActionsView(
     string[] SendBackTo,
     bool Discard,
     Guid? RetryRun,
-    string? RequestApprovalBlocker);
+    string? RequestApprovalBlocker,
+    bool ContinueWithoutVideo);
 
 internal sealed record CampaignDetail(
     Guid Id,

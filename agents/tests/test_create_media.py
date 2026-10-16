@@ -215,6 +215,12 @@ def test_images_are_made_from_the_catalogue_photo_in_each_size(fakes) -> None:
     assert ratios == ["16:9", "1:1", "9:16"]
 
 
+def test_images_pass_the_marketers_instruction_in_the_data(fakes) -> None:
+    post("/create/images", {**IMAGES_REQUEST, "instruction": "Show it on a rainy street"})
+
+    assert "Show it on a rainy street" in fakes.models.calls[0]["contents"][0].parts[2].text
+
+
 def test_images_report_the_sizes_that_failed(fakes) -> None:
     fakes.models.images = [RuntimeError("quota"), None, b"broken"]
 

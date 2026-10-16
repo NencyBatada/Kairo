@@ -11,7 +11,12 @@ internal sealed record MediaReferenceProduct(string Id, string Title, string Des
 
 internal sealed record ImageShot(string Id, string ProductId, string Style, IReadOnlyList<string> Formats);
 
-internal sealed record ImagesRequest(MediaBrief Brief, JsonElement? BrandKit, IReadOnlyList<MediaReferenceProduct> Products, IReadOnlyList<ImageShot> Shots);
+internal sealed record ImagesRequest(
+    MediaBrief Brief,
+    JsonElement? BrandKit,
+    IReadOnlyList<MediaReferenceProduct> Products,
+    IReadOnlyList<ImageShot> Shots,
+    string? Instruction = null);
 
 internal sealed record GeneratedImage(string ShotId, string ProductId, string Style, string Format, int Width, int Height, string MimeType, byte[] Data, string Prompt);
 

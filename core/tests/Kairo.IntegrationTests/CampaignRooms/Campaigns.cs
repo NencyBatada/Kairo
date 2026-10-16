@@ -24,10 +24,11 @@ public sealed class CampaignWorld : IAsyncDisposable
         ("1007809", "Chennai", "Tamil Nadu"),
     ];
 
-    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof, FakeCreate create)
+    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof, FakeCreate create, FakeMedia media)
     {
         Proof = proof;
         Create = create;
+        Media = media;
         Database = database;
         Api = api;
         Worker = worker;
@@ -52,6 +53,8 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public FakeCreate Create { get; }
 
+    public FakeMedia Media { get; }
+
     public Guid BrandId => Brand.BrandId;
 
     public HttpClient Marketer => Brand.Marketer.Browser;
@@ -74,6 +77,11 @@ public sealed class CampaignWorld : IAsyncDisposable
         var create = new FakeCreate();
         create.Attach(api.Agents);
         create.Attach(worker.Agents);
+        var media = new FakeMedia();
+        media.Attach(api.Agents);
+        media.Attach(worker.Agents);
+        FakeMedia.ServePhotos(api.Websites);
+        FakeMedia.ServePhotos(worker.Websites);
         Radar.PlanDemand(api.GoogleApis.Keywords);
         api.GoogleApis.Keywords.Bids["rain boots"] = (10_000_000, 30_000_000);
         api.GoogleApis.Keywords.Bids["waterproof shoes"] = (14_000_000, 42_000_000);
@@ -81,7 +89,7 @@ public sealed class CampaignWorld : IAsyncDisposable
         var brand = await Radar.BrandAsync(api);
         var approver = await Workspaces.JoinAsync(api, brand.Admin.Browser, brand.BrandId, "approver");
         await Radar.RefreshAsync(worker);
-        var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof, create);
+        var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof, create, media);
         await world.AssignApproversAsync(approver.UserId, approver.UserId, approver.UserId);
         return world;
     }
@@ -231,6 +239,9 @@ internal static class Campaigns
 
     public static JsonElement[] AllAssets(JsonElement set) =>
         [.. set.GetProperty("groups").EnumerateArray().SelectMany(group => group.GetProperty("assets").EnumerateArray())];
+
+    public static JsonElement[] TextAssets(JsonElement set) =>
+        [.. AllAssets(set).Where(asset => asset.GetProperty("kind").GetString() is "keyword_set" or "search_ad" or "demand_gen_text" or "shopping_title")];
 
     public static JsonElement Asset(JsonElement set, string kind) =>
         AllAssets(set).Single(asset => asset.GetProperty("kind").GetString() == kind);

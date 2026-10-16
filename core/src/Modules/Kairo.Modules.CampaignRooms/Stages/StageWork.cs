@@ -33,6 +33,7 @@ internal sealed class StageFailure(string code, string message) : Exception(mess
     public const string NoBrief = "no_brief";
     public const string Locked = "locked";
     public const string AssetMissing = "asset_missing";
+    public const string NoPhotos = "no_photos";
 
     public string Code { get; } = code;
 }

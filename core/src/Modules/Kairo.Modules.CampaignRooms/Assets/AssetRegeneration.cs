@@ -15,11 +15,23 @@ internal interface IAssetRegenerator
 
 internal sealed record AssetRegenerationContext(Room Room, Asset Asset, AssetVersion Current, AssetContent Content, string Instruction);
 
-internal sealed record AssetRegeneration(AssetContent Content, string? Model, string? PromptVersion, AgentUsage? Usage, string Summary);
+internal sealed record AssetRegeneration(
+    AssetContent Content,
+    string? Model,
+    string? PromptVersion,
+    AgentUsage? Usage,
+    string Summary,
+    IReadOnlyList<GeneratedAsset>? Companions = null);
 
 internal sealed record RegenerationInput(Guid AssetId, int Version, string Instruction);
 
-internal sealed record RegeneratedAsset(Guid AssetId, int FromVersion, string Instruction, AssetContent Content, string Summary);
+internal sealed record RegeneratedAsset(
+    Guid AssetId,
+    int FromVersion,
+    string Instruction,
+    AssetContent Content,
+    string Summary,
+    IReadOnlyList<GeneratedAsset>? Companions = null);
 
 internal sealed class AssetRegenerateWork(
     CampaignRoomsDbContext db,
@@ -60,7 +72,7 @@ internal sealed class AssetRegenerateWork(
 
         var result = await regenerator.RegenerateAsync(new AssetRegenerationContext(room, asset, current, current.Read(), input.Instruction), cancellationToken);
         return new StageOutcome(
-            new RegeneratedAsset(asset.Id, current.Version, input.Instruction, result.Content, result.Summary),
+            new RegeneratedAsset(asset.Id, current.Version, input.Instruction, result.Content, result.Summary, result.Companions),
             result.Model,
             result.PromptVersion,
             result.Usage,
@@ -77,5 +89,9 @@ internal sealed class AssetRegenerateWork(
         }
 
         store.AddVersion(asset, regenerated.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, regenerated.Instruction);
+        if (regenerated.Companions is { Count: > 0 } companions)
+        {
+            await store.SaveCompanionsAsync(room, asset, companions, run, outcome, regenerated.Instruction, cancellationToken);
+        }
     }
 }

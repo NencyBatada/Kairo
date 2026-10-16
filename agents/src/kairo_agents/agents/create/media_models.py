@@ -75,6 +75,7 @@ class ImagesRequest(CamelModel):
     brand_kit: dict[str, Any] | None = None
     products: list[ReferenceProduct] = Field(min_length=1, max_length=6)
     shots: list[Shot] = Field(min_length=1, max_length=12)
+    instruction: str | None = Field(default=None, max_length=500)
 
     @model_validator(mode="after")
     def consistent(self) -> "ImagesRequest":

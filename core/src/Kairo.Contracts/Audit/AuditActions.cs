@@ -63,6 +63,7 @@ public static class AuditActions
         new("asset.locked", "Locked a campaign asset"),
         new("asset.unlocked", "Unlocked a campaign asset"),
         new("asset.regenerated", "Asked Kairo to regenerate a campaign asset"),
+        new("asset.video_skipped", "Continued without the campaign video"),
         new("trigger_rule.created", "Created a trigger rule"),
         new("trigger_rule.updated", "Changed a trigger rule"),
         new("trigger_rule.paused", "Paused a trigger rule"),
