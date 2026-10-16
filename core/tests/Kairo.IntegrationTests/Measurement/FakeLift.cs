@@ -14,6 +14,8 @@ public sealed class FakeLift
 
     public double Lift { get; set; } = 0.12;
 
+    public bool? Conclusive { get; set; }
+
     public void Attach(FakeAgents agents)
     {
         var previous = agents.Respond;
@@ -37,8 +39,8 @@ public sealed class FakeLift
         var figures = Status == "ok"
             ? new
             {
-                lift = Lift, low = Lift - 0.06, high = Lift + 0.06, actual = 112.0 * days, expected = 100.0 * days, extra = 12.0 * days,
-                extraLow = 6.0 * days, extraHigh = 18.0 * days, conclusive = Lift - 0.06 > 0, placebos = 40, spread = 0.03,
+                lift = Lift, low = Lift - 0.06, high = Lift + 0.06, actual = (100 + Lift * 100) * days, expected = 100.0 * days, extra = Lift * 100 * days,
+                extraLow = (Lift - 0.06) * 100 * days, extraHigh = (Lift + 0.06) * 100 * days, conclusive = Conclusive ?? Lift - 0.06 > 0, placebos = 40, spread = 0.03,
             }
             : null;
         return FakeAgents.Json(new

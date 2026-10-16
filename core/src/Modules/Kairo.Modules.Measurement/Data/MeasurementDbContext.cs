@@ -1,4 +1,5 @@
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.Modules.Measurement.Impact;
 using Kairo.Modules.Measurement.Lift;
 
 namespace Kairo.Modules.Measurement.Data;
@@ -15,6 +16,8 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
     public DbSet<SalesSource> SalesSources => Set<SalesSource>();
 
     public DbSet<LiftReading> LiftReadings => Set<LiftReading>();
+
+    public DbSet<ImpactReport> ImpactReports => Set<ImpactReport>();
 
     protected override string Schema => SchemaName;
 
@@ -62,6 +65,35 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
             reading.Property(r => r.Status).HasMaxLength(20);
             reading.Property(r => r.Reason).HasMaxLength(40);
             reading.Property(r => r.Method).HasMaxLength(40);
+        });
+
+        modelBuilder.Entity<ImpactReport>(report =>
+        {
+            report.ToTable("ImpactReports");
+            report.HasIndex(r => new { r.BrandId, r.RoomId }).IsUnique();
+            report.HasIndex(r => new { r.BrandId, r.Status, r.ReadyAt });
+            report.Property(r => r.Status).HasMaxLength(20);
+            report.Property(r => r.Problem).HasMaxLength(1000);
+            report.Property(r => r.Title).HasMaxLength(200);
+            report.Property(r => r.Kpi).HasMaxLength(20);
+            report.Property(r => r.Currency).HasMaxLength(3);
+            report.Property(r => r.Spend).HasPrecision(19, 4);
+            report.Property(r => r.Results).HasPrecision(19, 4);
+            report.Property(r => r.CostPerResult).HasPrecision(19, 4);
+            report.Property(r => r.CostPerExtra).HasPrecision(19, 4);
+            report.Property(r => r.CostPerExtraLow).HasPrecision(19, 4);
+            report.Property(r => r.CostPerExtraHigh).HasPrecision(19, 4);
+            report.Property(r => r.TargetCost).HasPrecision(19, 4);
+            report.Property(r => r.Outcome).HasMaxLength(20);
+            report.Property(r => r.NextStep).HasMaxLength(20);
+            report.Property(r => r.NextTest).HasMaxLength(1000);
+            report.Property(r => r.Summary).HasMaxLength(1200);
+            report.Property(r => r.NextStepReasoning).HasMaxLength(1000);
+            report.Property(r => r.InconclusiveReason).HasMaxLength(800);
+            report.Property(r => r.NextTestAdvice).HasMaxLength(800);
+            report.Property(r => r.Model).HasMaxLength(80);
+            report.Property(r => r.PromptVersion).HasMaxLength(80);
+            report.Property(r => r.Version).IsConcurrencyToken();
         });
     }
 }
