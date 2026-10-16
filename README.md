@@ -282,6 +282,23 @@ Changes use a validate-only call, then set absolute values. A rejected change go
 
 This has only been verified locally against simulated Google APIs.
 
+## Lift readings
+
+`POST /jobs/measurement/lift` runs hourly through the `kairo-lift-readings` scheduler job. It measures each campaign's lift on the proof plan's KPI (orders or conversions), comparing the test regions with the holdout regions in the loaded analytics data.
+
+- **Early readings:** while the test runs, Kairo takes one early reading for each new day of loaded data, once at least 7 test days are covered. Early readings are labelled as early and never trigger recommendations.
+- **Final reading:** once the campaign is in `results_ready`, Kairo takes one final reading as soon as the data covers the last test day. If the test ended early, the last test day is the day before it ended. If the data still doesn't reach that day a week later, Kairo measures the days it has, and the reading shows fewer days than planned.
+
+Data coverage comes from the last successful feed run: sales tables or uploads for orders, and GA4 (or else Google Ads) for conversions.
+
+The agent service's `POST /prove/lift` measures lift with the same placebo difference-in-differences method the proof plan uses to size the test (`placebo-did/1`):
+- **Expected result:** the test regions' 56-day pre-period ratio to the holdouts, applied to the holdouts during the test.
+- **90% range:** comes from the same estimate on past weekly windows of the same length, widened for small samples. A reading is conclusive when the range excludes zero.
+- **Insufficient data:** with too little history or fewer than 3 placebo windows, the reading is saved as `insufficient_data` with a reason. Lift is never reported without a range.
+- **Revenue:** measured the same way when every region has revenue data.
+
+`GET /api/brands/{brandId}/campaigns/{campaignId}/lift` returns the readings with their per-region results and daily actual-against-expected series, plus the final reading and the latest early one. New readings record `measurement.lift_measured` and publish `measurement.lift_changed`.
+
 ## Run the tests
 
 From the repository root:
