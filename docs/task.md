@@ -162,7 +162,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 - [x] **Lift measurement**: Measures extra orders, conversions or revenue against the holdout regions, with a confidence range, plus early readings during the test.
 - [x] **Impact report**: Works out cost per extra result and the next step, and explains inconclusive results.
-- [/] **Brand Memory**: Saves what worked and what didn't, and feeds it into briefs, assets and rankings.
+- [x] **Brand Memory**: Saves what worked and what didn't, and feeds it into briefs, assets and rankings.
 
 ### Nency (web app)
 
