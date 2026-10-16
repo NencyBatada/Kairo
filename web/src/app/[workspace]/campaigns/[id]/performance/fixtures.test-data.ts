@@ -1,0 +1,12 @@
+import type { Day, Pause, Pacing, StockLog, Lift, Reading } from "./_lib/model";
+
+export const brandId = "11111111-1111-1111-1111-111111111111";
+export const campaignId = "22222222-2222-2222-2222-222222222222";
+export const pauseId = "33333333-3333-3333-3333-333333333333";
+export const batchId = "44444444-4444-4444-4444-444444444444";
+export function day(overrides: Partial<Day> = {}): Day { return { date: "2026-10-15", spend: "70", plannedSpend: "100", deviation: "-0.3", status: "under", conversions: "2.5", conversionValue: "400", impressions: "1000", clicks: "20", ...overrides }; }
+export function pacing(overrides: Partial<Pacing> = {}): Pacing { return { status: "off_pace", currency: "INR", start: "2026-10-10", end: "2026-10-30", campaigns: [{ campaignType: "search", plannedDailySpend: "100", status: "under", days: [day({ date: "2026-10-14" }), day()], alert: { date: "2026-10-15", direction: "under", causeKind: "stock_pauses", cause: "Stock pauses reduced the ads available to serve.", suggestedFix: "Check the stock feed before undoing pauses.", alertedAt: "2026-10-16T01:00:00Z" } }], ...overrides }; }
+export function pause(overrides: Partial<Pause> = {}): Pause { return { id: pauseId, version: "3", state: "paused", campaignType: "search", campaignResource: "customers/123/campaigns/456", adResource: "customers/123/adGroupAds/456~789", productIds: ["shoe-1"], batchId: null, createdAt: "2026-10-16T00:00:00Z", pausedAt: "2026-10-16T00:00:00Z", resumedAt: null, decidedAt: null, decidedBy: null, canUndo: true, ...overrides }; }
+export function stock(overrides: Partial<StockLog> = {}): StockLog { return { feedUpdatedAt: "2026-10-16T00:00:00Z", feedStale: false, pauses: [pause()], ...overrides }; }
+export function reading(overrides: Partial<Reading> = {}): Reading { return { id: pauseId, early: true, startDate: "2026-10-08", throughDate: "2026-10-15", kpi: "orders", unit: "city", days: 8, plannedDays: 14, status: "ok", reason: null, conclusive: false, lift: "0.12", low: "-0.03", high: "0.2", actual: "112", expected: "100", extra: "12", extraLow: "-3", extraHigh: "20", placebos: 40, revenue: null, regions: [], daily: [], method: "placebo-did/1", createdAt: "2026-10-16T00:00:00Z", ...overrides }; }
+export function lift(overrides: Partial<Lift> = {}): Lift { return { campaignId, stage: "live", latestEarly: reading(), final: null, readings: [reading()], ...overrides }; }
