@@ -247,6 +247,10 @@ public sealed class BriefApprovalTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Conflict, nothing.StatusCode);
         using var unknown = await ChangeAsync(roomId, new { version, reason = "Checking.", holdoutRegionIds = new[] { "atlantis" } });
         Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
+        await SqlAsync("UPDATE campaign_rooms.ProofPlans SET Content = JSON_MODIFY(Content, '$.startDate', '2020-01-01') WHERE BrandId = @brand;");
+        using var past = await ChangeAsync(roomId, new { version, reason = "End it early.", endDate = Campaigns.Iso(_world.Today().AddDays(-1)) });
+        Assert.Equal(HttpStatusCode.BadRequest, past.StatusCode);
+        Assert.Contains("not on a day that has passed", await past.Content.ReadAsStringAsync(Token));
 
         using var changed = await ChangeAsync(roomId, new { version, reason = "Pune had a strike.", holdoutRegionIds = new[] { "nashik" }, endDate = Campaigns.Iso(end.AddDays(-2)) });
 

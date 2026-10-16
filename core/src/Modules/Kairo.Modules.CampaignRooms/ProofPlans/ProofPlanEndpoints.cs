@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Kairo.Contracts.Audit;
+using Kairo.Contracts.Brands;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -209,6 +210,7 @@ internal static class ProofPlanEndpoints
         RoomWorkflow workflow,
         IAuditLog audit,
         CurrentMember member,
+        IBrandDirectory brands,
         TimeProvider time,
         CancellationToken cancellationToken)
     {
@@ -299,6 +301,12 @@ internal static class ProofPlanEndpoints
             if (content.StartDate is { } start && last < start)
             {
                 return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["endDate"] = [$"Pick an end date on or after the test's start, {BriefChecks.Day(start)}."] });
+            }
+
+            var zone = await brands.FindTimeZoneAsync(room.BrandId, cancellationToken) is { } id && TimeZoneInfo.TryFindSystemTimeZoneById(id, out var found) ? found : TimeZoneInfo.Utc;
+            if (last < DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(time.GetUtcNow(), zone).DateTime))
+            {
+                return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["endDate"] = ["The test can end today at the earliest, not on a day that has passed."] });
             }
 
             content.EndDate = last;

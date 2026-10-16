@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Kairo.Modules.CampaignRooms.Data.Migrations
 {
-    public partial class BriefApprovalLock : Migration
+    internal partial class BriefApprovalLock : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
