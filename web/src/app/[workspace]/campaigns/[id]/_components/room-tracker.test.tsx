@@ -28,14 +28,14 @@ test("updates elapsed stage time and cleans up the timer", () => {
 });
 
 test("names every pending approver and preserves send-back reasons", () => {
-  show({ ...room, status: "waiting_approval", pendingApproval: { gate: "brief", label: "Gate 1 · Brief", approvers: [{ id: "p1", name: "Meera Rao" }, { id: "p2", name: "Neha Shah" }], requestedBy: room.owner, requestedAt: room.updatedAt }, lastSendBack: { from: "asset_review", to: "brief_draft", comment: "Use the rainy-season products.", by: { id: "p1", name: "Meera Rao" }, at: room.updatedAt } });
+  show({ ...room, status: "waiting_approval", pendingApproval: { gate: "brief", label: "Gate 1 · Brief", approvers: [{ id: "p1", name: "Meera Rao" }, { id: "p2", name: "Neha Shah" }], requestedBy: room.owner, requestedAt: room.updatedAt, route: "approvers", routeReason: null }, lastSendBack: { from: "asset_review", to: "brief_draft", comment: "Use the rainy-season products.", by: { id: "p1", name: "Meera Rao" }, at: room.updatedAt } });
   expect(screen.getByText("Approvers: Meera Rao, Neha Shah.")).toBeTruthy();
   expect(screen.getByText("Use the rainy-season products.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Approve/ })).toBeNull();
 });
 
 test("explains a missing approver and agent ownership", () => {
-  show({ ...room, tracker: { ...room.tracker, ownerKind: "agent", owner: "Plan agent" }, pendingApproval: { gate: "brief", label: "Gate 1 · Brief", approvers: [], requestedBy: null, requestedAt: room.updatedAt } });
+  show({ ...room, tracker: { ...room.tracker, ownerKind: "agent", owner: "Plan agent" }, pendingApproval: { gate: "brief", label: "Gate 1 · Brief", approvers: [], requestedBy: null, requestedAt: room.updatedAt, route: "approvers", routeReason: null } });
   expect(screen.getByText("Working now")).toBeTruthy();
   expect(screen.getByText(/No approver is assigned/)).toBeTruthy();
 });
