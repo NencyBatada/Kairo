@@ -174,7 +174,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Impact Lab analysis**: Loads outcome data from Google Ads, GA4, BigQuery or a file, suggests comparison data, checks data quality and estimates the effect.
+- [/] **Impact Lab analysis**: Loads outcome data from Google Ads, GA4, BigQuery or a file, suggests comparison data, checks data quality and estimates the effect.
 
 ### Nency (web app)
 
