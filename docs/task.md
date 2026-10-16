@@ -102,8 +102,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Brief screen**: Every field with its reasoning, direct edits or typed instructions with a preview, and gate 1 approval.
-- [ ] **Regions map**: Test and holdout regions on a map, swaps from a ranked list, and the test numbers alongside.
+- [/] **Brief screen**: Every field with its reasoning, direct edits or typed instructions with a preview, and gate 1 approval. *Started contract and UI investigation against Talha's merged brief and approval endpoints. Next: user approval of the implementation plan, then isolated implementation and focused tests.*
+- [/] **Regions map**: Test and holdout regions on a map, swaps from a ranked list, and the test numbers alongside. *Started contract and UI investigation against the merged proof-plan endpoints. Next: user approval of the implementation plan, then isolated implementation and focused tests.*
 
 ## 7. Creative Studio
 
