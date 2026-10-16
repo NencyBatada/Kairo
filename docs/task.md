@@ -128,8 +128,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Asset review screen**: Scores, plain-language issues and before-and-after fixes, with send back, override with a reason and gate 2 approval.
-- [ ] **Check settings screen**: Lets admins tune rules and pass thresholds.
+- [/] **Asset review screen**: Scores, plain-language issues and before-and-after fixes, with send back, override with a reason and gate 2 approval.
+- [/] **Check settings screen**: Lets admins tune rules and pass thresholds.
 
 ## 9. Approve and launch
 
