@@ -15,7 +15,7 @@ export const room: components["schemas"]["CampaignDetail"] = {
   },
   pendingApproval: null, lastSendBack: null, discardReason: null,
   evidence: { topic: "Waterproof trainers", regions: [{ name: "Maharashtra" }], products: [{ title: "Rain Runner", id: "product-1" }], reasons: [{ text: "Demand is rising with the rains.", sources: [{ title: "Weather report", url: "https://example.com/weather" }] }] },
-  brief: null, runs: [run], actions: { requestApproval: null, approve: null, sendBackTo: [], discard: true, retryRun: "run-1", requestApprovalBlocker: null, continueWithoutVideo: false },
+  brief: null, runs: [run], actions: { requestApproval: null, approve: null, sendBackTo: [], discard: true, retryRun: "run-1", requestApprovalBlocker: null, continueWithoutVideo: false, approveBlocker: null, requestCheck: false },
 };
 
 export const activity: components["schemas"]["CampaignActivityPage"] = {

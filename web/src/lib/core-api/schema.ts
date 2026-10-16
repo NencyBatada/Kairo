@@ -4080,6 +4080,172 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/send-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetSendBackRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssetCheckRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/override": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CheckOverrideRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -4670,6 +4836,20 @@ export interface components {
             version: null | number | string;
             comment: null | string;
         };
+        AssetCheckRequest: {
+            version: null | number | string;
+        };
+        AssetCheckView: {
+            state: string;
+            score: null | number | string;
+            passed: null | boolean;
+            settingsVersion: null | number | string;
+            checkedAt: null | string;
+            issues: components["schemas"]["CheckIssueView"][];
+            overridden: null | components["schemas"]["CheckOverrideView"];
+            fixAttempts: number | string;
+            fixes: components["schemas"]["CheckFixView"][];
+        };
         AssetContentView: {
             keywords: null | components["schemas"]["AssetKeywordView"][];
             headlines: null | string[];
@@ -4772,6 +4952,22 @@ export interface components {
             start: number | string;
             end: number | string;
         };
+        AssetSendBackRequest: {
+            version: null | number | string;
+            comment: null | string;
+            assetIds: null | string[];
+        };
+        AssetSetCheckView: {
+            score: null | number | string;
+            passed: number | string;
+            flagged: number | string;
+            overridden: number | string;
+            unchecked: number | string;
+            settingsVersion: number | string;
+            passScore: number | string;
+            fixAttempts: number | string;
+            approveBlocker: null | string;
+        };
         AssetSetView: {
             campaignId: string;
             stage: string;
@@ -4779,6 +4975,8 @@ export interface components {
             editBlocker: null | string;
             languages: string[];
             groups: components["schemas"]["AssetGroupView"][];
+            check: components["schemas"]["AssetSetCheckView"];
+            canSendBack: boolean;
         };
         AssetSourcesView: {
             productIds: string[];
@@ -4808,6 +5006,9 @@ export interface components {
             content: components["schemas"]["AssetContentView"];
             disclosure: components["schemas"]["AssetDisclosureView"];
             updatedAt: string;
+            check: components["schemas"]["AssetCheckView"];
+            canOverride: boolean;
+            canSendBack: boolean;
         };
         AuditActionOption: {
             action: string;
@@ -4958,6 +5159,8 @@ export interface components {
             retryRun: null | string;
             requestApprovalBlocker: null | string;
             continueWithoutVideo: boolean;
+            approveBlocker: null | string;
+            requestCheck: boolean;
         };
         CampaignActivityPage: {
             entries: components["schemas"]["CampaignActivityView"][];
@@ -5092,6 +5295,36 @@ export interface components {
         };
         ChangeRolesRequest: {
             roles: components["schemas"]["BrandRole"][];
+        };
+        CheckFixView: {
+            fromVersion: number | string;
+            toVersion: number | string;
+            at: string;
+            issuesFixed: components["schemas"]["CheckIssueView"][];
+            before: components["schemas"]["AssetContentView"];
+            beforeMediaUrl: null | string;
+            after: components["schemas"]["AssetContentView"];
+            afterMediaUrl: null | string;
+        };
+        CheckIssueView: {
+            rule: string;
+            ruleName: string;
+            severity: string;
+            message: string;
+            field: null | string;
+            index: null | number | string;
+            at: null | number | string;
+            evidence: null | string;
+            overridable: boolean;
+        };
+        CheckOverrideRequest: {
+            version: null | number | string;
+            reason: null | string;
+        };
+        CheckOverrideView: {
+            by: string;
+            at: string;
+            reason: string;
         };
         CheckResult: {
             connection: components["schemas"]["ConnectionView"];

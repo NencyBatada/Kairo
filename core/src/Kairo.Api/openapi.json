@@ -4360,6 +4360,198 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/send-back": {
+      "post": {
+        "tags": [
+          "CheckEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetSendBackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/check": {
+      "post": {
+        "tags": [
+          "CheckEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/override": {
+      "post": {
+        "tags": [
+          "CheckEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckOverrideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -5182,6 +5374,103 @@
           }
         }
       },
+      "AssetCheckRequest": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "AssetCheckView": {
+        "required": [
+          "state",
+          "score",
+          "passed",
+          "settingsVersion",
+          "checkedAt",
+          "issues",
+          "overridden",
+          "fixAttempts",
+          "fixes"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "passed": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "settingsVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "checkedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckIssueView"
+            }
+          },
+          "overridden": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CheckOverrideView"
+              }
+            ]
+          },
+          "fixAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fixes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckFixView"
+            }
+          }
+        }
+      },
       "AssetContentView": {
         "required": [
           "keywords",
@@ -5800,6 +6089,128 @@
           }
         }
       },
+      "AssetSendBackRequest": {
+        "required": [
+          "version",
+          "comment",
+          "assetIds"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "assetIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "AssetSetCheckView": {
+        "required": [
+          "score",
+          "passed",
+          "flagged",
+          "overridden",
+          "unchecked",
+          "settingsVersion",
+          "passScore",
+          "fixAttempts",
+          "approveBlocker"
+        ],
+        "type": "object",
+        "properties": {
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "passed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "flagged": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "overridden": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unchecked": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "settingsVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "passScore": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fixAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "approveBlocker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AssetSetView": {
         "required": [
           "campaignId",
@@ -5807,7 +6218,9 @@
           "canEdit",
           "editBlocker",
           "languages",
-          "groups"
+          "groups",
+          "check",
+          "canSendBack"
         ],
         "type": "object",
         "properties": {
@@ -5838,6 +6251,12 @@
             "items": {
               "$ref": "#/components/schemas/AssetGroupView"
             }
+          },
+          "check": {
+            "$ref": "#/components/schemas/AssetSetCheckView"
+          },
+          "canSendBack": {
+            "type": "boolean"
           }
         }
       },
@@ -5906,7 +6325,10 @@
           "mediaUrl",
           "content",
           "disclosure",
-          "updatedAt"
+          "updatedAt",
+          "check",
+          "canOverride",
+          "canSendBack"
         ],
         "type": "object",
         "properties": {
@@ -6003,6 +6425,15 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "check": {
+            "$ref": "#/components/schemas/AssetCheckView"
+          },
+          "canOverride": {
+            "type": "boolean"
+          },
+          "canSendBack": {
+            "type": "boolean"
           }
         }
       },
@@ -6825,7 +7256,9 @@
           "discard",
           "retryRun",
           "requestApprovalBlocker",
-          "continueWithoutVideo"
+          "continueWithoutVideo",
+          "approveBlocker",
+          "requestCheck"
         ],
         "type": "object",
         "properties": {
@@ -6864,6 +7297,15 @@
             ]
           },
           "continueWithoutVideo": {
+            "type": "boolean"
+          },
+          "approveBlocker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "requestCheck": {
             "type": "boolean"
           }
         }
@@ -7581,6 +8023,171 @@
             "items": {
               "$ref": "#/components/schemas/BrandRole"
             }
+          }
+        }
+      },
+      "CheckFixView": {
+        "required": [
+          "fromVersion",
+          "toVersion",
+          "at",
+          "issuesFixed",
+          "before",
+          "beforeMediaUrl",
+          "after",
+          "afterMediaUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "fromVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "toVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "issuesFixed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CheckIssueView"
+            }
+          },
+          "before": {
+            "$ref": "#/components/schemas/AssetContentView"
+          },
+          "beforeMediaUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "after": {
+            "$ref": "#/components/schemas/AssetContentView"
+          },
+          "afterMediaUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CheckIssueView": {
+        "required": [
+          "rule",
+          "ruleName",
+          "severity",
+          "message",
+          "field",
+          "index",
+          "at",
+          "evidence",
+          "overridable"
+        ],
+        "type": "object",
+        "properties": {
+          "rule": {
+            "type": "string"
+          },
+          "ruleName": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "field": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "index": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "at": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "evidence": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "overridable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CheckOverrideRequest": {
+        "required": [
+          "version",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "CheckOverrideView": {
+        "required": [
+          "by",
+          "at",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reason": {
+            "type": "string"
           }
         }
       },
@@ -12487,6 +13094,9 @@
     },
     {
       "name": "MediaEndpoints"
+    },
+    {
+      "name": "CheckEndpoints"
     },
     {
       "name": "FeedEndpoints"
