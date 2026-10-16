@@ -218,7 +218,7 @@ public sealed class CampaignWorld : IAsyncDisposable
         var days = Enumerable.Range(1, 120).Select(offset => Today().AddDays(-offset)).ToList();
         Api.GoogleApis.BigQuery.Selects["ads_city_daily"] =
         [
-            .. days.SelectMany(day => Cities.Select(city => new[] { Campaigns.Iso(day), city.Id, city.Name, city.State, "4", "INR" })),
+            .. days.SelectMany(day => Cities.Select(city => new[] { Campaigns.Iso(day), city.Id, city.Name, city.State, "4", "INR", "100" })),
         ];
         Api.GoogleApis.BigQuery.Selects["sales_daily"] = [.. days.Select(day => new[] { Campaigns.Iso(day), "Mumbai", "10", "25000" })];
         foreach (var city in Cities)

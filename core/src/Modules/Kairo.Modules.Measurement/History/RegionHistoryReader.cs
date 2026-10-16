@@ -8,14 +8,14 @@ namespace Kairo.Modules.Measurement.History;
 internal static class HistoryQueries
 {
     public static string AdsCities(string table) => $"""
-        SELECT CAST(date AS STRING), city_id, city_name, state_name, SUM(conversions), ANY_VALUE(currency)
+        SELECT CAST(date AS STRING), city_id, city_name, state_name, SUM(conversions), ANY_VALUE(currency), SUM(cost)
         FROM {table}
         WHERE date BETWEEN @from AND @to AND city_name IS NOT NULL
         GROUP BY date, city_id, city_name, state_name
         """;
 
     public static string AdsStates(string table) => $"""
-        SELECT CAST(date AS STRING), region_id, region_name, CAST(NULL AS STRING), SUM(conversions), ANY_VALUE(currency)
+        SELECT CAST(date AS STRING), region_id, region_name, CAST(NULL AS STRING), SUM(conversions), ANY_VALUE(currency), SUM(cost)
         FROM {table}
         WHERE date BETWEEN @from AND @to AND region_name IS NOT NULL
         GROUP BY date, region_id, region_name
@@ -72,7 +72,7 @@ internal sealed class RegionHistoryReader(BigQueryClient bigQuery, IServiceAcces
         var cities = unit == RegionUnit.City;
         foreach (var row in await ReadAsync(cities ? HistoryQueries.AdsCities(Table(TableSchemas.AdsCityDaily)) : HistoryQueries.AdsStates(Table(TableSchemas.AdsRegionDaily))))
         {
-            history.Ads(row[0], row[1], row[2], row[3], Number(row[4]), row[5]);
+            history.Ads(row[0], row[1], row[2], row[3], Number(row[4]), row[5], Number(row[6]));
         }
 
         foreach (var row in await ReadAsync(cities ? HistoryQueries.Ga4Cities(Table(TableSchemas.Ga4CityDaily)) : HistoryQueries.Ga4States(Table(TableSchemas.Ga4RegionDaily))))
@@ -100,7 +100,7 @@ internal sealed class RegionHistoryReader(BigQueryClient bigQuery, IServiceAcces
 
         private int Days => to.DayNumber - from.DayNumber + 1;
 
-        public void Ads(string? date, string? geoId, string? name, string? state, double conversions, string? currency)
+        public void Ads(string? date, string? geoId, string? name, string? state, double conversions, string? currency, double cost)
         {
             if (Index(date) is not { } day || Clean(name) is not { } clean)
             {
@@ -110,6 +110,7 @@ internal sealed class RegionHistoryReader(BigQueryClient bigQuery, IServiceAcces
             var place = PlaceOf(clean, state);
             place.GeoTargetId ??= Clean(geoId);
             (place.AdsConversions ??= new double[Days])[day] += conversions;
+            (place.Cost ??= new double[Days])[day] += cost;
             _currency ??= Clean(currency);
         }
 
@@ -157,7 +158,8 @@ internal sealed class RegionHistoryReader(BigQueryClient bigQuery, IServiceAcces
                     place.State,
                     place.Orders,
                     place.Transactions ?? place.AdsConversions,
-                    place.Revenue ?? place.Ga4Revenue))
+                    place.Revenue ?? place.Ga4Revenue,
+                    place.Cost))
                 .ToList();
             return new RegionHistory(unit, from, to, _sales.Count > 0, _currency, regions);
         }
@@ -212,5 +214,7 @@ internal sealed class RegionHistoryReader(BigQueryClient bigQuery, IServiceAcces
         public double[]? Ga4Revenue { get; set; }
 
         public double[]? AdsConversions { get; set; }
+
+        public double[]? Cost { get; set; }
     }
 }

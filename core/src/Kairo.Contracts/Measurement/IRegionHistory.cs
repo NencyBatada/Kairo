@@ -23,4 +23,5 @@ public sealed record RegionSeries(
     string? State,
     double[]? Orders,
     double[]? Conversions,
-    double[]? Revenue);
+    double[]? Revenue,
+    double[]? Cost = null);
