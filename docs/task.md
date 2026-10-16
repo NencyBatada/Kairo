@@ -136,7 +136,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 ### Talha (core and agents)
 
 - [x] **Approval lock**: Ties each approval to the exact plan, so any change after approval needs a new one. *Merged into develop; 327 campaign-room tests, 67 architecture checks, TypeScript and 781 web tests pass. Includes immutable evidence, launch settings and budget-owner rechecks.*
-- [/] **Campaign build**: Uploads videos to YouTube, creates the Search, Shopping and Demand Gen campaigns paused and without the holdout regions, then turns everything on together.
+- [x] **Campaign build**: Uploads videos to YouTube, creates the Search, Shopping and Demand Gen campaigns paused and without the holdout regions, then turns everything on together.
 - [ ] **Retry and health check**: Retries a failed launch without duplicates, explains errors, and checks ad approvals and delivery the next day.
 
 ### Nency (web app)
