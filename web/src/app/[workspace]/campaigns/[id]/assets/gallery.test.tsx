@@ -55,3 +55,6 @@ test("shopping preview displays proposed title without invented product prices",
   const card = screen.getByRole("article", { name: /Shopping title/ }); expect(within(card).getByText("Acme everyday shoes")).toBeTruthy(); expect(within(card).getByText(/No product image supplied/)).toBeTruthy();
   expect(screen.getByRole("status").textContent).toBe("1 saved asset");
 });
+test("open history discloses a new version after live refresh", async () => {
+  const { rerender } = render(<AssetGallery {...props} set={assetSet()} />); fireEvent.click(screen.getByRole("button", { name: /View history/ })); await screen.findByText(/Version 1 · generated/); const next = asset({ version: 2 }); load.mockResolvedValue({ history: history(next) }); rerender(<AssetGallery {...props} set={assetSet([next])} />); fireEvent.click(screen.getByRole("button", { name: "Refresh history" })); expect(await screen.findByText(/Version 2 · generated/)).toBeTruthy(); expect(screen.queryByText(/A new version is available/)).toBeNull();
+});

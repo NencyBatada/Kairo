@@ -12,17 +12,18 @@ import { AssetMedia } from "./asset-media";
 export function AssetHistory({ asset, brandId, campaignId, timeZone }: { asset: Asset; brandId: string; campaignId: string; timeZone: string }) {
   const id = useId();
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<{ history?: History; error?: string }>({});
+  const [state, setState] = useState<{ history?: History; error?: string; version?: string }>({});
   const [busy, setBusy] = useState(false);
   async function load() {
     setBusy(true);
-    try { setState(await loadAssetHistory(brandId, campaignId, asset.id)); }
+    try { setState({ ...await loadAssetHistory(brandId, campaignId, asset.id), version: String(asset.version) }); }
     catch { setState({ error: "Asset history could not be loaded. Try again." }); }
     finally { setBusy(false); }
   }
   return <div className="border-t border-border pt-4">
     <Button variant="ghost" aria-expanded={open} aria-controls={id} onClick={() => { setOpen(!open); if (!open) void load(); }}>{open ? "Hide history" : "View history"}<span className="sr-only"> for {assetName(asset)}</span></Button>
     {open && <div id={id} aria-busy={busy} className="mt-3 min-w-0 space-y-4">
+      {!busy && state.history && state.version !== String(asset.version) && <Alert variant="info"><p>A new version is available. Refresh history to see it.</p><Button variant="secondary" className="mt-3" onClick={load}>Refresh history</Button></Alert>}
       {busy ? <><p role="status" className="text-sm text-muted-foreground">Loading history…</p><Skeleton className="h-20" /></> : state.error ? <Alert variant="destructive"><p>{state.error}</p><Button variant="secondary" onClick={load} className="mt-3">Try history again</Button></Alert> : <>
         {state.history?.versions.length === 0 && <p className="text-sm text-muted-foreground">No version history is available.</p>}
         {state.history?.versions.map((entry) => <details key={String(entry.version)} className="min-w-0 rounded-md border border-border p-3">
