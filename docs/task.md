@@ -166,9 +166,9 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Results screen**: Lift with its range, spend, cost per extra result, summary and next step. *Approved implementation in progress against Talha's impact-report API, in a dedicated task worktree.*
-- [/] **Report PDF**: Downloads the impact report as a PDF. *Approved on-demand PDF approach; implementation follows the Results merge so it can use the integrated report presentation model.*
-- [/] **Brand Memory screen**: View, edit and remove memory entries. *Approved implementation in progress against Talha's Brand Memory APIs, in a dedicated task worktree.*
+- [/] **Results screen**: Lift with its range, spend, cost per extra result, summary and next step. *Implemented in PR #24 against Talha's impact-report API. All 41 latest focused Results/area checks, lint, production build and unchanged API regeneration pass; 1,033 full web regression tests passed before the final accessibility additions. An isolated production-component/API fixture browser verifies final and inconclusive results, insufficient data, range/table access, warnings, matching campaign memory, mobile widths, light/dark themes, long content and 200% layout scaling. Left: PR merge, deployment and authenticated development verification with actual analytics. Dedicated worktree and branch retained until merge confirmation.*
+- [/] **Report PDF**: Downloads the impact report as a PDF. *Approved on-demand PDF approach; waiting for Results PR #24 to merge, as agreed, before creating its dedicated worktree from integrated develop and using the report presentation model.*
+- [/] **Brand Memory screen**: View, edit and remove memory entries. *Implemented in independent PR #25 against Talha's existing APIs. All 64 latest focused memory/navigation/Brand Kit checks, lint, production build and unchanged API regeneration pass; 1,048 full web regression tests passed before final transport/identity/layout additions. An isolated production-page/component/API fixture browser verifies filters and empty results, evidence, versioned saves, retained validation drafts, live-update protection, cancellation/confirmation, removed entries, viewer permissions, mobile layouts, light/dark themes and 200% layout scaling. DELETE has no atomic version precondition; the frontend checks the current version before removal. Left: PR merge, deployment and authenticated Next.js/development verification. Dedicated worktree and branch retained until merge confirmation.*
 
 ## 12. Impact Lab
 
