@@ -80,7 +80,7 @@ public sealed class RoomLifecycleTests
     public void The_tracker_marks_stages_before_the_current_one_as_done()
     {
         var room = new Room { State = RoomStates.AssetReview, PendingGate = RoomGates.Assets, StateEnteredAt = DateTimeOffset.UnixEpoch };
-        var approval = new CampaignApprovalView("assets", "Asset approval", [new(Guid.NewGuid(), "Priya"), new(Guid.NewGuid(), "Sam")], null, DateTimeOffset.UnixEpoch);
+        var approval = new CampaignApprovalView("assets", "Asset approval", [new(Guid.NewGuid(), "Priya"), new(Guid.NewGuid(), "Sam")], null, DateTimeOffset.UnixEpoch, "approvers", null);
 
         var tracker = CampaignReader.Tracker(room, null, approval, "Asha");
 

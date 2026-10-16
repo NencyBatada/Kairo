@@ -9,15 +9,6 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 
 public sealed class ProofPlanTests(SqlServer sqlServer) : IAsyncLifetime
 {
-    private static readonly (string Id, string Name, string State)[] Cities =
-    [
-        ("1007785", "Mumbai", "Maharashtra"),
-        ("1007788", "Pune", "Maharashtra"),
-        ("1007790", "Nagpur", "Maharashtra"),
-        ("1007791", "Nashik", "Maharashtra"),
-        ("1007809", "Chennai", "Tamil Nadu"),
-    ];
-
     private CampaignWorld _world = null!;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -310,21 +301,9 @@ public sealed class ProofPlanTests(SqlServer sqlServer) : IAsyncLifetime
 
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();
 
-    private void CityHistory()
-    {
-        BigQuery.Selects["ads_city_daily"] =
-        [
-            .. Days(120).SelectMany(day => Cities.Select(city => new[] { Iso(day), city.Id, city.Name, city.State, "4", "INR" })),
-        ];
-        BigQuery.Selects["sales_daily"] = [.. Days(120).Select(day => new[] { Iso(day), "Mumbai", "10", "25000" })];
-        foreach (var city in Cities)
-        {
-            _world.Api.GoogleApis.Keywords.RegionLastMonth[city.Id] = 1.0;
-        }
-    }
+    private void CityHistory() => _world.LoadCityHistory();
 
-    private DateOnly Today() =>
-        DateOnly.FromDateTime(_world.Api.Clock.GetUtcNow().ToOffset(TimeSpan.FromHours(5.5)).DateTime);
+    private DateOnly Today() => _world.Today();
 
     private IEnumerable<DateOnly> Days(int count)
     {

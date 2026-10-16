@@ -15,6 +15,15 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 
 public sealed class CampaignWorld : IAsyncDisposable
 {
+    private static readonly (string Id, string Name, string State)[] Cities =
+    [
+        ("1007785", "Mumbai", "Maharashtra"),
+        ("1007788", "Pune", "Maharashtra"),
+        ("1007790", "Nagpur", "Maharashtra"),
+        ("1007791", "Nashik", "Maharashtra"),
+        ("1007809", "Chennai", "Tamil Nadu"),
+    ];
+
     private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof)
     {
         Proof = proof;
@@ -131,6 +140,39 @@ public sealed class CampaignWorld : IAsyncDisposable
         return await approved.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
     }
 
+    public async Task<JsonElement> LaunchAsync(Guid roomId)
+    {
+        await ApproveBriefAsync(roomId);
+        Assert.Equal(CampaignAdvance.Moved, await SignalAsync(roomId, CampaignSignals.AssetsChecked));
+        var review = await Campaigns.DetailAsync(Approver.Browser, BrandId, roomId);
+        using var assets = await Campaigns.PostAsync(Approver.Browser, BrandId, roomId, "approve", new { gate = "assets", version = Campaigns.Version(review) });
+        Assert.Equal(HttpStatusCode.OK, assets.StatusCode);
+        var ready = await assets.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+        using var requested = await Campaigns.PostAsync(Marketer, BrandId, roomId, "approval-requests", new { gate = "launch", version = Campaigns.Version(ready) });
+        Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
+        var waiting = await requested.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+        using var launched = await Campaigns.PostAsync(Approver.Browser, BrandId, roomId, "approve", new { gate = "launch", version = Campaigns.Version(waiting) });
+        Assert.Equal(HttpStatusCode.OK, launched.StatusCode);
+        return await launched.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+    }
+
+    public void LoadCityHistory()
+    {
+        var days = Enumerable.Range(1, 120).Select(offset => Today().AddDays(-offset)).ToList();
+        Api.GoogleApis.BigQuery.Selects["ads_city_daily"] =
+        [
+            .. days.SelectMany(day => Cities.Select(city => new[] { Campaigns.Iso(day), city.Id, city.Name, city.State, "4", "INR" })),
+        ];
+        Api.GoogleApis.BigQuery.Selects["sales_daily"] = [.. days.Select(day => new[] { Campaigns.Iso(day), "Mumbai", "10", "25000" })];
+        foreach (var city in Cities)
+        {
+            Api.GoogleApis.Keywords.RegionLastMonth[city.Id] = 1.0;
+        }
+    }
+
+    public DateOnly Today() =>
+        DateOnly.FromDateTime(Api.Clock.GetUtcNow().ToOffset(TimeSpan.FromHours(5.5)).DateTime);
+
     public async ValueTask DisposeAsync()
     {
         await Worker.DisposeAsync();
@@ -160,6 +202,11 @@ internal static class Campaigns
         await browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/activity{query}", Token);
 
     public static int Version(JsonElement detail) => detail.GetProperty("version").GetInt32();
+
+    public static string Iso(DateOnly day) => day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+    public static Task<JsonElement> PlanAsync(HttpClient browser, Guid brandId, Guid roomId) =>
+        browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/proof-plan", Token);
 
     public static Task<JsonElement> BriefAsync(HttpClient browser, Guid brandId, Guid roomId) =>
         browser.GetFromJsonAsync<JsonElement>($"{Base(brandId)}/{roomId}/brief", Token);
