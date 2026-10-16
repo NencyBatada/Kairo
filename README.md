@@ -241,6 +241,20 @@ Approvers can send a confirmed failed launch back through the existing send-back
 
 Activation durably schedules a health check for 24 hours later. The worker checks the approved account's ad disapprovals and campaign delivery, publishes actionable `health.problem` notifications, and deduplicates them transactionally. Read failures use bounded retries. `POST /jobs/launches/health` and a fifteen-minute scheduler fallback process due checks. Proof-plan amendments retain their history and do not replace the launch snapshot or trigger Google changes. Development-account validation, real-account activation and launch-time performance verification remain pending; this implementation has only been verified locally with simulated Google APIs.
 
+## Pacing alerts
+
+Each live launch gets one pacing row per campaign per day, in the brand's time zone. A day is checked once its data has settled, after 06:00 the next day. The day the campaign launches is skipped, and any days missed during an outage are caught up for up to a week. The planned daily spend is the channel's approved total budget divided by the campaign's days.
+
+A campaign is off pace when it spends more than 20% over or under that plan. After two days in a row off pace in the same direction, Kairo sends one `pacing.alert` to marketers and the budget owners (or every approver if no budget owner is assigned). It records `launch.pacing_alerted` in the audit log, then waits for the streak to end before alerting again.
+
+The likely cause comes from fixed rules over Google Ads status:
+- **Spending too little:** the campaign is paused or ended; at least a quarter of its ads are paused or disapproved; the bid target is too strict; the bid strategy is still learning; or demand is lower than planned.
+- **Spending too much:** clicks now cost at least 20% more than earlier in the campaign, or demand is higher than planned.
+
+`GET /api/brands/{brandId}/campaigns/{campaignId}/pacing` returns daily spend against plan, results, each campaign's status, and the current alert with its cause and suggested fix. New rows publish `launch.pacing_changed`.
+
+`POST /jobs/launches/pacing` runs the check, and the hourly `kairo-launch-pacing` scheduler job calls it. Like the health check, this has only been verified with simulated Google APIs.
+
 ## Run the tests
 
 From the repository root:
