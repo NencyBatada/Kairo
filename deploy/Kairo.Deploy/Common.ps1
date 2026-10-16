@@ -16,6 +16,7 @@ $script:ScheduledJobs = @(
     @{ Name = 'kairo-stage-runs'; Schedule = '*/5 * * * *'; Path = '/jobs/campaigns/stage-runs'; Deadline = '300s' }
     @{ Name = 'kairo-launches'; Schedule = '* * * * *'; Path = '/jobs/launches/run'; Deadline = '300s' }
         @{ Name = 'kairo-launch-health'; Schedule = '*/15 * * * *'; Path = '/jobs/launches/health'; Deadline = '300s' }
+    @{ Name = 'kairo-stock-pauses'; Schedule = '*/15 * * * *'; Path = '/jobs/launches/stock'; Deadline = '600s' }
 )
 $script:GoogleSecrets = [ordered]@{
     'Authentication__Google__ClientId'     = 'google-client-id'

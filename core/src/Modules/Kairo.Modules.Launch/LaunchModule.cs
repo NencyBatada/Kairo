@@ -22,6 +22,8 @@ public sealed class LaunchModule : IModule
         services.AddScoped<ILaunchRecovery, LaunchRecovery>();
         services.AddScoped<LaunchHealthCheck>();
         services.AddScoped<LaunchHealthWorker>();
+        services.AddScoped<StockPauser>();
+        services.AddScoped<StockPauseWorker>();
         services.AddSingleton<LaunchLoopSwitch>();
         services.AddHostedService<LaunchLoop>();
     }
@@ -31,6 +33,10 @@ public sealed class LaunchModule : IModule
         var campaigns = api.MapBrandApi().MapGroup("/campaigns");
         campaigns.MapGet("/{campaignId:guid}/launch", LaunchEndpoints.GetAsync);
         campaigns.MapPost("/{campaignId:guid}/launch/retry", LaunchEndpoints.RetryAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapGet("/{campaignId:guid}/stock-pauses", StockPauseEndpoints.ListAsync);
+        campaigns.MapPost("/{campaignId:guid}/stock-pauses/{pauseId:guid}/undo", StockPauseEndpoints.UndoAsync).RequireBrandRole(BrandRoles.Marketer | BrandRoles.Admin);
+        campaigns.MapPost("/{campaignId:guid}/stock-pauses/batches/{batchId:guid}/confirm", StockPauseEndpoints.ConfirmAsync).RequireBrandRole(BrandRoles.Admin);
+        campaigns.MapPost("/{campaignId:guid}/stock-pauses/batches/{batchId:guid}/dismiss", StockPauseEndpoints.DismissAsync).RequireBrandRole(BrandRoles.Admin);
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
@@ -40,6 +46,8 @@ public sealed class LaunchModule : IModule
             TypedResults.Ok(new { processed = await dispatcher.RunDueAsync(lifetime.ApplicationStopping) }));
         jobs.MapPost("/launches/health", async (LaunchHealthCheck check, IHostApplicationLifetime lifetime) =>
             TypedResults.Ok(new { processed = await check.RunDueAsync(lifetime.ApplicationStopping) }));
+        jobs.MapPost("/launches/stock", async (StockPauser pauser, IHostApplicationLifetime lifetime) =>
+            TypedResults.Ok(new { processed = await pauser.RunDueAsync(lifetime.ApplicationStopping) }));
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

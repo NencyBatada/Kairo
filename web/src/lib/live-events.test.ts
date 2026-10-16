@@ -70,3 +70,7 @@ test("campaign moves and agent steps refresh the campaign screens", () => {
   expect(WORKSPACE_LIVE_EVENTS).toContain("campaigns.changed");
   expect(WORKSPACE_LIVE_EVENTS).toContain("launch.changed");
 });
+
+test("stock pauses and resumes refresh the performance screen", () => {
+  expect(WORKSPACE_LIVE_EVENTS).toContain("launch.stock_changed");
+});

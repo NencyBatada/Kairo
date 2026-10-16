@@ -102,6 +102,34 @@ internal sealed class CatalogueReader(CatalogueDbContext db) : ICatalogue
         return new CategoryStock(quantities.Count, known.Count, known.Sum(quantity => (long)quantity));
     }
 
+    public async Task<CatalogueStock> GetStockAsync(IReadOnlyCollection<Guid> productIds, CancellationToken cancellationToken)
+    {
+        var updatedAt = await db.BrandImports.AsNoTracking()
+            .Where(import => import.Status == ImportStatuses.Succeeded || import.Status == ImportStatuses.Unchanged)
+            .MaxAsync(import => (DateTimeOffset?)import.FinishedAt, cancellationToken);
+        if (productIds.Count == 0)
+        {
+            return new CatalogueStock(updatedAt, []);
+        }
+
+        var ids = productIds.Distinct().ToList();
+        var products = await db.BrandProducts.AsNoTracking()
+            .Where(p => ids.Contains(p.Id))
+            .Select(p => new { p.Id, p.Status, p.Availability, p.FirstSeenAt })
+            .ToListAsync(cancellationToken);
+        var changes = await db.BrandStockEvents.AsNoTracking()
+            .Where(stock => ids.Contains(stock.ProductId))
+            .GroupBy(stock => stock.ProductId)
+            .Select(group => new { ProductId = group.Key, At = group.Max(stock => stock.At) })
+            .ToDictionaryAsync(change => change.ProductId, change => change.At, cancellationToken);
+        return new CatalogueStock(updatedAt, products
+            .Select(p => new ProductStock(
+                p.Id,
+                p.Status == ProductStatuses.Removed ? ProductStatuses.Removed : p.Availability,
+                changes.TryGetValue(p.Id, out var at) ? at : p.FirstSeenAt))
+            .ToList());
+    }
+
     private IQueryable<Product> InStock() =>
         db.BrandProducts.AsNoTracking().Where(p => p.Status == ProductStatuses.Active && p.Availability == Availabilities.InStock);
 

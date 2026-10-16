@@ -67,6 +67,37 @@ internal sealed class ProductAdMap : IBrandOwned
     public string AdResource { get; set; } = "";
 }
 
+internal sealed class AdPause : IBrandOwned
+{
+    public Guid Id { get; set; }
+    public Guid BrandId { get; set; }
+    public Guid RoomId { get; set; }
+    public Guid LaunchId { get; set; }
+    public string CampaignType { get; set; } = "";
+    public string CampaignResource { get; set; } = "";
+    public string AdResource { get; set; } = "";
+    public string ProductIds { get; set; } = "[]";
+    public string State { get; set; } = "paused";
+    public Guid? BatchId { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? PausedAt { get; set; }
+    public DateTimeOffset? ResumedAt { get; set; }
+    public DateTimeOffset? DecidedAt { get; set; }
+    public Guid? DecidedBy { get; set; }
+    public int Version { get; set; } = 1;
+}
+
+internal sealed class StockWatch : IBrandOwned
+{
+    public Guid BrandId { get; set; }
+    public DateTimeOffset NextCheckAt { get; set; }
+    public DateTimeOffset? CheckedAt { get; set; }
+    public DateTimeOffset? ClaimedUntil { get; set; }
+    public Guid? ClaimToken { get; set; }
+    public DateTimeOffset? FeedUpdatedAt { get; set; }
+    public DateTimeOffset? StaleSince { get; set; }
+}
+
 internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options, KairoDatabase database) : ModuleDbContext(options, database)
 {
     public const string SchemaName = "launch";
@@ -74,6 +105,8 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
     public DbSet<ProductAdMap> ProductAds => Set<ProductAdMap>();
     public DbSet<LaunchStep> Steps => Set<LaunchStep>();
     public DbSet<LaunchHealth> Health => Set<LaunchHealth>();
+    public DbSet<AdPause> AdPauses => Set<AdPause>();
+    public DbSet<StockWatch> StockWatches => Set<StockWatch>();
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
@@ -115,6 +148,23 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
             map.Property(row => row.CampaignType).HasMaxLength(20);
             map.Property(row => row.CampaignResource).HasMaxLength(200);
             map.Property(row => row.AdResource).HasMaxLength(200);
+        });
+        modelBuilder.Entity<AdPause>(pause =>
+        {
+            pause.HasKey(row => row.Id);
+            pause.HasIndex(row => new { row.BrandId, row.RoomId, row.CreatedAt });
+            pause.HasIndex(row => new { row.BrandId, row.AdResource }).IsUnique().HasFilter("[State] IN (N'held', N'paused')");
+            pause.HasIndex(row => new { row.BrandId, row.BatchId });
+            pause.Property(row => row.CampaignType).HasMaxLength(20);
+            pause.Property(row => row.CampaignResource).HasMaxLength(200);
+            pause.Property(row => row.AdResource).HasMaxLength(200);
+            pause.Property(row => row.State).HasMaxLength(20);
+        });
+        modelBuilder.Entity<StockWatch>(watch =>
+        {
+            watch.HasKey(row => row.BrandId);
+            watch.HasIndex(row => row.NextCheckAt);
+            watch.Property(row => row.ClaimToken).IsConcurrencyToken();
         });
     }
 }
