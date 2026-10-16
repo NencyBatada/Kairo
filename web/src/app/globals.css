@@ -148,7 +148,7 @@
   --color-chart-6: var(--chart-6);
   --color-chart-7: var(--chart-7);
   --color-chart-8: var(--chart-8);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --shadow-popover: var(--popover-shadow);
