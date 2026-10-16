@@ -1,4 +1,5 @@
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Checks;
 
 namespace Kairo.Modules.CampaignRooms.Assets;
 
@@ -50,7 +51,10 @@ internal sealed record AssetView(
     string? MediaUrl,
     AssetContentView Content,
     AssetDisclosureView Disclosure,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    AssetCheckView Check,
+    bool CanOverride,
+    bool CanSendBack);
 
 internal sealed record AssetGroupView(string CampaignType, string Label, string Language, string? LanguageName, AssetView[] Assets);
 
@@ -60,7 +64,9 @@ internal sealed record AssetSetView(
     bool CanEdit,
     string? EditBlocker,
     string[] Languages,
-    AssetGroupView[] Groups);
+    AssetGroupView[] Groups,
+    AssetSetCheckView Check,
+    bool CanSendBack);
 
 internal sealed record AssetRegenerationView(Guid RunId, AssetView Asset);
 
@@ -86,8 +92,9 @@ internal static class AssetViews
 {
     public static readonly string[] CampaignTypeOrder = [BriefChoices.Search, BriefChoices.Shopping, BriefChoices.DemandGen];
 
-    public static AssetView View(Asset asset, AssetVersion version, Guid brandId)
+    public static AssetView View(Asset asset, AssetVersion version, Guid brandId, AssetCheckView? check = null, bool reviewing = false)
     {
+        var checkView = check ?? AssetCheckView.StateOnly(asset.CheckState);
         var content = version.Read();
         return new AssetView(
             asset.Id,
@@ -108,7 +115,10 @@ internal static class AssetViews
             content.Media is null ? null : MediaUrl(brandId, asset.RoomId, asset.Id, version.Version),
             Content(content),
             Disclosure(DisclosureRules.For(asset.Kind, content)),
-            asset.UpdatedAt);
+            asset.UpdatedAt,
+            checkView,
+            reviewing && CheckViews.CanOverride(checkView),
+            reviewing);
     }
 
     public static AssetDisclosureView Disclosure(AssetDisclosure disclosure) => new(

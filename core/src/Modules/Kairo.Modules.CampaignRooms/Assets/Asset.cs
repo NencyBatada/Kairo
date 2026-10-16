@@ -203,6 +203,7 @@ internal static class AssetCheckStates
     public const string Unchecked = "unchecked";
     public const string Passed = "passed";
     public const string Failed = "failed";
+    public const string Overridden = "overridden";
 }
 
 internal static class AssetStatuses

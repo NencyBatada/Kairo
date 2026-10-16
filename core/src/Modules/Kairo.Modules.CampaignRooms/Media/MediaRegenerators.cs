@@ -56,7 +56,7 @@ internal sealed class VideoRegenerator(MediaDesk desk, VideoMaker maker) : IAsse
         }
 
         var language = context.Asset.Language;
-        var newFootage = VideoMaker.NeedsNewFootage(context.Instruction);
+        var newFootage = context.NewVisuals ?? VideoMaker.NeedsNewFootage(context.Instruction);
         var lockedVoiceover = (await desk.CurrentAsync(context.Room.Id, language, AssetKinds.Voiceover, cancellationToken))
             .FirstOrDefault(entry => entry.Asset.Locked);
         var voice = new VideoVoice(

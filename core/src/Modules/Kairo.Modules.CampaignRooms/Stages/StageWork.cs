@@ -15,6 +15,10 @@ internal interface IStageWork
 
     string? NextKind(StageRun run, StageOutcome outcome) => FollowUp;
 
+    string? NextInput(StageRun run, StageOutcome outcome) => null;
+
+    string? SignalAfterSave(StageRun run, StageOutcome outcome) => null;
+
     int MaxAttempts => StageRunner.MaxAttempts;
 
     int AttemptsFor(StageRun run) => MaxAttempts;

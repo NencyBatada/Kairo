@@ -38,6 +38,13 @@ internal static class CampaignRoomsSetup
         services.AddScoped<AssetApproval>();
         services.AddScoped<AssetHistory>();
         services.AddScoped<CheckSettingsStore>();
+        services.AddScoped<AssetReworker>();
+        services.AddScoped<CheckAgent>();
+        services.AddScoped<CheckLedger>();
+        services.AddScoped<CheckViews>();
+        services.AddScoped<CheckReview>();
+        services.AddScoped<IStageWork, CheckWork>();
+        services.AddScoped<IStageWork, CheckFixWork>();
         services.AddScoped<IStageWork, CopyWork>();
         services.AddScoped<IStageWork, AssetRegenerateWork>();
         services.AddScoped<IAssetRegenerator, TextRegenerator>();
@@ -81,5 +88,8 @@ internal static class CampaignRoomsSetup
         campaigns.MapGet("/{campaignId:guid}/assets/{assetId:guid}/file", MediaEndpoints.FileAsync);
         campaigns.MapGet("/{campaignId:guid}/assets/{assetId:guid}/history", AssetEndpoints.HistoryAsync);
         campaigns.MapPost("/{campaignId:guid}/assets/skip-video", MediaEndpoints.SkipVideoAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/assets/send-back", CheckEndpoints.SendBackAsync).RequireBrandRole(BrandRoles.Approver);
+        campaigns.MapPost("/{campaignId:guid}/assets/check", CheckEndpoints.RequestCheckAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/assets/{assetId:guid}/override", CheckEndpoints.OverrideAsync).RequireBrandRole(BrandRoles.Approver);
     }
 }

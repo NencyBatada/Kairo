@@ -28,6 +28,8 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
 
     public DbSet<CheckSettings> CheckSettings => Set<CheckSettings>();
 
+    public DbSet<CheckResult> CheckResults => Set<CheckResult>();
+
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
@@ -135,6 +137,16 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             settings.HasKey(s => s.BrandId);
             settings.OwnsMany(s => s.Rules, rule => rule.ToJson());
             settings.OwnsMany(s => s.CustomRules, rule => rule.ToJson());
+        });
+
+        modelBuilder.Entity<CheckResult>(result =>
+        {
+            result.ToTable("CheckResults");
+            result.HasKey(r => r.Id).IsClustered(false);
+            result.HasIndex(r => new { r.BrandId, r.RoomId, r.AssetId, r.AssetVersion, r.CreatedAt }).IsClustered();
+            result.Property(r => r.Model).HasMaxLength(100);
+            result.Property(r => r.PromptVersion).HasMaxLength(100);
+            result.Property(r => r.OverrideReason).HasMaxLength(CheckResultLimits.MaxReason);
         });
     }
 

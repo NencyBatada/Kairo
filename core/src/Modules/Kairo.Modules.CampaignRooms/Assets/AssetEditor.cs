@@ -1,4 +1,6 @@
 using Kairo.Contracts.Audit;
+using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -30,6 +32,9 @@ internal sealed class AssetEditor(
     StageQueue queue,
     AssetStore store,
     IEnumerable<IAssetRegenerator> regenerators,
+    CheckViews checkViews,
+    CheckSettingsStore checkSettings,
+    AssetApproval approval,
     IAuditLog audit,
     TimeProvider time,
     CurrentMember member)
@@ -65,17 +70,28 @@ internal sealed class AssetEditor(
             join version in db.AssetVersions.AsNoTracking()
                 on new { AssetId = asset.Id, Version = asset.CurrentVersion } equals new { version.AssetId, version.Version }
             select new { asset, version }).ToListAsync(cancellationToken);
-        var views = current.Select(row => AssetViews.View(row.asset, row.version, room.BrandId)).ToList();
+        var checks = await checkViews.ForAsync(room.Id, room.BrandId, [.. current.Select(row => (row.asset, row.version))], cancellationToken);
+        var reviewing = await ReviewingAsync(room, cancellationToken);
+        var views = current.Select(row => AssetViews.View(row.asset, row.version, room.BrandId, checks[row.asset.Id], reviewing)).ToList();
         var blocker = EditBlocker(room);
         var shown = language is null ? views : views.Where(view => view.Language == language || view.Language == CreativeLanguages.None).ToList();
+        var settings = await checkSettings.GetAsync(room.BrandId, cancellationToken);
+        var approveBlocker = room.PendingGate == RoomGates.Assets ? await approval.BlockerAsync(room.Id, cancellationToken) : null;
         return new AssetSetView(
             room.Id,
             room.State,
             member.Has(BrandRoles.Marketer) && blocker is null && views.Count > 0,
             blocker,
             [.. views.Select(view => view.Language).Where(code => code != CreativeLanguages.None).Distinct().OrderBy(AssetViews.LanguageOrder)],
-            AssetViews.Groups(shown));
+            AssetViews.Groups(shown),
+            CheckViews.Summary(views, settings, approveBlocker),
+            reviewing && views.Count > 0);
     }
+
+    public async Task<bool> ReviewingAsync(Room room, CancellationToken cancellationToken) =>
+        room.State == RoomStates.AssetReview
+        && room.PendingGate == RoomGates.Assets
+        && await workflow.MayApproveAsync(room.BrandId, RoomGates.Assets, ApprovalRoutes.Approvers, member, cancellationToken);
 
     public async Task<AssetResult<AssetView>> EditAsync(Guid roomId, Guid assetId, AssetEditRequest request, CancellationToken cancellationToken)
     {

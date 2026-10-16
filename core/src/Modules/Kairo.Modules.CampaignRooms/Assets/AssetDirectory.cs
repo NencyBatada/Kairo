@@ -1,11 +1,12 @@
 using System.Text.Json;
 using Kairo.Contracts.CampaignRooms;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.SharedKernel.Files;
 
 namespace Kairo.Modules.CampaignRooms.Assets;
 
-internal sealed class AssetDirectory(CampaignRoomsDbContext db) : IAssets
+internal sealed class AssetDirectory(CampaignRoomsDbContext db, CheckLedger ledger) : IAssets
 {
     public async Task<IReadOnlyList<CampaignAsset>> GetCurrentAsync(Guid roomId, CancellationToken cancellationToken)
     {
@@ -15,6 +16,7 @@ internal sealed class AssetDirectory(CampaignRoomsDbContext db) : IAssets
             join version in db.AssetVersions.AsNoTracking()
                 on new { AssetId = asset.Id, Version = asset.CurrentVersion } equals new { version.AssetId, version.Version }
             select new { asset, version }).ToListAsync(cancellationToken);
+        var results = await ledger.LatestForRoomAsync(roomId, cancellationToken);
         return
         [
             .. current
@@ -22,7 +24,7 @@ internal sealed class AssetDirectory(CampaignRoomsDbContext db) : IAssets
                 .ThenBy(row => row.asset.Language, StringComparer.Ordinal)
                 .ThenBy(row => AssetKinds.Order(row.asset.Kind))
                 .ThenBy(row => row.asset.Key, StringComparer.Ordinal)
-                .Select(row => Of(row.asset, row.version)),
+                .Select(row => Of(row.asset, row.version, results.GetValueOrDefault((row.asset.Id, row.version.Version)))),
         ];
     }
 
@@ -36,10 +38,10 @@ internal sealed class AssetDirectory(CampaignRoomsDbContext db) : IAssets
 
         var row = await db.AssetVersions.AsNoTracking()
             .SingleOrDefaultAsync(entry => entry.AssetId == assetId && entry.Version == version, cancellationToken);
-        return row is null ? null : Of(asset, row);
+        return row is null ? null : Of(asset, row, await ledger.LatestAsync(asset.Id, version, cancellationToken));
     }
 
-    public static CampaignAsset Of(Asset asset, AssetVersion version)
+    public static CampaignAsset Of(Asset asset, AssetVersion version, CheckResult? check)
     {
         var content = version.Read();
         var provenance = version.ReadProvenance();
@@ -83,6 +85,8 @@ internal sealed class AssetDirectory(CampaignRoomsDbContext db) : IAssets
                 version.CreatedBy,
                 version.CreatedAt,
                 version.ApprovedBy,
-                version.ApprovedAt));
+                version.ApprovedAt),
+            check?.Score,
+            check?.OverriddenAt is not null);
     }
 }

@@ -21,19 +21,7 @@ internal sealed class TextRegenerator(CopyDesk desk, CopyAgent agent) : IAssetRe
                 context.Asset.Language,
                 context.Instruction,
                 context.Asset.Kind,
-                new AssetTextData(
-                    context.Asset.AdGroup is { } group ? CopyDesk.Cut(group, 100) : null,
-                    [.. context.Asset.ProductIds.Select(copy.KeyOf).OfType<string>()],
-                    [.. (content.Keywords ?? []).Take(50).Select(keyword => new CopyKeyword(CopyDesk.Cut(keyword.Text, 200), keyword.Match))],
-                    Lines(content.Headlines, 15),
-                    Lines(content.LongHeadlines, 5),
-                    Lines(content.Descriptions, 5),
-                    content.Path1,
-                    content.Path2,
-                    content.BusinessName,
-                    content.CallToAction,
-                    content.Title is { } title ? CopyDesk.Cut(title, 300) : null,
-                    content.CurrentTitle is { } current ? CopyDesk.Cut(current, 300) : null),
+                Data(context.Asset, content, copy),
                 copy.BriefData(),
                 copy.ProductData(),
                 copy.BrandKit),
@@ -52,6 +40,20 @@ internal sealed class TextRegenerator(CopyDesk desk, CopyAgent agent) : IAssetRe
         var summary = AdLimits.Tidy(answer.Summary) is { Length: > 0 } said ? CopyDesk.Cut(said, 300) : "Rewrote the asset.";
         return new AssetRegeneration(next, answer.Model, answer.PromptVersion, answer.Usage, summary);
     }
+
+    public static AssetTextData Data(Asset asset, AssetContent content, CopyContext copy) => new(
+        asset.AdGroup is { } group ? CopyDesk.Cut(group, 100) : null,
+        [.. asset.ProductIds.Select(copy.KeyOf).OfType<string>()],
+        [.. (content.Keywords ?? []).Take(50).Select(keyword => new CopyKeyword(CopyDesk.Cut(keyword.Text, 200), keyword.Match))],
+        Lines(content.Headlines, 15),
+        Lines(content.LongHeadlines, 5),
+        Lines(content.Descriptions, 5),
+        content.Path1,
+        content.Path2,
+        content.BusinessName,
+        content.CallToAction,
+        content.Title is { } title ? CopyDesk.Cut(title, 300) : null,
+        content.CurrentTitle is { } current ? CopyDesk.Cut(current, 300) : null);
 
     public static AssetContent Apply(string kind, AssetContent current, RevisedText revised)
     {

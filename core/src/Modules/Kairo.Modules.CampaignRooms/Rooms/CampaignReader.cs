@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Kairo.Contracts.Identity;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Stages;
 
@@ -10,6 +12,7 @@ internal sealed class CampaignReader(
     CampaignRoomsDbContext db,
     RoomWorkflow workflow,
     BriefGate briefGate,
+    AssetApproval assetApproval,
     IBrandMembers members,
     CurrentMember member)
 {
@@ -153,6 +156,8 @@ internal sealed class CampaignReader(
         StageKinds.Brief or StageKinds.StarterBrief => "The Plan agent is drafting the brief.",
         StageKinds.CreateCopy => "The Create agent is writing the ads.",
         StageKinds.AssetRegenerate => "The Create agent is rewriting an asset.",
+        StageKinds.Check => "Brand Guardian is checking the assets.",
+        StageKinds.CheckFix => "Brand Guardian is fixing assets that failed a check.",
         _ => $"The {StageProgress.ActorName(run.Agent)} is working on this stage.",
     };
 
@@ -178,14 +183,20 @@ internal sealed class CampaignReader(
             && room.Status != RoomStatuses.AgentWorking
             && (stateGate != RoomGates.Brief || hasBrief);
         var blocker = canRequest && stateGate == RoomGates.Brief ? (await briefGate.CheckAsync(room, cancellationToken)).Problem : null;
+        var approveBlocker = room.PendingGate == RoomGates.Assets && mayApprove ? await assetApproval.BlockerAsync(room.Id, cancellationToken) : null;
+        var requestCheck = marketer
+            && CheckReview.CheckBlocker(room) is null
+            && await db.Assets.AnyAsync(asset => asset.RoomId == room.Id && asset.Status == AssetStatuses.Active && !asset.Hidden, cancellationToken);
         return new CampaignActionsView(
             canRequest && blocker is null ? stateGate : null,
-            room.PendingGate is not null && mayApprove ? room.PendingGate : null,
+            room.PendingGate is not null && mayApprove && approveBlocker is null ? room.PendingGate : null,
             maySendBack ? [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
             marketer && RoomLifecycle.CanDiscard(room.State),
             marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null,
             blocker,
-            marketer && latest is { Status: StageRunStatuses.Failed, Kind: StageKinds.CreateVideo });
+            marketer && latest is { Status: StageRunStatuses.Failed, Kind: StageKinds.CreateVideo },
+            approveBlocker,
+            requestCheck);
     }
 
     public static CampaignBriefView BriefView(Brief brief)

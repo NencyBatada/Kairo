@@ -304,6 +304,75 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     b.ToTable("BriefProposals", "campaign_rooms");
                 });
 
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AssetVersion")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("FailedFixes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Issues")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("OverriddenAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("OverriddenBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OverrideReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("Passed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SettingsVersion")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "AssetId", "AssetVersion", "CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "AssetId", "AssetVersion", "CreatedAt"));
+
+                    b.ToTable("CheckResults", "campaign_rooms");
+                });
+
             modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckSettings", b =>
                 {
                     b.Property<Guid>("BrandId")

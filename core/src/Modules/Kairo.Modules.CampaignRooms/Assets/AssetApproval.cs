@@ -19,8 +19,38 @@ internal sealed class AssetApproval(
     public const string MissingFile = "A media file in this set is missing. Send the assets back so Kairo can make it again.";
     public const string StorageFailed = "Kairo couldn't keep the approved media files. Try approving again.";
 
+    public async Task<string?> BlockerAsync(Guid roomId, CancellationToken cancellationToken)
+    {
+        var states = await db.Assets
+            .Where(asset => asset.RoomId == roomId && asset.Status == AssetStatuses.Active && !asset.Hidden)
+            .Select(asset => asset.CheckState)
+            .ToListAsync(cancellationToken);
+        var waiting = states.Count(state => state == AssetCheckStates.Unchecked);
+        var flagged = states.Count(state => state == AssetCheckStates.Failed);
+        if (waiting > 0)
+        {
+            return waiting == 1
+                ? "1 asset hasn't been checked by Brand Guardian yet. Send it back so it can be checked."
+                : $"{waiting} assets haven't been checked by Brand Guardian yet. Send them back so they can be checked.";
+        }
+
+        if (flagged > 0)
+        {
+            return flagged == 1
+                ? "1 asset still has open issues. Override its flag with a reason, or send it back."
+                : $"{flagged} assets still have open issues. Override each flag with a reason, or send the assets back.";
+        }
+
+        return null;
+    }
+
     public async Task<ApprovedAssets> ApproveAsync(Guid roomId, Guid approverId, CancellationToken cancellationToken)
     {
+        if (await BlockerAsync(roomId, cancellationToken) is { } blocker)
+        {
+            return ApprovedAssets.Failed(blocker);
+        }
+
         var current = await (
             from asset in db.Assets
             where asset.RoomId == roomId && asset.Status == AssetStatuses.Active && !asset.Hidden

@@ -55,4 +55,6 @@ public sealed record CampaignAsset(
     JsonElement Content,
     CampaignAssetFile? File,
     CampaignAssetDisclosure Disclosure,
-    CampaignAssetProvenance Provenance);
+    CampaignAssetProvenance Provenance,
+    int? Score,
+    bool Overridden);

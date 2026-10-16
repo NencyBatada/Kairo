@@ -292,7 +292,7 @@ internal static class CampaignEndpoints
         return TypedResults.Ok(await reader.DetailAsync(room, cancellationToken));
     }
 
-    private static async Task<Results<Ok<CampaignDetail>, NotFound, ProblemHttpResult, ValidationProblem>> ResultAsync(
+    public static async Task<Results<Ok<CampaignDetail>, NotFound, ProblemHttpResult, ValidationProblem>> ResultAsync(
         MoveResult result,
         CampaignReader reader,
         CancellationToken cancellationToken) => result.Error switch

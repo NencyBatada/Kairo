@@ -99,7 +99,7 @@ internal static class AssetEndpoints
             ? null
             : new Dictionary<string, string[]> { ["version"] = ["Send the asset's version from when you opened it."] };
 
-    private static Results<Ok<T>, NotFound, ProblemHttpResult, ValidationProblem> Result<T>(AssetResult<T> result)
+    public static Results<Ok<T>, NotFound, ProblemHttpResult, ValidationProblem> Result<T>(AssetResult<T> result)
         where T : class => result.Error switch
         {
             AssetError.None => TypedResults.Ok(result.Value!),

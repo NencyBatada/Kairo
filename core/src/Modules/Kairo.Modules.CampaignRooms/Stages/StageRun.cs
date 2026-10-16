@@ -66,4 +66,5 @@ internal static class StageKinds
     public const string CreateVideo = "create_video";
     public const string AssetRegenerate = "asset_regenerate";
     public const string Check = "check";
+    public const string CheckFix = "check_fix";
 }
