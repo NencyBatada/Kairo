@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { detail, draftRoom, proof, proposal } from "../fixtures.test-data";
 import { BriefWorkspace } from "./brief-workspace";
@@ -9,7 +9,8 @@ const { saveBrief, proposeBrief, applyBrief, requestBriefApproval, decideBrief }
 vi.mock("../actions", () => ({ saveBrief, proposeBrief, applyBrief, requestBriefApproval, decideBrief }));
 const now = Date.parse("2026-10-16T01:00:00Z");
 const props = { detail, room: draftRoom, proof, brandId: "brand-1", canEdit: true, timeZone: "Asia/Kolkata", now, children: <ProofSummary result={proof} /> };
-beforeEach(() => { vi.clearAllMocks(); saveBrief.mockResolvedValue({ status: "saved", message: "Saved", detail }); proposeBrief.mockResolvedValue({ status: "saved", message: "Preview ready", proposal }); applyBrief.mockResolvedValue({ status: "saved", message: "Applied", detail }); requestBriefApproval.mockResolvedValue({ status: "saved", message: "Requested" }); decideBrief.mockResolvedValue({ status: "saved", message: "Approved" }); });
+beforeEach(() => { vi.clearAllMocks(); vi.spyOn(Date, "now").mockReturnValue(now); saveBrief.mockResolvedValue({ status: "saved", message: "Saved", detail }); proposeBrief.mockResolvedValue({ status: "saved", message: "Preview ready", proposal }); applyBrief.mockResolvedValue({ status: "saved", message: "Applied", detail }); requestBriefApproval.mockResolvedValue({ status: "saved", message: "Requested" }); decideBrief.mockResolvedValue({ status: "saved", message: "Approved" }); });
+afterEach(() => vi.restoreAllMocks());
 
 test("shows every editable field, reasoning, test numbers and localized history", () => {
   render(<BriefWorkspace {...props} />);
