@@ -123,7 +123,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Checks and automatic fixes**: Checks brand rules, ad policies, format specs, YouTube's ABCD principles and product accuracy, scores each asset and fixes failures up to 3 times.
+- [x] **Checks and automatic fixes**: Checks brand rules, ad policies, format specs, YouTube's ABCD principles and product accuracy, scores each asset and fixes failures up to 3 times. *Note: after checks finish the room stays in creating and the marketer requests gate 2; gate 2 needs every flag passed or overridden. The `gemini-3.5-pro` check model still needs a first real Vertex call, and the 95% planted-issue test set is not built yet.*
 - [x] **Check settings**: Stores the rules and pass thresholds that admins can tune. *Note: format limits and media specs are fixed and can't be overridden, alongside political content, because Google Ads would reject those ads.*
 
 ### Nency (web app)
