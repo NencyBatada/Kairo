@@ -6,8 +6,10 @@ const { getRoom, get } = vi.hoisted(() => ({ getRoom: vi.fn(), get: vi.fn() }));
 vi.mock("../_lib/room", () => ({ getRoom }));
 vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown }) => result.data }));
 vi.mock("./history-action", () => ({ loadAssetHistory: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("./actions", () => ({ saveAsset: vi.fn(), setAssetLock: vi.fn(), regenerateAsset: vi.fn() }));
 const params = Promise.resolve({ workspace: "acme", id: campaignId });
-beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ brandId, timeZone: "Asia/Kolkata" }); get.mockResolvedValue({ data: assetSet([asset(), asset({ id: "hi", language: "hi" }), asset({ id: "shared", language: "zxx", kind: "image" })]) }); });
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ brandId, timeZone: "Asia/Kolkata", room: { runs: [] } }); get.mockResolvedValue({ data: assetSet([asset(), asset({ id: "hi", language: "hi" }), asset({ id: "shared", language: "zxx", kind: "image" })]) }); });
 test("scopes reads and preserves shared assets when filtering language", async () => {
   render(await Page({ params, searchParams: Promise.resolve({ language: "hi", type: "search" }) }));
   expect(getRoom).toHaveBeenCalledWith("acme", campaignId); expect(get.mock.calls[0][1].params.path).toEqual({ brandId, campaignId });
