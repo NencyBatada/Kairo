@@ -160,20 +160,50 @@ public sealed class CampaignWorld : IAsyncDisposable
         return await approved.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
     }
 
-    public async Task<JsonElement> LaunchAsync(Guid roomId)
+    public async Task<JsonElement> ReadyForLaunchAsync(Guid roomId)
     {
         await ApproveBriefAsync(roomId);
-        Assert.Equal(CampaignAdvance.Moved, await SignalAsync(roomId, CampaignSignals.AssetsChecked));
+        for (var i = 0; i < 10 && await RunStagesAsync() > 0; i++) { }
+        var creating = await Campaigns.DetailAsync(Marketer, BrandId, roomId);
+        using var requestAssets = await Campaigns.PostAsync(Marketer, BrandId, roomId, "approval-requests", new { gate = "assets", version = Campaigns.Version(creating) });
+        Assert.Equal(HttpStatusCode.OK, requestAssets.StatusCode);
         var review = await Campaigns.DetailAsync(Approver.Browser, BrandId, roomId);
         using var assets = await Campaigns.PostAsync(Approver.Browser, BrandId, roomId, "approve", new { gate = "assets", version = Campaigns.Version(review) });
         Assert.Equal(HttpStatusCode.OK, assets.StatusCode);
         var ready = await assets.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+        return await ConfigureLaunchAsync(roomId);
+    }
+
+    public async Task<JsonElement> LaunchAsync(Guid roomId)
+    {
+        var ready = await ReadyForLaunchAsync(roomId);
         using var requested = await Campaigns.PostAsync(Marketer, BrandId, roomId, "approval-requests", new { gate = "launch", version = Campaigns.Version(ready) });
         Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
         var waiting = await requested.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
         using var launched = await Campaigns.PostAsync(Approver.Browser, BrandId, roomId, "approve", new { gate = "launch", version = Campaigns.Version(waiting) });
         Assert.Equal(HttpStatusCode.OK, launched.StatusCode);
         return await launched.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
+    }
+
+    public async Task<JsonElement> ConfigureLaunchAsync(Guid roomId)
+    {
+        var detail = await Campaigns.DetailAsync(Marketer, BrandId, roomId);
+        var brief = (await Campaigns.BriefAsync(Marketer, BrandId, roomId)).GetProperty("brief");
+        var types = brief.GetProperty("campaignTypes").EnumerateArray().Select(type => type.GetString()!).ToArray();
+        if (types.Contains("shopping")) await Connections.ConnectAsync(Api, Admin, BrandId, "merchant-center");
+        var budget = brief.GetProperty("budget").GetProperty("amount").GetDecimal();
+        using var response = await Marketer.PutAsJsonAsync($"{Campaigns.Base(BrandId)}/{roomId}/launch-plan", new
+        {
+            version = Campaigns.Version(detail),
+            settings = new
+            {
+                channels = types.Select((type, index) => new { campaignType = type, budget = index == types.Length - 1 ? budget - decimal.Floor(budget / types.Length) * (types.Length - 1) : decimal.Floor(budget / types.Length), biddingStrategy = "maximize_clicks" }),
+                salesCountry = "IN",
+                geoTargetIds = new Dictionary<string, string> { ["mumbai"] = "1007785", ["pune"] = "1007788", ["nagpur"] = "1007790", ["nashik"] = "1007791", ["chennai"] = "1007809" },
+            },
+        }, Campaigns.Token);
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync(Campaigns.Token));
+        return await Campaigns.DetailAsync(Marketer, BrandId, roomId);
     }
 
     public void LoadCityHistory()

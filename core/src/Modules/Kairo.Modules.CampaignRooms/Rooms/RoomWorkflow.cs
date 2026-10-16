@@ -8,6 +8,8 @@ using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Stages;
+using Kairo.Contracts.Approvals;
+using Kairo.Modules.CampaignRooms.LaunchPlans;
 
 namespace Kairo.Modules.CampaignRooms.Rooms;
 
@@ -45,6 +47,9 @@ internal sealed class RoomWorkflow(
     INotifications notifications,
     StageQueue queue,
     AssetApproval assetApproval,
+    ApprovalSnapshots snapshots,
+    IApprovalLocks approvalLocks,
+    LaunchPlanDesk launchPlans,
     TimeProvider time)
 {
     public const string AuditTarget = "campaign_room";
@@ -69,7 +74,7 @@ internal sealed class RoomWorkflow(
     }
 
     public async Task<BriefRoute> RouteAsync(Room room, string gate, CancellationToken cancellationToken) =>
-        gate == RoomGates.Brief ? await briefGate.RouteAsync(room, cancellationToken) : BriefRoute.Approvers;
+        gate is RoomGates.Brief or RoomGates.Launch ? await briefGate.RouteAsync(room, cancellationToken) : BriefRoute.Approvers;
 
     public async Task<IReadOnlyList<BrandMember>> ApproversAsync(Guid brandId, string gate, string route, IReadOnlyList<BrandMember> members, CancellationToken cancellationToken)
     {
@@ -161,10 +166,21 @@ internal sealed class RoomWorkflow(
             return MoveResult.Done(room);
         }
 
-        room.GateRoute = check?.Route.Route;
+        if (gate == RoomGates.Launch && await launchPlans.BlockerAsync(room.Id, cancellationToken) is { } launchBlocker)
+        {
+            return MoveResult.Failed(MoveError.NotAllowed, launchBlocker);
+        }
+
+        var requestedRoute = gate == RoomGates.Launch ? await briefGate.RouteAsync(room, cancellationToken) : check?.Route ?? BriefRoute.Approvers;
+        if (requestedRoute.ToBudgetOwner && (await approvers.ForAsync(room.BrandId, ApprovalDuty.BudgetOwner, cancellationToken)).Count == 0)
+        {
+            return MoveResult.Failed(MoveError.NotAllowed, BriefGate.NoBudgetOwner);
+        }
+
+        room.GateRoute = requestedRoute.Route;
         room.GateBriefVersion = check?.BriefVersion;
         room.GatePlanVersion = check?.PlanVersion;
-        await RequestGateAsync(room, gate, member.UserId, check?.Route ?? BriefRoute.Approvers, cancellationToken);
+        await RequestGateAsync(room, gate, member.UserId, requestedRoute, cancellationToken);
         Touch(room);
         var details = check is null
             ? (object)new { gate }
@@ -204,9 +220,25 @@ internal sealed class RoomWorkflow(
             route = await briefGate.RouteAsync(room, cancellationToken);
         }
 
+        if (gate == RoomGates.Launch)
+        {
+            route = await briefGate.RouteAsync(room, cancellationToken);
+        }
+
         if (!await MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken))
         {
             return MoveResult.Failed(MoveError.NotApprover, NotApproverMessage(room, route));
+        }
+
+        var approvedSnapshot = await GateSnapshotAsync(room.Id, gate, cancellationToken);
+        if (room.GateHash is null || room.GateHash != ApprovalHash.Of(approvedSnapshot))
+        {
+            return MoveResult.Failed(MoveError.NotAllowed, "The plan changed or has no approval snapshot. Send it back and request approval again.");
+        }
+
+        if (gate == RoomGates.Launch && await launchPlans.BlockerAsync(room.Id, cancellationToken) is { } launchBlocker)
+        {
+            return MoveResult.Failed(MoveError.NotAllowed, launchBlocker);
         }
 
         ApprovedAssets? assets = null;
@@ -228,6 +260,7 @@ internal sealed class RoomWorkflow(
         }
 
         ClearGate(room);
+        await approvalLocks.ApproveAsync(room.Id, gate, member.UserId, approvedSnapshot, cancellationToken);
         await EnterAsync(room, next, cancellationToken);
         var locked = next == RoomStates.Launching ? await LockPlanAsync(room.Id, cancellationToken) : null;
         await notifications.ResolveAsync(GateSubject(room.Id, gate), cancellationToken);
@@ -474,6 +507,14 @@ internal sealed class RoomWorkflow(
 
     private async Task EnterAsync(Room room, string state, CancellationToken cancellationToken, bool startCreate = true, Guid? requestedBy = null)
     {
+        var invalidates = state switch
+        {
+            RoomStates.BriefDraft => RoomGates.All,
+            RoomStates.Creating or RoomStates.AssetReview => new[] { RoomGates.Assets, RoomGates.Launch },
+            RoomStates.ReadyToLaunch => new[] { RoomGates.Launch },
+            _ => Array.Empty<string>(),
+        };
+        if (invalidates.Length > 0) await approvalLocks.InvalidateAsync(room.Id, invalidates, cancellationToken);
         var leaving = room.State;
         room.State = state;
         room.StateEnteredAt = time.GetUtcNow();
@@ -507,6 +548,7 @@ internal sealed class RoomWorkflow(
 
     private async Task RequestGateAsync(Room room, string gate, Guid? requestedBy, BriefRoute route, CancellationToken cancellationToken)
     {
+        room.GateHash = ApprovalHash.Of(await GateSnapshotAsync(room.Id, gate, cancellationToken));
         room.PendingGate = gate;
         room.GateRequestedBy = requestedBy;
         room.GateRequestedAt = time.GetUtcNow();
@@ -528,6 +570,7 @@ internal sealed class RoomWorkflow(
 
     private static void ClearGate(Room room)
     {
+        room.GateHash = null;
         room.PendingGate = null;
         room.GateRequestedBy = null;
         room.GateRequestedAt = null;
@@ -549,6 +592,13 @@ internal sealed class RoomWorkflow(
         (await brands.GetAsync([brandId], cancellationToken)).Single();
 
     private static object Snapshot(Room room) => new { room.State, room.Status, room.PendingGate };
+
+    private async Task<string> GateSnapshotAsync(Guid roomId, string gate, CancellationToken cancellationToken) => gate switch
+    {
+        RoomGates.Brief => await snapshots.BriefAsync(roomId, cancellationToken),
+        RoomGates.Assets => await snapshots.AssetsSnapshotAsync(roomId, cancellationToken),
+        _ => await launchPlans.GetAsync(roomId, cancellationToken) is { } plan ? LaunchPlanDesk.Serialize(plan) : "{}",
+    };
 
     private static string? Trimmed(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 

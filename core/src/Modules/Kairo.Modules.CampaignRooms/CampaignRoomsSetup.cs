@@ -6,6 +6,8 @@ using Kairo.Modules.CampaignRooms.Media;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
+using Kairo.Modules.CampaignRooms.LaunchPlans;
+using Kairo.Contracts.Launch;
 
 namespace Kairo.Modules.CampaignRooms;
 
@@ -13,6 +15,9 @@ internal static class CampaignRoomsSetup
 {
     public static void AddCampaignRooms(this IServiceCollection services)
     {
+        services.AddScoped<ApprovalSnapshots>();
+        services.AddScoped<LaunchPlanDesk>();
+        services.AddScoped<ILaunchPlans>(provider => provider.GetRequiredService<LaunchPlanDesk>());
         services.AddScoped<RoomWorkflow>();
         services.AddScoped<CampaignReader>();
         services.AddScoped<StageQueue>();
@@ -65,6 +70,8 @@ internal static class CampaignRoomsSetup
         api.ServiceProvider.GetRequiredService<StageLoopSwitch>().TurnOn();
         api.MapCheckSettings();
         var campaigns = api.MapBrandApi().MapGroup("/campaigns");
+        campaigns.MapGet("/{campaignId:guid}/launch-plan", LaunchPlanEndpoints.GetAsync);
+        campaigns.MapPut("/{campaignId:guid}/launch-plan", LaunchPlanEndpoints.UpdateAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("", CampaignEndpoints.ListAsync);
         campaigns.MapGet("/{campaignId:guid}", CampaignEndpoints.GetAsync);
         campaigns.MapGet("/{campaignId:guid}/activity", CampaignEndpoints.ActivityAsync);

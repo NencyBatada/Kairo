@@ -1,4 +1,6 @@
 using Kairo.Contracts.Audit;
+using Kairo.Contracts.Approvals;
+using Kairo.Modules.CampaignRooms.LaunchPlans;
 using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
 using Kairo.Modules.CampaignRooms.Data;
@@ -13,6 +15,7 @@ internal sealed class CheckReview(
     StageQueue queue,
     AssetStore store,
     CheckLedger ledger,
+    ApprovalSnapshots snapshots,
     CheckViews views,
     IAuditLog audit,
     TimeProvider time,
@@ -76,6 +79,8 @@ internal sealed class CheckReview(
         result.OverrideReason = reason;
         asset.CheckState = AssetCheckStates.Overridden;
         workflow.Touch(room);
+        await db.SaveChangesAsync(cancellationToken);
+        room.GateHash = ApprovalHash.Of(await snapshots.AssetsSnapshotAsync(room.Id, cancellationToken));
         await db.SaveChangesAsync(cancellationToken);
         await audit.RecordAsync(
             new AuditRecord(

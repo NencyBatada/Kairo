@@ -5,6 +5,7 @@ using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
+using Kairo.Modules.CampaignRooms.LaunchPlans;
 
 namespace Kairo.Modules.CampaignRooms.Data;
 
@@ -30,10 +31,18 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
 
     public DbSet<CheckResult> CheckResults => Set<CheckResult>();
 
+    public DbSet<LaunchPlanDraft> LaunchPlans => Set<LaunchPlanDraft>();
+
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<LaunchPlanDraft>(draft =>
+        {
+            draft.HasKey(row => row.RoomId);
+            draft.ToTable("LaunchPlans");
+        });
+
         modelBuilder.Entity<Room>(room =>
         {
             room.ToTable("Rooms");
@@ -47,6 +56,7 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             room.Property(r => r.Status).HasMaxLength(20);
             room.Property(r => r.PendingGate).HasMaxLength(20);
             room.Property(r => r.GateRoute).HasMaxLength(20);
+            room.Property(r => r.GateHash).HasMaxLength(64);
             room.Property(r => r.RunStatus).HasMaxLength(20);
             room.Property(r => r.DiscardedFrom).HasMaxLength(20);
             room.Property(r => r.DiscardReason).HasMaxLength(RoomLimits.MaxReasonLength);

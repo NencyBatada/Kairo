@@ -1,0 +1,1087 @@
+using System;
+using Kairo.Modules.CampaignRooms.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
+#nullable disable
+
+namespace Kairo.Modules.CampaignRooms.Data.Migrations
+{
+    [DbContext(typeof(CampaignRoomsDbContext))]
+    [Migration("20261016094713_LaunchPlans")]
+    partial class LaunchPlans
+    {
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasDefaultSchema("campaign_rooms")
+                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Assets.Asset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdGroup")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CampaignType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CheckState")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CurrentVersion")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("DurationSeconds")
+                        .HasPrecision(9, 3)
+                        .HasColumnType("decimal(9,3)");
+
+                    b.Property<string>("Format")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("Height")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("LockedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("LockedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.PrimitiveCollection<string>("ProductIds")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("Width")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "Key")
+                        .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "Key"));
+
+                    b.ToTable("Assets", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Assets.AssetVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Instruction")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Provenance")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "AssetId", "Version")
+                        .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "AssetId", "Version"));
+
+                    b.ToTable("AssetVersions", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.Brief", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Instruction")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "Version")
+                        .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "Version"));
+
+                    b.ToTable("Briefs", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.BriefProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AppliedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.PrimitiveCollection<string>("Fields")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Instruction")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "CreatedAt"));
+
+                    b.ToTable("BriefProposals", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckResult", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AssetVersion")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("FailedFixes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Issues")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("OverriddenAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("OverriddenBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OverrideReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("Passed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SettingsVersion")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "AssetId", "AssetVersion", "CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "AssetId", "AssetVersion", "CreatedAt"));
+
+                    b.ToTable("CheckResults", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckSettings", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FixAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PassScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandId");
+
+                    b.ToTable("CheckSettings", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.LaunchPlans.LaunchPlanDraft", b =>
+                {
+                    b.Property<Guid>("RoomId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Settings")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("RoomId");
+
+                    b.ToTable("LaunchPlans", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.ProofPlans.ProofPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ApprovedWithWarnings")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangeReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("ChangedAfterLock")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("LockedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Method")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("StageRunId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "RoomId", "Version")
+                        .IsUnique();
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "Version"));
+
+                    b.ToTable("ProofPlans", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Rooms.Room", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DiscardReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("DiscardedFrom")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("GateBriefVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GateHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int?>("GatePlanVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("GateRequestedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("GateRequestedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("GateRoute")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("OpportunityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PendingGate")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("RunStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("StateEnteredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("BrandId", "CreatedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "CreatedAt"));
+
+                    b.HasIndex("BrandId", "OpportunityId")
+                        .IsUnique();
+
+                    b.HasIndex("BrandId", "State");
+
+                    b.HasIndex("BrandId", "Status");
+
+                    b.ToTable("Rooms", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Stages.StageRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Agent")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ClaimedUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Input")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("InputTokens")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Output")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OutputTokens")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PromptVersion")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("QueuedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("RequestedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"), false);
+
+                    b.HasIndex("Status", "NextAttemptAt");
+
+                    b.HasIndex("BrandId", "RoomId", "QueuedAt");
+
+                    SqlServerIndexBuilderExtensions.IsClustered(b.HasIndex("BrandId", "RoomId", "QueuedAt"));
+
+                    b.ToTable("StageRuns", "campaign_rooms");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.Brief", b =>
+                {
+                    b.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefContent", "Content", b1 =>
+                        {
+                            b1.Property<Guid>("BriefId");
+
+                            b1.Property<string>("Audience")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Audiences")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("CampaignTypes")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Channels")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("EndDate");
+
+                            b1.Property<string>("Goal")
+                                .IsRequired();
+
+                            b1.Property<string>("KeyMessage")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("KeyMessages")
+                                .IsRequired();
+
+                            b1.Property<string>("Kpi")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("LandingPages")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Languages")
+                                .IsRequired();
+
+                            b1.Property<string>("Objective")
+                                .IsRequired();
+
+                            b1.Property<string>("Offer");
+
+                            b1.PrimitiveCollection<string>("ProductIds")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Regions")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("StartDate");
+
+                            b1.Property<string>("Timing")
+                                .IsRequired();
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.HasKey("BriefId");
+
+                            b1.ToTable("Briefs", "campaign_rooms");
+
+                            b1
+                                .ToJson("Content")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BriefId");
+
+                            b1.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefBudget", "Budget", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefId");
+
+                                    b2.Property<decimal>("Amount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefId");
+
+                                    b2.ToTable("Briefs", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefId");
+                                });
+
+                            b1.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefReason", "Reasons", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Field")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Reason")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("Briefs", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefId");
+
+                                    b2.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefEvidence", "Evidence", b3 =>
+                                        {
+                                            b3.Property<Guid>("BriefReasonBriefContentBriefId");
+
+                                            b3.Property<int>("BriefReason__synthesizedOrdinal");
+
+                                            b3.Property<int>("__synthesizedOrdinal")
+                                                .ValueGeneratedOnAddOrUpdate();
+
+                                            b3.Property<string>("Label")
+                                                .IsRequired();
+
+                                            b3.Property<string>("Source");
+
+                                            b3.Property<string>("Value")
+                                                .IsRequired();
+
+                                            b3.HasKey("BriefReasonBriefContentBriefId", "BriefReason__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                            b3.ToTable("Briefs", "campaign_rooms");
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("BriefReasonBriefContentBriefId", "BriefReason__synthesizedOrdinal");
+                                        });
+
+                                    b2.Navigation("Evidence");
+                                });
+
+                            b1.Navigation("Budget");
+
+                            b1.Navigation("Reasons");
+                        });
+
+                    b.Navigation("Content")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Briefs.BriefProposal", b =>
+                {
+                    b.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefContent", "Content", b1 =>
+                        {
+                            b1.Property<Guid>("BriefProposalId");
+
+                            b1.Property<string>("Audience")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Audiences")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("CampaignTypes")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Channels")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("EndDate");
+
+                            b1.Property<string>("Goal")
+                                .IsRequired();
+
+                            b1.Property<string>("KeyMessage")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("KeyMessages")
+                                .IsRequired();
+
+                            b1.Property<string>("Kpi")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("LandingPages")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Languages")
+                                .IsRequired();
+
+                            b1.Property<string>("Objective")
+                                .IsRequired();
+
+                            b1.Property<string>("Offer");
+
+                            b1.PrimitiveCollection<string>("ProductIds")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Regions")
+                                .IsRequired();
+
+                            b1.Property<DateOnly?>("StartDate");
+
+                            b1.Property<string>("Timing")
+                                .IsRequired();
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.HasKey("BriefProposalId");
+
+                            b1.ToTable("BriefProposals", "campaign_rooms");
+
+                            b1
+                                .ToJson("Content")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BriefProposalId");
+
+                            b1.OwnsOne("Kairo.Modules.CampaignRooms.Briefs.BriefBudget", "Budget", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefProposalId");
+
+                                    b2.Property<decimal>("Amount");
+
+                                    b2.Property<string>("Currency")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefProposalId");
+
+                                    b2.ToTable("BriefProposals", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefProposalId");
+                                });
+
+                            b1.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefReason", "Reasons", b2 =>
+                                {
+                                    b2.Property<Guid>("BriefContentBriefProposalId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Field")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Reason")
+                                        .IsRequired();
+
+                                    b2.HasKey("BriefContentBriefProposalId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("BriefProposals", "campaign_rooms");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("BriefContentBriefProposalId");
+
+                                    b2.OwnsMany("Kairo.Modules.CampaignRooms.Briefs.BriefEvidence", "Evidence", b3 =>
+                                        {
+                                            b3.Property<Guid>("BriefReasonBriefContentBriefProposalId");
+
+                                            b3.Property<int>("BriefReason__synthesizedOrdinal");
+
+                                            b3.Property<int>("__synthesizedOrdinal")
+                                                .ValueGeneratedOnAddOrUpdate();
+
+                                            b3.Property<string>("Label")
+                                                .IsRequired();
+
+                                            b3.Property<string>("Source");
+
+                                            b3.Property<string>("Value")
+                                                .IsRequired();
+
+                                            b3.HasKey("BriefReasonBriefContentBriefProposalId", "BriefReason__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                            b3.ToTable("BriefProposals", "campaign_rooms");
+
+                                            b3.WithOwner()
+                                                .HasForeignKey("BriefReasonBriefContentBriefProposalId", "BriefReason__synthesizedOrdinal");
+                                        });
+
+                                    b2.Navigation("Evidence");
+                                });
+
+                            b1.Navigation("Budget");
+
+                            b1.Navigation("Reasons");
+                        });
+
+                    b.Navigation("Content")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckSettings", b =>
+                {
+                    b.OwnsMany("Kairo.Modules.CampaignRooms.Checks.CheckRuleSetting", "Rules", b1 =>
+                        {
+                            b1.Property<Guid>("CheckSettingsBrandId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<string>("Rule")
+                                .IsRequired();
+
+                            b1.Property<string>("Severity")
+                                .IsRequired();
+
+                            b1.HasKey("CheckSettingsBrandId", "__synthesizedOrdinal");
+
+                            b1.ToTable("CheckSettings", "campaign_rooms");
+
+                            b1
+                                .ToJson("Rules")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CheckSettingsBrandId");
+                        });
+
+                    b.OwnsMany("Kairo.Modules.CampaignRooms.Checks.CustomCheckRule", "CustomRules", b1 =>
+                        {
+                            b1.Property<Guid>("CheckSettingsBrandId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<string>("AppliesTo")
+                                .IsRequired();
+
+                            b1.Property<string>("Id");
+
+                            b1.Property<string>("Severity")
+                                .IsRequired();
+
+                            b1.Property<string>("Text")
+                                .IsRequired();
+
+                            b1.HasKey("CheckSettingsBrandId", "__synthesizedOrdinal");
+
+                            b1.ToTable("CheckSettings", "campaign_rooms");
+
+                            b1
+                                .ToJson("CustomRules")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CheckSettingsBrandId");
+                        });
+
+                    b.Navigation("CustomRules");
+
+                    b.Navigation("Rules");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Rooms.Room", b =>
+                {
+                    b.OwnsMany("Kairo.Modules.CampaignRooms.Rooms.RoomProduct", "Products", b1 =>
+                        {
+                            b1.Property<Guid>("RoomId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<string>("Id");
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.HasKey("RoomId", "__synthesizedOrdinal");
+
+                            b1.ToTable("Rooms", "campaign_rooms");
+
+                            b1
+                                .ToJson("Products")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RoomId");
+                        });
+
+                    b.OwnsOne("Kairo.Modules.CampaignRooms.Rooms.RoomSendBack", "LastSendBack", b1 =>
+                        {
+                            b1.Property<Guid>("RoomId");
+
+                            b1.Property<DateTimeOffset>("At");
+
+                            b1.Property<Guid>("By");
+
+                            b1.Property<string>("Comment")
+                                .IsRequired();
+
+                            b1.Property<string>("From")
+                                .IsRequired();
+
+                            b1.Property<string>("To")
+                                .IsRequired();
+
+                            b1.HasKey("RoomId");
+
+                            b1.ToTable("Rooms", "campaign_rooms");
+
+                            b1
+                                .ToJson("LastSendBack")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("RoomId");
+                        });
+
+                    b.Navigation("LastSendBack");
+
+                    b.Navigation("Products");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}

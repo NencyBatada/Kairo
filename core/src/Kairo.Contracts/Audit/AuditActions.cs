@@ -47,6 +47,7 @@ public static class AuditActions
         new("campaign_room.opened", "Opened a campaign room"),
         new("campaign_room.approval_requested", "Asked for approval on a campaign"),
         new("campaign_room.approved", "Approved a campaign step"),
+        new("launch_plan.updated", "Changed the campaign launch settings"),
         new("campaign_room.sent_back", "Sent campaign work back"),
         new("campaign_room.discarded", "Discarded a campaign"),
         new("campaign_room.advanced", "Moved a campaign to its next stage"),
