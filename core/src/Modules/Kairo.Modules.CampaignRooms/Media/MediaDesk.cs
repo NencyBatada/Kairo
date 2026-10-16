@@ -23,7 +23,8 @@ internal sealed class MediaDesk(
     IBrandKit brandKit,
     IConnections connections,
     IFileStore files,
-    AssetStore store)
+    AssetStore store,
+    ProvenanceTrail trail)
 {
     public const string FileArea = "assets";
     public const int PhotosPerProduct = 3;
@@ -57,7 +58,8 @@ internal sealed class MediaDesk(
             var read = await photos.FetchFirstAsync(links, PhotosPerProduct, cancellationToken);
             if (read.Count > 0)
             {
-                found.Add(new ProductPhotos(product, read));
+                trail.Photos(product.Product.Id, read.Select(photo => photo.Url));
+                found.Add(new ProductPhotos(product, [.. read.Select(photo => photo.Photo)]));
             }
         }
 

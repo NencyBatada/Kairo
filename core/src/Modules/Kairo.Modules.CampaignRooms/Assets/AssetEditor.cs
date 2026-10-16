@@ -130,7 +130,7 @@ internal sealed class AssetEditor(
             return AssetResult<AssetView>.Failed(AssetError.NotAllowed, "Nothing in the asset changed.");
         }
 
-        var version = store.AddVersion(asset, next, AssetOrigins.Edited, null, null, null, member.UserId, null);
+        var version = store.AddVersion(asset, next, AssetOrigins.Edited, null, null, null, member.UserId, null, fields);
         await FinishAsync(room, new AuditRecord("asset.edited", RoomWorkflow.AuditTarget, room.Id.ToString(), new { assetId = asset.Id, version = current.Version }, new { assetId = asset.Id, asset.Kind, version = version.Version, fields }), cancellationToken);
         return AssetResult<AssetView>.Done(AssetViews.View(asset, version, room.BrandId));
     }

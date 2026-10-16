@@ -88,10 +88,11 @@ internal sealed class AssetRegenerateWork(
             return;
         }
 
-        store.AddVersion(asset, regenerated.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, regenerated.Instruction);
         if (regenerated.Companions is { Count: > 0 } companions)
         {
             await store.SaveCompanionsAsync(room, asset, companions, run, outcome, regenerated.Instruction, cancellationToken);
         }
+
+        store.AddVersion(asset, regenerated.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, regenerated.Instruction);
     }
 }

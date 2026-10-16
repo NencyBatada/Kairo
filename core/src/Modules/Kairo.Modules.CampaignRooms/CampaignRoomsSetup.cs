@@ -31,6 +31,7 @@ internal static class CampaignRoomsSetup
         services.AddScoped<IStageWork, StarterBriefAlias>();
         services.AddScoped<CopyAgent>();
         services.AddScoped<CopyDesk>();
+        services.AddScoped<ProvenanceTrail>();
         services.AddScoped<AssetStore>();
         services.AddScoped<AssetEditor>();
         services.AddScoped<IStageWork, CopyWork>();

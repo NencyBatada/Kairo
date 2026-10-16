@@ -15,7 +15,7 @@ internal sealed record MadeVideo(
 
 internal sealed record StoredClip(byte[] Data, decimal Seconds);
 
-internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent)
+internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent, ProvenanceTrail trail)
 {
     public const int Clips = 2;
     public const int ClipSeconds = 8;
@@ -152,6 +152,7 @@ internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent)
         {
             if (content.Media is { } media && await desk.ReadAsync(media, cancellationToken) is { } data)
             {
+                trail.Used(asset, asset.CurrentVersion, media.FileKey);
                 clips.Add(new StoredClip(data, asset.DurationSeconds ?? ClipSeconds));
             }
         }
@@ -173,6 +174,7 @@ internal sealed class VideoMaker(MediaDesk desk, MediaAgent agent)
 
             if (await desk.ReadAsync(content.Media!, cancellationToken) is { } data)
             {
+                trail.Used(asset, asset.CurrentVersion, content.Media!.FileKey);
                 frames.Add(new FootageFrame(KeyOf(context, asset), content.Media!.ContentType, data));
             }
         }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Kairo.IntegrationTests.Agents;
 using Kairo.IntegrationTests.Web;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Media;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Agents;
@@ -187,7 +188,8 @@ public sealed class MediaAgentTests
             2,
             Token);
 
-        Assert.Equal(["image/jpeg", "image/png"], photos.Select(photo => photo.MimeType));
+        Assert.Equal(["image/jpeg", "image/png"], photos.Select(photo => photo.Photo.MimeType));
+        Assert.Equal(["https://shop.test/1.jpg", "https://shop.test/3.png"], photos.Select(photo => photo.Url));
         Assert.DoesNotContain("https://shop.test/4.jpg", websites.Requests);
         Assert.Single(websites.Requests, url => url == "https://shop.test/1.jpg");
     }
@@ -203,7 +205,7 @@ public sealed class MediaAgentTests
             .Build());
         services.AddKairoAgents();
         services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => agents);
-        return new MediaAgent(services.BuildServiceProvider().GetRequiredService<AgentClient>());
+        return new MediaAgent(services.BuildServiceProvider().GetRequiredService<AgentClient>(), new ProvenanceTrail());
     }
 
     private sealed class PlainWork : IStageWork

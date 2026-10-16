@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.SharedKernel.Agents;
 
 namespace Kairo.Modules.CampaignRooms.Media;
@@ -83,7 +84,7 @@ internal sealed record VideoAnswer(
     string? PromptVersion,
     AgentUsage? Usage = null);
 
-internal sealed class MediaAgent(AgentClient agents)
+internal sealed class MediaAgent(AgentClient agents, ProvenanceTrail trail)
 {
     public const string ImagesRoute = "create/images";
     public const string FootageRoute = "create/footage";
@@ -93,12 +94,21 @@ internal sealed class MediaAgent(AgentClient agents)
     public static readonly TimeSpan FootageTimeout = TimeSpan.FromMinutes(6);
     public static readonly TimeSpan VideoTimeout = TimeSpan.FromSeconds(150);
 
-    public Task<ImagesAnswer> ImagesAsync(ImagesRequest request, CancellationToken cancellationToken) =>
-        agents.PostAsync<ImagesRequest, ImagesAnswer>(ImagesRoute, request, ImagesTimeout, cancellationToken);
+    public Task<ImagesAnswer> ImagesAsync(ImagesRequest request, CancellationToken cancellationToken)
+    {
+        trail.Called(ImagesRoute, request);
+        return agents.PostAsync<ImagesRequest, ImagesAnswer>(ImagesRoute, request, ImagesTimeout, cancellationToken);
+    }
 
-    public Task<FootageAnswer> FootageAsync(FootageRequest request, CancellationToken cancellationToken) =>
-        agents.PostAsync<FootageRequest, FootageAnswer>(FootageRoute, request, FootageTimeout, cancellationToken);
+    public Task<FootageAnswer> FootageAsync(FootageRequest request, CancellationToken cancellationToken)
+    {
+        trail.Called(FootageRoute, request);
+        return agents.PostAsync<FootageRequest, FootageAnswer>(FootageRoute, request, FootageTimeout, cancellationToken);
+    }
 
-    public Task<VideoAnswer> VideoAsync(VideoRequest request, CancellationToken cancellationToken) =>
-        agents.PostAsync<VideoRequest, VideoAnswer>(VideoRoute, request, VideoTimeout, cancellationToken);
+    public Task<VideoAnswer> VideoAsync(VideoRequest request, CancellationToken cancellationToken)
+    {
+        trail.Called(VideoRoute, request);
+        return agents.PostAsync<VideoRequest, VideoAnswer>(VideoRoute, request, VideoTimeout, cancellationToken);
+    }
 }

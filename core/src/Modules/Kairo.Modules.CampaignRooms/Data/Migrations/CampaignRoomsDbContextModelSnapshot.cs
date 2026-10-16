@@ -128,6 +128,12 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ApprovedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("AssetId")
                         .HasColumnType("uniqueidentifier");
 
@@ -160,6 +166,9 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     b.Property<string>("PromptVersion")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Provenance")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uniqueidentifier");

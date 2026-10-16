@@ -98,7 +98,7 @@ internal sealed record RevisedText(
 
 internal sealed record CopyInstructionAnswer(RevisedText? Asset, string? Summary, string? Model, string? PromptVersion, AgentUsage? Usage = null);
 
-internal sealed class CopyAgent(AgentClient agents)
+internal sealed class CopyAgent(AgentClient agents, ProvenanceTrail trail)
 {
     public const string CopyRoute = "create/copy";
     public const string InstructionRoute = "create/copy-instruction";
@@ -106,9 +106,15 @@ internal sealed class CopyAgent(AgentClient agents)
     public static readonly TimeSpan CopyTimeout = TimeSpan.FromSeconds(150);
     public static readonly TimeSpan InstructionTimeout = TimeSpan.FromSeconds(60);
 
-    public Task<CopyAnswer> WriteAsync(CopyRequest request, CancellationToken cancellationToken) =>
-        agents.PostAsync<CopyRequest, CopyAnswer>(CopyRoute, request, CopyTimeout, cancellationToken);
+    public Task<CopyAnswer> WriteAsync(CopyRequest request, CancellationToken cancellationToken)
+    {
+        trail.Called(CopyRoute, request);
+        return agents.PostAsync<CopyRequest, CopyAnswer>(CopyRoute, request, CopyTimeout, cancellationToken);
+    }
 
-    public Task<CopyInstructionAnswer> ReviseAsync(CopyInstructionRequest request, CancellationToken cancellationToken) =>
-        agents.PostAsync<CopyInstructionRequest, CopyInstructionAnswer>(InstructionRoute, request, InstructionTimeout, cancellationToken);
+    public Task<CopyInstructionAnswer> ReviseAsync(CopyInstructionRequest request, CancellationToken cancellationToken)
+    {
+        trail.Called(InstructionRoute, request);
+        return agents.PostAsync<CopyInstructionRequest, CopyInstructionAnswer>(InstructionRoute, request, InstructionTimeout, cancellationToken);
+    }
 }

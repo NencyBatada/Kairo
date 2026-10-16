@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.CampaignRooms.Media;
 
+internal sealed record FetchedPhoto(string Url, MediaPhoto Photo);
+
 internal sealed class CataloguePhotos(SafeWebClient web, ILogger<CataloguePhotos> logger)
 {
     public const long MaxBytes = 10 * 1024 * 1024;
@@ -28,10 +30,10 @@ internal sealed class CataloguePhotos(SafeWebClient web, ILogger<CataloguePhotos
         }
     }
 
-    public async Task<IReadOnlyList<MediaPhoto>> FetchFirstAsync(IEnumerable<string?> links, int count, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<FetchedPhoto>> FetchFirstAsync(IEnumerable<string?> links, int count, CancellationToken cancellationToken)
     {
-        var photos = new List<MediaPhoto>();
-        foreach (var link in links.Where(link => !string.IsNullOrWhiteSpace(link)).Distinct())
+        var photos = new List<FetchedPhoto>();
+        foreach (var link in links.OfType<string>().Where(link => !string.IsNullOrWhiteSpace(link)).Distinct())
         {
             if (photos.Count == count)
             {
@@ -40,7 +42,7 @@ internal sealed class CataloguePhotos(SafeWebClient web, ILogger<CataloguePhotos
 
             if (await FetchAsync(link, cancellationToken) is { } photo)
             {
-                photos.Add(photo);
+                photos.Add(new FetchedPhoto(link, photo));
             }
         }
 

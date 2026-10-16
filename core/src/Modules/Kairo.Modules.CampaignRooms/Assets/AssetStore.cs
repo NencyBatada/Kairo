@@ -19,7 +19,7 @@ internal sealed record GeneratedAsset(
 
 internal sealed record SavedAssets(int Created, int Updated, int Removed, int KeptLocked);
 
-internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
+internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trail, TimeProvider time)
 {
     public Task<AssetVersion?> CurrentAsync(Asset asset, CancellationToken cancellationToken) =>
         db.AssetVersions.AsNoTracking().SingleOrDefaultAsync(version => version.AssetId == asset.Id && version.Version == asset.CurrentVersion, cancellationToken);
@@ -41,7 +41,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
         var byKey = existing.ToDictionary(asset => asset.Key, StringComparer.Ordinal);
         var keys = new HashSet<string>(StringComparer.Ordinal);
         var (created, updated, kept) = (0, 0, 0);
-        foreach (var item in generated)
+        foreach (var item in FootageFirst(generated))
         {
             if (!keys.Add(item.Key))
             {
@@ -103,7 +103,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
         var existing = await db.Assets
             .Where(asset => asset.RoomId == room.Id && asset.Language == main.Language && keys.Contains(asset.Key))
             .ToDictionaryAsync(asset => asset.Key, StringComparer.Ordinal, cancellationToken);
-        foreach (var item in companions)
+        foreach (var item in FootageFirst(companions))
         {
             if (existing.TryGetValue(item.Key, out var asset))
             {
@@ -142,9 +142,11 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
         string? model,
         string? promptVersion,
         Guid? createdBy,
-        string? instruction)
+        string? instruction,
+        IReadOnlyList<string>? changedFields = null)
     {
         var now = time.GetUtcNow();
+        var previous = asset.CurrentVersion;
         asset.CurrentVersion++;
         asset.CheckState = AssetCheckStates.Unchecked;
         asset.UpdatedAt = now;
@@ -163,10 +165,19 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, TimeProvider time)
             PromptVersion = promptVersion,
             CreatedBy = createdBy,
             CreatedAt = now,
+            Provenance = trail.For(asset, previous, changedFields).Write(),
         };
         db.AssetVersions.Add(version);
+        if (asset.Kind == AssetKinds.Footage)
+        {
+            trail.Used(asset, version.Version, content.Media?.FileKey);
+        }
+
         return version;
     }
+
+    private static IEnumerable<GeneratedAsset> FootageFirst(IEnumerable<GeneratedAsset> items) =>
+        items.OrderBy(item => item.Kind == AssetKinds.Footage ? 0 : 1);
 
     private static void Describe(Asset asset, GeneratedAsset item, int briefVersion)
     {

@@ -1,0 +1,113 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Kairo.Modules.CampaignRooms.Assets;
+
+internal sealed class AssetProvenance
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    };
+
+    public List<AgentCallRecord> AgentCalls { get; set; } = [];
+
+    public List<string> ProductIds { get; set; } = [];
+
+    public List<string> PhotoUrls { get; set; } = [];
+
+    public List<AssetInput> Inputs { get; set; } = [];
+
+    public int? BrandKitVersion { get; set; }
+
+    public int BriefVersion { get; set; }
+
+    public int? PreviousVersion { get; set; }
+
+    public List<string> ChangedFields { get; set; } = [];
+
+    public List<string> MemoryUses { get; set; } = [];
+
+    public static AssetProvenance Parse(string? json) =>
+        string.IsNullOrWhiteSpace(json) ? new AssetProvenance() : JsonSerializer.Deserialize<AssetProvenance>(json, Json) ?? new AssetProvenance();
+
+    public string Write() => JsonSerializer.Serialize(this, Json);
+}
+
+internal sealed class AgentCallRecord
+{
+    public string Route { get; set; } = "";
+
+    public string Digest { get; set; } = "";
+}
+
+internal sealed class AssetInput
+{
+    public Guid AssetId { get; set; }
+
+    public int Version { get; set; }
+
+    public string Kind { get; set; } = "";
+
+    public string? FileKey { get; set; }
+}
+
+internal sealed class ProvenanceTrail
+{
+    public const int MostPhotos = 12;
+    public const int MostInputs = 12;
+
+    private static readonly JsonSerializerOptions Requests = new(JsonSerializerDefaults.Web);
+
+    private readonly List<AgentCallRecord> _calls = [];
+    private readonly Dictionary<string, List<string>> _photos = new(StringComparer.Ordinal);
+    private readonly List<AssetInput> _inputs = [];
+    private int? _brandKitVersion;
+
+    public static string Digest<T>(T request) =>
+        $"sha256:{Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, Requests)))}";
+
+    public void Called<T>(string route, T request) => _calls.Add(new AgentCallRecord { Route = route, Digest = Digest(request) });
+
+    public void Photos(Guid productId, IEnumerable<string> urls)
+    {
+        var list = _photos.TryGetValue(productId.ToString(), out var known) ? known : _photos[productId.ToString()] = [];
+        list.AddRange(urls.Where(url => !list.Contains(url, StringComparer.Ordinal)));
+    }
+
+    public void Used(Asset asset, int version, string? fileKey)
+    {
+        if (!_inputs.Any(input => input.AssetId == asset.Id && input.Version == version))
+        {
+            _inputs.Add(new AssetInput { AssetId = asset.Id, Version = version, Kind = asset.Kind, FileKey = fileKey });
+        }
+    }
+
+    public void BrandKit(int? version) => _brandKitVersion = version ?? _brandKitVersion;
+
+    public AssetProvenance For(Asset asset, int? previousVersion, IReadOnlyList<string>? changedFields)
+    {
+        var media = !AssetKinds.IsText(asset.Kind);
+        return new AssetProvenance
+        {
+            AgentCalls = [.. _calls.Select(call => new AgentCallRecord { Route = call.Route, Digest = call.Digest })],
+            ProductIds = [.. asset.ProductIds],
+            PhotoUrls = media
+                ? [.. asset.ProductIds.SelectMany(id => _photos.TryGetValue(id, out var urls) ? urls : []).Distinct(StringComparer.Ordinal).Take(MostPhotos)]
+                : [],
+            Inputs = [.. _inputs.Where(input => input.AssetId != asset.Id && InputKinds(asset.Kind).Contains(input.Kind)).Take(MostInputs)],
+            BrandKitVersion = _brandKitVersion,
+            BriefVersion = asset.BriefVersion,
+            PreviousVersion = previousVersion is > 0 ? previousVersion : null,
+            ChangedFields = [.. changedFields ?? []],
+        };
+    }
+
+    private static string[] InputKinds(string kind) => kind switch
+    {
+        AssetKinds.Footage => [AssetKinds.Image],
+        AssetKinds.Video or AssetKinds.Voiceover => [AssetKinds.Footage],
+        _ => [],
+    };
+}

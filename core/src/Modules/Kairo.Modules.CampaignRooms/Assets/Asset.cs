@@ -80,7 +80,15 @@ internal sealed class AssetVersion : IBrandOwned
 
     public DateTimeOffset CreatedAt { get; set; }
 
+    public string? Provenance { get; set; }
+
+    public Guid? ApprovedBy { get; set; }
+
+    public DateTimeOffset? ApprovedAt { get; set; }
+
     public AssetContent Read() => AssetContent.Parse(Content);
+
+    public AssetProvenance ReadProvenance() => AssetProvenance.Parse(Provenance);
 }
 
 internal sealed class AssetContent

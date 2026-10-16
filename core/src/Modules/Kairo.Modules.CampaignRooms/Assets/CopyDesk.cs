@@ -52,7 +52,8 @@ internal sealed class CopyDesk(
     CampaignRoomsDbContext db,
     ICatalogue catalogue,
     IBrandDirectory brands,
-    IBrandKit brandKit)
+    IBrandKit brandKit,
+    ProvenanceTrail trail)
 {
     public const int MaxProducts = 12;
     public const int MaxKeywords = 20;
@@ -88,6 +89,7 @@ internal sealed class CopyDesk(
 
         var brand = (await brands.GetAsync([room.BrandId], cancellationToken)).Single();
         var kit = await brandKit.GetApprovedAsync(cancellationToken);
+        trail.BrandKit(kit?.Version);
         var evidence = RoomEvidence.Read(room.Evidence);
         return new CopyContext(
             brief,
