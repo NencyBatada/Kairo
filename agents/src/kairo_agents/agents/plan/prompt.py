@@ -2,7 +2,7 @@ from functools import cache
 from importlib import resources
 
 TRIGGER_BRIEF_PROMPT_VERSION = "plan-trigger-brief/1"
-BRIEF_PROMPT_VERSION = "plan-brief/1"
+BRIEF_PROMPT_VERSION = "plan-brief/2"
 BRIEF_INSTRUCTION_PROMPT_VERSION = "plan-brief-instruction/1"
 
 
@@ -17,7 +17,7 @@ def trigger_brief_instructions() -> str:
 
 
 def brief_instructions() -> str:
-    return _read("brief_v1.md")
+    return _read("brief_v2.md")
 
 
 def brief_instruction_instructions() -> str:

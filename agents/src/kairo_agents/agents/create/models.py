@@ -48,6 +48,7 @@ class CopyRequest(CamelModel):
     keywords: list[Annotated[str, Field(max_length=100)]] = Field(default=[], max_length=20)
     locked: list[LockedCopy] = Field(default=[], max_length=100)
     brand_kit: dict[str, Any] | None = None
+    memory: list[Annotated[str, Field(max_length=500)]] = Field(default=[], max_length=10)
 
 
 class DraftKeyword(CamelModel):

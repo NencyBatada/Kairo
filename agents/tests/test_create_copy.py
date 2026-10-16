@@ -667,3 +667,24 @@ def test_hindi_shopping_titles_skip_the_script_check(models) -> None:
         "p1",
         "p2",
     ]
+
+
+def test_copy_sends_brand_memory_lessons_with_the_brief(models) -> None:
+    lesson = "Worked (message): Quick-dry claims beat price claims."
+    request = {**REQUEST, "campaignTypes": ["search"], "memory": [lesson]}
+
+    response = TestClient(app).post("/create/copy", json=request)
+
+    assert response.status_code == 200
+    [call] = models.calls
+    assert lesson in call["contents"]
+    assert "Brand Memory" in call["config"].system_instruction
+
+
+def test_copy_refuses_too_many_memory_lessons(models) -> None:
+    request = {**REQUEST, "memory": [f"Worked (message): lesson {index}" for index in range(11)]}
+
+    response = TestClient(app).post("/create/copy", json=request)
+
+    assert response.status_code == 422
+    assert models.calls == []
