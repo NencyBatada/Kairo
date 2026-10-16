@@ -41,7 +41,8 @@ internal sealed class NightlySource(
         string? currency = null;
         foreach (var row in rows)
         {
-            if (!DateOnly.TryParseExact(row[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date) || row[2] is not { } name)
+            if (!DateOnly.TryParseExact(row[0], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+                || LiveData.KeyOf(row[2]) is null || row[2] is not { } name)
             {
                 continue;
             }
