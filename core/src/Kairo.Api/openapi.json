@@ -5450,6 +5450,47 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/impact-report": {
+      "get": {
+        "tags": [
+          "ImpactEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/notifications": {
       "get": {
         "tags": [
@@ -10148,6 +10189,235 @@
         "type": "string",
         "format": "binary"
       },
+      "ImpactFlag": {
+        "required": [
+          "code",
+          "detail"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "ImpactReportView": {
+        "required": [
+          "id",
+          "status",
+          "title",
+          "kpi",
+          "currency",
+          "spend",
+          "results",
+          "costPerResult",
+          "costPerExtra",
+          "costPerExtraLow",
+          "costPerExtraHigh",
+          "targetCost",
+          "outcome",
+          "nextStep",
+          "nextTest",
+          "flags",
+          "summary",
+          "nextStepReasoning",
+          "inconclusiveReason",
+          "nextTestAdvice",
+          "model",
+          "promptVersion",
+          "readyAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "kpi": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "spend": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "results": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "costPerResult": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "costPerExtra": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "costPerExtraLow": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "costPerExtraHigh": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "targetCost": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "nextStep": {
+            "type": "string"
+          },
+          "nextTest": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NextTestPlan"
+              }
+            ]
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactFlag"
+            }
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nextStepReasoning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inconclusiveReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nextTestAdvice": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "promptVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "readyAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ImpactView": {
+        "required": [
+          "campaignId",
+          "stage",
+          "state",
+          "report",
+          "final"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "report": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ImpactReportView"
+              }
+            ]
+          },
+          "final": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LiftReadingView"
+              }
+            ]
+          }
+        }
+      },
       "ImportDetailView": {
         "required": [
           "id",
@@ -12073,6 +12343,34 @@
           "expiresAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "NextTestPlan": {
+        "required": [
+          "days",
+          "addRegions",
+          "reasons"
+        ],
+        "type": "object",
+        "properties": {
+          "days": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "addRegions": {
+            "type": "boolean"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -15463,6 +15761,9 @@
     },
     {
       "name": "LiftEndpoints"
+    },
+    {
+      "name": "ImpactEndpoints"
     },
     {
       "name": "InboxEndpoints"

@@ -5,13 +5,14 @@ using Kairo.Contracts.CampaignRooms;
 using Kairo.Contracts.Live;
 using Kairo.Contracts.Measurement;
 using Kairo.Modules.Measurement.Data;
+using Kairo.Modules.Measurement.Impact;
 using Kairo.SharedKernel.Agents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Measurement.Lift;
 
-internal sealed record LiftSweep(int Brands, int Early, int Final);
+internal sealed record LiftSweep(int Brands, int Early, int Final, int Reports);
 
 internal sealed record RegionResult(string Id, string Name, bool Test, string Status, string? Reason, LiftFigures? Figures, double? Cost);
 
@@ -210,7 +211,7 @@ internal static class LiftJobs
     {
         var stopping = lifetime.ApplicationStopping;
         var all = await brands.ListAllAsync(stopping);
-        var (early, final) = (0, 0);
+        var (early, final, reports) = (0, 0, 0);
         foreach (var brand in all)
         {
             try
@@ -220,6 +221,7 @@ internal static class LiftJobs
                 var result = await scope.ServiceProvider.GetRequiredService<LiftMeasurer>().RunAsync(brand, stopping);
                 early += result.Early;
                 final += result.Final;
+                reports += await scope.ServiceProvider.GetRequiredService<ImpactReporter>().RunAsync(brand, stopping);
             }
             catch (Exception exception) when (!stopping.IsCancellationRequested)
             {
@@ -227,6 +229,6 @@ internal static class LiftJobs
             }
         }
 
-        return TypedResults.Ok(new LiftSweep(all.Count, early, final));
+        return TypedResults.Ok(new LiftSweep(all.Count, early, final, reports));
     }
 }

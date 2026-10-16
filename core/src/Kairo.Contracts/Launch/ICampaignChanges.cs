@@ -13,6 +13,8 @@ public interface ICampaignChanges
     Task SetTargetAsync(Guid roomId, string campaignType, string biddingStrategy, decimal target, CancellationToken cancellationToken);
 
     Task ApplyGoogleAsync(Guid roomId, string resourceName, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<AdResult>> AdResultsAsync(Guid roomId, DateOnly from, DateOnly to, CancellationToken cancellationToken);
 }
 
 public sealed record CampaignState(
@@ -23,6 +25,20 @@ public sealed record CampaignState(
     decimal SpentToDate,
     string BiddingStrategy,
     decimal? Target,
+    decimal Cost,
+    decimal Conversions,
+    decimal ConversionValue,
+    string? Campaign = null);
+
+public sealed record AdAsset(Guid Id, string Kind, string Language, string? Format, JsonElement Content);
+
+public sealed record AdResult(
+    string Key,
+    string CampaignType,
+    string Language,
+    IReadOnlyList<AdAsset> Assets,
+    long Impressions,
+    long Clicks,
     decimal Cost,
     decimal Conversions,
     decimal ConversionValue);
