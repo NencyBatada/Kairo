@@ -217,6 +217,25 @@ def test_guard_drops_banned_words_competitors_and_unsupported_claims() -> None:
     assert not rules.allows("Lowest price in India")
 
 
+def test_guard_names_the_rule_behind_each_finding() -> None:
+    rules = guard()
+
+    assert rules.findings("Stay dry on the way to work") == []
+    assert [(item.rule, item.evidence) for item in rules.findings("Cheap shoes, unlike Rival")] == [
+        ("brand.banned_words", "cheap"),
+        ("brand.competitors", "Rival"),
+    ]
+    found = rules.findings("Get 20% off at Rs. 1999 with free shipping")
+    assert [(item.rule, item.evidence) for item in found] == [
+        ("policy.unsupported_claims", "Rs. 1999"),
+        ("policy.unsupported_claims", "20%"),
+        ("policy.unsupported_claims", "free shipping"),
+    ]
+    assert all(item.message for item in found)
+    hindi = rules.findings("आज छूट पाएं")
+    assert [(item.rule, item.evidence) for item in hindi] == [("policy.unsupported_claims", "छूट")]
+
+
 def test_lines_keep_unique_texts_within_the_limit() -> None:
     kept = lines(HEADLINES, limits.SEARCH_HEADLINE, 15, guard(), True)
 

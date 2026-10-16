@@ -63,6 +63,17 @@ PUNCTUATION = ".,!?;:\"'()।-"
 SYMBOLS = re.compile(r"[!@%,*=;:?\^`<>{}\[\]|~\"#$()/]")
 GAPS = re.compile(r"[\s/]+")
 
+BANNED_WORDS = "brand.banned_words"
+COMPETITORS = "brand.competitors"
+UNSUPPORTED_CLAIMS = "policy.unsupported_claims"
+
+
+@dataclass(frozen=True)
+class GuardFinding:
+    rule: str
+    message: str
+    evidence: str
+
 
 @dataclass
 class Guard:
@@ -80,24 +91,61 @@ class Guard:
         return languages.fits_keyword(text, self.language, self.names)
 
     def allows(self, text: str) -> bool:
+        return not self.findings(text)
+
+    def findings(self, text: str) -> list[GuardFinding]:
         lowered = text.casefold()
-        for word in self.banned + self.competitors:
-            if word and re.search(rf"(?<!\w){re.escape(word.casefold())}(?!\w)", lowered):
-                return False
+        found: list[GuardFinding] = []
+        for word in self.banned:
+            if word and whole(word.casefold(), lowered):
+                found.append(GuardFinding(BANNED_WORDS, f"Uses the banned word “{word}”.", word))
+        for name in self.competitors:
+            if name and whole(name.casefold(), lowered):
+                found.append(GuardFinding(COMPETITORS, f"Names the competitor “{name}”.", name))
         for match in AMOUNT.finditer(text):
-            number = normalized(match.group(1) or match.group(2))
-            if number not in self.numbers:
-                return False
+            if normalized(match.group(1) or match.group(2)) not in self.numbers:
+                amount = match.group(0).strip()
+                found.append(
+                    GuardFinding(
+                        UNSUPPORTED_CLAIMS,
+                        f"Mentions “{amount}”, which isn't a price in the catalogue or brief.",
+                        amount,
+                    )
+                )
         for match in PERCENT.finditer(text):
             if f"{match.group(1)}%" not in self.facts.replace(" %", "%"):
-                return False
+                found.append(
+                    GuardFinding(
+                        UNSUPPORTED_CLAIMS,
+                        f"Mentions “{match.group(0)}”, which the brief and catalogue don't "
+                        "support.",
+                        match.group(0),
+                    )
+                )
         for claim in CLAIMS:
-            if re.search(rf"(?<!\w){re.escape(claim)}(?!\w)", lowered) and claim not in self.facts:
-                return False
+            if whole(claim, lowered) and claim not in self.facts:
+                found.append(
+                    GuardFinding(
+                        UNSUPPORTED_CLAIMS,
+                        f"Promises “{claim}”, which the brief and catalogue don't mention.",
+                        claim,
+                    )
+                )
         for claim, meaning in TRANSLATED_CLAIMS.items():
             if mentions(text, claim) and claim not in self.facts and meaning not in self.facts:
-                return False
-        return True
+                found.append(
+                    GuardFinding(
+                        UNSUPPORTED_CLAIMS,
+                        f"Promises “{claim}” ({meaning}), which the brief and catalogue don't "
+                        "mention.",
+                        claim,
+                    )
+                )
+        return found
+
+
+def whole(phrase: str, text: str) -> bool:
+    return re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", text) is not None
 
 
 def mentions(text: str, phrase: str) -> bool:
