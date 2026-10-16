@@ -32,6 +32,7 @@ export function AdPreview({ asset, assets, brandId, campaignId }: { asset: Asset
 export function AssetCopy({ asset }: { asset: Pick<Asset, "content"> }) {
   const content = asset.content;
   return <div className="grid gap-4 text-sm">
+    <dl className="grid min-w-0 gap-2 wrap-anywhere">{([["businessName", "Business name"], ["callToAction", "Call to action"], ["path1", "First display path"], ["path2", "Second display path"], ["finalUrl", "Final URL"], ["offerId", "Offer ID"]] as const).map(([field, label]) => content[field] ? <div key={field}><dt className="text-xs text-subtle-foreground">{label}</dt><dd>{content[field]}</dd></div> : null)}</dl>
     {(["headlines", "longHeadlines", "descriptions"] as const).map((field) => content[field]?.length ? <div key={field}><p className="mb-1 font-medium">{{ headlines: "Headlines", longHeadlines: "Long headlines", descriptions: "Descriptions" }[field]}</p><ul className="list-inside list-disc space-y-1 wrap-anywhere">{content[field]?.map((text, i) => <li key={i}>{text}</li>)}</ul></div> : null)}
     {content.script?.length ? <div><p className="mb-2 font-medium">Script and captions</p><ol className="space-y-3">{content.script.map((line, i) => <li key={i} className="wrap-anywhere"><p className="text-xs text-subtle-foreground">{line.start} to {line.end} seconds</p><p>{line.voiceover}</p><p className="text-muted-foreground">Caption: {line.caption}</p></li>)}</ol></div> : null}
   </div>;
