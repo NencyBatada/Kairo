@@ -128,8 +128,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Asset review screen**: Scores, plain-language issues and before-and-after fixes, with send back, override with a reason and gate 2 approval.
-- [/] **Check settings screen**: Lets admins tune rules and pass thresholds.
+- [/] **Asset review screen**: Scores, plain-language issues and before-and-after fixes, with send back, override with a reason and gate 2 approval. *Implemented in PR #20 on feature/asset-review-screen. The full 808-test web regression run and 52 latest focused review, shared approval and brief checks pass, alongside lint, production build and unchanged API regeneration. An isolated component browser harness verifies override and selected send-back failure/retry, locked selections, rechecking, approval requests, gate 2 approval, saved fixes, stale comments, viewer access, keyboard focus, Hindi fonts, dark mode, reduced motion, 320px reflow, long names, landscape and 200% layout scaling. Worktree retained pending user merge confirmation. Left: user merge into develop, deployment and authenticated development verification, including actual server-action transport and real media/generation services.*
+- [/] **Check settings screen**: Lets admins tune rules and pass thresholds. *Implemented in PR #19 on feature/check-settings-screen; web CI passed. All 812 web tests, including 32 focused settings/navigation checks, lint, production build and unchanged API regeneration pass. The isolated component browser harness verifies rule severities, custom rules, limits, failed-save retention, stale drafts, confirmed removal/discard, read-only member access, navigation protection, keyboard focus, dark mode, reduced motion, 320px reflow, landscape and 200% layout scaling. Worktree retained pending user merge confirmation. Left: user merge into develop, deployment and authenticated development-environment verification.*
 
 ## 9. Approve and launch
 
