@@ -1,15 +1,19 @@
+using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandMemory;
+using Kairo.Contracts.Live;
 using Kairo.Modules.BrandMemory.Data;
 
 namespace Kairo.Modules.BrandMemory.Memory;
 
-internal sealed class BrandMemoryReader(BrandMemoryDbContext db, TimeProvider time) : IBrandMemory
+internal sealed class BrandMemoryReader(BrandMemoryDbContext db, IAuditLog audit, ILiveUpdates live, TimeProvider time) : IBrandMemory
 {
     public const int Candidates = 500;
     public const double ProductMatch = 3;
     public const double CategoryMatch = 2;
     public const double RegionMatch = 1;
     public const double Untagged = 0.5;
+    public const int MostTags = 50;
+    public const int TagLength = 200;
 
     public async Task<IReadOnlyList<MemoryNote>> RelevantAsync(MemoryQuery query, CancellationToken cancellationToken)
     {
@@ -87,6 +91,39 @@ internal sealed class BrandMemoryReader(BrandMemoryDbContext db, TimeProvider ti
         return entries.Select(Note).ToList();
     }
 
+    public async Task<Guid> SaveAsync(MemoryDraft draft, CancellationToken cancellationToken)
+    {
+        if (!MemoryKinds.IsKnown(draft.Kind) || !MemoryOutcomes.IsKnown(draft.Outcome)
+            || Cut(draft.Title, MemoryEndpoints.TitleLength) is not { } title || Cut(draft.Lesson, MemoryEndpoints.LessonLength) is not { } lesson)
+        {
+            throw new ArgumentException("A Brand Memory entry needs a known kind and outcome, a title and a lesson.", nameof(draft));
+        }
+
+        var entry = new MemoryEntry
+        {
+            Id = Guid.NewGuid(),
+            Kind = draft.Kind,
+            Outcome = draft.Outcome,
+            Title = title,
+            Lesson = lesson,
+            Evidence = string.IsNullOrWhiteSpace(draft.Evidence) ? "{}" : draft.Evidence,
+            Products = Tags(draft.Products),
+            Categories = Tags(draft.Categories),
+            Regions = Tags(draft.Regions),
+            State = MemoryStates.Active,
+            CreatedBy = Cut(draft.CreatedBy, 40) ?? "",
+            CreatedAt = time.GetUtcNow(),
+        };
+        db.Entries.Add(entry);
+        await db.SaveChangesAsync(cancellationToken);
+        await audit.RecordAsync(
+            new AuditRecord("brand_memory.entry_saved", MemoryEndpoints.AuditTarget, entry.Id.ToString(),
+                After: new { entry.Kind, entry.Outcome, entry.Title, source = entry.CreatedBy }),
+            cancellationToken);
+        await live.PublishAsync(MemoryEndpoints.Changed(entry.Id), cancellationToken);
+        return entry.Id;
+    }
+
     public static MemoryNote Note(MemoryEntry entry) => new(
         entry.Id,
         entry.Kind,
@@ -108,6 +145,15 @@ internal sealed class BrandMemoryReader(BrandMemoryDbContext db, TimeProvider ti
         return (ProductMatch * entry.Products.Count(products.Contains))
             + (CategoryMatch * entry.Categories.Count(categories.Contains))
             + (RegionMatch * entry.Regions.Count(regions.Contains));
+    }
+
+    private static List<string> Tags(IEnumerable<string> values) =>
+        [.. values.Select(value => Cut(value, TagLength)).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).Take(MostTags)];
+
+    private static string? Cut(string? text, int length)
+    {
+        var trimmed = text?.Trim() ?? "";
+        return trimmed.Length == 0 ? null : trimmed.Length > length ? trimmed[..length] : trimmed;
     }
 
     private static HashSet<string> Set(IEnumerable<string>? values) =>
