@@ -32,6 +32,13 @@ test("background changes preserve unsaved values and require an explicit reload"
   expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("My work"); expect(screen.getByRole("button", { name: "Save brief" }).matches(":disabled")).toBe(true);
   fireEvent.click(screen.getByRole("button", { name: "Discard edits and load latest" })); expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Someone else's change");
 });
+test("untouched brief fields follow a new saved version without blocking editing", () => {
+  const view = render(<BriefWorkspace {...props} />);
+  view.rerender(<BriefWorkspace {...props} detail={{ ...detail, campaignVersion: 2, brief: { ...detail.brief!, version: 3, title: "Latest saved brief" } }} room={{ ...draftRoom, version: 2 }} />);
+  expect((screen.getByLabelText("Title") as HTMLInputElement).value).toBe("Latest saved brief");
+  expect(screen.getByRole("button", { name: "Save brief" }).matches(":disabled")).toBe(false);
+  expect(screen.queryByText(/newer campaign version is available/)).toBeNull();
+});
 test("failed edits retain entered values and focus a linked error summary", async () => {
   saveBrief.mockResolvedValue({ status: "error", message: "Check the budget", fieldErrors: { budget: ["Too large"] } });
   render(<BriefWorkspace {...props} />); fireEvent.change(screen.getByLabelText("Title"), { target: { value: "My work" } });
