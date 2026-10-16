@@ -55,6 +55,8 @@ internal sealed class AssetInput
     public string? FileKey { get; set; }
 }
 
+internal sealed record ProvenanceState(List<AgentCallRecord> Calls, Dictionary<string, List<string>> Photos, List<AssetInput> Inputs);
+
 internal sealed class ProvenanceTrail
 {
     public const int MostPhotos = 12;
@@ -105,6 +107,38 @@ internal sealed class ProvenanceTrail
         lock (_gate)
         {
             _brandKitVersion = version ?? _brandKitVersion;
+        }
+    }
+
+    public ProvenanceState Take()
+    {
+        lock (_gate)
+        {
+            var state = new ProvenanceState(
+                [.. _calls],
+                _photos.ToDictionary(entry => entry.Key, entry => entry.Value.ToList(), StringComparer.Ordinal),
+                [.. _inputs]);
+            _calls.Clear();
+            _photos.Clear();
+            _inputs.Clear();
+            return state;
+        }
+    }
+
+    public void Restore(ProvenanceState state)
+    {
+        lock (_gate)
+        {
+            _calls.Clear();
+            _calls.AddRange(state.Calls);
+            _photos.Clear();
+            foreach (var (product, urls) in state.Photos)
+            {
+                _photos[product] = [.. urls];
+            }
+
+            _inputs.Clear();
+            _inputs.AddRange(state.Inputs);
         }
     }
 

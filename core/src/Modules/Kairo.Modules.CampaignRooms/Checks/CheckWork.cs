@@ -338,7 +338,7 @@ internal sealed partial class CheckWork(
                 custom,
                 asset.Id.ToString(),
                 new VideoCheckInput(file.ContentType, bytes),
-                asset.DurationSeconds,
+                asset.DurationSeconds is > 0 and <= 120 ? asset.DurationSeconds : null,
                 [.. (content.Script ?? []).Take(12).Select(line => new VideoCheckLine(CopyDesk.Cut(line.Voiceover, 300), CopyDesk.Cut(line.Caption, 120), Math.Max(0, line.Start), Math.Max(0, line.End)))],
                 await ReferencesAsync(asset, context, references, cancellationToken),
                 logo);

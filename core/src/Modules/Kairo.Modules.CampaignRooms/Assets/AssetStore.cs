@@ -99,6 +99,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
         StageOutcome outcome,
         string instruction,
         string origin,
+        Guid? createdBy,
         CancellationToken cancellationToken)
     {
         var keys = companions.Select(item => item.Key).ToList();
@@ -132,7 +133,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
                 db.Assets.Add(asset);
             }
 
-            AddVersion(asset, item.Content, origin, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, instruction);
+            AddVersion(asset, item.Content, origin, run.Id, outcome.Model, outcome.PromptVersion, createdBy, instruction);
         }
     }
 

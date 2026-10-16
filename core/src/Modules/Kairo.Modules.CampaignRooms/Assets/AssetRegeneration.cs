@@ -46,8 +46,11 @@ internal sealed record RegeneratedBatch(List<RegeneratedAsset> Assets, List<Rege
 internal sealed class AssetReworker(
     CampaignRoomsDbContext db,
     AssetStore store,
+    ProvenanceTrail trail,
     IEnumerable<IAssetRegenerator> regenerators)
 {
+    private readonly Dictionary<Guid, ProvenanceState> _trails = [];
+
     public const int TextPerRun = 5;
     public const int ImagesPerRun = 2;
     public const int VideosPerRun = 1;
@@ -101,7 +104,9 @@ internal sealed class AssetReworker(
             throw new StageFailure(StageFailure.UnknownKind, "Kairo can't regenerate this kind of asset yet.");
         }
 
+        trail.Take();
         var result = await regenerator.RegenerateAsync(new AssetRegenerationContext(room, asset, current, current.Read(), instruction, newVisuals), cancellationToken);
+        _trails[asset.Id] = trail.Take();
         return new RegeneratedAsset(
             asset.Id,
             current.Version,
@@ -115,7 +120,7 @@ internal sealed class AssetReworker(
             result.Usage);
     }
 
-    public async Task<Asset?> SaveAsync(Room room, RegeneratedAsset regenerated, string origin, StageRun run, StageOutcome outcome, CancellationToken cancellationToken)
+    public async Task<Asset?> SaveAsync(Room room, RegeneratedAsset regenerated, string origin, Guid? createdBy, StageRun run, StageOutcome outcome, CancellationToken cancellationToken)
     {
         var asset = await db.Assets.SingleOrDefaultAsync(row => row.Id == regenerated.AssetId && row.RoomId == room.Id, cancellationToken);
         if (asset is null || asset.Locked || asset.Status != AssetStatuses.Active || asset.CurrentVersion != regenerated.FromVersion)
@@ -123,15 +128,20 @@ internal sealed class AssetReworker(
             return null;
         }
 
+        if (_trails.TryGetValue(regenerated.AssetId, out var recorded))
+        {
+            trail.Restore(recorded);
+        }
+
         var model = regenerated.Model ?? outcome.Model;
         var promptVersion = regenerated.PromptVersion ?? outcome.PromptVersion;
         var savedOutcome = outcome with { Model = model, PromptVersion = promptVersion };
         if (regenerated.Companions is { Count: > 0 } companions)
         {
-            await store.SaveCompanionsAsync(room, asset, companions, run, savedOutcome, regenerated.Instruction, origin, cancellationToken);
+            await store.SaveCompanionsAsync(room, asset, companions, run, savedOutcome, regenerated.Instruction, origin, createdBy, cancellationToken);
         }
 
-        store.AddVersion(asset, regenerated.Content, origin, run.Id, model, promptVersion, run.RequestedBy, regenerated.Instruction);
+        store.AddVersion(asset, regenerated.Content, origin, run.Id, model, promptVersion, createdBy, regenerated.Instruction);
         if (regenerated.DurationSeconds is { } seconds)
         {
             asset.DurationSeconds = seconds;
@@ -269,7 +279,7 @@ internal sealed class AssetRegenerateWork(
         };
         foreach (var item in items)
         {
-            await reworker.SaveAsync(room, item, AssetOrigins.Regenerated, run, outcome, cancellationToken);
+            await reworker.SaveAsync(room, item, AssetOrigins.Regenerated, run.RequestedBy, run, outcome, cancellationToken);
         }
     }
 }

@@ -81,6 +81,31 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task One_fix_run_records_each_fixed_asset_with_only_its_own_agent_call_and_no_person()
+    {
+        await SaveSettingsAsync(new { version = 0, rules = (object?)null, customRules = (object?)null, passScore = 80, fixAttempts = 1 });
+        _world.Check.Findings = (path, assetId, body) =>
+            path == "/check/copy" && Kind(body, assetId) is "search_ad" or "keyword_set" ? [FakeCheck.Finding("policy.ads", Claim)] : [];
+        var roomId = await ApprovedAsync();
+
+        Assert.Equal(5, await RunAllAsync());
+
+        var set = await Campaigns.AssetsAsync(_world.Approver.Browser, _world.BrandId, roomId);
+        var digests = new List<string?>();
+        foreach (var kind in new[] { "search_ad", "keyword_set" })
+        {
+            var latest = (await HistoryAsync(roomId, Id(Campaigns.Asset(set, kind)))).GetProperty("versions")[0];
+            Assert.Equal(("fixed", JsonValueKind.Null), (latest.GetProperty("origin").GetString(), latest.GetProperty("createdBy").ValueKind));
+            var call = Assert.Single(latest.GetProperty("agentCalls").EnumerateArray());
+            Assert.Equal("create/copy-instruction", call.GetProperty("route").GetString());
+            digests.Add(call.GetProperty("digest").GetString());
+        }
+
+        Assert.Equal(2, _world.Create.Instructions.Count);
+        Assert.NotEqual(digests[0], digests[1]);
+    }
+
+    [Fact]
     public async Task An_asset_still_failing_after_the_fix_limit_blocks_gate_two_until_its_flag_is_overridden()
     {
         await SaveSettingsAsync(new { version = 0, rules = (object?)null, customRules = (object?)null, passScore = 80, fixAttempts = 2 });
@@ -438,6 +463,13 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
         .. (await Campaigns.ActivityAsync(_world.Marketer, _world.BrandId, roomId)).GetProperty("entries").EnumerateArray()
             .Select(entry => entry.GetProperty("action").GetString()),
     ];
+
+    private async Task<JsonElement> HistoryAsync(Guid roomId, Guid assetId)
+    {
+        using var response = await _world.Marketer.GetAsync($"{Campaigns.Base(_world.BrandId)}/{roomId}/assets/{assetId}/history", Token);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadFromJsonAsync<JsonElement>(Token);
+    }
 
     private async Task BumpAsync(Guid assetId)
     {

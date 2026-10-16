@@ -96,7 +96,7 @@ internal sealed class CheckFixWork(
         var result = (FixOutcome)outcome.Output;
         foreach (var item in result.Fixed)
         {
-            if (await reworker.SaveAsync(room, item.Asset, AssetOrigins.Fixed, run, outcome, cancellationToken) is not { } asset)
+            if (await reworker.SaveAsync(room, item.Asset, AssetOrigins.Fixed, null, run, outcome, cancellationToken) is not { } asset)
             {
                 continue;
             }
