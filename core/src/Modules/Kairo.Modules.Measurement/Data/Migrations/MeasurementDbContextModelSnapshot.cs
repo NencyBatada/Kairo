@@ -173,6 +173,112 @@ namespace Kairo.Modules.Measurement.Data.Migrations
 
                     b.ToTable("SalesUploads", "measurement");
                 });
+
+            modelBuilder.Entity("Kairo.Modules.Measurement.Lift.LiftReading", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("Actual")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("Conclusive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Daily")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Days")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Early")
+                        .HasColumnType("bit");
+
+                    b.Property<double?>("Expected")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Extra")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ExtraHigh")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("ExtraLow")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("High")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Kpi")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<double?>("Lift")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Low")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("Placebos")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlannedDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Regions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Revenue")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("Spread")
+                        .HasColumnType("float");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("ThroughDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId", "RoomId", "Early", "ThroughDate")
+                        .IsUnique();
+
+                    b.ToTable("LiftReadings", "measurement");
+                });
 #pragma warning restore 612, 618
         }
     }

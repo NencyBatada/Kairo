@@ -10,6 +10,7 @@ public sealed class MeasurementTableTests(SqlServer sqlServer)
     [InlineData("FeedRuns")]
     [InlineData("SalesUploads")]
     [InlineData("SalesSources")]
+    [InlineData("LiftReadings")]
     public async Task The_table_is_covered_by_the_measurement_security_policy(string table)
     {
         var predicates = await ScalarAsync(

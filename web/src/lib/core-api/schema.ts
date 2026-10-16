@@ -5032,6 +5032,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/lift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LiftView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/notifications": {
         parameters: {
             query?: never;
@@ -6005,6 +6048,11 @@ export interface components {
             appliesTo: string;
             severity: string;
         };
+        DayResult: {
+            date: string;
+            actual: number | string;
+            expected: number | string;
+        };
         DiscardRequest: {
             reason: null | string;
             version: null | number | string;
@@ -6401,6 +6449,53 @@ export interface components {
             startedAt: string;
             finishedAt: null | string;
         };
+        LiftFigures: {
+            lift: number | string;
+            low: number | string;
+            high: number | string;
+            actual: number | string;
+            expected: number | string;
+            extra: number | string;
+            extraLow: number | string;
+            extraHigh: number | string;
+            conclusive: boolean;
+            placebos: number | string;
+            spread: number | string;
+        };
+        LiftReadingView: {
+            id: string;
+            early: boolean;
+            startDate: string;
+            throughDate: string;
+            kpi: string;
+            unit: string;
+            days: number | string;
+            plannedDays: number | string;
+            status: string;
+            reason: null | string;
+            conclusive: boolean;
+            lift: null | number | string;
+            low: null | number | string;
+            high: null | number | string;
+            actual: null | number | string;
+            expected: null | number | string;
+            extra: null | number | string;
+            extraLow: null | number | string;
+            extraHigh: null | number | string;
+            placebos: number | string;
+            revenue: null | components["schemas"]["LiftFigures"];
+            regions: components["schemas"]["RegionResult"][];
+            daily: components["schemas"]["DayResult"][];
+            method: string;
+            createdAt: string;
+        };
+        LiftView: {
+            campaignId: string;
+            stage: string;
+            final: null | components["schemas"]["LiftReadingView"];
+            latestEarly: null | components["schemas"]["LiftReadingView"];
+            readings: components["schemas"]["LiftReadingView"][];
+        };
         MatchedProductView: {
             id: string;
             offerId: string;
@@ -6727,6 +6822,15 @@ export interface components {
             dismissReason: null | string;
             createdAt: string;
             updatedAt: string;
+        };
+        RegionResult: {
+            id: string;
+            name: string;
+            test: boolean;
+            status: string;
+            reason: null | string;
+            figures: null | components["schemas"]["LiftFigures"];
+            cost: null | number | string;
         };
         RegionView: {
             id: string;

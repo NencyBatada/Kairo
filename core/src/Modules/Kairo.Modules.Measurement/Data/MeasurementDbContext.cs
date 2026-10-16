@@ -1,4 +1,5 @@
 using Kairo.Modules.Measurement.Feeds;
+using Kairo.Modules.Measurement.Lift;
 
 namespace Kairo.Modules.Measurement.Data;
 
@@ -12,6 +13,8 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
     public DbSet<SalesUpload> SalesUploads => Set<SalesUpload>();
 
     public DbSet<SalesSource> SalesSources => Set<SalesSource>();
+
+    public DbSet<LiftReading> LiftReadings => Set<LiftReading>();
 
     protected override string Schema => SchemaName;
 
@@ -48,6 +51,17 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
             source.Property(s => s.OrdersColumn).HasMaxLength(300);
             source.Property(s => s.RevenueColumn).HasMaxLength(300);
             source.Property(s => s.Location).HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<LiftReading>(reading =>
+        {
+            reading.ToTable("LiftReadings");
+            reading.HasIndex(r => new { r.BrandId, r.RoomId, r.Early, r.ThroughDate }).IsUnique();
+            reading.Property(r => r.Kpi).HasMaxLength(20);
+            reading.Property(r => r.Unit).HasMaxLength(20);
+            reading.Property(r => r.Status).HasMaxLength(20);
+            reading.Property(r => r.Reason).HasMaxLength(40);
+            reading.Property(r => r.Method).HasMaxLength(40);
         });
     }
 }

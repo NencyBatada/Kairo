@@ -72,9 +72,9 @@ public sealed class ProofPlanTests(SqlServer sqlServer) : IAsyncLifetime
         [
             .. Days(120).SelectMany(day => new[]
             {
-                new[] { Iso(day), "21342", "Maharashtra", null, "5", "INR" },
-                new[] { Iso(day), "21333", "Kerala", null, "3", "INR" },
-                new[] { Iso(day), "21345", "Tamil Nadu", null, "4", "INR" },
+                new[] { Iso(day), "21342", "Maharashtra", null, "5", "INR", "100" },
+                new[] { Iso(day), "21333", "Kerala", null, "3", "INR", "100" },
+                new[] { Iso(day), "21345", "Tamil Nadu", null, "4", "INR", "100" },
             }),
         ];
 
