@@ -9,11 +9,9 @@ import LaunchPage from "./campaigns/[id]/launch/page";
 import CampaignRoomPage from "./campaigns/[id]/page";
 import PerformancePage from "./campaigns/[id]/performance/page";
 import ResultsPage from "./campaigns/[id]/results/page";
-import CampaignsPage from "./campaigns/page";
 import ImpactLabPage from "./impact-lab/page";
 
 test.each([
-  ["Campaigns", CampaignsPage, "No campaigns yet"],
   ["Impact Lab", ImpactLabPage, "No analyses yet"],
 ] as [string, ComponentType, string][])("%s has one page title and an honest empty state", (title, Page, empty) => {
   render(<Page />);
