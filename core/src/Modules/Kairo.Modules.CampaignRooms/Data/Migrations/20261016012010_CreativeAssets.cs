@@ -84,10 +84,16 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                 columns: new[] { "BrandId", "RoomId", "AssetId", "Version" },
                 unique: true)
                 .Annotation("SqlServer:Clustered", true);
+
+            migrationBuilder.AddBrandSeparation("campaign_rooms", "Assets");
+            migrationBuilder.AddBrandSeparation("campaign_rooms", "AssetVersions");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.RemoveBrandSeparation("campaign_rooms", "AssetVersions");
+            migrationBuilder.RemoveBrandSeparation("campaign_rooms", "Assets");
+
             migrationBuilder.DropTable(
                 name: "Assets",
                 schema: "campaign_rooms");
