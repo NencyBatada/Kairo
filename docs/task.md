@@ -161,7 +161,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 ### Talha (core and agents)
 
 - [x] **Lift measurement**: Measures extra orders, conversions or revenue against the holdout regions, with a confidence range, plus early readings during the test.
-- [/] **Impact report**: Works out cost per extra result and the next step, and explains inconclusive results.
+- [x] **Impact report**: Works out cost per extra result and the next step, and explains inconclusive results.
 - [/] **Brand Memory**: Saves what worked and what didn't, and feeds it into briefs, assets and rankings.
 
 ### Nency (web app)
