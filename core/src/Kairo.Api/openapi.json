@@ -4932,6 +4932,47 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/pacing": {
+      "get": {
+        "tags": [
+          "PacingEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacingView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -11814,6 +11855,201 @@
           }
         }
       },
+      "PacingAlertView": {
+        "required": [
+          "date",
+          "direction",
+          "causeKind",
+          "cause",
+          "suggestedFix",
+          "alertedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "direction": {
+            "type": "string"
+          },
+          "causeKind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "suggestedFix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "alertedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PacingCampaignView": {
+        "required": [
+          "campaignType",
+          "plannedDailySpend",
+          "status",
+          "days",
+          "alert"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignType": {
+            "type": "string"
+          },
+          "plannedDailySpend": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "status": {
+            "type": "string"
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacingDayView"
+            }
+          },
+          "alert": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PacingAlertView"
+              }
+            ]
+          }
+        }
+      },
+      "PacingDayView": {
+        "required": [
+          "date",
+          "spend",
+          "plannedSpend",
+          "deviation",
+          "status",
+          "conversions",
+          "conversionValue",
+          "impressions",
+          "clicks"
+        ],
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "spend": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "plannedSpend": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "deviation": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "status": {
+            "type": "string"
+          },
+          "conversions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "conversionValue": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "impressions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "clicks": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        }
+      },
+      "PacingView": {
+        "required": [
+          "status",
+          "currency",
+          "start",
+          "end",
+          "campaigns"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "campaigns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PacingCampaignView"
+            }
+          }
+        }
+      },
       "PendingInvitation": {
         "required": [
           "id",
@@ -14302,6 +14538,9 @@
     },
     {
       "name": "StockPauseEndpoints"
+    },
+    {
+      "name": "PacingEndpoints"
     },
     {
       "name": "FeedEndpoints"
