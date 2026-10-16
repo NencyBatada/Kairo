@@ -7,6 +7,42 @@ import { ApprovalPanel, type ApprovalDecision } from "./approval-panel";
 
 const saved: FormState = { status: "saved" };
 
+test("blocked approval still permits an independently enabled send-back with its selected summary", async () => {
+  const onDecision = vi.fn(async () => saved);
+  renderPanel({ approveDisabled: true, sendBack: { label: "Send selected assets back (1)", confirmLabel: "Send selected assets back", description: "Only selected unlocked assets regenerate.", disabled: false, summary: <p>Selected asset: Walking shoes</p> }, onDecision });
+  expect(screen.getByRole("button", { name: "Approve brief" }).matches(":disabled")).toBe(true);
+  const sheet = await openSheet("Send selected assets back (1)", "Send selected assets back?");
+  expect(within(sheet).getByText("Selected asset: Walking shoes")).toBeTruthy();
+  fireEvent.change(within(sheet).getByLabelText("What needs to change"), { target: { value: "Fix the voice" } });
+  fireEvent.click(within(sheet).getByRole("button", { name: "Send selected assets back" }));
+  await waitFor(() => expect(onDecision).toHaveBeenCalledWith({ kind: "send-back", reason: "Fix the voice" }));
+});
+
+test("an open decision keeps its comment and blocks submission after saved work changes", async () => {
+  const onDecision = vi.fn(async () => saved);
+  const props = { label: "Gate 2", title: "Asset approval", subject: "assets", status: "waiting" as const, approver: "Priya", canDecide: true, onDecision };
+  const { rerender } = render(<ApprovalPanel {...props} contextKey="version-1" />);
+  const sheet = await openSheet("Send back", "Send the assets back?");
+  fireEvent.change(within(sheet).getByLabelText("What needs to change"), { target: { value: "Keep this correction" } });
+  rerender(<ApprovalPanel {...props} contextKey="version-2" />);
+  expect((within(sheet).getByLabelText("What needs to change") as HTMLTextAreaElement).value).toBe("Keep this correction");
+  expect(within(sheet).getByRole("button", { name: "Send back" }).matches(":disabled")).toBe(true);
+  fireEvent.click(within(sheet).getByRole("button", { name: "Send back" }));
+  expect(onDecision).not.toHaveBeenCalled();
+});
+
+test("a server conflict keeps the reason and requires a fresh review before retrying", async () => {
+  const onDecision = vi.fn(async () => ({ status: "error" as const, message: "The saved version changed", conflict: true }));
+  renderPanel({ onDecision });
+  const sheet = await openSheet("Send back", "Send the brief back?");
+  fireEvent.change(within(sheet).getByLabelText("What needs to change"), { target: { value: "Retain this reason" } });
+  fireEvent.click(within(sheet).getByRole("button", { name: "Send back" }));
+  expect(await within(sheet).findByText("The saved version changed")).toBeTruthy();
+  expect((within(sheet).getByLabelText("What needs to change") as HTMLTextAreaElement).value).toBe("Retain this reason");
+  expect(within(sheet).getByRole("button", { name: "Send back" }).matches(":disabled")).toBe(true);
+  expect(onDecision).toHaveBeenCalledOnce();
+});
+
 function renderPanel(props: Partial<Parameters<typeof ApprovalPanel>[0]> = {}) {
   const onDecision = vi.fn(async (decision: ApprovalDecision): Promise<FormState> => {
     void decision;

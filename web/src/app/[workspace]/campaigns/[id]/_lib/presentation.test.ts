@@ -12,7 +12,7 @@ test("handles clock skew and invalid timestamps", () => {
 });
 
 test("routes stages to their review screen and formats workspace times", () => {
-  expect(stageSegment("asset_review")).toBe("assets");
+  expect(stageSegment("asset_review")).toBe("review");
   expect(stageSegment("discarded")).toBeUndefined();
   expect(dates("Asia/Kolkata").format(new Date("2026-10-15T03:30:00Z"))).toMatch(/9:00/i);
 });

@@ -9,7 +9,7 @@ export const statusLabels: Record<string, string> = {
 };
 
 export function stageSegment(stage: string) {
-  return ({ brief_draft: "brief", creating: "assets", asset_review: "assets", ready_to_launch: "launch", launching: "launch", live: "performance", results_ready: "results", closed: "results" } as Record<string, string>)[stage];
+  return ({ brief_draft: "brief", creating: "assets", asset_review: "review", ready_to_launch: "launch", launching: "launch", live: "performance", results_ready: "results", closed: "results" } as Record<string, string>)[stage];
 }
 
 export function elapsed(enteredAt: string, now: number) {

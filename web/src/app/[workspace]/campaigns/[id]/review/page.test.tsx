@@ -1,0 +1,13 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { reviewRoom, reviewSet } from "./fixtures.test-data";
+import { brandId, campaignId } from "../assets/fixtures.test-data";
+const { getRoom, get } = vi.hoisted(() => ({ getRoom: vi.fn(), get: vi.fn() }));
+vi.mock("../_lib/room", () => ({ getRoom }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown }) => result.data }));
+vi.mock("./actions", () => ({ reviewAssets: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ room: reviewRoom(), brandId, timeZone: "Asia/Kolkata" }); get.mockResolvedValue({ data: reviewSet() }); });
+test("loads the full asset set for the resolved campaign and displays progress", async () => { render(await Page({ params: Promise.resolve({ workspace: "acme", id: campaignId }) })); expect(getRoom).toHaveBeenCalledWith("acme", campaignId); expect(get.mock.calls[0][1]).toEqual({ params: { path: { brandId, campaignId } } }); expect(screen.getByRole("heading", { name: "Brand Guardian" })).toBeTruthy(); expect(screen.getByRole("heading", { name: "Agent work" })).toBeTruthy(); });
+test("read failures reach the review error boundary", async () => { get.mockRejectedValueOnce(new Error("offline")); await expect(Page({ params: Promise.resolve({ workspace: "acme", id: campaignId }) })).rejects.toThrow("offline"); });
