@@ -255,6 +255,33 @@ The likely cause comes from fixed rules over Google Ads status:
 
 `POST /jobs/launches/pacing` runs the check, and the hourly `kairo-launch-pacing` scheduler job calls it. Like the health check, this has only been verified with simulated Google APIs.
 
+## Test end and recommendations
+
+A live campaign's test ends when its proof-plan window closes. `POST /jobs/campaigns/test-ends` runs hourly and moves those campaigns to `results_ready`. Marketers and approvers can end a test early with `POST /api/brands/{brandId}/campaigns/{campaignId}/end-test` and the campaign `version`. This flags the campaign as ended early.
+
+`POST /jobs/care/recommendations` runs hourly and does three things:
+
+- **Drafts Kairo's recommendations once per finished test**, using fixed rules and the Google Ads results for the test window. Only campaigns still running with at least two days left and 15 conversions count.
+  - **Budget move:** when one campaign's cost per result (or return, for revenue tests) is at least 25% better than another's, Kairo suggests moving a quarter of the weaker campaign's remaining budget to it. Total spend stays the same.
+  - **Target change:** when a target CPA or ROAS is more than 20% away from what the test achieved, Kairo suggests that value as the new target.
+- **Refreshes Google Ads' own recommendations** for live and finished campaigns. While a test runs, only types that cannot widen targeting are shown: keywords, ad text, assets, budget and bidding opt-ins. Network and geo expansion types, and any unknown type, stay hidden. Once every campaign has passed its end date in the brand's time zone, Kairo stops refreshing them and expires any still open.
+- **Notifies approvers.** `report.ready` goes out when drafts are ready. Each visible recommendation sends `approval.needed` to the approvers assigned to its type.
+
+The recommendation endpoints are:
+
+- `GET /api/brands/{brandId}/campaigns/{campaignId}/recommendations` lists the test state and the recommendations, each with its expected effect, reasoning, evidence, duty and whether the viewer can approve it.
+- `POST /api/brands/{brandId}/recommendations/{id}/approve` is for approvers assigned to that recommendation type (or any approver when nobody is assigned). Google budget increases also need the budget owner.
+- `POST /api/brands/{brandId}/recommendations/{id}/dismiss` is for marketers and approvers, with an optional reason.
+
+Before applying, Kairo checks again with Google:
+
+- If the campaign's budget, bid target or status changed since drafting, the recommendation expires.
+- If Google no longer offers its suggestion, that suggestion expires.
+
+Changes use a validate-only call, then set absolute values. A rejected change goes back to `proposed` with the problem shown. Applied, dismissed and expired recommendations are audited, and screens refresh on `care.recommendations_changed`.
+
+This has only been verified locally against simulated Google APIs.
+
 ## Run the tests
 
 From the repository root:

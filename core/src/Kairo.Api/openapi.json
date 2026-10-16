@@ -3525,6 +3525,67 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/end-test": {
+      "post": {
+        "tags": [
+          "CampaignEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampaignDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/campaigns/{campaignId}/stage-runs/{runId}/retry": {
       "post": {
         "tags": [
@@ -4973,6 +5034,169 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/recommendations": {
+      "get": {
+        "tags": [
+          "RecommendationEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/recommendations/{recommendationId}/approve": {
+      "post": {
+        "tags": [
+          "RecommendationEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "recommendationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRecommendation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/recommendations/{recommendationId}/dismiss": {
+      "post": {
+        "tags": [
+          "RecommendationEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "recommendationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DismissRecommendation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -5761,6 +5985,23 @@
           },
           "currency": {
             "type": "string"
+          }
+        }
+      },
+      "ApproveRecommendation": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -8302,6 +8543,49 @@
           }
         }
       },
+      "CampaignTestView": {
+        "required": [
+          "stage",
+          "start",
+          "end",
+          "endedAt",
+          "endedEarly",
+          "running"
+        ],
+        "type": "object",
+        "properties": {
+          "stage": {
+            "type": "string"
+          },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "endedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endedEarly": {
+            "type": "boolean"
+          },
+          "running": {
+            "type": "boolean"
+          }
+        }
+      },
       "CampaignTrackerView": {
         "required": [
           "stages",
@@ -9096,6 +9380,30 @@
           }
         }
       },
+      "DismissRecommendation": {
+        "required": [
+          "version",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "DismissRequest": {
         "required": [
           "reason",
@@ -9314,6 +9622,23 @@
             "items": {
               "$ref": "#/components/schemas/EmailSetting"
             }
+          }
+        }
+      },
+      "EndTestRequest": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -12896,6 +13221,133 @@
           }
         }
       },
+      "RecommendationList": {
+        "required": [
+          "test",
+          "recommendations"
+        ],
+        "type": "object",
+        "properties": {
+          "test": {
+            "$ref": "#/components/schemas/CampaignTestView"
+          },
+          "recommendations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecommendationView"
+            }
+          }
+        }
+      },
+      "RecommendationView": {
+        "required": [
+          "id",
+          "version",
+          "source",
+          "type",
+          "campaignType",
+          "state",
+          "title",
+          "expectedEffect",
+          "reasoning",
+          "change",
+          "evidence",
+          "duty",
+          "held",
+          "canApprove",
+          "problem",
+          "decidedBy",
+          "decidedAt",
+          "dismissReason",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "source": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "campaignType": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "expectedEffect": {
+            "type": "string"
+          },
+          "reasoning": {
+            "type": "string"
+          },
+          "change": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "duty": {
+            "type": "string"
+          },
+          "held": {
+            "type": "boolean"
+          },
+          "canApprove": {
+            "type": "boolean"
+          },
+          "problem": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "decidedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "dismissReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "RegionView": {
         "required": [
           "id",
@@ -14541,6 +14993,9 @@
     },
     {
       "name": "PacingEndpoints"
+    },
+    {
+      "name": "RecommendationEndpoints"
     },
     {
       "name": "FeedEndpoints"

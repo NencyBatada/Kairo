@@ -3362,6 +3362,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/end-test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EndTestRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns/{campaignId}/stage-runs/{runId}/retry": {
         parameters: {
             query?: never;
@@ -4626,6 +4681,159 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecommendationList"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/recommendations/{recommendationId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recommendationId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApproveRecommendation"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecommendationView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/recommendations/{recommendationId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recommendationId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DismissRecommendation"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecommendationView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -5211,6 +5419,9 @@ export interface components {
             budgetLimit: null | number | string;
             currency: string;
         };
+        ApproveRecommendation: {
+            version: null | number | string;
+        };
         ApproveRequest: {
             gate: null | string;
             version: null | number | string;
@@ -5651,6 +5862,14 @@ export interface components {
             label: string;
             progress: string;
         };
+        CampaignTestView: {
+            stage: string;
+            start: null | string;
+            end: null | string;
+            endedAt: null | string;
+            endedEarly: boolean;
+            running: boolean;
+        };
         CampaignTrackerView: {
             stages: components["schemas"]["CampaignStageStepView"][];
             current: string;
@@ -5790,6 +6009,10 @@ export interface components {
             reason: null | string;
             version: null | number | string;
         };
+        DismissRecommendation: {
+            version: null | number | string;
+            reason: null | string;
+        };
         DismissRequest: {
             reason: null | string;
             note: null | string;
@@ -5836,6 +6059,9 @@ export interface components {
         };
         EmailSettings: {
             kinds: components["schemas"]["EmailSetting"][];
+        };
+        EndTestRequest: {
+            version: null | number | string;
         };
         FeedRequest: {
             url: null | string;
@@ -6475,6 +6701,32 @@ export interface components {
         ReasonView: {
             text: string;
             sources: components["schemas"]["ReasonSourceView"][];
+        };
+        RecommendationList: {
+            test: components["schemas"]["CampaignTestView"];
+            recommendations: components["schemas"]["RecommendationView"][];
+        };
+        RecommendationView: {
+            id: string;
+            version: number | string;
+            source: string;
+            type: string;
+            campaignType: string;
+            state: string;
+            title: string;
+            expectedEffect: string;
+            reasoning: string;
+            change: components["schemas"]["JsonElement"];
+            evidence: components["schemas"]["JsonElement"];
+            duty: string;
+            held: boolean;
+            canApprove: boolean;
+            problem: null | string;
+            decidedBy: null | string;
+            decidedAt: null | string;
+            dismissReason: null | string;
+            createdAt: string;
+            updatedAt: string;
         };
         RegionView: {
             id: string;

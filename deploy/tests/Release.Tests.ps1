@@ -274,6 +274,20 @@ Describe 'Invoke-KairoDeploy' {
             '--location asia-south1 --project kairo-test')
     }
 
+    It 'ends finished tests and drafts recommendations hourly through the authenticated worker' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+        $calls | Should -Contain ('scheduler jobs create http kairo-test-ends --schedule 10 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/campaigns/test-ends --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 600s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+        $calls | Should -Contain ('scheduler jobs create http kairo-recommendations --schedule 25 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/care/recommendations --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 1800s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
     It 'updates the hourly catalogue job when it already exists' {
         $script:scheduleExists = $true
 

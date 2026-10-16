@@ -20,6 +20,7 @@ public sealed class LaunchModule : IModule
         services.AddScoped<LaunchDispatcher>();
         services.AddScoped<LaunchReconciler>();
         services.AddScoped<ILaunchRecovery, LaunchRecovery>();
+        services.AddScoped<ICampaignChanges, CampaignChanges>();
         services.AddScoped<LaunchHealthCheck>();
         services.AddScoped<LaunchHealthWorker>();
         services.AddScoped<StockPauser>();

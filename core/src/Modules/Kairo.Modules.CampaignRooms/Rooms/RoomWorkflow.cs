@@ -388,6 +388,30 @@ internal sealed class RoomWorkflow(
         return MoveResult.Done(room);
     }
 
+    public async Task<MoveResult> EndTestAsync(Guid roomId, int version, CancellationToken cancellationToken)
+    {
+        if (await OpenAsync(roomId, version, cancellationToken) is not { Room: { } room } opened)
+        {
+            return MoveResult.Failed(MoveError.NotFound);
+        }
+
+        if (opened.Error != MoveError.None)
+        {
+            return opened;
+        }
+
+        if (room.State != RoomStates.Live)
+        {
+            return MoveResult.Failed(MoveError.NotAllowed, "Only a live campaign's test can be ended early.");
+        }
+
+        var before = Snapshot(room);
+        room.TestEndedEarly = true;
+        await EnterAsync(room, RoomStates.ResultsReady, cancellationToken);
+        await FinishAsync(room, new AuditRecord("campaign_room.test_ended", AuditTarget, room.Id.ToString(), before, After(room, new { early = true })), cancellationToken);
+        return MoveResult.Done(room);
+    }
+
     public async Task<MoveResult> AdvanceAsync(Guid roomId, string signal, AuditActor actor, CancellationToken cancellationToken)
     {
         if (RoomLifecycle.Signal(signal) is not { } move)

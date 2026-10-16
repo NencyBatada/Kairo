@@ -59,6 +59,8 @@ internal static class CampaignRoomsSetup
         services.AddScoped<IAssetRegenerator, VideoRegenerator>();
         services.AddScoped<ICampaignRooms, RoomOpener>();
         services.AddScoped<ICampaignLifecycle, CampaignLifecycle>();
+        services.AddScoped<ICampaignTests, CampaignTests>();
+        services.AddScoped<TestEnds>();
         services.AddScoped<IProofPlans, ProofPlanDirectory>();
         services.AddScoped<IAssets, AssetDirectory>();
         services.AddSingleton<StageLoopSwitch>();
@@ -79,6 +81,7 @@ internal static class CampaignRoomsSetup
         campaigns.MapPost("/{campaignId:guid}/approve", CampaignEndpoints.ApproveAsync).RequireBrandRole(BrandRoles.Approver);
         campaigns.MapPost("/{campaignId:guid}/send-back", CampaignEndpoints.SendBackAsync).RequireBrandRole(BrandRoles.Approver);
         campaigns.MapPost("/{campaignId:guid}/discard", CampaignEndpoints.DiscardAsync).RequireBrandRole(BrandRoles.Marketer);
+        campaigns.MapPost("/{campaignId:guid}/end-test", CampaignEndpoints.EndTestAsync).RequireBrandRole(BrandRoles.Marketer | BrandRoles.Approver);
         campaigns.MapPost("/{campaignId:guid}/stage-runs/{runId:guid}/retry", CampaignEndpoints.RetryAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("/{campaignId:guid}/proof-plan", ProofPlanEndpoints.GetAsync);
         campaigns.MapPost("/{campaignId:guid}/proof-plan/holdouts", ProofPlanEndpoints.ChooseHoldoutsAsync).RequireBrandRole(BrandRoles.Marketer);

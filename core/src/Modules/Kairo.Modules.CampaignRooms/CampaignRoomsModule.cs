@@ -1,4 +1,5 @@
 using Kairo.Modules.CampaignRooms.Data;
+using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
 
 namespace Kairo.Modules.CampaignRooms;
@@ -20,6 +21,7 @@ public sealed class CampaignRoomsModule : IModule
     public void MapJobs(IEndpointRouteBuilder jobs)
     {
         jobs.MapStageJobs();
+        jobs.MapTestEndJobs();
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>
