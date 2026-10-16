@@ -38,12 +38,17 @@ public sealed partial class FakeBigQuery
         ["shop.daily_orders"] = new BrandTable(
             "asia-south1",
             [("order_date", "DATE"), ("state", "STRING"), ("order_count", "INTEGER"), ("net_revenue", "NUMERIC"), ("notes", "STRING")]),
+        ["shop.daily_units"] = new BrandTable(
+            "asia-south1",
+            [("sold_on", "DATE"), ("product_line", "STRING"), ("units", "INTEGER"), ("tags", "STRING")]),
         ["shop.orders"] = new BrandTable(
             "asia-south1",
             [("ordered_at", "TIMESTAMP"), ("state", "STRING"), ("order_count", "INTEGER"), ("net_revenue", "NUMERIC")]),
     };
 
     public List<SalesTableRow> SalesTableRows { get; } = [];
+
+    public List<(string Date, string Series, string Value)> LabTableRows { get; } = [];
 
     public ConcurrentDictionary<string, List<string?[]>> Selects { get; } = new();
 
@@ -266,6 +271,15 @@ public sealed partial class FakeBigQuery
         Queries.Enqueue(new FakeQuery(BrandProject, accessToken, request.GetProperty("location").GetString()!, request.GetProperty("query").GetString()!, request.GetProperty("queryParameters").Clone()));
         var from = DateValues(request, "from").Single();
         var to = DateValues(request, "to").Single();
+        if (request.GetProperty("query").GetString()!.Contains(" AS series", StringComparison.Ordinal))
+        {
+            var lab = LabTableRows
+                .Where(row => string.CompareOrdinal(row.Date, from) >= 0 && string.CompareOrdinal(row.Date, to) <= 0)
+                .Select(row => (object)new { f = new object[] { new { v = row.Date }, new { v = row.Series }, new { v = row.Value } } })
+                .Chunk(500);
+            return Page($"lab_{Guid.NewGuid():N}", new Queue<object[]>(lab));
+        }
+
         var rows = SalesTableRows
             .Where(row => string.CompareOrdinal(row.Date, from) >= 0 && string.CompareOrdinal(row.Date, to) <= 0)
             .Select(row => (object)new { f = new object[] { new { v = row.Date }, new { v = row.Region }, new { v = row.Orders }, new { v = row.Revenue } } })
