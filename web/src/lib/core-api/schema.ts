@@ -3362,6 +3362,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/proof-plan/changes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ProofPlanChangeRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProofPlanResult"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns/{campaignId}/brief": {
         parameters: {
             query?: never;
@@ -4287,6 +4342,7 @@ export interface components {
             sendBackTo: string[];
             discard: boolean;
             retryRun: null | string;
+            requestApprovalBlocker: null | string;
         };
         CampaignActivityPage: {
             entries: components["schemas"]["CampaignActivityView"][];
@@ -4307,6 +4363,8 @@ export interface components {
             approvers: components["schemas"]["CampaignPersonView"][];
             requestedBy: null | components["schemas"]["CampaignPersonView"];
             requestedAt: string;
+            route: string;
+            routeReason: null | string;
         };
         CampaignBriefView: {
             version: number | string;
@@ -4934,10 +4992,17 @@ export interface components {
             days: number | string;
             lift: null | number | string;
         };
+        ProofPlanChangeRequest: {
+            version: null | number | string;
+            reason: null | string;
+            holdoutRegionIds: null | string[];
+            endDate: null | string;
+        };
         ProofPlanResult: {
             plan: null | components["schemas"]["ProofPlanView"];
             updating: boolean;
             canChooseHoldouts: boolean;
+            canChangeAfterLock: boolean;
         };
         ProofPlanView: {
             version: number | string;
@@ -4959,6 +5024,8 @@ export interface components {
             warnings: components["schemas"]["ProofWarningView"][];
             lockedAt: null | string;
             changedAfterLock: boolean;
+            approvedWithWarnings: boolean;
+            changeReason: null | string;
             createdAt: string;
         };
         ProofRegionView: {

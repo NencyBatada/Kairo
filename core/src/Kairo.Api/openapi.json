@@ -3511,6 +3511,67 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/proof-plan/changes": {
+      "post": {
+        "tags": [
+          "ProofPlanEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProofPlanChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProofPlanResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/campaigns/{campaignId}/brief": {
       "get": {
         "tags": [
@@ -5359,7 +5420,8 @@
           "approve",
           "sendBackTo",
           "discard",
-          "retryRun"
+          "retryRun",
+          "requestApprovalBlocker"
         ],
         "type": "object",
         "properties": {
@@ -5390,6 +5452,12 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "requestApprovalBlocker": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5468,7 +5536,9 @@
           "label",
           "approvers",
           "requestedBy",
-          "requestedAt"
+          "requestedAt",
+          "route",
+          "routeReason"
         ],
         "type": "object",
         "properties": {
@@ -5497,6 +5567,15 @@
           "requestedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "route": {
+            "type": "string"
+          },
+          "routeReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -8960,11 +9039,53 @@
           }
         }
       },
+      "ProofPlanChangeRequest": {
+        "required": [
+          "version",
+          "reason",
+          "holdoutRegionIds",
+          "endDate"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "holdoutRegionIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ProofPlanResult": {
         "required": [
           "plan",
           "updating",
-          "canChooseHoldouts"
+          "canChooseHoldouts",
+          "canChangeAfterLock"
         ],
         "type": "object",
         "properties": {
@@ -8982,6 +9103,9 @@
             "type": "boolean"
           },
           "canChooseHoldouts": {
+            "type": "boolean"
+          },
+          "canChangeAfterLock": {
             "type": "boolean"
           }
         }
@@ -9007,6 +9131,8 @@
           "warnings",
           "lockedAt",
           "changedAfterLock",
+          "approvedWithWarnings",
+          "changeReason",
           "createdAt"
         ],
         "type": "object",
@@ -9125,6 +9251,15 @@
           },
           "changedAfterLock": {
             "type": "boolean"
+          },
+          "approvedWithWarnings": {
+            "type": "boolean"
+          },
+          "changeReason": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "createdAt": {
             "type": "string",
