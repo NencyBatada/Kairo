@@ -84,6 +84,7 @@ internal static class RoomLifecycle
     public static (string From, string To)? Signal(string signal) => signal switch
     {
         CampaignSignals.AssetsChecked => (RoomStates.Creating, RoomStates.AssetReview),
+        CampaignSignals.LaunchStarted => (RoomStates.Launching, RoomStates.Launching),
         CampaignSignals.LaunchFinished => (RoomStates.Launching, RoomStates.Live),
         CampaignSignals.LaunchFailed => (RoomStates.Launching, RoomStates.Launching),
         CampaignSignals.TestEnded => (RoomStates.Live, RoomStates.ResultsReady),

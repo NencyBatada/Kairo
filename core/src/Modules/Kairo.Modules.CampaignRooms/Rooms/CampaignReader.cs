@@ -125,6 +125,13 @@ internal sealed class CampaignReader(
             return ("none", "", "Nothing left to do. The learnings are saved.");
         }
 
+        if (room.State == RoomStates.Launching)
+        {
+            return room.RunStatus == StageRunStatuses.Failed
+                ? ("person", ownerName, "The launch needs attention. Open the launch progress to see the cause and suggested fix.")
+                : ("agent", "Launch service", "Kairo is building the approved campaigns in Google Ads.");
+        }
+
         if (latest is { } run && StageRunStatuses.IsActive(run.Status))
         {
             return ("agent", StageProgress.ActorName(run.Agent), Working(run));

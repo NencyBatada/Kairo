@@ -31,6 +31,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public ConcurrentQueue<string> Requests { get; } = new();
 
+    public Func<Uri, string, HttpResponseMessage?>? LaunchResponse { get; set; }
+
     public ConcurrentQueue<string> Revoked { get; } = new();
 
     public FakeBigQuery BigQuery { get; } = new();
@@ -259,6 +261,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     private HttpResponseMessage Product(Uri uri, string body, string? login)
     {
+        if (LaunchResponse?.Invoke(uri, body) is { } launch) return launch;
         var path = uri.AbsolutePath;
         return (uri.Host, path) switch
         {

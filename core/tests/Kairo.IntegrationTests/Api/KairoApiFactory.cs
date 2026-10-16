@@ -105,6 +105,7 @@ public sealed class KairoApiFactory(
             services.AddSingleton<TimeProvider>(Clock);
             services.PostConfigureAll<OpenIdConnectOptions>(Google.Configure);
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
+            services.AddHttpClient("kairo-launch-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-gmail").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);
             services.AddHttpClient("kairo-brand-kit-google").ConfigurePrimaryHttpMessageHandler(() => GoogleApis);

@@ -16,6 +16,7 @@ public enum CampaignAdvance
 
 public static class CampaignSignals
 {
+    public const string LaunchStarted = "launch_started";
     public const string AssetsChecked = "assets_checked";
     public const string LaunchFinished = "launch_finished";
     public const string LaunchFailed = "launch_failed";

@@ -64,6 +64,7 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
         builder.UseSetting(AgentClient.UrlSetting, "http://agents.test");
         builder.UseSetting("Kairo:Triggers:WeatherProject", "kairo-test");
+        builder.UseSetting("Kairo:Launch:Loop", "off");
         if (AnalyticsProject is not null)
         {
             builder.UseSetting("Kairo:Analytics:Project", AnalyticsProject);
@@ -73,6 +74,7 @@ public sealed class KairoWorkerFactory(string connectionString, FakeGoogleApis g
         {
             services.AddSingleton<TimeProvider>(Clock);
             services.AddHttpClient("kairo-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
+            services.AddHttpClient("kairo-launch-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-measurement-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-opportunities-google").ConfigurePrimaryHttpMessageHandler(() => googleApis);
             services.AddHttpClient("kairo-triggers-weather").ConfigurePrimaryHttpMessageHandler(() => googleApis);

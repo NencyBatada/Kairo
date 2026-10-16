@@ -3,6 +3,8 @@ using Kairo.Contracts.Approvals;
 using Kairo.Contracts.Brands;
 using Kairo.Contracts.Connections;
 using Kairo.Contracts.Launch;
+using Kairo.Contracts.BrandKit;
+using System.Security.Cryptography;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 
@@ -16,7 +18,7 @@ internal sealed class LaunchPlanDraft : IBrandOwned
 }
 
 internal sealed class LaunchPlanDesk(CampaignRoomsDbContext db, ApprovalSnapshots snapshots, IApprovalLocks approvals,
-    IConnections connections, IBrandDirectory brands) : ILaunchPlans
+    IConnections connections, IBrandDirectory brands, IBrandKit kits) : ILaunchPlans
 {
     public async Task<LaunchPlan?> GetAsync(Guid roomId, CancellationToken cancellationToken)
     {
@@ -36,6 +38,15 @@ internal sealed class LaunchPlanDesk(CampaignRoomsDbContext db, ApprovalSnapshot
         var youtube = await connections.GetStatusAsync(ConnectedProduct.YouTube, cancellationToken);
         var content = brief.Content.Normalized();
         var plan = proof.Read();
+        LaunchLogo? logo = null;
+        if (settings.Channels.Any(channel => channel.CampaignType == "demand_gen")
+            && await kits.GetApprovedAsync(cancellationToken) is { } kit
+            && kit.Content.TryGetProperty("logo", out var logoJson) && logoJson.ValueKind == JsonValueKind.Object
+            && logoJson.TryGetProperty("fileId", out var fileIdJson) && fileIdJson.TryGetGuid(out var fileId)
+            && await kits.OpenFileAsync(fileId, cancellationToken) is { } file)
+        {
+            logo = new LaunchLogo(fileId, kit.Version, file.ContentType, Convert.ToHexStringLower(SHA256.HashData(file.Content)));
+        }
         return new LaunchPlan(roomId, room.BrandId, room.Title, brief.Version, proof.Version, content.Budget!.Amount,
             content.Budget.Currency, brand.TimeZone, content.StartDate!.Value, content.EndDate!.Value,
             [.. content.Languages], [.. plan.TestRegions.OrderBy(region => region.Id).Select(region => new LaunchRegion(settings.GeoTargetIds?.GetValueOrDefault(region.Id) ?? region.Id, region.Name))],
@@ -43,7 +54,7 @@ internal sealed class LaunchPlanDesk(CampaignRoomsDbContext db, ApprovalSnapshot
             ads.State == ConnectionState.Connected ? ads.ExternalId : null,
             merchant.State == ConnectionState.Connected ? merchant.ExternalId : null,
             youtube.State == ConnectionState.Connected ? youtube.ExternalId : null,
-            [.. content.ProductIds.Order(StringComparer.Ordinal)], [.. content.LandingPages], settings, await snapshots.AssetsAsync(roomId, cancellationToken));
+            [.. content.ProductIds.Order(StringComparer.Ordinal)], [.. content.LandingPages], settings, await snapshots.AssetsAsync(roomId, cancellationToken), logo);
     }
 
     public async Task<bool> IsApprovedAsync(Guid roomId, CancellationToken cancellationToken) =>
@@ -99,6 +110,7 @@ internal sealed class LaunchPlanDesk(CampaignRoomsDbContext db, ApprovalSnapshot
         if (channels.Any(channel => channel.CampaignType == "shopping") && (plan.MerchantAccountId is null || plan.Settings.SalesCountry is not { Length: 2 } country || country.Any(character => character is < 'A' or > 'Z'))) return "Connect Merchant Center and choose the Shopping sales country.";
         if (plan.Assets.Length == 0 || plan.Assets.Any(asset => asset.CheckState is not ("passed" or "overridden") || asset.DisclosureBlocker is not null)) return "Approve a checked asset set before launch.";
         if (plan.Assets.Any(asset => asset.Kind == "video") && plan.YouTubeChannelId is null) return "Reconnect YouTube before launching the approved videos.";
+        if (channels.Any(channel => channel.CampaignType == "demand_gen") && (plan.Logo is null || (plan.Settings.AudienceIds ?? []).Length == 0)) return "Choose an audience list and approve a Brand Kit logo for Demand Gen before launch.";
         return null;
     }
 }
