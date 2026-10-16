@@ -53,6 +53,7 @@ test("instructions show before and after, never applying until explicitly confir
   await waitFor(() => expect((screen.getByRole("button", { name: "Apply changes" }) as HTMLButtonElement).disabled).toBe(false));
   fireEvent.click(screen.getByRole("button", { name: "Apply changes" })); await waitFor(() => expect(applyBrief).toHaveBeenCalledWith("brand-1", draftRoom.id, proposal.id, "1"));
   await waitFor(() => expect(screen.queryByRole("heading", { name: "Proposed changes" })).toBeNull());
+  expect(screen.queryByText("Preview ready")).toBeNull();
 });
 test("a failed apply preserves its preview and a changed version disables it", async () => {
   applyBrief.mockResolvedValue({ status: "error", message: "The service is busy" });

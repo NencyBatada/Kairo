@@ -48,7 +48,7 @@ export function BriefInstructions({ detail, brandId, campaignId, disabled, now, 
       <Button variant="secondary" type="submit" disabled={disabled || applying} pending={pending} className="w-full sm:w-auto">Preview changes</Button>
     </form>
     <div ref={statusRef} tabIndex={-1} className="space-y-3">
-      {(!preview || state.status === "error") && <FormStatus state={state} />}
+      {(preview || state.status === "error") && <FormStatus state={state} />}
       <FormStatus state={applyState} />
       {preview && <div className="space-y-4 border-t pt-4">
         <h3 className="font-semibold">Proposed changes</h3><p className="wrap-anywhere text-small">{preview.proposal.summary}</p>
