@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -24,6 +25,8 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
     public DbSet<Asset> Assets => Set<Asset>();
 
     public DbSet<AssetVersion> AssetVersions => Set<AssetVersion>();
+
+    public DbSet<CheckSettings> CheckSettings => Set<CheckSettings>();
 
     protected override string Schema => SchemaName;
 
@@ -124,6 +127,14 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             version.Property(v => v.Instruction).HasMaxLength(AssetLimits.Instruction);
             version.Property(v => v.Model).HasMaxLength(100);
             version.Property(v => v.PromptVersion).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<CheckSettings>(settings =>
+        {
+            settings.ToTable("CheckSettings");
+            settings.HasKey(s => s.BrandId);
+            settings.OwnsMany(s => s.Rules, rule => rule.ToJson());
+            settings.OwnsMany(s => s.CustomRules, rule => rule.ToJson());
         });
     }
 

@@ -38,6 +38,21 @@ public sealed class LiveEventsTests(SqlServer sqlServer) : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Saving_check_settings_publishes_check_settings_changed()
+    {
+        var owner = await Workspaces.SignInAsync(_api);
+        var brandId = await Workspaces.CreateAsync(owner.Browser);
+        await using var listener = await LiveListener.OpenAsync(_api, owner.Browser, brandId);
+
+        (await owner.Browser.PutAsJsonAsync(
+            $"/api/brands/{brandId}/check-settings",
+            new { version = 0, passScore = 75, fixAttempts = 2 },
+            Token)).EnsureSuccessStatusCode();
+
+        Assert.Equal("check_settings.changed", (await listener.NextAsync()).Type);
+    }
+
+    [Fact]
     public async Task Invitation_changes_reach_admins_only()
     {
         var owner = await Workspaces.SignInAsync(_api);

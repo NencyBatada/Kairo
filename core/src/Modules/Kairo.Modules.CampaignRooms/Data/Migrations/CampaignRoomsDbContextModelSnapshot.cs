@@ -304,6 +304,32 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
                     b.ToTable("BriefProposals", "campaign_rooms");
                 });
 
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckSettings", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("FixAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PassScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("BrandId");
+
+                    b.ToTable("CheckSettings", "campaign_rooms");
+                });
+
             modelBuilder.Entity("Kairo.Modules.CampaignRooms.ProofPlans.ProofPlan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -839,6 +865,68 @@ namespace Kairo.Modules.CampaignRooms.Data.Migrations
 
                     b.Navigation("Content")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Kairo.Modules.CampaignRooms.Checks.CheckSettings", b =>
+                {
+                    b.OwnsMany("Kairo.Modules.CampaignRooms.Checks.CheckRuleSetting", "Rules", b1 =>
+                        {
+                            b1.Property<Guid>("CheckSettingsBrandId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<string>("Rule")
+                                .IsRequired();
+
+                            b1.Property<string>("Severity")
+                                .IsRequired();
+
+                            b1.HasKey("CheckSettingsBrandId", "__synthesizedOrdinal");
+
+                            b1.ToTable("CheckSettings", "campaign_rooms");
+
+                            b1
+                                .ToJson("Rules")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CheckSettingsBrandId");
+                        });
+
+                    b.OwnsMany("Kairo.Modules.CampaignRooms.Checks.CustomCheckRule", "CustomRules", b1 =>
+                        {
+                            b1.Property<Guid>("CheckSettingsBrandId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAddOrUpdate();
+
+                            b1.Property<string>("AppliesTo")
+                                .IsRequired();
+
+                            b1.Property<string>("Id");
+
+                            b1.Property<string>("Severity")
+                                .IsRequired();
+
+                            b1.Property<string>("Text")
+                                .IsRequired();
+
+                            b1.HasKey("CheckSettingsBrandId", "__synthesizedOrdinal");
+
+                            b1.ToTable("CheckSettings", "campaign_rooms");
+
+                            b1
+                                .ToJson("CustomRules")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CheckSettingsBrandId");
+                        });
+
+                    b.Navigation("CustomRules");
+
+                    b.Navigation("Rules");
                 });
 
             modelBuilder.Entity("Kairo.Modules.CampaignRooms.Rooms.Room", b =>

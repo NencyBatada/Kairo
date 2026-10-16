@@ -1,6 +1,7 @@
 using Kairo.Contracts.CampaignRooms;
 using Kairo.Modules.CampaignRooms.Assets;
 using Kairo.Modules.CampaignRooms.Briefs;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Media;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -36,6 +37,7 @@ internal static class CampaignRoomsSetup
         services.AddScoped<AssetEditor>();
         services.AddScoped<AssetApproval>();
         services.AddScoped<AssetHistory>();
+        services.AddScoped<CheckSettingsStore>();
         services.AddScoped<IStageWork, CopyWork>();
         services.AddScoped<IStageWork, AssetRegenerateWork>();
         services.AddScoped<IAssetRegenerator, TextRegenerator>();
@@ -54,6 +56,7 @@ internal static class CampaignRoomsSetup
     public static void MapCampaignRooms(this IEndpointRouteBuilder api)
     {
         api.ServiceProvider.GetRequiredService<StageLoopSwitch>().TurnOn();
+        api.MapCheckSettings();
         var campaigns = api.MapBrandApi().MapGroup("/campaigns");
         campaigns.MapGet("", CampaignEndpoints.ListAsync);
         campaigns.MapGet("/{campaignId:guid}", CampaignEndpoints.GetAsync);
