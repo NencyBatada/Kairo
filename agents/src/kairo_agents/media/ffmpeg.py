@@ -30,5 +30,5 @@ def _run(args: list[str], cwd: Path, timeout: float) -> None:
         raise FfmpegError(result.stderr.decode("utf-8", errors="replace")[-2000:])
 
 
-async def run_ffmpeg(args: list[str], cwd: Path, timeout: float = 150) -> None:
+async def run_ffmpeg(args: list[str], cwd: Path, timeout: float = 100) -> None:
     await asyncio.to_thread(_run, args, cwd, timeout)

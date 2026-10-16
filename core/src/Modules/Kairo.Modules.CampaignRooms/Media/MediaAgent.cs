@@ -90,8 +90,8 @@ internal sealed class MediaAgent(AgentClient agents)
     public const string VideoRoute = "create/video";
 
     public static readonly TimeSpan ImagesTimeout = TimeSpan.FromMinutes(4);
-    public static readonly TimeSpan FootageTimeout = TimeSpan.FromMinutes(8);
-    public static readonly TimeSpan VideoTimeout = TimeSpan.FromMinutes(3);
+    public static readonly TimeSpan FootageTimeout = TimeSpan.FromMinutes(6);
+    public static readonly TimeSpan VideoTimeout = TimeSpan.FromSeconds(150);
 
     public Task<ImagesAnswer> ImagesAsync(ImagesRequest request, CancellationToken cancellationToken) =>
         agents.PostAsync<ImagesRequest, ImagesAnswer>(ImagesRoute, request, ImagesTimeout, cancellationToken);

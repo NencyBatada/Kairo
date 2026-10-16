@@ -113,6 +113,7 @@ public sealed class MediaAgentTests
             new[] { MediaAgent.ImagesTimeout, MediaAgent.FootageTimeout, MediaAgent.VideoTimeout },
             timeout => Assert.True(timeout <= AgentSetup.MaxTimeout));
         Assert.True(AgentSetup.MaxTimeout < StageDispatcher.Lease);
+        Assert.True(MediaAgent.FootageTimeout + MediaAgent.VideoTimeout <= StageDispatcher.Lease - TimeSpan.FromMinutes(1));
     }
 
     [Fact]
