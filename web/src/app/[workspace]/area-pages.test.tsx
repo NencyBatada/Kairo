@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import type { ComponentType } from "react";
 import { expect, test } from "vitest";
 
-import PerformancePage from "./campaigns/[id]/performance/page";
 import ResultsPage from "./campaigns/[id]/results/page";
 import ImpactLabPage from "./impact-lab/page";
 
@@ -17,7 +16,6 @@ test.each([
 });
 
 test.each([
-  ["Performance", PerformancePage, "No performance yet"],
   ["Results", ResultsPage, "No results yet"],
 ] as [string, ComponentType, string][])("%s sits under the room's title with its own empty state", (_, Page, empty) => {
   render(<Page />);

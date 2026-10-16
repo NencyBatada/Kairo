@@ -1,0 +1,9 @@
+import { expect, test } from "vitest";
+import { batchContext, chartPaths, date, difference, totals, validId, validVersion } from "./model";
+import { batchId, day, pause, stock } from "../fixtures.test-data";
+
+test("totals use numeric API strings and preserve fractional conversions", () => { expect(totals([day(), day({ spend: "0", conversions: "0.25" })])).toEqual({ spend: 70, plan: 200, conversions: 2.75, value: 800, clicks: 40, impressions: 2000 }); expect(totals([]).spend).toBe(0); });
+test("chart breaks a missing day instead of inventing a continuous observation", () => { expect(chartPaths([day({ date: "2026-10-12" }), day({ date: "2026-10-13" }), day()], "spend", () => 10, () => 20)).toBe("M10,20 L10,20 M10,20"); });
+test("batch fingerprint ignores row order but includes held versions, membership and feed freshness", () => { const log = stock({ pauses: [pause({ state: "held", batchId }), pause({ id: batchId, batchId, state: "held" })] }); const key = batchContext(log, batchId); expect(batchContext({ ...log, pauses: [...log.pauses].reverse() }, batchId)).toBe(key); for (const changed of [{ ...log, feedStale: true }, { ...log, feedUpdatedAt: null }, { ...log, pauses: [log.pauses[0]] }, { ...log, pauses: [pause({ batchId, state: "held", version: 4 }), log.pauses[1]] }]) expect(batchContext(changed, batchId)).not.toBe(key); });
+test.each([0, -1, NaN, Infinity, 1.5, 2147483648, "3", null])("rejects invalid mutation version %s", value => { expect(validVersion(value)).toBe(false); });
+test("validates identity and formats calendar dates without shifting time zones", () => { expect(validId(batchId)).toBe(true); expect(validId("../other")).toBe(false); expect(validVersion(2147483647)).toBe(true); expect(date("2026-10-15")).toBe("15 Oct 2026"); expect(difference("-0.3")).toBe("−30.0%"); });

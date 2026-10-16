@@ -1,0 +1,15 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { brandId, campaignId, pacing, stock, lift } from "./fixtures.test-data";
+const { get, getRoom, getWorkspace } = vi.hoisted(() => ({ get: vi.fn(), getRoom: vi.fn(), getWorkspace: vi.fn() }));
+vi.mock("../_lib/room", () => ({ getRoom }));
+vi.mock("@/lib/core-api/queries", () => ({ getWorkspace }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown; response: Response }) => { if (!result.response.ok) throw new Error(`API ${result.response.status}`); return result.data; } }));
+vi.mock("./actions", () => ({ changeStock: vi.fn() }));
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ room: { id: campaignId }, brandId, timeZone: "Asia/Kolkata" }); getWorkspace.mockResolvedValue({ roles: ["marketer"] }); get.mockImplementation(async (path: string) => ({ response: new Response(), data: path.endsWith("/pacing") ? pacing() : path.endsWith("/lift") ? lift() : stock() })); });
+const params = Promise.resolve({ workspace: "acme", id: "route-alias" });
+test("loads scoped data using the resolved room identity and marketer permissions", async () => { render(await Page({ params })); expect(getRoom).toHaveBeenCalledWith("acme", "route-alias"); expect(get.mock.calls.map(call => call[1])).toEqual([{ params: { path: { brandId, campaignId } } }, { params: { path: { brandId, campaignId } } }, { params: { path: { brandId, campaignId } } }]); expect(screen.getByRole("button", { name: "Undo pause" })).toBeTruthy(); expect(screen.getByRole("link").getAttribute("href")).toContain(`${campaignId}/recommendations`); });
+test("only pacing 404 means no performance; viewers cannot mutate stock", async () => { getWorkspace.mockResolvedValue({ roles: ["viewer"] }); get.mockResolvedValueOnce({ response: new Response(null, { status: 404 }) }).mockResolvedValueOnce({ response: new Response(), data: stock() }); render(await Page({ params })); expect(screen.getByText("No performance yet")).toBeTruthy(); expect(screen.queryByRole("button", { name: "Undo pause" })).toBeNull(); });
+test.each([401, 403, 500])("pacing read failure reaches the error boundary (%s)", async status => { get.mockResolvedValueOnce({ response: new Response(null, { status }) }); await expect(Page({ params })).rejects.toThrow(`API ${status}`); });
+test("stock log failure never becomes an empty log", async () => { get.mockRejectedValueOnce(new Error("offline")); await expect(Page({ params })).rejects.toThrow("offline"); });
