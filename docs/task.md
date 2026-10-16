@@ -111,8 +111,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 - [x] **Copy generation**: Keywords, search ads, Demand Gen text and shopping titles in the brand's voice, within Google Ads limits. *Note: copy is written in the brief's first language until Regional languages adds the rest; the 80-character, 10-word keyword limit still needs confirming against Google Ads documentation.*
 - [x] **Images and video**: Product images from catalogue photos in every size, and a short 9:16 video with voiceover, captions and logo. *Note: still needs a first run against real Gemini image, Veo and Text-to-Speech in development.*
-- [ ] **Regional languages**: Copy and voiceover in each language in the brief, starting with Hindi.
-- [ ] **Asset history and AI labels**: Records how each asset was made and adds AI disclosure labels where platforms require them.
+- [/] **Regional languages**: Copy and voiceover in each language in the brief, starting with Hindi.
+- [/] **Asset history and AI labels**: Records how each asset was made and adds AI disclosure labels where platforms require them.
 
 ### Nency (web app)
 
