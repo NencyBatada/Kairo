@@ -36,6 +36,7 @@ public static class AuditActions
         new("analytics.feed_started", "Started a data feed refresh"),
         new("analytics.feed_succeeded", "Refreshed a data feed"),
         new("analytics.feed_failed", "A data feed refresh failed"),
+        new("measurement.lift_measured", "Measured a campaign's lift against its holdout regions"),
         new("notifications.email_settings_changed", "Changed notification email settings"),
         new("opportunities.refreshed", "Refreshed the opportunities"),
         new("opportunity.accepted", "Accepted an opportunity"),

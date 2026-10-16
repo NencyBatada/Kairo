@@ -14,6 +14,7 @@ public static class AgentSetup
         services.TryAddSingleton<AgentClient>();
         services.TryAddSingleton<PlanAgent>();
         services.TryAddSingleton<ProofPlanAgent>();
+        services.TryAddSingleton<LiftAgent>();
         return services;
     }
 }
