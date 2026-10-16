@@ -4,11 +4,14 @@ $script:Apis = @(
     'iam.googleapis.com', 'storage.googleapis.com', 'cloudkms.googleapis.com',
     'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
     'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com',
-    'aiplatform.googleapis.com', 'weather.googleapis.com'
+    'aiplatform.googleapis.com', 'weather.googleapis.com', 'texttospeech.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
-$script:FileBuckets = @('brand-files', 'catalogue-imports')
-$script:BucketLifecycles = @{ 'catalogue-imports' = 'catalogue-imports-lifecycle.json' }
+$script:FileBuckets = @('brand-files', 'catalogue-imports', 'generated-media')
+$script:BucketLifecycles = @{
+    'catalogue-imports' = 'catalogue-imports-lifecycle.json'
+    'generated-media'   = 'generated-media-lifecycle.json'
+}
 $script:PasswordCharacters = [char[]]'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
 $script:MailRedirectUri = 'http://localhost:8765/'
 $script:GmailSendScope = 'https://www.googleapis.com/auth/gmail.send'

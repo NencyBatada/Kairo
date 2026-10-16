@@ -344,6 +344,14 @@ Describe 'Invoke-KairoDeploy' {
         $agents | Should -BeLike '*--timeout 3600*'
     }
 
+    It 'gives the agent service room to put videos together' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        $agents = $calls | Where-Object { $_ -like 'run deploy kairo-agents *' }
+        $agents | Should -BeLike '*--memory 2Gi*'
+        $agents | Should -BeLike '*--cpu 2*'
+    }
+
     It 'deploys the web app publicly, pointing at the API' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

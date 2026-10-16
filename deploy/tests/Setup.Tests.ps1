@@ -32,7 +32,7 @@ Describe 'Initialize-KairoProject' {
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
-                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com --project kairo-test')
+                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com texttospeech.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {
@@ -154,6 +154,22 @@ Describe 'Initialize-KairoProject' {
             $rules.rule[0].action.type | Should -Be 'Delete'
             $rules.rule[0].condition.age | Should -Be 30
             ($calls | Where-Object { $_ -like 'storage buckets update gs://kairo-test-brand-files *' }) | Should -BeNullOrEmpty
+        }
+
+        It 'creates a private bucket for generated media that deletes unapproved drafts after 30 days' {
+            $calls | Should -Contain 'storage buckets create gs://kairo-test-generated-media --location asia-south1 --uniform-bucket-level-access --public-access-prevention --project kairo-test'
+            foreach ($name in 'kairo-api', 'kairo-worker') {
+                $calls | Should -Contain "storage buckets add-iam-policy-binding gs://kairo-test-generated-media --member serviceAccount:$name@kairo-test.iam.gserviceaccount.com --role roles/storage.objectAdmin --project kairo-test"
+            }
+            ($calls | Where-Object { $_ -like 'storage buckets add-iam-policy-binding gs://kairo-test-generated-media *kairo-agents@*' }) | Should -BeNullOrEmpty
+
+            $update = @($calls | Where-Object { $_ -like 'storage buckets update gs://kairo-test-generated-media --lifecycle-file=* --project kairo-test' })
+            $update.Count | Should -Be 1
+            $file = $update[0] -replace '^.*--lifecycle-file=(\S+) .*$', '$1'
+            $rules = Get-Content -Raw -Path $file | ConvertFrom-Json
+            $rules.rule[0].action.type | Should -Be 'Delete'
+            $rules.rule[0].condition.age | Should -Be 30
+            $rules.rule[0].condition.matchesPrefix | Should -Be @('drafts/')
         }
     }
 
