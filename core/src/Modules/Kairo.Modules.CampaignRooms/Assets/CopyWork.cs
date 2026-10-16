@@ -33,6 +33,11 @@ internal sealed class CopyWork(
             throw new StageFailure(StageFailure.NoBrief, "This campaign has no brief to write ads from.");
         }
 
+        if (context.CampaignTypes.Count == 0)
+        {
+            throw new StageFailure(StageFailure.NoProducts, "None of the brief's products are in stock, so Kairo can't write shopping titles.");
+        }
+
         var locked = await db.Assets.AsNoTracking()
             .Where(asset => asset.RoomId == room.Id && asset.Locked && asset.Status == AssetStatuses.Active && AssetKinds.Text.Contains(asset.Kind))
             .ToListAsync(cancellationToken);

@@ -81,15 +81,10 @@ internal sealed class CopyDesk(
             .Take(MaxProducts)
             .Select((id, index) => new KeyedProduct($"p{index + 1}", stocked[id]))
             .ToList();
-        var types = (content.CampaignTypes ?? [])
-            .Where(BriefChoices.IsCampaignType)
-            .Distinct()
-            .Where(type => type != BriefChoices.Shopping || products.Count > 0)
-            .ToList();
-        if (types.Count == 0)
-        {
-            types.Add(BriefChoices.Search);
-        }
+        var chosen = (content.CampaignTypes ?? []).Where(BriefChoices.IsCampaignType).Distinct().ToList();
+        List<string> types = chosen.Count == 0
+            ? [BriefChoices.Search]
+            : chosen.Where(type => type != BriefChoices.Shopping || products.Count > 0).ToList();
 
         var brand = (await brands.GetAsync([room.BrandId], cancellationToken)).Single();
         var kit = await brandKit.GetApprovedAsync(cancellationToken);

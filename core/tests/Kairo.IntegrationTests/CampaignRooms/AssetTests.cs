@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kairo.Contracts.CampaignRooms;
+using Kairo.IntegrationTests.Catalogue;
+using Kairo.IntegrationTests.Opportunities;
 
 namespace Kairo.IntegrationTests.CampaignRooms;
 
@@ -283,6 +285,22 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
 
         var after = await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal(["keyword_set", "shopping_title"], Campaigns.AllAssets(after).Select(asset => asset.GetProperty("kind").GetString()));
+    }
+
+    [Fact]
+    public async Task Shopping_alone_with_nothing_in_stock_needs_attention()
+    {
+        _world.Plan.Answer = request => Brief(request, ["shopping"]);
+        var roomId = await _world.OpenWithBriefAsync();
+        await _world.ApproveBriefAsync(roomId);
+        await Catalogues.ImportAsync(_world.Admin, _world.BrandId, Radar.Catalogue("out_of_stock"));
+
+        Assert.Equal(1, await _world.RunStagesAsync());
+
+        Assert.Empty(_world.Create.Requests);
+        var detail = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
+        Assert.Equal("needs_attention", Campaigns.Status(detail));
+        Assert.Empty(Campaigns.AllAssets(await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId)));
     }
 
     private async Task<Guid> CreatedAsync()
