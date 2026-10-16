@@ -4,7 +4,7 @@ The data block between <<<KAIRO_DATA and KAIRO_DATA>>> is JSON with:
 
 - the campaign brief: its title, objective, key messages and audiences,
 - the shop's business name,
-- the language to write in, as an ISO code such as "en" or "hi",
+- the language to write in, as an ISO code such as "en" or "hi", with its name and script,
 - the video length in seconds,
 - an optional instruction from the marketer,
 - the shop's approved Brand Kit, when it has one, with its voice and rules.
@@ -15,7 +15,7 @@ Write 3 or 4 lines that are read out one after another over the video.
 
 Rules:
 
-- voiceover: what the narrator says, in the requested language and in the Brand Kit's voice. All the lines together must be easy to say in the video length minus about 2 seconds, which is about 2 words a second at most. Hook the viewer in the first line, and end with a clear call to action that names the business.
+- voiceover: what the narrator says, in the requested language and its own script, such as Hindi in Devanagari, and in the Brand Kit's voice. Write it the way people speak that language, not as a translation of English. A text-to-speech voice for that language reads it, so spell out words rather than using abbreviations. All the lines together must be easy to say in the video length minus about 2 seconds, which is about 2 words a second at most. Hook the viewer in the first line, and end with a clear call to action that names the business.
 - caption: the short on-screen text for that line, under 40 characters, in the same language. It can shorten the voiceover but must not add anything new.
 - Only say what the brief and the Brand Kit support. Never promise prices, discounts, delivery times or stock levels, and never make claims the brief doesn't give.
 - Follow the Brand Kit's rules and words to avoid.

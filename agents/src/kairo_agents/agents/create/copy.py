@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
-from kairo_agents.agents.create import limits
+from kairo_agents.agents.create import languages, limits
 from kairo_agents.agents.create.models import (
     AdGroupCopy,
     AssetText,
@@ -43,6 +43,22 @@ CLAIMS = (
     "sale",
     "coupon",
 )
+TRANSLATED_CLAIMS = {
+    "मुफ्त डिलीवरी": "free delivery",
+    "मुफ़्त डिलीवरी": "free delivery",
+    "फ्री डिलीवरी": "free delivery",
+    "मुफ्त शिपिंग": "free shipping",
+    "मुफ़्त शिपिंग": "free shipping",
+    "छूट": "discount",
+    "डिस्काउंट": "discount",
+    "कैशबैक": "cashback",
+    "सबसे कम कीमत": "lowest price",
+    "सबसे सस्ता": "cheapest",
+    "सबसे सस्ते": "cheapest",
+    "गारंटी": "guarantee",
+    "सेल": "sale",
+    "कूपन": "coupon",
+}
 SYMBOLS = re.compile(r"[!@%,*=;:?\^`<>{}\[\]|~\"#$()/]")
 GAPS = re.compile(r"[\s/]+")
 
@@ -53,6 +69,14 @@ class Guard:
     competitors: list[str] = field(default_factory=list)
     facts: str = ""
     numbers: set[str] = field(default_factory=set)
+    language: str = "en"
+    names: frozenset[str] = frozenset()
+
+    def fits(self, text: str) -> bool:
+        return languages.fits(text, self.language, self.names)
+
+    def fits_keyword(self, text: str) -> bool:
+        return languages.fits_keyword(text, self.language, self.names)
 
     def allows(self, text: str) -> bool:
         lowered = text.casefold()
@@ -69,11 +93,18 @@ class Guard:
         for claim in CLAIMS:
             if re.search(rf"(?<!\w){re.escape(claim)}(?!\w)", lowered) and claim not in self.facts:
                 return False
+        for claim, meaning in TRANSLATED_CLAIMS.items():
+            if claim in text and claim not in self.facts and meaning not in self.facts:
+                return False
         return True
 
 
 def guard_for(
-    brief: CopyBrief, products: list[CopyProduct], brand_kit: dict[str, Any] | None
+    brief: CopyBrief,
+    products: list[CopyProduct],
+    brand_kit: dict[str, Any] | None,
+    language: str = "en",
+    brand: str = "",
 ) -> Guard:
     rules = (brand_kit or {}).get("rules") or {}
     banned = [str(word).strip() for word in rules.get("bannedWords") or [] if str(word).strip()]
@@ -94,11 +125,16 @@ def guard_for(
     for text in facts:
         for match in AMOUNT.finditer(text):
             numbers.add(normalized(match.group(1) or match.group(2)))
+    names = {word.casefold() for word in brand.split()}
+    for product in products:
+        names.update(word.casefold() for word in (product.brand or "").split())
     return Guard(
         banned=banned,
         competitors=[name for name in competitors if name],
         facts=" ".join(facts).casefold(),
         numbers=numbers,
+        language=language,
+        names=frozenset(names),
     )
 
 
@@ -117,13 +153,17 @@ def emoji(text: str) -> bool:
     return any(unicodedata.category(character) == "So" for character in text)
 
 
-def line(text: str | None, maximum: int, guard: Guard, headline: bool = False) -> str | None:
+def line(
+    text: str | None, maximum: int, guard: Guard, headline: bool = False, script: bool = True
+) -> str | None:
     value = tidy(text)
     if not value or limits.length(value) > maximum or emoji(value):
         return None
     if headline and "!" in value:
         return None
-    if re.search(r"([!?.,])\1", value):
+    if re.search(r"([!?.,।])\1", value):
+        return None
+    if script and not guard.fits(value):
         return None
     return value if guard.allows(value) else None
 
@@ -149,10 +189,11 @@ def keywords(drafts: Iterable[DraftKeyword | Keyword], guard: Guard) -> list[Key
         text = tidy(draft.text).casefold()
         if (
             not text
-            or len(text) > limits.KEYWORD
+            or limits.length(text) > limits.KEYWORD
             or len(text.split()) > limits.KEYWORD_WORDS
             or SYMBOLS.search(text)
             or emoji(text)
+            or not guard.fits_keyword(text)
             or not guard.allows(text)
         ):
             continue
@@ -325,7 +366,7 @@ def clean_titles(draft: DraftTitles, products: list[CopyProduct], guard: Guard) 
     titles: dict[str, ShoppingTitle] = {}
     for drafted in draft.titles:
         product_id = drafted.product_id.strip()
-        title = line(drafted.title, limits.SHOPPING_TITLE, guard)
+        title = line(drafted.title, limits.SHOPPING_TITLE, guard, script=False)
         if product_id in known and title and product_id not in titles:
             titles[product_id] = ShoppingTitle(product_id=product_id, title=title)
     ordered = [titles[product.id] for product in products if product.id in titles]
@@ -413,7 +454,7 @@ def clean_revision(
             ),
             [],
         )
-    title = line(draft.title, limits.SHOPPING_TITLE, guard)
+    title = line(draft.title, limits.SHOPPING_TITLE, guard, script=False)
     if title is None:
         return Cleaned(None, [f"Write a title of up to {limits.SHOPPING_TITLE} characters."])
     return Cleaned(current.model_copy(update={"title": title}), [])

@@ -102,6 +102,7 @@ class FakeModels:
         self.calls: list[dict] = []
         self.images: list[bytes | None | Exception] = []
         self.text = ""
+        self.texts: list[str] = []
         self.error: Exception | None = None
 
     async def generate_content(self, **kwargs):
@@ -128,7 +129,8 @@ class FakeModels:
             )
         if self.error:
             raise self.error
-        return SimpleNamespace(text=self.text, candidates=[], usage_metadata=None)
+        text = self.texts.pop(0) if self.texts else self.text
+        return SimpleNamespace(text=text, candidates=[], usage_metadata=None)
 
 
 class FakeVideos:
@@ -530,3 +532,72 @@ def test_voices_can_be_overridden_per_language(monkeypatch) -> None:
 
     assert voice_for("en").name == "en-IN-Chirp3-HD-Kore"
     assert voice_for("xx") is None
+
+
+HINDI_SCRIPT = {
+    "lines": [
+        {"voiceover": "फिर से बारिश?", "caption": "फिर से बारिश?"},
+        {"voiceover": "Acme Shoes के जूते मिनटों में सूखते हैं।", "caption": "मिनटों में सूखें"},
+        {"voiceover": "आज ही Acme Shoes से खरीदें।", "caption": "आज ही खरीदें"},
+    ]
+}
+
+
+def test_video_speaks_and_captions_hindi_with_a_hindi_voice(fakes, video_request) -> None:
+    fakes.models.text = json.dumps(HINDI_SCRIPT)
+    fakes.speech.seconds = 0.6
+    video_request["language"] = "hi"
+
+    response = post("/create/video", video_request)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["language"] == "hi"
+    assert body["voice"] == "hi-IN-Chirp3-HD-Achird"
+    assert [line["caption"] for line in body["script"]] == [
+        "फिर से बारिश?",
+        "मिनटों में सूखें",
+        "आज ही खरीदें",
+    ]
+    assert {call["voice"].language_code for call in fakes.speech.calls} == {"hi-IN"}
+    assert '"languageName": "Hindi"' in fakes.models.calls[0]["contents"]
+
+
+def test_video_asks_again_when_a_hindi_script_comes_back_in_english(fakes, video_request) -> None:
+    fakes.models.texts = [json.dumps(SCRIPT), json.dumps(HINDI_SCRIPT)]
+    fakes.speech.seconds = 0.6
+    video_request["language"] = "hi"
+
+    response = post("/create/video", video_request)
+
+    assert response.status_code == 200
+    first, second = fakes.models.calls
+    assert "rejected" not in first["config"].system_instruction
+    assert "in Hindi, in Devanagari script" in second["config"].system_instruction
+    assert response.json()["script"][0]["voiceover"] == "फिर से बारिश?"
+
+
+def test_video_fails_when_the_script_is_in_the_wrong_language_twice(fakes, video_request) -> None:
+    fakes.models.text = json.dumps(SCRIPT)
+    video_request["language"] = "hi"
+
+    response = post("/create/video", video_request)
+
+    assert response.status_code == 502
+    assert len(fakes.models.calls) == 2
+    assert fakes.speech.calls == []
+
+
+def test_hindi_has_a_voice_and_languages_without_one_do_not(monkeypatch) -> None:
+    monkeypatch.delenv("KAIRO_TTS_VOICE_HI", raising=False)
+
+    hindi = voice_for("hi")
+
+    assert hindi is not None
+    assert (hindi.language_code, hindi.name, hindi.script) == (
+        "hi-IN",
+        "hi-IN-Chirp3-HD-Achird",
+        "devanagari",
+    )
+    assert voice_for("mr") is None
+    assert voice_for("ta") is None

@@ -18,6 +18,7 @@ from kairo_agents.agents.create.copy import (
     clean_titles,
     guard_for,
 )
+from kairo_agents.agents.create.languages import guidance, language_data
 from kairo_agents.agents.create.models import (
     CopyInstructionRequest,
     CopyInstructionResponse,
@@ -74,13 +75,16 @@ async def generate(
     data: str,
     temperature: float,
     clean: Callable[[Any], Cleaned],
+    language: str = "en",
 ) -> tuple[Any, list[Usage | None]]:
     usages: list[Usage | None] = []
     problems: list[str] = []
     for attempt in range(2):
         system = instructions
         if attempt:
-            notes = "\n".join(f"- {problem}" for problem in problems)
+            notes = "\n".join(
+                f"- {problem}" for problem in [*problems, guidance(language)] if problem
+            )
             system = f"{instructions}\n\nYour last answer was rejected because:\n{notes}\n\nFix it."
         response = await clients().aio.models.generate_content(
             model=model,
@@ -105,6 +109,10 @@ async def generate(
     raise ModelFailed("; ".join(problems))
 
 
+def copy_data(request: CopyRequest | CopyInstructionRequest) -> str:
+    return data_block({**request.model_dump(by_alias=True), **language_data(request.language)})
+
+
 def total(usages: list[Usage | None]) -> Usage | None:
     known = [usage for usage in usages if usage is not None]
     if not known:
@@ -120,8 +128,10 @@ def total(usages: list[Usage | None]) -> Usage | None:
 @router.post("/create/copy", response_model=CopyResponse)
 async def copy(request: CopyRequest, clients: ClientSource) -> Any:
     model = model_name()
-    guard = guard_for(request.brief, request.products, request.brand_kit)
-    data = data_block(request)
+    guard = guard_for(
+        request.brief, request.products, request.brand_kit, request.language, request.brand
+    )
+    data = copy_data(request)
     jobs: dict[str, Any] = {}
     if "search" in request.campaign_types:
         jobs["search"] = generate(
@@ -132,6 +142,7 @@ async def copy(request: CopyRequest, clients: ClientSource) -> Any:
             data,
             COPY_TEMPERATURE,
             lambda draft: clean_search(draft, request.brief, request.products, guard),
+            request.language,
         )
     if "demand_gen" in request.campaign_types:
         jobs["demand_gen"] = generate(
@@ -144,6 +155,7 @@ async def copy(request: CopyRequest, clients: ClientSource) -> Any:
             lambda draft: clean_demand_gen(
                 draft, request.brand, request.brief, request.products, guard
             ),
+            request.language,
         )
     if "shopping" in request.campaign_types and request.products:
         jobs["shopping"] = generate(
@@ -176,7 +188,9 @@ async def copy(request: CopyRequest, clients: ClientSource) -> Any:
 @router.post("/create/copy-instruction", response_model=CopyInstructionResponse)
 async def copy_instruction(request: CopyInstructionRequest, clients: ClientSource) -> Any:
     model = model_name()
-    guard = guard_for(request.brief, request.products, request.brand_kit)
+    guard = guard_for(
+        request.brief, request.products, request.brand_kit, request.language, request.brand
+    )
     summary: list[str] = []
 
     def clean(draft: DraftRevision) -> Cleaned:
@@ -197,9 +211,10 @@ async def copy_instruction(request: CopyInstructionRequest, clients: ClientSourc
             model,
             copy_instruction_instructions(),
             DraftRevision,
-            data_block(request),
+            copy_data(request),
             INSTRUCTION_TEMPERATURE,
             clean,
+            request.language,
         )
     except Exception:
         logger.exception("Create couldn't follow the copy instruction.")

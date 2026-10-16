@@ -3,7 +3,7 @@ from importlib import resources
 
 IMAGE_PROMPT_VERSION = "create-image/1"
 FOOTAGE_PROMPT_VERSION = "create-footage/1"
-VIDEO_SCRIPT_PROMPT_VERSION = "create-video-script/1"
+VIDEO_SCRIPT_PROMPT_VERSION = "create-video-script/2"
 
 
 @cache
@@ -21,4 +21,4 @@ def footage_instructions() -> str:
 
 
 def video_script_instructions() -> str:
-    return _read("video_script_v1.md")
+    return _read("video_script_v2.md")

@@ -195,7 +195,8 @@ def guard():
 
 def test_length_counts_double_width_characters_twice() -> None:
     assert limits.length("Dry feet") == 8
-    assert limits.length("बारिश के जूते") == len("बारिश के जूते")
+    assert limits.length("बारिश के जूते") == len("बारिश के जूते") == 13
+    assert limits.length("हिंदी") == 5
     assert limits.length("雨靴") == 4
 
 
@@ -246,8 +247,69 @@ def test_keywords_are_lower_case_unique_and_valid() -> None:
     assert [(keyword.text, keyword.match) for keyword in kept] == [
         ("waterproof shoes", "exact"),
         ("rain boots", "phrase"),
-        ("बारिश के जूते", "phrase"),
     ]
+
+
+def hindi_guard():
+    return guard_for(
+        CopyBrief.model_validate(BRIEF),
+        [CopyProduct.model_validate(product) for product in PRODUCTS],
+        KIT,
+        "hi",
+        "Acme Shoes",
+    )
+
+
+def test_hindi_keywords_keep_devanagari_and_hinglish_but_not_other_scripts() -> None:
+    kept = keywords(
+        [
+            DraftKeyword(text="बारिश के जूते", match="phrase"),
+            DraftKeyword(text="barish ke joote", match="phrase"),
+            DraftKeyword(text="acme जूते", match="exact"),
+            DraftKeyword(text="மழை காலணி", match="phrase"),
+            DraftKeyword(text="সস্তা জুতো", match="phrase"),
+        ],
+        hindi_guard(),
+    )
+
+    assert [keyword.text for keyword in kept] == [
+        "बारिश के जूते",
+        "barish ke joote",
+        "acme जूते",
+    ]
+
+
+def test_hindi_lines_must_be_mostly_devanagari() -> None:
+    rules = hindi_guard()
+
+    assert lines(
+        [
+            "बारिश में भी सूखे पैर",
+            "Acme Shoes के वाटरप्रूफ जूते",
+            "Stay dry on your commute",
+            "Waterproof shoes जूते",
+            "மழையில் உலர்ந்த கால்கள்",
+        ],
+        limits.SEARCH_HEADLINE,
+        15,
+        rules,
+        True,
+    ) == ["बारिश में भी सूखे पैर", "Acme Shoes के वाटरप्रूफ जूते"]
+
+
+def test_english_lines_drop_other_scripts() -> None:
+    assert lines(["Dry feet all day", "सूखे पैर पूरे दिन"], 30, 15, guard(), True) == [
+        "Dry feet all day"
+    ]
+
+
+def test_hindi_claims_need_the_same_support_as_english_ones() -> None:
+    rules = hindi_guard()
+
+    assert rules.allows("₹999 से ऊपर मुफ्त डिलीवरी")
+    assert not rules.allows("आज 20% छूट")
+    assert not rules.allows("सबसे सस्ते जूते")
+    assert not rules.allows("कैशबैक पाएं")
 
 
 def test_paths_names_and_calls_to_action_are_cleaned() -> None:
@@ -314,7 +376,15 @@ def test_copy_writes_each_campaign_type_in_parallel_and_cleans_it(models, monkey
     assert schemas[DraftTitles]["config"].system_instruction == titles_instructions()
     assert all(call["model"] == "gemini-flash-test" for call in models.calls)
     assert all(
-        call["contents"] == data_block(CopyRequest.model_validate(REQUEST)) for call in models.calls
+        call["contents"]
+        == data_block(
+            {
+                **CopyRequest.model_validate(REQUEST).model_dump(by_alias=True),
+                "languageName": "English",
+                "script": "latin",
+            }
+        )
+        for call in models.calls
     )
 
 
@@ -489,3 +559,89 @@ def test_copy_instruction_fails_when_the_rewrite_breaks_the_rules_twice(models) 
     response = TestClient(app).post("/create/copy-instruction", json=INSTRUCTION)
 
     assert response.status_code == 502
+
+
+HINDI_SEARCH = {
+    "adGroups": [
+        {
+            "name": "बारिश के जूते",
+            "productIds": ["p1"],
+            "keywords": [
+                {"text": "बारिश के जूते", "match": "phrase"},
+                {"text": "barish ke joote", "match": "phrase"},
+                {"text": "மழை காலணி", "match": "phrase"},
+            ],
+            "headlines": [
+                "बारिश में भी सूखे पैर",
+                "वाटरप्रूफ रनिंग जूते",
+                "मिनटों में सूखें",
+                "Stay dry on your commute",
+            ],
+            "descriptions": [
+                "मेश रनर जो आपके पैर सूखे रखें और मिनटों में सूख जाएं।",
+                "Acme Shoes के जूते हर मौसम के लिए।",
+            ],
+            "path1": "जूते",
+            "path2": "बारिश",
+        }
+    ]
+}
+
+ENGLISH_ONLY = {
+    "adGroups": [
+        {
+            **SEARCH["adGroups"][0],
+            "headlines": ["Stay dry on your commute", "Dries in minutes", "Rain shoes"],
+        }
+    ]
+}
+
+
+def test_copy_writes_hindi_in_devanagari_with_hinglish_keywords(models) -> None:
+    models.answers[DraftSearch] = [json.dumps(HINDI_SEARCH)]
+
+    response = TestClient(app).post(
+        "/create/copy", json={**REQUEST, "language": "hi", "campaignTypes": ["search"]}
+    )
+
+    assert response.status_code == 200
+    group = response.json()["assets"]["adGroups"][0]
+    assert [keyword["text"] for keyword in group["keywords"]] == [
+        "बारिश के जूते",
+        "barish ke joote",
+    ]
+    assert group["headlines"] == [
+        "बारिश में भी सूखे पैर",
+        "वाटरप्रूफ रनिंग जूते",
+        "मिनटों में सूखें",
+    ]
+    assert "Stay dry on your commute" not in group["headlines"]
+    call = models.calls[0]
+    assert '"languageName": "Hindi"' in call["contents"]
+    assert '"script": "devanagari"' in call["contents"]
+
+
+def test_copy_asks_again_in_hindi_when_the_answer_is_in_english(models) -> None:
+    models.answers[DraftSearch] = [json.dumps(ENGLISH_ONLY), json.dumps(HINDI_SEARCH)]
+
+    response = TestClient(app).post(
+        "/create/copy", json={**REQUEST, "language": "hi", "campaignTypes": ["search"]}
+    )
+
+    assert response.status_code == 200
+    first, second = models.calls
+    assert "rejected" not in first["config"].system_instruction
+    assert "in Hindi, in Devanagari script" in second["config"].system_instruction
+    assert "Latin letters" in second["config"].system_instruction
+
+
+def test_hindi_shopping_titles_skip_the_script_check(models) -> None:
+    response = TestClient(app).post(
+        "/create/copy", json={**REQUEST, "language": "hi", "campaignTypes": ["shopping"]}
+    )
+
+    assert response.status_code == 200
+    assert [title["productId"] for title in response.json()["assets"]["shoppingTitles"]] == [
+        "p1",
+        "p2",
+    ]

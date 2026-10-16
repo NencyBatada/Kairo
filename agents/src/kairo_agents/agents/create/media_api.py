@@ -12,6 +12,7 @@ from google.cloud import texttospeech
 from google.genai import types
 
 from kairo_agents.agents.brand_kit.api import default_client
+from kairo_agents.agents.create.languages import fits, guidance, language_data
 from kairo_agents.agents.create.media_models import (
     FootageClip,
     FootageRequest,
@@ -367,27 +368,7 @@ async def video(request: VideoRequest, clients: ClientSource, speech: SpeechSour
         lines = clean_script(request.script)
     else:
         try:
-            response = await clients().aio.models.generate_content(
-                model=model,
-                contents=data_block(
-                    {
-                        "brief": request.brief.model_dump(by_alias=True),
-                        "businessName": request.business_name,
-                        "language": request.language,
-                        "seconds": total,
-                        "instruction": request.instruction,
-                        "brandKit": request.brand_kit,
-                    }
-                ),
-                config=types.GenerateContentConfig(
-                    system_instruction=video_script_instructions(),
-                    response_mime_type="application/json",
-                    response_schema=VoiceoverScript,
-                    temperature=0.4,
-                ),
-            )
-            lines = clean_script(VoiceoverScript.model_validate_json(response.text or "").lines)
-            usage = usage_of(response)
+            lines, usage = await write_script(clients, model, request, total)
         except Exception:
             logger.exception("Create couldn't write the video script.")
             return JSONResponse(status_code=502, content={"error": "model_failed"})
@@ -429,6 +410,49 @@ async def video(request: VideoRequest, clients: ClientSource, speech: SpeechSour
         prompt_version=VIDEO_SCRIPT_PROMPT_VERSION,
         usage=usage,
     )
+
+
+async def write_script(
+    clients: Callable[[], Any], model: str, request: VideoRequest, total: float
+) -> tuple[list[ScriptLine], Usage | None]:
+    names = frozenset(word.casefold() for word in (request.business_name or "").split())
+    system = video_script_instructions()
+    responses = []
+    lines: list[ScriptLine] = []
+    for _ in range(2):
+        response = await clients().aio.models.generate_content(
+            model=model,
+            contents=data_block(
+                {
+                    "brief": request.brief.model_dump(by_alias=True),
+                    "businessName": request.business_name,
+                    "language": request.language,
+                    **language_data(request.language),
+                    "seconds": total,
+                    "instruction": request.instruction,
+                    "brandKit": request.brand_kit,
+                }
+            ),
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                response_mime_type="application/json",
+                response_schema=VoiceoverScript,
+                temperature=0.4,
+            ),
+        )
+        responses.append(response)
+        lines = clean_script(VoiceoverScript.model_validate_json(response.text or "").lines)
+        if all(
+            fits(line.voiceover, request.language, names)
+            and fits(line.caption, request.language, names)
+            for line in lines
+        ):
+            return lines, total_usage(responses)
+        system = (
+            f"{video_script_instructions()}\n\nYour last answer was rejected because some lines "
+            f"were not in the requested language.\n- {guidance(request.language)}\n\nFix it."
+        )
+    return [], total_usage(responses)
 
 
 def clean_script(lines: list[ScriptLine]) -> list[ScriptLine]:

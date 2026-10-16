@@ -1,6 +1,8 @@
 import os
 from dataclasses import dataclass, replace
 
+from kairo_agents.agents.create.languages import LANGUAGES
+
 
 @dataclass(frozen=True)
 class Voice:
@@ -11,7 +13,9 @@ class Voice:
 
 
 VOICES: dict[str, Voice] = {
-    "en": Voice("en", "en-IN", "en-IN-Chirp3-HD-Achird", "latin"),
+    language.code: Voice(language.code, language.voice_code, language.voice, language.script)
+    for language in LANGUAGES.values()
+    if language.speaks and language.voice_code and language.voice
 }
 
 
