@@ -121,3 +121,5 @@ internal sealed record ApproveRequest(string? Gate, int? Version, string? Commen
 internal sealed record SendBackRequest(string? To, string? Comment, int? Version);
 
 internal sealed record DiscardRequest(string? Reason, int? Version);
+
+internal sealed record EndTestRequest(int? Version);

@@ -44,6 +44,8 @@ internal sealed class Room : IBrandOwned
 
     public string? DiscardedFrom { get; set; }
 
+    public bool TestEndedEarly { get; set; }
+
     public Guid CreatedBy { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }

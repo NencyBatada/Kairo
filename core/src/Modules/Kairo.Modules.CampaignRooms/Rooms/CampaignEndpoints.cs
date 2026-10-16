@@ -255,6 +255,23 @@ internal static class CampaignEndpoints
         return await ResultAsync(await workflow.DiscardAsync(campaignId, request.Reason, version, cancellationToken), reader, cancellationToken);
     }
 
+    public static async Task<Results<Ok<CampaignDetail>, NotFound, ProblemHttpResult, ValidationProblem>> EndTestAsync(
+        Guid campaignId,
+        EndTestRequest request,
+        RoomWorkflow workflow,
+        CampaignReader reader,
+        CancellationToken cancellationToken)
+    {
+        var errors = new Dictionary<string, string[]>();
+        var version = Version(request.Version, errors);
+        if (errors.Count > 0)
+        {
+            return TypedResults.ValidationProblem(errors);
+        }
+
+        return await ResultAsync(await workflow.EndTestAsync(campaignId, version, cancellationToken), reader, cancellationToken);
+    }
+
     public static async Task<Results<Ok<CampaignDetail>, NotFound, ProblemHttpResult>> RetryAsync(
         Guid campaignId,
         Guid runId,
