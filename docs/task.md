@@ -102,8 +102,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Brief screen**: Every field with its reasoning, direct edits or typed instructions with a preview, and gate 1 approval. *Started contract and UI investigation against Talha's merged brief and approval endpoints. Next: user approval of the implementation plan, then isolated implementation and focused tests.*
-- [/] **Regions map**: Test and holdout regions on a map, swaps from a ranked list, and the test numbers alongside. *Started contract and UI investigation against the merged proof-plan endpoints. Next: user approval of the implementation plan, then isolated implementation and focused tests.*
+- [/] **Brief screen**: Every field with its reasoning, direct edits or typed instructions with a preview, and gate 1 approval. *Implemented in PR #15 on feature/smart-brief-screen. 55 focused brief/area checks, lint, production build and API type regeneration pass. Verified edits, failed-save retention, preview/apply, stale versions, approval/send-back and viewer access in an isolated component browser harness with a local API-contract fixture, including dark mode, reduced motion, 320px reflow and 200% layout. Automatic approval review blocked the normal Next.js fixture preview, so authenticated development verification remains outstanding. Left: user merge into develop, deployment and development-environment verification.*
+- [/] **Regions map**: Test and holdout regions on a map, swaps from a ranked list, and the test numbers alongside. *Implemented in PR #16 on feature/proof-plan-regions, depending on PR #15; merge #15 first. All 76 focused Task 6 checks, lint, production build and API type regeneration pass. The isolated component browser harness verifies map/list navigation, swaps and recalculation, unsaved-choice protection, locked changes with recorded reasons, viewer access, dark mode, reduced motion, 320px reflow, portrait/landscape and 200% layout. Left: user merge into develop, deployment and authenticated development-environment verification.*
 
 ## 7. Creative Studio
 
