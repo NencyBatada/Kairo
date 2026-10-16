@@ -20,6 +20,7 @@ export const WORKSPACE_LIVE_EVENTS = [
   "campaigns.changed",
   "launch.changed",
   "launch.stock_changed",
+  "launch.pacing_changed",
   "notification.created",
   "notifications.read",
 ] as const;

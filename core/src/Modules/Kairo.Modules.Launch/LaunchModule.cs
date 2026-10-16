@@ -24,6 +24,8 @@ public sealed class LaunchModule : IModule
         services.AddScoped<LaunchHealthWorker>();
         services.AddScoped<StockPauser>();
         services.AddScoped<StockPauseWorker>();
+        services.AddScoped<PacingCheck>();
+        services.AddScoped<PacingWorker>();
         services.AddSingleton<LaunchLoopSwitch>();
         services.AddHostedService<LaunchLoop>();
     }
@@ -37,6 +39,7 @@ public sealed class LaunchModule : IModule
         campaigns.MapPost("/{campaignId:guid}/stock-pauses/{pauseId:guid}/undo", StockPauseEndpoints.UndoAsync).RequireBrandRole(BrandRoles.Marketer | BrandRoles.Admin);
         campaigns.MapPost("/{campaignId:guid}/stock-pauses/batches/{batchId:guid}/confirm", StockPauseEndpoints.ConfirmAsync).RequireBrandRole(BrandRoles.Admin);
         campaigns.MapPost("/{campaignId:guid}/stock-pauses/batches/{batchId:guid}/dismiss", StockPauseEndpoints.DismissAsync).RequireBrandRole(BrandRoles.Admin);
+        campaigns.MapGet("/{campaignId:guid}/pacing", PacingEndpoints.GetAsync);
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
@@ -48,6 +51,8 @@ public sealed class LaunchModule : IModule
             TypedResults.Ok(new { processed = await check.RunDueAsync(lifetime.ApplicationStopping) }));
         jobs.MapPost("/launches/stock", async (StockPauser pauser, IHostApplicationLifetime lifetime) =>
             TypedResults.Ok(new { processed = await pauser.RunDueAsync(lifetime.ApplicationStopping) }));
+        jobs.MapPost("/launches/pacing", async (PacingCheck check, IHostApplicationLifetime lifetime) =>
+            TypedResults.Ok(new { processed = await check.RunDueAsync(lifetime.ApplicationStopping) }));
     }
 
     public Task MigrateAsync(IServiceProvider services, CancellationToken cancellationToken) =>

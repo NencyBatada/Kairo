@@ -62,6 +62,7 @@ public static class AuditActions
         new("launch.mass_pause_dismissed", "Dismissed held stock pauses"),
         new("launch.stock_pause_undone", "Undid an automatic stock pause"),
         new("launch.stock_feed_stale", "Stopped stock pauses because the stock feed is stale"),
+        new("launch.pacing_alerted", "Alerted that a campaign is off its spending plan"),
         new("campaign_room.sent_back", "Sent campaign work back"),
         new("campaign_room.discarded", "Discarded a campaign"),
         new("campaign_room.advanced", "Moved a campaign to its next stage"),

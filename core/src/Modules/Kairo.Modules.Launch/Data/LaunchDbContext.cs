@@ -56,6 +56,30 @@ internal sealed class LaunchHealth : IBrandOwned
     public string? Cause { get; set; }
 }
 
+internal sealed class PacingDay : IBrandOwned
+{
+    public Guid Id { get; set; }
+    public Guid BrandId { get; set; }
+    public Guid LaunchId { get; set; }
+    public Guid RoomId { get; set; }
+    public string CampaignType { get; set; } = "";
+    public DateOnly Date { get; set; }
+    public decimal Spend { get; set; }
+    public decimal PlannedSpend { get; set; }
+    public decimal Conversions { get; set; }
+    public decimal ConversionValue { get; set; }
+    public long Impressions { get; set; }
+    public long Clicks { get; set; }
+    public decimal Deviation { get; set; }
+    public string Status { get; set; } = "on_pace";
+    public bool StreakAlerted { get; set; }
+    public DateTimeOffset? AlertedAt { get; set; }
+    public string? CauseKind { get; set; }
+    public string? Cause { get; set; }
+    public string? SuggestedFix { get; set; }
+    public DateTimeOffset RecordedAt { get; set; }
+}
+
 internal sealed class ProductAdMap : IBrandOwned
 {
     public Guid Id { get; set; }
@@ -107,6 +131,7 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
     public DbSet<LaunchHealth> Health => Set<LaunchHealth>();
     public DbSet<AdPause> AdPauses => Set<AdPause>();
     public DbSet<StockWatch> StockWatches => Set<StockWatch>();
+    public DbSet<PacingDay> Pacing => Set<PacingDay>();
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
@@ -139,6 +164,22 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
             health.HasIndex(row => new { row.Status, row.DueAt });
             health.Property(row => row.Status).HasMaxLength(30);
             health.Property(row => row.Cause).HasMaxLength(500);
+        });
+        modelBuilder.Entity<PacingDay>(day =>
+        {
+            day.HasKey(row => row.Id);
+            day.HasIndex(row => new { row.BrandId, row.LaunchId, row.CampaignType, row.Date }).IsUnique();
+            day.HasIndex(row => new { row.BrandId, row.RoomId, row.Date });
+            day.Property(row => row.CampaignType).HasMaxLength(20);
+            day.Property(row => row.Spend).HasPrecision(19, 4);
+            day.Property(row => row.PlannedSpend).HasPrecision(19, 4);
+            day.Property(row => row.Conversions).HasPrecision(19, 4);
+            day.Property(row => row.ConversionValue).HasPrecision(19, 4);
+            day.Property(row => row.Deviation).HasPrecision(9, 4);
+            day.Property(row => row.Status).HasMaxLength(20);
+            day.Property(row => row.CauseKind).HasMaxLength(40);
+            day.Property(row => row.Cause).HasMaxLength(500);
+            day.Property(row => row.SuggestedFix).HasMaxLength(500);
         });
         modelBuilder.Entity<ProductAdMap>(map =>
         {

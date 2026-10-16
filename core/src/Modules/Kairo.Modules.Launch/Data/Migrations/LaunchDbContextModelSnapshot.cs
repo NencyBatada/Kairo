@@ -281,6 +281,91 @@ namespace Kairo.Modules.Launch.Data.Migrations
                     b.ToTable("Steps", "launch");
                 });
 
+            modelBuilder.Entity("Kairo.Modules.Launch.Data.PacingDay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AlertedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CampaignType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Cause")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CauseKind")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<long>("Clicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("ConversionValue")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<decimal>("Conversions")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("Deviation")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
+                    b.Property<long>("Impressions")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("LaunchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("PlannedSpend")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Spend")
+                        .HasPrecision(19, 4)
+                        .HasColumnType("decimal(19,4)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("StreakAlerted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SuggestedFix")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId", "RoomId", "Date");
+
+                    b.HasIndex("BrandId", "LaunchId", "CampaignType", "Date")
+                        .IsUnique();
+
+                    b.ToTable("Pacing", "launch");
+                });
+
             modelBuilder.Entity("Kairo.Modules.Launch.Data.ProductAdMap", b =>
                 {
                     b.Property<Guid>("Id")

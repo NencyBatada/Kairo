@@ -4583,6 +4583,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/pacing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PacingView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -6251,6 +6294,39 @@ export interface components {
             lastOutcome: null | string;
             lastReason: null | string;
             items: components["schemas"]["OpportunityCard"][];
+        };
+        PacingAlertView: {
+            date: string;
+            direction: string;
+            causeKind: null | string;
+            cause: null | string;
+            suggestedFix: null | string;
+            alertedAt: string;
+        };
+        PacingCampaignView: {
+            campaignType: string;
+            plannedDailySpend: number | string;
+            status: string;
+            days: components["schemas"]["PacingDayView"][];
+            alert: null | components["schemas"]["PacingAlertView"];
+        };
+        PacingDayView: {
+            date: string;
+            spend: number | string;
+            plannedSpend: number | string;
+            deviation: number | string;
+            status: string;
+            conversions: number | string;
+            conversionValue: number | string;
+            impressions: number | string;
+            clicks: number | string;
+        };
+        PacingView: {
+            status: string;
+            currency: string;
+            start: string;
+            end: string;
+            campaigns: components["schemas"]["PacingCampaignView"][];
         };
         PendingInvitation: {
             id: string;
