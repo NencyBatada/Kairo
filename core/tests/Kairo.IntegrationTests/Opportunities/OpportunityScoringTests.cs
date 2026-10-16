@@ -1,3 +1,4 @@
+using Kairo.Contracts.BrandMemory;
 using Kairo.Modules.Opportunities.Radar;
 using Kairo.Modules.Opportunities.Refresh;
 using Kairo.Modules.Opportunities.Scoring;
@@ -183,6 +184,43 @@ public sealed class OpportunityScoringTests
     [InlineData("2026-10-13T12:00:00Z", null, true)]
     public void A_brand_is_due_once_a_day_from_five_local_time(string now, string? last, bool due) =>
         Assert.Equal(due, RefreshClock.IsDue(DateTimeOffset.Parse(now), "Asia/Kolkata", last is null ? null : DateTimeOffset.Parse(last)));
+
+    [Fact]
+    public void Brand_Memory_lifts_topics_that_worked_and_lowers_ones_that_did_not()
+    {
+        var product = Guid.NewGuid();
+        var memory = new[]
+        {
+            Note(MemoryOutcomes.Worked, "Quick-dry beats price", categories: ["shoes > rain"]),
+            Note(MemoryOutcomes.DidntWork, "Studio shots fell flat", products: [product.ToString()]),
+            Note(MemoryOutcomes.Worked, "School shoes sell in June", categories: ["Shoes > School"]),
+            Note(MemoryOutcomes.Worked, "Removed lesson", categories: ["Shoes > Rain"]) with { Removed = true },
+        };
+
+        var (multiplier, reasons, entries) = OpportunityScoring.Memory(["Shoes > Rain"], [product], memory);
+
+        Assert.Equal(0.98, multiplier);
+        Assert.Equal(["Brand Memory: Quick-dry beats price", "Brand Memory: Studio shots fell flat"], reasons);
+        Assert.Equal([memory[0].Id, memory[1].Id], entries);
+    }
+
+    [Fact]
+    public void The_Brand_Memory_adjustment_is_capped_and_scales_the_score()
+    {
+        var worked = Enumerable.Range(0, 4).Select(index => Note(MemoryOutcomes.Worked, $"Win {index}", categories: ["Rain"])).ToList();
+        var failed = Enumerable.Range(0, 4).Select(index => Note(MemoryOutcomes.DidntWork, $"Loss {index}", categories: ["Rain"])).ToList();
+
+        Assert.Equal(OpportunityScoring.HighestMemory, OpportunityScoring.Memory(["Rain"], [], worked).Multiplier);
+        Assert.Equal(OpportunityScoring.LowestMemory, OpportunityScoring.Memory(["Rain"], [], failed).Multiplier);
+        var breakdown = OpportunityScoring.Breakdown(Series(100, 100, 100, 100, 150), 0.5, ["rain boots"], "rain boots", [], Now, ["Rain"], [], worked.Take(1));
+        Assert.Equal((1.15, 1), (breakdown.Memory, breakdown.MemoryEntryIds!.Count));
+        var plain = OpportunityScoring.Breakdown(Series(100, 100, 100, 100, 150), 0.5, ["rain boots"], "rain boots", [], Now);
+        Assert.Null(plain.Memory);
+        Assert.True(OpportunityScoring.Score(breakdown) > OpportunityScoring.Score(plain));
+    }
+
+    private static MemoryNote Note(string outcome, string title, string[]? products = null, string[]? categories = null) =>
+        new(Guid.NewGuid(), MemoryKinds.Message, outcome, title, title, products ?? [], categories ?? [], []);
 
     private static Demand Series(params long[] searches) =>
         new(searches.Select((value, index) => new MonthlySearches(2025 + ((index + 9) / 12), ((index + 9) % 12) + 1, value)));

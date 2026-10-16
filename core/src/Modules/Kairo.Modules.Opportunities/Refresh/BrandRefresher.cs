@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandKit;
+using Kairo.Contracts.BrandMemory;
 using Kairo.Contracts.Brands;
 using Kairo.Contracts.Catalogue;
 using Kairo.Contracts.Connections;
@@ -23,6 +24,7 @@ internal sealed class BrandRefresher(
     KairoDatabase database,
     IConnections connections,
     IBrandKit brandKit,
+    IBrandMemory brandMemory,
     ICatalogue catalogue,
     KeywordPlanner planner,
     SenseAgent sense,
@@ -187,6 +189,7 @@ internal sealed class BrandRefresher(
                 watched),
             cancellationToken);
 
+        var memory = await brandMemory.RelevantAsync(new MemoryQuery(Categories: [.. categories.Select(category => category.Name)], Limit: MemoryQuery.MostEntries), cancellationToken);
         var byText = candidates.ToDictionary(entry => entry.Idea.Text, entry => entry.Idea, StringComparer.OrdinalIgnoreCase);
         var known = categories.Select(category => category.Name).ToHashSet(StringComparer.Ordinal);
         var now = time.GetUtcNow();
@@ -210,7 +213,8 @@ internal sealed class BrandRefresher(
             var products = await catalogue.FindInStockAsync(matched, [name, .. keywords], OpportunityOptions.MaxProducts, cancellationToken);
             var demand = Demand.Sum(keywords.Select(text => byText[text].Months));
             var key = TopicText.Key(name);
-            var breakdown = OpportunityScoring.Breakdown(demand, topic.Fit ?? 0, keywords, key, dismissals.Select(dismissal => dismissal.Past), now);
+            var breakdown = OpportunityScoring.Breakdown(
+                demand, topic.Fit ?? 0, keywords, key, dismissals.Select(dismissal => dismissal.Past), now, matched, [.. products.Select(product => product.Id)], memory);
             radar.Add(new RadarTopic
             {
                 Name = name,
@@ -350,6 +354,12 @@ internal sealed class BrandRefresher(
             run.Updated = merged.Updated;
             run.Expired = merged.Expired;
             var outcome = await FinishAsync(run, RefreshOutcomes.Succeeded, null, null, cancellationToken);
+            foreach (var opportunity in existing.Concat(merged.Created)
+                .Where(o => o.Breakdown.MemoryEntryIds is { Count: > 0 } && gathered.Kept.Any(topic => ReferenceEquals(topic.Breakdown, o.Breakdown))))
+            {
+                await brandMemory.RecordUsesAsync(opportunity.Breakdown.MemoryEntryIds!, MemoryUsedIn.Opportunity, opportunity.Id, null, cancellationToken);
+            }
+
             await audit.RecordAsync(
                 new AuditRecord(
                     "opportunities.refreshed",

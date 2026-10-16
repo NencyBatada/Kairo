@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.BrandKit;
+using Kairo.Contracts.BrandMemory;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -38,6 +39,7 @@ internal sealed class BriefEditor(
     StageQueue queue,
     BriefAgent agent,
     IBrandKit brandKit,
+    IBrandMemory brandMemory,
     IAuditLog audit,
     TimeProvider time,
     ILogger<BriefEditor> logger)
@@ -64,6 +66,9 @@ internal sealed class BriefEditor(
         var content = latest?.Content.Normalized();
         var context = await desk.ReadAsync(room, content, true, cancellationToken);
         var people = await reader.MembersAsync(cancellationToken);
+        var memory = briefs.FirstOrDefault(brief => brief.Origin == BriefOrigins.Drafted) is { } drafted
+            ? await brandMemory.UsedByAsync(MemoryUsedIn.Brief, drafted.Id, cancellationToken)
+            : [];
         return new BriefDetail(
             room.Id,
             room.Version,
@@ -77,7 +82,8 @@ internal sealed class BriefEditor(
                 brief.Origin,
                 brief.CreatedBy is { } by ? CampaignReader.Person(by, people) : null,
                 brief.Instruction,
-                brief.CreatedAt))]);
+                brief.CreatedAt))],
+            [.. memory.Select(note => new BriefMemoryView(note.Id, note.Kind, note.Outcome, note.Title, note.Removed))]);
     }
 
     public async Task<BriefResult<BriefDetail>> EditAsync(Guid roomId, BriefEditRequest request, CurrentMember member, CancellationToken cancellationToken)

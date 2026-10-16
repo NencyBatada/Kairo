@@ -1,9 +1,9 @@
 from functools import cache
 from importlib import resources
 
-IMAGE_PROMPT_VERSION = "create-image/1"
-FOOTAGE_PROMPT_VERSION = "create-footage/1"
-VIDEO_SCRIPT_PROMPT_VERSION = "create-video-script/2"
+IMAGE_PROMPT_VERSION = "create-image/2"
+FOOTAGE_PROMPT_VERSION = "create-footage/2"
+VIDEO_SCRIPT_PROMPT_VERSION = "create-video-script/3"
 
 
 @cache
@@ -13,12 +13,12 @@ def _read(name: str) -> str:
 
 
 def image_instructions() -> str:
-    return _read("image_v1.md")
+    return _read("image_v2.md")
 
 
 def footage_instructions() -> str:
-    return _read("footage_v1.md")
+    return _read("footage_v2.md")
 
 
 def video_script_instructions() -> str:
-    return _read("video_script_v2.md")
+    return _read("video_script_v3.md")

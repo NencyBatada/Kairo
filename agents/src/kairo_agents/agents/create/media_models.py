@@ -54,6 +54,7 @@ class MediaBrief(CamelModel):
     audiences: list[Annotated[str, Field(max_length=300)]] = Field(
         default_factory=list, max_length=6
     )
+    memory: list[Annotated[str, Field(max_length=500)]] = Field(default_factory=list, max_length=10)
 
 
 class ReferenceProduct(CamelModel):

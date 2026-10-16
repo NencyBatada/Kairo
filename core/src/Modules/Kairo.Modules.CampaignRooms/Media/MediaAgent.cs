@@ -4,7 +4,7 @@ using Kairo.SharedKernel.Agents;
 
 namespace Kairo.Modules.CampaignRooms.Media;
 
-internal sealed record MediaBrief(string Title, string Objective, IReadOnlyList<string> KeyMessages, IReadOnlyList<string> Audiences);
+internal sealed record MediaBrief(string Title, string Objective, IReadOnlyList<string> KeyMessages, IReadOnlyList<string> Audiences, IReadOnlyList<string> Memory);
 
 internal sealed record MediaPhoto(string MimeType, byte[] Data);
 

@@ -412,6 +412,12 @@ namespace Kairo.Modules.Opportunities.Data.Migrations
 
                             b1.Property<int>("GrowthScore");
 
+                            b1.Property<double?>("Memory");
+
+                            b1.PrimitiveCollection<string>("MemoryEntryIds");
+
+                            b1.PrimitiveCollection<string>("MemoryReasons");
+
                             b1.Property<int>("VolumeScore");
 
                             b1.HasKey("OpportunityId");

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Kairo.Contracts.BrandKit;
+using Kairo.Contracts.BrandMemory;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -12,6 +13,7 @@ internal sealed class BriefWork(
     BriefAgent agent,
     BriefDesk desk,
     IBrandKit brandKit,
+    IBrandMemory brandMemory,
     TimeProvider time) : IStageWork
 {
     public const string RadarSource = "radar";
@@ -19,6 +21,8 @@ internal sealed class BriefWork(
     public const int MaxProducts = 12;
     public const int MaxKeywords = 20;
     public const int MaxRegions = 40;
+    public const int MaxMemory = 10;
+    public const int MemoryText = 500;
     public const string Planner = BudgetGuide.Planner;
 
     public string Kind => StageKinds.Brief;
@@ -49,6 +53,11 @@ internal sealed class BriefWork(
             [.. products.Where(product => product.Price is > 0).Select(product => product.Price!.Value)],
             context.Brand.Currency);
         var kit = await brandKit.GetApprovedAsync(cancellationToken);
+        var memory = (await brandMemory.RelevantAsync(
+                new MemoryQuery([.. products.Select(product => product.Id)], evidence.Categories, [.. regions.Select(region => region.Name)], Limit: MaxMemory),
+                cancellationToken))
+            .Select((note, index) => (Key: $"m{index + 1}", Note: note))
+            .ToList();
         var answer = await agent.DraftAsync(
             new SmartBriefRequest(
                 context.Brand.Name,
@@ -67,7 +76,7 @@ internal sealed class BriefWork(
                 new SmartDateGuide(BriefDesk.Iso(context.Today), BriefDesk.Iso(start), BriefDesk.Iso(end), context.LatestEnd is { } latest ? BriefDesk.Iso(latest) : null),
                 [.. BriefChoices.Languages.Select(language => language.Value)],
                 Seed(evidence.Brief),
-                [],
+                [.. memory.Select(entry => new SmartMemory(entry.Key, Cut(entry.Note.Text, MemoryText)))],
                 kit?.Content),
             cancellationToken);
         if (Clean(answer.Brief, context, keyed, guide, start, end) is not { } content)
@@ -75,15 +84,21 @@ internal sealed class BriefWork(
             throw new AgentCallException(AgentCallException.BadAnswer, "The Plan agent's brief is missing required fields.");
         }
 
-        return new StageOutcome(content, answer.Model, answer.PromptVersion, answer.Usage, "Drafted the brief");
+        var used = (answer.Brief?.MemoryUsed ?? []).OfType<string>()
+            .Select(key => memory.FirstOrDefault(entry => entry.Key == key.Trim()).Note?.Id)
+            .OfType<Guid>()
+            .Distinct()
+            .ToList();
+        return new StageOutcome(content, answer.Model, answer.PromptVersion, answer.Usage, "Drafted the brief", used);
     }
 
     public async Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken)
     {
         var latest = await db.Briefs.Where(brief => brief.RoomId == room.Id).MaxAsync(brief => (int?)brief.Version, cancellationToken) ?? 0;
+        var id = Guid.NewGuid();
         db.Briefs.Add(new Brief
         {
-            Id = Guid.NewGuid(),
+            Id = id,
             BrandId = room.BrandId,
             RoomId = room.Id,
             Version = latest + 1,
@@ -94,6 +109,10 @@ internal sealed class BriefWork(
             PromptVersion = outcome.PromptVersion,
             CreatedAt = time.GetUtcNow(),
         });
+        if (outcome.MemoryUsed is { Count: > 0 } used)
+        {
+            await brandMemory.RecordUsesAsync(used, MemoryUsedIn.Brief, id, room.Id, cancellationToken);
+        }
     }
 
     public static (DateOnly Start, DateOnly End) SuggestedDates(BriefDeskContext context)

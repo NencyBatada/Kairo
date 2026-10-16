@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Kairo.Contracts.BrandKit;
+using Kairo.Contracts.BrandMemory;
 using Kairo.Contracts.Brands;
 using Kairo.Contracts.Catalogue;
 using Kairo.Modules.CampaignRooms.Briefs;
@@ -19,8 +20,11 @@ internal sealed record CopyContext(
     IReadOnlyList<KeyedProduct> Products,
     JsonElement? BrandKit,
     IReadOnlyList<string> Keywords,
-    IReadOnlyList<string> Languages)
+    IReadOnlyList<string> Languages,
+    IReadOnlyList<MemoryNote> Memory)
 {
+    public IReadOnlyList<string> MemoryData() => [.. Memory.Select(note => CopyDesk.Cut(note.Text, CopyDesk.MemoryText))];
+
     public string FeedLanguage() => CreativeLanguages.FeedLanguage(Products.Select(entry => entry.Product.Title), Languages);
 
     public CopyBriefData BriefData() => new(
@@ -56,8 +60,11 @@ internal sealed class CopyDesk(
     ICatalogue catalogue,
     IBrandDirectory brands,
     IBrandKit brandKit,
+    IBrandMemory brandMemory,
     ProvenanceTrail trail)
 {
+    public const int MaxMemory = 8;
+    public const int MemoryText = 500;
     public const int MaxProducts = 12;
     public const int MaxKeywords = 20;
     public const string DefaultLanguage = "en";
@@ -95,6 +102,14 @@ internal sealed class CopyDesk(
         trail.BrandKit(kit?.Version);
         var evidence = RoomEvidence.Read(room.Evidence);
         var languages = CreativeLanguages.Of(content, DefaultLanguage);
+        var memory = await brandMemory.RelevantAsync(
+            new MemoryQuery(
+                [.. products.Select(entry => entry.Product.Id.ToString())],
+                [.. products.Select(entry => entry.Product.Category).OfType<string>().Concat(evidence.Categories ?? [])],
+                [.. content.Regions ?? []],
+                [MemoryKinds.Message, MemoryKinds.Visual, MemoryKinds.Audience],
+                MaxMemory),
+            cancellationToken);
         return new CopyContext(
             brief,
             content,
@@ -104,8 +119,11 @@ internal sealed class CopyDesk(
             products,
             kit?.Content,
             [.. (evidence.Keywords ?? []).Where(keyword => !string.IsNullOrWhiteSpace(keyword)).Select(keyword => Cut(keyword, 100)).Distinct().Take(MaxKeywords)],
-            languages);
+            languages,
+            memory);
     }
+
+    public void Remember(CopyContext context) => trail.Memory(context.Memory);
 
     public static string Cut(string? text, int length)
     {

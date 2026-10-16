@@ -26,7 +26,7 @@ internal interface IStageWork
     Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken);
 }
 
-internal sealed record StageOutcome(object Output, string? Model, string? PromptVersion, AgentUsage? Usage, string Summary);
+internal sealed record StageOutcome(object Output, string? Model, string? PromptVersion, AgentUsage? Usage, string Summary, IReadOnlyList<Guid>? MemoryUsed = null);
 
 internal sealed class StageFailure(string code, string message) : Exception(message)
 {

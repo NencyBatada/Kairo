@@ -5118,6 +5118,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/brand-memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    kind?: string;
+                    outcome?: string;
+                    state?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemoryEntryList"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/brand-memory/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemoryEntryDetail"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    entryId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["EditMemoryEntry"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MemoryEntryDetail"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/brands/{brandId}/notifications": {
         parameters: {
             query?: never;
@@ -5738,6 +5893,7 @@ export interface components {
             budgetLimit: null | components["schemas"]["BriefBudgetView"];
             options: components["schemas"]["BriefOptionsView"];
             history: components["schemas"]["BriefVersionView"][];
+            memory: components["schemas"]["BriefMemoryView"][];
         };
         BriefEditRequest: {
             version: null | number | string;
@@ -5765,6 +5921,13 @@ export interface components {
             version: null | number | string;
             briefVersion: null | number | string;
             instruction: null | string;
+        };
+        BriefMemoryView: {
+            id: string;
+            kind: string;
+            outcome: string;
+            title: string;
+            removed: boolean;
         };
         BriefOptionsView: {
             regions: components["schemas"]["BriefRegionOptionView"][];
@@ -6136,6 +6299,11 @@ export interface components {
             requestedAt: string;
             finishedAt: null | string;
             version: null | number | string;
+        };
+        EditMemoryEntry: {
+            version: null | number | string;
+            title: null | string;
+            lesson: null | string;
         };
         EmailSetting: {
             kind: string;
@@ -6594,6 +6762,41 @@ export interface components {
             roles: components["schemas"]["BrandRole"][];
             joinedAt: string;
         };
+        MemoryEntryDetail: {
+            entry: components["schemas"]["MemoryEntryView"];
+            uses: components["schemas"]["MemoryUseView"][];
+        };
+        MemoryEntryList: {
+            entries: components["schemas"]["MemoryEntryView"][];
+        };
+        MemoryEntryView: {
+            id: string;
+            version: number | string;
+            kind: string;
+            outcome: string;
+            title: string;
+            lesson: string;
+            evidence: components["schemas"]["JsonElement"];
+            products: string[];
+            categories: string[];
+            regions: string[];
+            languages: string[];
+            sourceCampaignId: null | string;
+            state: string;
+            createdBy: string;
+            createdAt: string;
+            editedBy: null | string;
+            editedAt: null | string;
+            removedBy: null | string;
+            removedAt: null | string;
+            uses: number | string;
+        };
+        MemoryUseView: {
+            usedIn: string;
+            targetId: string;
+            campaignId: null | string;
+            usedAt: string;
+        };
         MeResponse: {
             id: string;
             name: string;
@@ -7043,6 +7246,8 @@ export interface components {
             fitReason: null | string;
             feedback: number | string;
             feedbackReasons: string[];
+            memory: number | string;
+            memoryReasons: string[];
         };
         SendBackRequest: {
             to: null | string;

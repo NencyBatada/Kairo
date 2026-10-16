@@ -27,7 +27,7 @@ internal sealed class ImageRegenerator(MediaDesk desk, MediaAgent agent) : IAsse
         var shot = new ImageShot("s1", product.Key, ImagesWork.StyleOf(context.Asset), [format]);
         var answer = await agent.ImagesAsync(
             new ImagesRequest(
-                MediaDesk.Brief(copy),
+                desk.BriefFor(copy),
                 copy.BrandKit,
                 [new MediaReferenceProduct(product.Key, CopyDesk.Cut(product.Product.Title, 300), CopyDesk.Cut(product.Product.Description, 2000), photos[0].Photos)],
                 [shot],

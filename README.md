@@ -314,6 +314,25 @@ The same `POST /jobs/measurement/lift` run writes the impact report once a campa
 
 `GET /api/brands/{brandId}/campaigns/{campaignId}/impact-report` returns the report state (`measuring`, `writing`, `ready` or `failed`), the report and the final reading. Brand Memory reads finished reports through `IImpactReports`.
 
+## Brand Memory
+
+`POST /jobs/brand-memory/learn` runs hourly through the `kairo-brand-memory-learn` scheduler job, after the lift run.
+
+- **Learning:** for each ready impact report whose campaign is in `results_ready`, the agent service's `POST /learn/lessons` asks Gemini Flash for up to 8 lessons. Each lesson is a message, visual, audience or region that worked or didn't, and is built from the report, the brief, per-region lift and the ads' Google Ads results.
+- **Guardrails, in code:**
+  - An inconclusive report saves nothing.
+  - Message and visual lessons need ads with at least 100 clicks or 15 conversions that differ significantly from the rest of their campaign type.
+  - Audience and region lessons must match the result, and region lessons must also match that region's own lift.
+- **Closing the campaign:** saving the lessons, or skipping an inconclusive report, closes the campaign. A failed Learn call retries on later runs, up to 3 attempts.
+- **Where lessons are used:**
+  - Brief drafting, and copy and media generation, get relevant active lessons.
+  - Opportunity rankings rise 15% for each matching lesson that worked and fall 15% for each that didn't, kept between 0.7 and 1.3 times.
+  - Each use is recorded, so briefs, asset histories and score breakdowns show which lessons they used.
+
+`GET /api/brands/{brandId}/brand-memory` lists entries, filtered by `kind`, `outcome` and `state`. `GET .../brand-memory/{entryId}` shows an entry and its uses. Admins and marketers can `PATCH` an entry's title or lesson with its version, or `DELETE` it. Removed entries are never used again. Changes record `brand_memory.entry_saved`, `brand_memory.entry_edited` or `brand_memory.entry_removed`, and publish `brand_memory.changed`.
+
+This has only been verified locally against simulated Google and Gemini APIs.
+
 ## Run the tests
 
 From the repository root:

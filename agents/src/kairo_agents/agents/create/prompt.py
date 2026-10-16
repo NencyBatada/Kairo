@@ -1,7 +1,7 @@
 from functools import cache
 from importlib import resources
 
-COPY_PROMPT_VERSION = "create-copy/2"
+COPY_PROMPT_VERSION = "create-copy/3"
 COPY_INSTRUCTION_PROMPT_VERSION = "create-copy-instruction/2"
 
 
@@ -12,11 +12,11 @@ def _read(name: str) -> str:
 
 
 def search_instructions() -> str:
-    return _read("search_v2.md")
+    return _read("search_v3.md")
 
 
 def demand_gen_instructions() -> str:
-    return _read("demand_gen_v2.md")
+    return _read("demand_gen_v3.md")
 
 
 def titles_instructions() -> str:

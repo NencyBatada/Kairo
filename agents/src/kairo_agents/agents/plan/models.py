@@ -109,6 +109,11 @@ class BriefSeed(CamelModel):
     offer: str | None = Field(default=None, max_length=300)
 
 
+class BriefMemory(CamelModel):
+    id: str = Field(pattern=r"^m[0-9]{1,2}$")
+    text: str = Field(max_length=500)
+
+
 class SmartBriefRequest(CamelModel):
     brand: str = Field(max_length=200)
     market: str = Field(max_length=100)
@@ -118,7 +123,7 @@ class SmartBriefRequest(CamelModel):
     dates: DateGuide
     languages: list[LanguageCode] = Field(min_length=1, max_length=12)
     seed: BriefSeed | None = None
-    memory: list[Annotated[str, Field(max_length=500)]] = Field(default=[], max_length=20)
+    memory: list[BriefMemory] = Field(default=[], max_length=20)
     brand_kit: dict[str, Any] | None = None
 
 
@@ -149,6 +154,7 @@ class DraftedSmartBrief(CamelModel):
     product_ids: list[str]
     languages: list[str]
     reasons: FieldReasons
+    memory_used: list[str] = []
 
 
 class SmartBrief(CamelModel):
@@ -165,6 +171,7 @@ class SmartBrief(CamelModel):
     product_ids: list[str]
     languages: list[str]
     reasons: FieldReasons
+    memory_used: list[str] = []
 
 
 class SmartBriefResponse(CamelModel):

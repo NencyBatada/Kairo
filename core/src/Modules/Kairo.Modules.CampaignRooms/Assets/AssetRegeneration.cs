@@ -142,6 +142,7 @@ internal sealed class AssetReworker(
         }
 
         store.AddVersion(asset, regenerated.Content, origin, run.Id, model, promptVersion, createdBy, regenerated.Instruction);
+        await store.RecordMemoryAsync(cancellationToken);
         if (regenerated.DurationSeconds is { } seconds)
         {
             asset.DurationSeconds = seconds;

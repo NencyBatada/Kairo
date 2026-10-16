@@ -159,12 +159,38 @@ def test_brief_makes_one_structured_call_and_cleans_every_field(models, monkeypa
         "productIds": ["p2", "p1"],
         "languages": ["en", "mr"],
         "reasons": REASONS,
+        "memoryUsed": [],
     }
     [call] = models.calls
     assert call["model"] == "gemini-pro-test"
     assert call["config"].response_schema is DraftedSmartBrief
     assert call["config"].system_instruction == brief_instructions()
     assert call["contents"] == data_block(SmartBriefRequest.model_validate(REQUEST))
+
+
+def test_brief_sends_brand_memory_and_keeps_only_the_lessons_it_was_given(models) -> None:
+    lessons = [
+        {"id": "m1", "text": "Worked (message): Quick-dry claims beat price claims."},
+        {"id": "m2", "text": "Didn't work (region): Goa barely responded."},
+    ]
+    models.text = json.dumps({**ANSWER, "memoryUsed": ["M1", "m7", "m1", "m2"]})
+
+    response = TestClient(app).post("/plan/brief", json={**REQUEST, "memory": lessons})
+
+    assert response.status_code == 200
+    assert response.json()["brief"]["memoryUsed"] == ["m1", "m2"]
+    [call] = models.calls
+    assert "Quick-dry claims beat price claims." in call["contents"]
+    assert "memoryUsed" in brief_instructions()
+
+
+def test_brief_rejects_memory_without_a_short_id(models) -> None:
+    memory = [{"id": "entry-1", "text": "Worked (message): Quick-dry."}]
+
+    response = TestClient(app).post("/plan/brief", json={**REQUEST, "memory": memory})
+
+    assert response.status_code == 422
+    assert models.calls == []
 
 
 def test_brief_uses_a_pro_model_by_default(models, monkeypatch) -> None:

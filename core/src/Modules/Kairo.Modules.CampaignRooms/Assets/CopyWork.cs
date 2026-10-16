@@ -88,6 +88,7 @@ internal sealed class CopyWork(
             }
         }
 
+        desk.Remember(context);
         var answers = await Task.WhenAll(parts.Select(part => agent.WriteAsync(
             new CopyRequest(
                 context.Brand,
@@ -97,7 +98,8 @@ internal sealed class CopyWork(
                 context.ProductData(),
                 context.Keywords,
                 lockedTexts.GetValueOrDefault(part.Language) ?? [],
-                context.BrandKit),
+                context.BrandKit,
+                context.MemoryData()),
             cancellationToken)));
         var written = new List<LanguageCopy>();
         foreach (var (part, answer) in parts.Zip(answers))

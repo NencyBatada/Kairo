@@ -64,6 +64,7 @@ def clean_smart_brief(drafted: DraftedSmartBrief, request: SmartBriefRequest) ->
         product_ids=chosen_products or products[:3],
         languages=clean_languages(drafted.languages, request.languages),
         reasons=clean_reasons(drafted.reasons),
+        memory_used=pick(drafted.memory_used, [memory.id for memory in request.memory]),
     )
 
 

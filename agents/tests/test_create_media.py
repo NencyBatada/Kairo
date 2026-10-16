@@ -223,6 +223,16 @@ def test_images_pass_the_marketers_instruction_in_the_data(fakes) -> None:
     assert "Show it on a rainy street" in fakes.models.calls[0]["contents"][0].parts[2].text
 
 
+def test_images_pass_brand_memory_lessons_in_the_brief(fakes) -> None:
+    lesson = "Worked (visual): Rainy street scenes beat studio shots."
+    request = {**IMAGES_REQUEST, "brief": {**BRIEF, "memory": [lesson]}}
+
+    post("/create/images", request)
+
+    assert lesson in fakes.models.calls[0]["contents"][0].parts[2].text
+    assert "Brand Memory" in image_instructions()
+
+
 def test_images_report_the_sizes_that_failed(fakes) -> None:
     fakes.models.images = [RuntimeError("quota"), None, b"broken"]
 

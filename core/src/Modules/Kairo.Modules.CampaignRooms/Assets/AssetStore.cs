@@ -1,3 +1,4 @@
+using Kairo.Contracts.BrandMemory;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
@@ -20,8 +21,20 @@ internal sealed record GeneratedAsset(
 
 internal sealed record SavedAssets(int Created, int Updated, int Removed, int KeptLocked);
 
-internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trail, TimeProvider time)
+internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trail, IBrandMemory brandMemory, TimeProvider time)
 {
+    private readonly List<(Guid AssetId, Guid RoomId, IReadOnlyList<Guid> Entries)> _memoryUses = [];
+
+    public async Task RecordMemoryAsync(CancellationToken cancellationToken)
+    {
+        var pending = _memoryUses.ToList();
+        _memoryUses.Clear();
+        foreach (var (assetId, roomId, entries) in pending)
+        {
+            await brandMemory.RecordUsesAsync(entries, MemoryUsedIn.Asset, assetId, roomId, cancellationToken);
+        }
+    }
+
     public Task<AssetVersion?> CurrentAsync(Asset asset, CancellationToken cancellationToken) =>
         db.AssetVersions.AsNoTracking().SingleOrDefaultAsync(version => version.AssetId == asset.Id && version.Version == asset.CurrentVersion, cancellationToken);
 
@@ -88,6 +101,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
             removed++;
         }
 
+        await RecordMemoryAsync(cancellationToken);
         return new SavedAssets(created, updated, removed, kept);
     }
 
@@ -135,6 +149,8 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
 
             AddVersion(asset, item.Content, origin, run.Id, outcome.Model, outcome.PromptVersion, createdBy, instruction);
         }
+
+        await RecordMemoryAsync(cancellationToken);
     }
 
     public async Task<int> RetireAsync(Room room, IReadOnlyCollection<string> kinds, IReadOnlyCollection<string> languages, CancellationToken cancellationToken)
@@ -187,6 +203,11 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
             Provenance = trail.For(asset, previous, changedFields).Write(),
         };
         db.AssetVersions.Add(version);
+        if (trail.MemoryIds(asset.Kind) is { Count: > 0 } entries)
+        {
+            _memoryUses.Add((asset.Id, asset.RoomId, entries));
+        }
+
         if (asset.Kind == AssetKinds.Footage)
         {
             trail.Used(asset, version.Version, content.Media?.FileKey);
