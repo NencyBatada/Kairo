@@ -123,8 +123,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Checks and automatic fixes**: Checks brand rules, ad policies, format specs, YouTube's ABCD principles and product accuracy, scores each asset and fixes failures up to 3 times.
-- [ ] **Check settings**: Stores the rules and pass thresholds that admins can tune.
+- [/] **Checks and automatic fixes**: Checks brand rules, ad policies, format specs, YouTube's ABCD principles and product accuracy, scores each asset and fixes failures up to 3 times.
+- [/] **Check settings**: Stores the rules and pass thresholds that admins can tune.
 
 ### Nency (web app)
 
