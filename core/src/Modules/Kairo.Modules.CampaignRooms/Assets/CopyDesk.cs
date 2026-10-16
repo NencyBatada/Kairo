@@ -18,8 +18,11 @@ internal sealed record CopyContext(
     IReadOnlyList<string> CampaignTypes,
     IReadOnlyList<KeyedProduct> Products,
     JsonElement? BrandKit,
-    IReadOnlyList<string> Keywords)
+    IReadOnlyList<string> Keywords,
+    IReadOnlyList<string> Languages)
 {
+    public string FeedLanguage() => CreativeLanguages.FeedLanguage(Products.Select(entry => entry.Product.Title), Languages);
+
     public CopyBriefData BriefData() => new(
         CopyDesk.Cut(Content.Title, 200) is { Length: > 0 } title ? title : "Campaign",
         CopyDesk.Cut(Content.Objective, 500),
@@ -91,15 +94,17 @@ internal sealed class CopyDesk(
         var kit = await brandKit.GetApprovedAsync(cancellationToken);
         trail.BrandKit(kit?.Version);
         var evidence = RoomEvidence.Read(room.Evidence);
+        var languages = CreativeLanguages.Of(content, DefaultLanguage);
         return new CopyContext(
             brief,
             content,
             Cut(brand.Name, 200),
-            (content.Languages ?? []).FirstOrDefault(BriefChoices.IsLanguage) ?? DefaultLanguage,
+            languages[0],
             types,
             products,
             kit?.Content,
-            [.. (evidence.Keywords ?? []).Where(keyword => !string.IsNullOrWhiteSpace(keyword)).Select(keyword => Cut(keyword, 100)).Distinct().Take(MaxKeywords)]);
+            [.. (evidence.Keywords ?? []).Where(keyword => !string.IsNullOrWhiteSpace(keyword)).Select(keyword => Cut(keyword, 100)).Distinct().Take(MaxKeywords)],
+            languages);
     }
 
     public static string Cut(string? text, int length)

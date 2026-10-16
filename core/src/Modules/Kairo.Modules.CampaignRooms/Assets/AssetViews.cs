@@ -52,7 +52,7 @@ internal sealed record AssetView(
     AssetDisclosureView Disclosure,
     DateTimeOffset UpdatedAt);
 
-internal sealed record AssetGroupView(string CampaignType, string Label, AssetView[] Assets);
+internal sealed record AssetGroupView(string CampaignType, string Label, string Language, string? LanguageName, AssetView[] Assets);
 
 internal sealed record AssetSetView(
     Guid CampaignId,
@@ -119,6 +119,9 @@ internal static class AssetViews
         [.. disclosure.PlatformLabels.Select(label => new PlatformLabelView(label.Platform, label.Setting, label.Reason, label.Source))],
         disclosure.Blocker);
 
+    public static int LanguageOrder(string language) =>
+        Array.FindIndex(CreativeLanguages.All, entry => entry.Code == language) is var index and >= 0 ? index : CreativeLanguages.All.Length;
+
     public static string MediaUrl(Guid brandId, Guid roomId, Guid assetId, int version) =>
         $"/api/brands/{brandId}/campaigns/{roomId}/assets/{assetId}/file?version={version}";
 
@@ -140,15 +143,17 @@ internal static class AssetViews
     public static AssetGroupView[] Groups(IEnumerable<AssetView> assets) =>
     [
         .. assets
-            .GroupBy(asset => asset.CampaignType)
-            .OrderBy(group => Array.IndexOf(CampaignTypeOrder, group.Key) is var index and >= 0 ? index : CampaignTypeOrder.Length)
+            .GroupBy(asset => (asset.CampaignType, asset.Language))
+            .OrderBy(group => Array.IndexOf(CampaignTypeOrder, group.Key.CampaignType) is var index and >= 0 ? index : CampaignTypeOrder.Length)
+            .ThenBy(group => LanguageOrder(group.Key.Language))
             .Select(group => new AssetGroupView(
-                group.Key,
-                BriefChoices.CampaignTypeName(group.Key),
+                group.Key.CampaignType,
+                BriefChoices.CampaignTypeName(group.Key.CampaignType),
+                group.Key.Language,
+                group.Key.Language == CreativeLanguages.None ? null : CreativeLanguages.Name(group.Key.Language),
                 [
                     .. group
-                        .OrderBy(asset => asset.Language, StringComparer.Ordinal)
-                        .ThenBy(asset => asset.AdGroup ?? "", StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(asset => asset.AdGroup ?? "", StringComparer.OrdinalIgnoreCase)
                         .ThenBy(asset => AssetKinds.Order(asset.Kind))
                         .ThenBy(asset => asset.Format ?? "", StringComparer.Ordinal)
                         .ThenBy(asset => asset.Content.Title ?? "", StringComparer.OrdinalIgnoreCase),

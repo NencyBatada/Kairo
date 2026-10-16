@@ -37,6 +37,8 @@ public sealed class FakeMedia
 
     public static byte[] VoiceBytes(int generation) => [0x49, 0x44, 0x33, (byte)generation];
 
+    public static double VideoSeconds(int generation) => 15.0 - ((generation - 1) * 0.5);
+
     public static void ServePhotos(FakeWebsites websites)
     {
         foreach (var id in new[] { "RAIN-1", "RAIN-2", "SCHOOL-1" })
@@ -132,7 +134,7 @@ public sealed class FakeMedia
 
         return FakeAgents.Json(new
         {
-            video = new { mimeType = "video/mp4", data = Convert.ToBase64String(VideoBytes(Generation)), seconds = 15.0 },
+            video = new { mimeType = "video/mp4", data = Convert.ToBase64String(VideoBytes(Generation)), seconds = VideoSeconds(Generation) },
             voiceover = new { mimeType = "audio/mpeg", data = Convert.ToBase64String(VoiceBytes(Generation)), seconds = 15.0 },
             width = 1080,
             height = 1920,

@@ -1,12 +1,22 @@
+using Kairo.Modules.CampaignRooms.Briefs;
+
 namespace Kairo.Modules.CampaignRooms.Assets;
 
 internal static class AssetEndpoints
 {
-    public static async Task<Results<Ok<AssetSetView>, NotFound>> ListAsync(
+    public static async Task<Results<Ok<AssetSetView>, NotFound, ValidationProblem>> ListAsync(
         Guid campaignId,
+        string? language,
         AssetEditor editor,
-        CancellationToken cancellationToken) =>
-        await editor.ListAsync(campaignId, cancellationToken) is { } set ? TypedResults.Ok(set) : TypedResults.NotFound();
+        CancellationToken cancellationToken)
+    {
+        if (language is not null && !BriefChoices.IsLanguage(language))
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["language"] = ["Choose one of the brief's languages."] });
+        }
+
+        return await editor.ListAsync(campaignId, language, cancellationToken) is { } set ? TypedResults.Ok(set) : TypedResults.NotFound();
+    }
 
     public static async Task<Results<Ok<AssetHistoryView>, NotFound>> HistoryAsync(
         Guid campaignId,

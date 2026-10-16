@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Kairo.Modules.CampaignRooms.Data;
+using Kairo.Modules.CampaignRooms.Media;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Agents;
@@ -21,9 +22,10 @@ internal sealed record AssetRegeneration(
     string? PromptVersion,
     AgentUsage? Usage,
     string Summary,
-    IReadOnlyList<GeneratedAsset>? Companions = null);
+    IReadOnlyList<GeneratedAsset>? Companions = null,
+    decimal? DurationSeconds = null);
 
-internal sealed record RegenerationInput(Guid AssetId, int Version, string Instruction);
+internal sealed record RegenerationInput(Guid AssetId, int Version, string Instruction, string? Kind = null);
 
 internal sealed record RegeneratedAsset(
     Guid AssetId,
@@ -31,7 +33,8 @@ internal sealed record RegeneratedAsset(
     string Instruction,
     AssetContent Content,
     string Summary,
-    IReadOnlyList<GeneratedAsset>? Companions = null);
+    IReadOnlyList<GeneratedAsset>? Companions = null,
+    decimal? DurationSeconds = null);
 
 internal sealed class AssetRegenerateWork(
     CampaignRoomsDbContext db,
@@ -46,12 +49,27 @@ internal sealed class AssetRegenerateWork(
 
     public string? NextKind(StageRun run, StageOutcome outcome) => StageKinds.Check;
 
-    public static string Input(Guid assetId, int version, string instruction) =>
-        JsonSerializer.Serialize(new RegenerationInput(assetId, version, instruction), JsonSerializerOptions.Web);
+    public int AttemptsFor(StageRun run) =>
+        Read(run)?.Kind == AssetKinds.Video ? VideoWork.Attempts : StageRunner.MaxAttempts;
+
+    public static string Input(Guid assetId, int version, string instruction, string kind) =>
+        JsonSerializer.Serialize(new RegenerationInput(assetId, version, instruction, kind), JsonSerializerOptions.Web);
+
+    public static RegenerationInput? Read(StageRun run)
+    {
+        try
+        {
+            return run.Input is { } json ? JsonSerializer.Deserialize<RegenerationInput>(json, JsonSerializerOptions.Web) : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     public async Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken)
     {
-        var input = run.Input is { } json ? JsonSerializer.Deserialize<RegenerationInput>(json, JsonSerializerOptions.Web) : null;
+        var input = Read(run);
         var asset = input is null
             ? null
             : await db.Assets.AsNoTracking().SingleOrDefaultAsync(row => row.Id == input.AssetId && row.RoomId == room.Id && row.Status == AssetStatuses.Active, cancellationToken);
@@ -72,7 +90,7 @@ internal sealed class AssetRegenerateWork(
 
         var result = await regenerator.RegenerateAsync(new AssetRegenerationContext(room, asset, current, current.Read(), input.Instruction), cancellationToken);
         return new StageOutcome(
-            new RegeneratedAsset(asset.Id, current.Version, input.Instruction, result.Content, result.Summary, result.Companions),
+            new RegeneratedAsset(asset.Id, current.Version, input.Instruction, result.Content, result.Summary, result.Companions, result.DurationSeconds),
             result.Model,
             result.PromptVersion,
             result.Usage,
@@ -94,5 +112,9 @@ internal sealed class AssetRegenerateWork(
         }
 
         store.AddVersion(asset, regenerated.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, regenerated.Instruction);
+        if (regenerated.DurationSeconds is { } seconds)
+        {
+            asset.DurationSeconds = seconds;
+        }
     }
 }

@@ -39,7 +39,9 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.True(set.GetProperty("canEdit").GetBoolean());
         Assert.Equal(JsonValueKind.Null, set.GetProperty("editBlocker").ValueKind);
         Assert.Equal(["en"], set.GetProperty("languages").EnumerateArray().Select(language => language.GetString()));
-        Assert.Equal(["search", "shopping"], set.GetProperty("groups").EnumerateArray().Select(group => group.GetProperty("campaignType").GetString()));
+        Assert.Equal(
+            [("search", "en", "English"), ("search", "zxx", null), ("shopping", "en", "English")],
+            set.GetProperty("groups").EnumerateArray().Select(group => (group.GetProperty("campaignType").GetString(), group.GetProperty("language").GetString(), group.GetProperty("languageName").GetString())));
         Assert.Equal(["keyword_set", "search_ad", "shopping_title"], Campaigns.TextAssets(set).Select(asset => asset.GetProperty("kind").GetString()));
         var ad = Campaigns.Asset(set, "search_ad");
         Assert.Equal(("Rain runners", 1, "generated", "unchecked", false), (ad.GetProperty("adGroup").GetString(), ad.GetProperty("version").GetInt32(), ad.GetProperty("origin").GetString(), ad.GetProperty("checkState").GetString(), ad.GetProperty("locked").GetBoolean()));

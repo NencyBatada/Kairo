@@ -17,6 +17,8 @@ internal interface IStageWork
 
     int MaxAttempts => StageRunner.MaxAttempts;
 
+    int AttemptsFor(StageRun run) => MaxAttempts;
+
     Task<StageOutcome> RunAsync(StageRun run, Room room, CancellationToken cancellationToken);
 
     Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken);

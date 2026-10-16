@@ -57,16 +57,24 @@ internal sealed class VideoRegenerator(MediaDesk desk, VideoMaker maker) : IAsse
 
         var language = context.Asset.Language;
         var newFootage = VideoMaker.NeedsNewFootage(context.Instruction);
-        var made = await maker.MakeAsync(context.Room, copy with { Language = language }, context.Instruction, !newFootage, cancellationToken);
+        var lockedVoiceover = (await desk.CurrentAsync(context.Room.Id, language, AssetKinds.Voiceover, cancellationToken))
+            .FirstOrDefault(entry => entry.Asset.Locked);
+        var voice = new VideoVoice(
+            language,
+            await desk.BusinessNameAsync(copy, language, context.Room.Id, cancellationToken),
+            lockedVoiceover.Content?.Script);
+        var made = await maker.MakeAsync(context.Room, copy, voice, context.Instruction, !newFootage, cancellationToken);
         var next = context.Content.Copy();
         next.Media = made.Video.Content.Media;
         next.Script = made.Video.Content.Script;
+        var summary = made.Footage.Count > 0 ? "Made new footage and a new video." : "Made a new video from the same footage.";
         return new AssetRegeneration(
             next,
             made.Model,
             made.PromptVersion,
             made.Usage,
-            made.Footage.Count > 0 ? "Made new footage and a new video." : "Made a new video from the same footage.",
-            [made.Voiceover, .. made.Footage]);
+            lockedVoiceover.Asset is null ? summary : $"{summary} The voiceover is locked, so its words stayed the same.",
+            [made.Voiceover, .. made.Footage],
+            made.Video.DurationSeconds);
     }
 }

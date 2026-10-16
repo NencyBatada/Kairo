@@ -6,6 +6,10 @@ using Kairo.Modules.CampaignRooms.Stages;
 
 namespace Kairo.Modules.CampaignRooms.Media;
 
+internal sealed record LanguageVideo(string Language, List<GeneratedAsset> Assets);
+
+internal sealed record VideoDraft(int BriefVersion, IReadOnlyList<string> Voiced, List<GeneratedAsset>? Footage, List<LanguageVideo> Videos);
+
 internal sealed class VideoWork(
     CampaignRoomsDbContext db,
     MediaDesk desk,
@@ -13,7 +17,11 @@ internal sealed class VideoWork(
     AssetStore store,
     IAuditLog audit) : IStageWork
 {
+    public const int Attempts = 2;
+
     public static readonly string[] Kinds = [AssetKinds.Video, AssetKinds.Voiceover, AssetKinds.Footage];
+
+    public static readonly string[] SpokenKinds = [AssetKinds.Video, AssetKinds.Voiceover];
 
     public string Kind => StageKinds.CreateVideo;
 
@@ -21,7 +29,7 @@ internal sealed class VideoWork(
 
     public string Stage => RoomStates.Creating;
 
-    public int MaxAttempts => 2;
+    public int MaxAttempts => Attempts;
 
     public string? NextKind(StageRun run, StageOutcome outcome) => StageKinds.Check;
 
@@ -32,40 +40,84 @@ internal sealed class VideoWork(
             throw new StageFailure(StageFailure.NoBrief, "This campaign has no brief to make a video from.");
         }
 
-        var lockedVideo = await db.Assets.AsNoTracking().AnyAsync(
-            asset => asset.RoomId == room.Id && asset.Language == context.Language && asset.Kind == AssetKinds.Video && asset.Locked && asset.Status == AssetStatuses.Active,
-            cancellationToken);
-        if (lockedVideo)
+        var voiced = context.Languages.Where(CreativeLanguages.Speaks).ToList();
+        if (voiced.Count == 0)
         {
-            return new StageOutcome(new MediaDraft(context.Brief.Version, context.Language, null, true, 0), null, null, null, "The video is locked, so Kairo kept it.");
+            return new StageOutcome(
+                new VideoDraft(context.Brief.Version, voiced, null, []),
+                null,
+                null,
+                null,
+                "None of the brief's languages has a voiceover yet, so Kairo made no video.");
         }
 
-        var made = await maker.MakeAsync(room, context, null, false, cancellationToken);
+        var locked = await db.Assets.AsNoTracking()
+            .Where(asset => asset.RoomId == room.Id && SpokenKinds.Contains(asset.Kind) && asset.Locked && asset.Status == AssetStatuses.Active && voiced.Contains(asset.Language))
+            .ToListAsync(cancellationToken);
+        var lockedVideos = locked.Where(asset => asset.Kind == AssetKinds.Video).Select(asset => asset.Language).ToHashSet(StringComparer.Ordinal);
+        var wanted = voiced.Where(language => !lockedVideos.Contains(language)).ToList();
+        if (wanted.Count == 0)
+        {
+            return new StageOutcome(new VideoDraft(context.Brief.Version, voiced, null, []), null, null, null, "Every video is locked, so Kairo kept them.");
+        }
+
+        var voices = new List<VideoVoice>();
+        foreach (var language in wanted)
+        {
+            voices.Add(new VideoVoice(
+                language,
+                await desk.BusinessNameAsync(context, language, room.Id, cancellationToken),
+                await LockedScriptAsync(locked, language, cancellationToken)));
+        }
+
+        var footage = await maker.FootageAsync(room, context, null, cancellationToken);
+        var setting = await maker.SettingAsync(context, cancellationToken);
+        var composed = await Task.WhenAll(voices.Select(voice => maker.ComposeAsync(room, context, setting, voice, footage.Clips, null, cancellationToken)));
+        var videos = voices.Zip(composed).Select(pair => new LanguageVideo(pair.First.Language, [pair.Second.Video, pair.Second.Voiceover])).ToList();
+        var names = string.Join(" and ", wanted.Select(CreativeLanguages.Name));
         return new StageOutcome(
-            new MediaDraft(context.Brief.Version, context.Language, [made.Video, made.Voiceover, .. made.Footage], true, 0),
-            made.Model,
-            made.PromptVersion,
-            made.Usage,
-            $"Made a {made.Video.DurationSeconds:0.#}-second video with voiceover and captions");
+            new VideoDraft(context.Brief.Version, voiced, [.. footage.Assets], videos),
+            footage.Model ?? composed[0].Model,
+            footage.PromptVersion ?? composed[0].PromptVersion,
+            MediaDesk.Sum([footage.Usage, .. composed.Select(video => video.Usage)]),
+            $"Made the {names} video with voiceover and captions");
     }
 
     public async Task SaveAsync(StageRun run, Room room, StageOutcome outcome, CancellationToken cancellationToken)
     {
-        var draft = (MediaDraft)outcome.Output;
-        if (draft.Assets is null)
+        var draft = (VideoDraft)outcome.Output;
+        var (created, updated, removed, kept) = (0, 0, 0, 0);
+        void Count(SavedAssets saved) =>
+            (created, updated, removed, kept) = (created + saved.Created, updated + saved.Updated, removed + saved.Removed, kept + saved.KeptLocked);
+
+        if (draft.Footage is { } footage)
         {
-            return;
+            Count(await store.SaveGeneratedAsync(room, draft.BriefVersion, CreativeLanguages.None, [AssetKinds.Footage], footage, run, outcome, cancellationToken));
+            removed += await store.RetireAsync(room, [AssetKinds.Footage], [CreativeLanguages.None], cancellationToken);
         }
 
-        var saved = await store.SaveGeneratedAsync(room, draft.BriefVersion, draft.Language, Kinds, draft.Assets, run, outcome, cancellationToken);
+        foreach (var video in draft.Videos)
+        {
+            Count(await store.SaveGeneratedAsync(room, draft.BriefVersion, video.Language, SpokenKinds, video.Assets, run, outcome, cancellationToken));
+        }
+
+        removed += await store.RetireAsync(room, SpokenKinds, draft.Voiced, cancellationToken);
         await audit.RecordAsync(
             new AuditRecord(
                 "asset.generated",
                 RoomWorkflow.AuditTarget,
                 room.Id.ToString(),
                 null,
-                new { runId = run.Id, run.Kind, language = draft.Language, saved.Created, saved.Updated, saved.Removed, saved.KeptLocked },
+                new { runId = run.Id, run.Kind, languages = draft.Videos.Select(video => video.Language).ToArray(), Created = created, Updated = updated, Removed = removed, KeptLocked = kept },
                 AuditActor.Agent(StageProgress.ActorName(run.Agent), run.Agent)),
             cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<AssetScriptLine>?> LockedScriptAsync(IReadOnlyList<Asset> locked, string language, CancellationToken cancellationToken)
+    {
+        var voiceover = locked.FirstOrDefault(asset => asset.Kind == AssetKinds.Voiceover && asset.Language == language);
+        return voiceover is not null && await store.CurrentAsync(voiceover, cancellationToken) is { } version
+            ? version.Read().Script
+            : null;
     }
 }

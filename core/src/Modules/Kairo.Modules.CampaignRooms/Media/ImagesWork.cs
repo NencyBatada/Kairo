@@ -67,11 +67,11 @@ internal sealed class ImagesWork(
         var formats = Formats(context.CampaignTypes);
         if (formats.Count == 0)
         {
-            return new StageOutcome(new MediaDraft(context.Brief.Version, context.Language, [], video, 0), null, null, null, "No image ads are needed for this campaign.");
+            return new StageOutcome(new MediaDraft(context.Brief.Version, CreativeLanguages.None, [], video, 0), null, null, null, "No image ads are needed for this campaign.");
         }
 
         var locked = (await db.Assets.AsNoTracking()
-            .Where(asset => asset.RoomId == room.Id && asset.Language == context.Language && asset.Kind == AssetKinds.Image && asset.Locked && asset.Status == AssetStatuses.Active)
+            .Where(asset => asset.RoomId == room.Id && asset.Language == CreativeLanguages.None && asset.Kind == AssetKinds.Image && asset.Locked && asset.Status == AssetStatuses.Active)
             .Select(asset => asset.Key)
             .ToListAsync(cancellationToken))
             .ToHashSet(StringComparer.Ordinal);
@@ -81,10 +81,10 @@ internal sealed class ImagesWork(
             throw MediaDesk.NoPhotos();
         }
 
-        var shots = Shots(products, formats, video, context.Language, locked);
+        var shots = Shots(products, formats, video, CreativeLanguages.None, locked);
         if (shots.Count == 0)
         {
-            return new StageOutcome(new MediaDraft(context.Brief.Version, context.Language, null, video, 0), null, null, null, "Every image is locked, so Kairo kept them.");
+            return new StageOutcome(new MediaDraft(context.Brief.Version, CreativeLanguages.None, null, video, 0), null, null, null, "Every image is locked, so Kairo kept them.");
         }
 
         var answer = await agent.ImagesAsync(
@@ -103,7 +103,7 @@ internal sealed class ImagesWork(
 
         var failed = answer.Failures?.Count ?? 0;
         return new StageOutcome(
-            new MediaDraft(context.Brief.Version, context.Language, assets, video, failed),
+            new MediaDraft(context.Brief.Version, CreativeLanguages.None, assets, video, failed),
             answer.Model,
             answer.PromptVersion,
             answer.Usage,
@@ -119,13 +119,14 @@ internal sealed class ImagesWork(
         }
 
         var saved = await store.SaveGeneratedAsync(room, draft.BriefVersion, draft.Language, Kinds, draft.Assets, run, outcome, cancellationToken);
+        var retired = await store.RetireAsync(room, Kinds, [draft.Language], cancellationToken);
         await audit.RecordAsync(
             new AuditRecord(
                 "asset.generated",
                 RoomWorkflow.AuditTarget,
                 room.Id.ToString(),
                 null,
-                new { runId = run.Id, run.Kind, language = draft.Language, saved.Created, saved.Updated, saved.Removed, saved.KeptLocked, failed = draft.Failed },
+                new { runId = run.Id, run.Kind, language = draft.Language, saved.Created, saved.Updated, Removed = saved.Removed + retired, saved.KeptLocked, failed = draft.Failed },
                 AuditActor.Agent(StageProgress.ActorName(run.Agent), run.Agent)),
             cancellationToken);
     }
@@ -181,7 +182,7 @@ internal sealed class ImagesWork(
 
             var media = await desk.SaveAsync(room.BrandId, image.Data, "image/jpeg", cancellationToken);
             assets.Add(new GeneratedAsset(
-                KeyFor(context.Language, product.Id, shot.Style, image.Format),
+                KeyFor(CreativeLanguages.None, product.Id, shot.Style, image.Format),
                 AssetKinds.Image,
                 campaignType,
                 null,

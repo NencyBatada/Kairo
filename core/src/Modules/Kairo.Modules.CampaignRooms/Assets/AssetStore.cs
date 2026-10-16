@@ -15,7 +15,8 @@ internal sealed record GeneratedAsset(
     int? Width = null,
     int? Height = null,
     decimal? DurationSeconds = null,
-    bool Hidden = false);
+    bool Hidden = false,
+    string? Language = null);
 
 internal sealed record SavedAssets(int Created, int Updated, int Removed, int KeptLocked);
 
@@ -101,7 +102,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
     {
         var keys = companions.Select(item => item.Key).ToList();
         var existing = await db.Assets
-            .Where(asset => asset.RoomId == room.Id && asset.Language == main.Language && keys.Contains(asset.Key))
+            .Where(asset => asset.RoomId == room.Id && keys.Contains(asset.Key))
             .ToDictionaryAsync(asset => asset.Key, StringComparer.Ordinal, cancellationToken);
         foreach (var item in FootageFirst(companions))
         {
@@ -123,7 +124,7 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
                     BrandId = room.BrandId,
                     RoomId = room.Id,
                     Key = item.Key,
-                    Language = main.Language,
+                    Language = item.Language ?? main.Language,
                     CreatedAt = time.GetUtcNow(),
                 };
                 Describe(asset, item, main.BriefVersion);
@@ -132,6 +133,22 @@ internal sealed class AssetStore(CampaignRoomsDbContext db, ProvenanceTrail trai
 
             AddVersion(asset, item.Content, AssetOrigins.Regenerated, run.Id, outcome.Model, outcome.PromptVersion, run.RequestedBy, instruction);
         }
+    }
+
+    public async Task<int> RetireAsync(Room room, IReadOnlyCollection<string> kinds, IReadOnlyCollection<string> languages, CancellationToken cancellationToken)
+    {
+        var scope = kinds.ToList();
+        var kept = languages.ToList();
+        var stale = await db.Assets
+            .Where(asset => asset.RoomId == room.Id && scope.Contains(asset.Kind) && !kept.Contains(asset.Language) && asset.Status == AssetStatuses.Active && !asset.Locked)
+            .ToListAsync(cancellationToken);
+        foreach (var asset in stale)
+        {
+            asset.Status = AssetStatuses.Removed;
+            asset.UpdatedAt = time.GetUtcNow();
+        }
+
+        return stale.Count;
     }
 
     public AssetVersion AddVersion(

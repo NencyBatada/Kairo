@@ -1,4 +1,5 @@
 using System.Globalization;
+using Kairo.Modules.CampaignRooms.Assets;
 
 namespace Kairo.Modules.CampaignRooms.Briefs;
 
@@ -88,8 +89,38 @@ internal static class BriefChecks
                 "The YouTube channel isn't connected, so Demand Gen will run image ads only until it is.");
         }
 
+        if (types.Contains(BriefChoices.DemandGen))
+        {
+            Voiceovers(content, Add);
+        }
+
         return warnings;
     }
+
+    private static void Voiceovers(BriefContent content, Action<string, string, string, string> add)
+    {
+        var languages = (content.Languages ?? []).Where(BriefChoices.IsLanguage).Distinct().ToList();
+        var silent = languages.Where(language => !CreativeLanguages.Speaks(language)).ToList();
+        if (silent.Count == 0)
+        {
+            return;
+        }
+
+        var names = Join(silent.Select(CreativeLanguages.Name).ToList());
+        var spoken = languages.Except(silent).Select(CreativeLanguages.Name).ToList();
+        if (spoken.Count == 0)
+        {
+            add("no_voiceover", BriefFields.Languages, BriefSeverities.Warning,
+                $"Kairo can write the ads in {names} but can't make a voiceover in {(silent.Count == 1 ? "it" : "them")} yet, so Demand Gen will run without a video. Add English or Hindi for a video.");
+            return;
+        }
+
+        add("no_voiceover", BriefFields.Languages, BriefSeverities.Info,
+            $"Kairo can write the ads in {names} but can't make a voiceover in {(silent.Count == 1 ? "it" : "them")} yet, so the video will be in {Join(spoken)} only.");
+    }
+
+    private static string Join(IReadOnlyList<string> names) =>
+        names.Count == 1 ? names[0] : $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}";
 
     private static void Budget(BriefContent content, BriefSituation situation, Action<string, string, string, string> add)
     {

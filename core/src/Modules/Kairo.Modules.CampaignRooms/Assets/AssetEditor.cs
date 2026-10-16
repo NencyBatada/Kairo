@@ -51,7 +51,7 @@ internal sealed class AssetEditor(
         : room.RunStatus is { } status && StageRunStatuses.IsActive(status) ? AgentBusy
         : null;
 
-    public async Task<AssetSetView?> ListAsync(Guid roomId, CancellationToken cancellationToken)
+    public async Task<AssetSetView?> ListAsync(Guid roomId, string? language, CancellationToken cancellationToken)
     {
         var room = await db.Rooms.AsNoTracking().SingleOrDefaultAsync(row => row.Id == roomId, cancellationToken);
         if (room is null)
@@ -67,13 +67,14 @@ internal sealed class AssetEditor(
             select new { asset, version }).ToListAsync(cancellationToken);
         var views = current.Select(row => AssetViews.View(row.asset, row.version, room.BrandId)).ToList();
         var blocker = EditBlocker(room);
+        var shown = language is null ? views : views.Where(view => view.Language == language || view.Language == CreativeLanguages.None).ToList();
         return new AssetSetView(
             room.Id,
             room.State,
             member.Has(BrandRoles.Marketer) && blocker is null && views.Count > 0,
             blocker,
-            [.. views.Select(view => view.Language).Distinct().Order(StringComparer.Ordinal)],
-            AssetViews.Groups(views));
+            [.. views.Select(view => view.Language).Where(code => code != CreativeLanguages.None).Distinct().OrderBy(AssetViews.LanguageOrder)],
+            AssetViews.Groups(shown));
     }
 
     public async Task<AssetResult<AssetView>> EditAsync(Guid roomId, Guid assetId, AssetEditRequest request, CancellationToken cancellationToken)
@@ -184,7 +185,7 @@ internal sealed class AssetEditor(
             return AssetResult<AssetRegenerationView>.Failed(AssetError.NotAllowed, "Kairo can't regenerate this kind of asset yet.");
         }
 
-        var run = await queue.EnqueueAsync(room, StageKinds.AssetRegenerate, member.UserId, cancellationToken, AssetRegenerateWork.Input(asset.Id, asset.CurrentVersion, instruction));
+        var run = await queue.EnqueueAsync(room, StageKinds.AssetRegenerate, member.UserId, cancellationToken, AssetRegenerateWork.Input(asset.Id, asset.CurrentVersion, instruction, asset.Kind));
         var current = await store.CurrentAsync(asset, cancellationToken);
         await FinishAsync(room, new AuditRecord("asset.regenerated", RoomWorkflow.AuditTarget, room.Id.ToString(), null, new { assetId = asset.Id, asset.Kind, version = asset.CurrentVersion, instruction, runId = run.Id }), cancellationToken);
         return AssetResult<AssetRegenerationView>.Done(new AssetRegenerationView(run.Id, AssetViews.View(asset, current!, room.BrandId)));

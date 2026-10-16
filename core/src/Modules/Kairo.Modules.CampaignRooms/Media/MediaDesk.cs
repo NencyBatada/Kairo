@@ -141,9 +141,9 @@ internal sealed class MediaDesk(
         return hexes.FirstOrDefault(colour => colour.Role == "primary").Hex ?? hexes.FirstOrDefault().Hex;
     }
 
-    public async Task<string> BusinessNameAsync(CopyContext context, Guid roomId, CancellationToken cancellationToken)
+    public async Task<string> BusinessNameAsync(CopyContext context, string language, Guid roomId, CancellationToken cancellationToken)
     {
-        var text = await CurrentAsync(roomId, context.Language, AssetKinds.DemandGenText, cancellationToken);
+        var text = await CurrentAsync(roomId, language, AssetKinds.DemandGenText, cancellationToken);
         var name = text.Select(entry => entry.Content.BusinessName).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? context.Brand;
         return CopyDesk.Cut(name, BusinessNameLength);
     }
