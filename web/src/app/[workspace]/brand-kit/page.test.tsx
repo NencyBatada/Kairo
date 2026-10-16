@@ -22,6 +22,7 @@ test("loads Brand Kit data for the resolved workspace and handles no drafting ru
   expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/brand-kit", { params: { path: { brandId: "brand-1" } } });
   expect(screen.getByRole("heading", { name: "Create your Brand Kit" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Save draft" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "View Brand Memory" }).getAttribute("href")).toBe("/acme/brand-kit/memory");
 });
 
 test("members can view an empty kit without admin actions", async () => {
