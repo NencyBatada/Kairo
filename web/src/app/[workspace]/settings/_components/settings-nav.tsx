@@ -12,6 +12,7 @@ export function SettingsNav({ workspace }: { workspace: string }) {
         { href: `${base}/connections`, label: "Connections" },
         { href: `${base}/team`, label: "Team" },
         { href: `${base}/approvals`, label: "Approvals" },
+        { href: `${base}/checks`, label: "Brand Guardian" },
         { href: `${base}/notifications`, label: "Notifications" },
         { href: `${base}/audit-log`, label: "Audit log" },
       ]}
