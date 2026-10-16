@@ -32,6 +32,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public ConcurrentQueue<string> Requests { get; } = new();
 
     public Func<Uri, string, HttpResponseMessage?>? LaunchResponse { get; set; }
+    public Func<HttpRequestMessage, string, HttpResponseMessage?>? LaunchRequest { get; set; }
 
     public ConcurrentQueue<string> Revoked { get; } = new();
 
@@ -156,6 +157,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         }
 
         var login = request.Headers.TryGetValues("login-customer-id", out var values) ? values.Single() : null;
+        if (LaunchRequest?.Invoke(request, body) is { } launch) return launch;
         return Product(uri, body, login);
     }
 

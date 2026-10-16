@@ -23,9 +23,10 @@ internal sealed class LaunchDispatcher(LaunchDbContext db, KairoDatabase databas
         {
             claimed = await db.Database.SqlQuery<ClaimedLaunch>($"""
                 UPDATE TOP (4) launch.Launches WITH (READPAST, UPDLOCK, ROWLOCK)
-                SET Status = N'running', ClaimToken = {claim}, ClaimedUntil = {until}, Attempts = Attempts + 1
+                SET Status = N'running', ClaimToken = {claim}, ClaimedUntil = {until}, Attempts = Attempts + 1, Version = Version + 1
                 OUTPUT inserted.Id, inserted.BrandId
-                WHERE Status IN (N'queued', N'running') AND (ClaimedUntil IS NULL OR ClaimedUntil < {now})
+                WHERE Status IN (N'queued', N'running', N'retry_wait') AND (ClaimedUntil IS NULL OR ClaimedUntil < {now})
+                  AND (NextAttemptAt IS NULL OR NextAttemptAt <= {now})
                 """).ToListAsync(cancellationToken);
         }
 
@@ -63,6 +64,7 @@ internal sealed class LaunchLoop(LaunchLoopSwitch loopSwitch, IServiceScopeFacto
             {
                 await using var scope = scopes.CreateAsyncScope();
                 await scope.ServiceProvider.GetRequiredService<LaunchDispatcher>().RunDueAsync(stoppingToken);
+                await scope.ServiceProvider.GetRequiredService<LaunchHealthCheck>().RunDueAsync(stoppingToken);
                 await Task.Delay(TimeSpan.FromSeconds(2), time, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }

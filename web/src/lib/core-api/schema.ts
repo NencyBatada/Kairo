@@ -4320,6 +4320,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LaunchStatus"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RetryLaunch"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LaunchStatus"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/analytics/feeds": {
         parameters: {
             query?: never;
@@ -5585,6 +5675,19 @@ export interface components {
             imageLink: null | string;
             category: null | string;
         };
+        HealthAlert: {
+            kind: string;
+            resource: string;
+            cause: string;
+            suggestedFix: string;
+        };
+        HealthView: {
+            status: string;
+            dueAt: string;
+            checkedAt: null | string;
+            cause: null | string;
+            alerts: components["schemas"]["HealthAlert"][];
+        };
         HoldoutRequest: {
             regionIds: null | string[];
             version: null | number | string;
@@ -5827,6 +5930,34 @@ export interface components {
             geoTargetIds?: null | {
                 [key: string]: string;
             };
+        };
+        LaunchStatus: {
+            id: string;
+            version: number | string;
+            status: string;
+            step: string;
+            attempts: number | string;
+            uncertain: boolean;
+            cause: null | string;
+            suggestedFix: null | string;
+            retryAvailable: boolean;
+            nextAttemptAt: null | string;
+            activatedAt: null | string;
+            externalIds: {
+                [key: string]: string;
+            };
+            videoIds: {
+                [key: string]: string;
+            };
+            steps: components["schemas"]["LaunchStepView"][];
+            health: null | components["schemas"]["HealthView"];
+        };
+        LaunchStepView: {
+            name: string;
+            attempt: number | string;
+            outcome: string;
+            startedAt: string;
+            finishedAt: null | string;
         };
         MatchedProductView: {
             id: string;
@@ -6102,6 +6233,9 @@ export interface components {
             lastMonthSearches: number | string;
             growth: null | number | string;
             rising: boolean;
+        };
+        RetryLaunch: {
+            version: number | string;
         };
         RevisionRequest: {
             revision: number | string;

@@ -23,6 +23,37 @@ internal sealed class LaunchRecord : IBrandOwned
     public string? ErrorMessage { get; set; }
     public string? SuggestedFix { get; set; }
     public bool Uncertain { get; set; }
+    public int Version { get; set; } = 1;
+    public int RetryCount { get; set; }
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    public string? PendingBuild { get; set; }
+}
+
+internal sealed class LaunchStep : IBrandOwned
+{
+    public Guid Id { get; set; }
+    public Guid BrandId { get; set; }
+    public Guid LaunchId { get; set; }
+    public string Name { get; set; } = "";
+    public int Attempt { get; set; }
+    public DateTimeOffset StartedAt { get; set; }
+    public DateTimeOffset? FinishedAt { get; set; }
+    public string Outcome { get; set; } = "attempting";
+}
+
+internal sealed class LaunchHealth : IBrandOwned
+{
+    public Guid Id { get; set; }
+    public Guid BrandId { get; set; }
+    public Guid LaunchId { get; set; }
+    public DateTimeOffset DueAt { get; set; }
+    public DateTimeOffset? CheckedAt { get; set; }
+    public DateTimeOffset? ClaimedUntil { get; set; }
+    public Guid? ClaimToken { get; set; }
+    public int Attempts { get; set; }
+    public string Status { get; set; } = "pending";
+    public string Alerts { get; set; } = "[]";
+    public string? Cause { get; set; }
 }
 
 internal sealed class ProductAdMap : IBrandOwned
@@ -41,6 +72,8 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
     public const string SchemaName = "launch";
     public DbSet<LaunchRecord> Launches => Set<LaunchRecord>();
     public DbSet<ProductAdMap> ProductAds => Set<ProductAdMap>();
+    public DbSet<LaunchStep> Steps => Set<LaunchStep>();
+    public DbSet<LaunchHealth> Health => Set<LaunchHealth>();
     protected override string Schema => SchemaName;
 
     protected override void ConfigureModel(ModelBuilder modelBuilder)
@@ -48,15 +81,31 @@ internal sealed class LaunchDbContext(DbContextOptions<LaunchDbContext> options,
         modelBuilder.Entity<LaunchRecord>(launch =>
         {
             launch.HasKey(row => row.Id);
-            launch.HasIndex(row => new { row.BrandId, row.RoomId }).IsUnique();
+            launch.HasIndex(row => new { row.BrandId, row.RoomId }).IsUnique().HasFilter("[Status] <> N'superseded'");
             launch.HasIndex(row => new { row.Status, row.ClaimedUntil });
             launch.Property(row => row.Hash).HasMaxLength(64);
+            launch.Property(row => row.ClaimToken).IsConcurrencyToken();
             launch.Property(row => row.Status).HasMaxLength(30);
             launch.Property(row => row.Step).HasMaxLength(100);
             launch.Property(row => row.AttemptingStep).HasMaxLength(100);
             launch.Property(row => row.ErrorCode).HasMaxLength(60);
             launch.Property(row => row.ErrorMessage).HasMaxLength(500);
             launch.Property(row => row.SuggestedFix).HasMaxLength(500);
+        });
+        modelBuilder.Entity<LaunchStep>(step =>
+        {
+            step.HasKey(row => row.Id);
+            step.HasIndex(row => new { row.BrandId, row.LaunchId, row.Name, row.Attempt }).IsUnique();
+            step.Property(row => row.Name).HasMaxLength(100);
+            step.Property(row => row.Outcome).HasMaxLength(30);
+        });
+        modelBuilder.Entity<LaunchHealth>(health =>
+        {
+            health.HasKey(row => row.Id);
+            health.HasIndex(row => row.LaunchId).IsUnique();
+            health.HasIndex(row => new { row.Status, row.DueAt });
+            health.Property(row => row.Status).HasMaxLength(30);
+            health.Property(row => row.Cause).HasMaxLength(500);
         });
         modelBuilder.Entity<ProductAdMap>(map =>
         {

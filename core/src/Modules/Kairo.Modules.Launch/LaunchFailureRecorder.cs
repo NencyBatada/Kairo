@@ -9,7 +9,7 @@ using Kairo.Modules.Launch.Google;
 namespace Kairo.Modules.Launch;
 
 internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase database, ICampaignLifecycle lifecycle,
-    IAuditLog audit, ILiveUpdates live, INotifications notifications, IBrandDirectory brands)
+    IAuditLog audit, ILiveUpdates live, INotifications notifications, IBrandDirectory brands, TimeProvider time)
 {
     public async Task RecordAsync(Guid id, Guid claim, LaunchException error, CancellationToken cancellationToken)
     {
@@ -31,6 +31,19 @@ internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase da
             record.ErrorMessage = error.Message;
             record.SuggestedFix = error.Fix;
             record.Uncertain = error.Uncertain;
+            record.Version++;
+            record.NextAttemptAt = null;
+            if (error.Transient && record.RetryCount < 3)
+            {
+                record.NextAttemptAt = time.GetUtcNow() + RetryDelay(record.RetryCount++);
+                record.Status = "retry_wait";
+            }
+            var step = await db.Steps.Where(row => row.LaunchId == id && row.FinishedAt == null).OrderByDescending(row => row.StartedAt).FirstOrDefaultAsync(cancellationToken);
+            if (step is not null)
+            {
+                step.Outcome = error.Uncertain ? "uncertain" : "failed";
+                step.FinishedAt = time.GetUtcNow();
+            }
             if (!error.Uncertain) record.AttemptingStep = null;
             record.ClaimedUntil = null;
             record.ClaimToken = null;
@@ -50,4 +63,6 @@ internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase da
             throw;
         }
     }
+
+    public static TimeSpan RetryDelay(int attempt) => TimeSpan.FromSeconds(attempt switch { 0 => 30, 1 => 120, _ => 600 });
 }

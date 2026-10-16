@@ -247,6 +247,15 @@ Describe 'Invoke-KairoDeploy' {
             '--location asia-south1 --project kairo-test')
     }
 
+    It 'checks due launch health every fifteen minutes through the authenticated worker' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+        $calls | Should -Contain ('scheduler jobs create http kairo-launch-health --schedule */15 * * * * --time-zone Asia/Kolkata ' +
+            '--uri https://kairo-worker-abc123-el.a.run.app/jobs/launches/health --http-method POST ' +
+            '--oidc-service-account-email kairo-scheduler@kairo-test.iam.gserviceaccount.com ' +
+            '--oidc-token-audience https://kairo-worker-abc123-el.a.run.app --attempt-deadline 300s --max-retry-attempts 0 ' +
+            '--location asia-south1 --project kairo-test')
+    }
+
     It 'updates the hourly catalogue job when it already exists' {
         $script:scheduleExists = $true
 

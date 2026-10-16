@@ -15,7 +15,7 @@ internal sealed class LaunchQueue(LaunchDbContext db, ILaunchPlans plans, TimePr
             throw new InvalidOperationException("Launch requires approval of the current plan.");
         }
 
-        if (await db.Launches.AnyAsync(row => row.RoomId == roomId, cancellationToken))
+        if (await db.Launches.AnyAsync(row => row.RoomId == roomId && row.Status != "superseded", cancellationToken))
         {
             throw new InvalidOperationException("This campaign already has a launch record.");
         }
