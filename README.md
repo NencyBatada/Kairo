@@ -333,6 +333,32 @@ The same `POST /jobs/measurement/lift` run writes the impact report once a campa
 
 This has only been verified locally against simulated Google and Gemini APIs.
 
+## Impact Lab
+
+Impact Lab measures a change made outside Kairo, such as a TV burst, a price cut or a new store, with the same placebo difference-in-differences method as lift (`placebo-did/1`). The SAD names CausalImpact; Kairo uses this method instead so campaign lift and Impact Lab results compare like with like and need no extra dependency.
+
+An analysis moves through `setup`, `data_check`, `running` and `result` (or `failed`). Admins and marketers make changes; every member can read.
+
+1. **Setup:** `POST /api/brands/{brandId}/impact-lab/analyses` takes the change's name, what changed, its start and end (at most 180 days, starting before today), whether it affected regions, products or something else, and the outcome source. `PUT .../{analysisId}` edits it; changing the dates or source clears loaded data.
+2. **Data:** `POST .../{analysisId}/load` reads the outcome from 365 days before the start to the end, or to the last day the source covers, and keeps a snapshot. At most 200 series are kept, the largest first, and empty leading days are dropped. The view shows the date range, days of history and change days covered.
+
+   | Source | Outcome | Split by | Read from |
+   | --- | --- | --- | --- |
+   | `google_ads` | conversions, conversion value, clicks | state, city, campaign | the nightly tables, once a Google Ads feed has run |
+   | `google_ads` | conversions, conversion value, clicks | category (product type), product | the Shopping report, live |
+   | `ga4` | transactions, purchase revenue, sessions, key events | state, city | the nightly tables, once a GA4 feed has run |
+   | `ga4` | items purchased, item revenue | category, product | the Data API item report, live |
+   | `bigquery` | a numeric column the user names | a series column | the brand's own table, with the BigQuery connection; the column types are checked first |
+   | `file` | the value column | the series column | a CSV with `date,series,value`, uploaded with `POST .../{analysisId}/file` (10 MB at most) |
+
+3. **Data check:** `PUT .../{analysisId}/selection` takes the affected series and, optionally, the comparison. The agent service's `POST /prove/lab/check` ranks every other series by how closely it tracked the affected ones over the 56 days before the change (weekly totals when daily values are sparse) and suggests up to 5 with a fit of at least 0.5. It warns about fewer than 56 days of history, too few placebo windows for a range, noisy data (the smallest reliably detectable change above 20%), a fit below 0.7, no comparison, and data that doesn't cover the whole change.
+4. **Run:** `POST .../{analysisId}/run` queues the analysis. The API process runs it within seconds, and the `kairo-impact-lab` scheduler job (`POST /jobs/impact-lab/run`, every 5 minutes) picks up anything left. The agent service's `POST /prove/lab/run` measures the effect with its 90% range and the daily actual-against-expected series from 56 days before the change, then asks Gemini Pro for a summary, an explanation and, when inconclusive, why and what would help. Numbers not in the facts are rejected. After 3 failed attempts the analysis is marked `failed` and can be run again. Either way the person who ran it gets `impact_lab.ready`.
+5. **Save:** `POST .../{analysisId}/memory` saves a conclusive result to Brand Memory once, as a `change` entry that worked (rise) or didn't (fall), tagged with the affected regions, categories or products. Inconclusive results can't be saved. Briefs and opportunity rankings use these entries; copy and media don't.
+
+`GET .../impact-lab/analyses` lists past analyses and `GET .../{analysisId}` returns one with its data summary, candidates, warnings and result. Changes record `impact_lab.analysis_created`, `impact_lab.data_loaded`, `impact_lab.result_ready`, `impact_lab.analysis_failed` and `impact_lab.saved_to_memory`, and publish `impact_lab.changed`.
+
+This has only been verified locally against simulated Google and Gemini APIs.
+
 ## Run the tests
 
 From the repository root:
