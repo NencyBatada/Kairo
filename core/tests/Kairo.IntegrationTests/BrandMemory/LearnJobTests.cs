@@ -157,6 +157,24 @@ public sealed class LearnJobTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal((LearnOutcomes.Failed, LearnWork.MostAttempts), (learned.Outcome, learned.Attempts));
     }
 
+    [Fact]
+    public async Task Failing_to_read_ad_results_counts_as_a_failed_attempt()
+    {
+        var (room, test) = await LiveAsync();
+        await FinishAsync(room, test);
+        _world.Api.GoogleApis.LaunchResponse = (uri, body) => body.Contains("FROM ad_group_ad", StringComparison.Ordinal)
+            ? new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"code\":400,\"message\":\"Bad query\",\"status\":\"INVALID_ARGUMENT\"}}") }
+            : _google.Respond(uri, body);
+
+        Assert.Equal(1, (await LearnJobAsync()).GetProperty("failed").GetInt32());
+
+        Assert.Empty(_learnRequests);
+        Assert.Equal("results_ready", await StageAsync(room));
+        await using var scope = await ScopeAsync();
+        var learned = await scope.ServiceProvider.GetRequiredService<BrandMemoryDbContext>().LearnRuns.SingleAsync(Token);
+        Assert.Equal((LearnOutcomes.Failed, 1), (learned.Outcome, learned.Attempts));
+    }
+
     private async Task<JsonElement> LearnJobAsync()
     {
         using var client = _world.Worker.CreateClient();

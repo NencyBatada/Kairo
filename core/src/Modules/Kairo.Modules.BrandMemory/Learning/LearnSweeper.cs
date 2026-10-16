@@ -59,9 +59,10 @@ internal sealed class LearnSweeper(
                         break;
                 }
             }
-            catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
             {
                 logger.LogError(exception, "Learning from campaign {RoomId} failed.", report.RoomId);
+                await work.FailAsync(report.RoomId, report.ReportId, exception.Message, cancellationToken);
                 failed++;
             }
         }

@@ -74,7 +74,7 @@ internal sealed partial class LearnWork(
         catch (AgentCallException exception)
         {
             logger.LogWarning(exception, "The Learn agent failed for campaign {RoomId}.", input.RoomId);
-            return await FailAsync(input, exception.Message, cancellationToken);
+            return await FailAsync(input.RoomId, input.ReportId, exception.Message, cancellationToken);
         }
 
         return await SaveAsync(input, LearnOutcomes.Saved, Entries(input, answer.Lessons), answer, cancellationToken);
@@ -235,21 +235,21 @@ internal sealed partial class LearnWork(
         }
     }
 
-    private async Task<LearnRun> FailAsync(LearnInput input, string error, CancellationToken cancellationToken)
+    public async Task<LearnRun> FailAsync(Guid roomId, Guid? reportId, string error, CancellationToken cancellationToken)
     {
         await database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await database.LockAsync(LockName(input.RoomId), cancellationToken);
-            var run = await db.LearnRuns.SingleOrDefaultAsync(row => row.RoomId == input.RoomId, cancellationToken);
+            await database.LockAsync(LockName(roomId), cancellationToken);
+            var run = await db.LearnRuns.SingleOrDefaultAsync(row => row.RoomId == roomId, cancellationToken);
             if (run is { Outcome: not LearnOutcomes.Failed })
             {
                 await database.RollbackAsync(cancellationToken);
                 return run;
             }
 
-            run ??= db.LearnRuns.Add(new LearnRun { Id = Guid.NewGuid(), RoomId = input.RoomId }).Entity;
-            run.ReportId = input.ReportId;
+            run ??= db.LearnRuns.Add(new LearnRun { Id = Guid.NewGuid(), RoomId = roomId }).Entity;
+            run.ReportId = reportId;
             run.Outcome = LearnOutcomes.Failed;
             run.Attempts++;
             run.Error = error.Length > MaxErrorLength ? error[..MaxErrorLength] : error;
