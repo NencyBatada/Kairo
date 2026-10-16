@@ -176,7 +176,13 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public async Task<JsonElement> LaunchAsync(Guid roomId)
     {
-        var ready = await ReadyForLaunchAsync(roomId);
+        await ReadyForLaunchAsync(roomId);
+        return await LaunchPreparedAsync(roomId);
+    }
+
+    public async Task<JsonElement> LaunchPreparedAsync(Guid roomId)
+    {
+        var ready = await Campaigns.DetailAsync(Marketer, BrandId, roomId);
         using var requested = await Campaigns.PostAsync(Marketer, BrandId, roomId, "approval-requests", new { gate = "launch", version = Campaigns.Version(ready) });
         Assert.Equal(HttpStatusCode.OK, requested.StatusCode);
         var waiting = await requested.Content.ReadFromJsonAsync<JsonElement>(Campaigns.Token);
@@ -199,6 +205,7 @@ public sealed class CampaignWorld : IAsyncDisposable
             {
                 channels = types.Select((type, index) => new { campaignType = type, budget = index == types.Length - 1 ? budget - decimal.Floor(budget / types.Length) * (types.Length - 1) : decimal.Floor(budget / types.Length), biddingStrategy = "maximize_clicks" }),
                 salesCountry = "IN",
+                audienceIds = types.Contains("demand_gen") ? new[] { "7" } : Array.Empty<string>(),
                 geoTargetIds = new Dictionary<string, string> { ["mumbai"] = "1007785", ["pune"] = "1007788", ["nagpur"] = "1007790", ["nashik"] = "1007791", ["chennai"] = "1007809" },
             },
         }, Campaigns.Token);

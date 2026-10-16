@@ -68,4 +68,5 @@ test("trigger rule and festival changes refresh the trigger screens", () => {
 test("campaign moves and agent steps refresh the campaign screens", () => {
   expect(WORKSPACE_LIVE_EVENTS).toContain("campaign.changed");
   expect(WORKSPACE_LIVE_EVENTS).toContain("campaigns.changed");
+  expect(WORKSPACE_LIVE_EVENTS).toContain("launch.changed");
 });

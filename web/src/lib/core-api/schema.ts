@@ -5775,6 +5775,12 @@ export interface components {
             total: number | string;
             dailyMicros: number | string;
         };
+        LaunchLogo: {
+            fileId: string;
+            brandKitVersion: number | string;
+            contentType: string;
+            digest: string;
+        };
         LaunchPlan: {
             roomId: string;
             brandId: string;
@@ -5796,6 +5802,8 @@ export interface components {
             landingPages: string[];
             settings: components["schemas"]["LaunchSettings"];
             assets: components["schemas"]["LaunchAsset"][];
+            logo?: null | components["schemas"]["LaunchLogo"];
+            executionVersion: string;
         };
         LaunchPlanUpdate: {
             version: number | string;

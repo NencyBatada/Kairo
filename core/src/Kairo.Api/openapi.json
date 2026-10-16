@@ -10279,6 +10279,35 @@
           }
         }
       },
+      "LaunchLogo": {
+        "required": [
+          "fileId",
+          "brandKitVersion",
+          "contentType",
+          "digest"
+        ],
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "brandKitVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string"
+          }
+        }
+      },
       "LaunchPlan": {
         "required": [
           "roomId",
@@ -10409,6 +10438,20 @@
             "items": {
               "$ref": "#/components/schemas/LaunchAsset"
             }
+          },
+          "logo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/LaunchLogo"
+              }
+            ]
+          },
+          "executionVersion": {
+            "type": "string",
+            "default": "google-ads/v25/launch-1"
           }
         }
       },

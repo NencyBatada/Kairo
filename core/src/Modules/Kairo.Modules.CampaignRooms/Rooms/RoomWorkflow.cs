@@ -10,6 +10,8 @@ using Kairo.Modules.CampaignRooms.ProofPlans;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.Contracts.Approvals;
 using Kairo.Modules.CampaignRooms.LaunchPlans;
+using Kairo.Contracts.Launch;
+using Kairo.Contracts.CampaignRooms;
 
 namespace Kairo.Modules.CampaignRooms.Rooms;
 
@@ -50,6 +52,7 @@ internal sealed class RoomWorkflow(
     ApprovalSnapshots snapshots,
     IApprovalLocks approvalLocks,
     LaunchPlanDesk launchPlans,
+    ILaunchQueue launches,
     TimeProvider time)
 {
     public const string AuditTarget = "campaign_room";
@@ -262,6 +265,7 @@ internal sealed class RoomWorkflow(
         ClearGate(room);
         await approvalLocks.ApproveAsync(room.Id, gate, member.UserId, approvedSnapshot, cancellationToken);
         await EnterAsync(room, next, cancellationToken);
+        if (gate == RoomGates.Launch) await launches.EnqueueAsync(room.Id, cancellationToken);
         var locked = next == RoomStates.Launching ? await LockPlanAsync(room.Id, cancellationToken) : null;
         await notifications.ResolveAsync(GateSubject(room.Id, gate), cancellationToken);
         var details = gate switch
@@ -402,6 +406,8 @@ internal sealed class RoomWorkflow(
         }
         else
         {
+            if (signal == CampaignSignals.LaunchStarted) room.RunStatus = StageRunStatuses.Running;
+            if (signal == CampaignSignals.LaunchFailed) room.RunStatus = StageRunStatuses.Failed;
             Touch(room);
         }
 
