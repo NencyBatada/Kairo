@@ -19,7 +19,7 @@ test("compares shopping titles for viewers and never shows mutation actions", ()
 });
 test("failed saves retain input, field errors and original version", async () => {
   render(studio()); fireEvent.click(screen.getByRole("button", { name: "Edit asset" })); fireEvent.change(screen.getByLabelText("Campaign shopping title"), { target: { value: "My own edited title" } }); fireEvent.click(screen.getByRole("button", { name: "Save asset" }));
-  expect(await screen.findByText("Could not save")).toBeTruthy(); expect((screen.getByLabelText("Campaign shopping title") as HTMLTextAreaElement).value).toBe("My own edited title"); expect(screen.getByText("Check title")).toBeTruthy(); expect(save.mock.calls[0][4].get("version")).toBe("1"); expect(document.activeElement).toBe(screen.getByRole("alert").parentElement);
+  expect(await screen.findByText("Could not save")).toBeTruthy(); expect((screen.getByLabelText("Campaign shopping title") as HTMLTextAreaElement).value).toBe("My own edited title"); expect(screen.getByText("Check title")).toBeTruthy(); expect(save.mock.calls[0][4].get("version")).toBe("1"); await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("alert").parentElement));
 });
 test("success replaces the saved title and clears the editor", async () => {
   save.mockResolvedValue({ status: "saved", message: "Asset saved", asset: { ...title(), version: 2, editedByPerson: true, content: { ...title().content, title: "Saved campaign title" } } });
