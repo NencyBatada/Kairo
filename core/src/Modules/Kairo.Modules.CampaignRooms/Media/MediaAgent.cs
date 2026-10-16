@@ -108,7 +108,7 @@ internal sealed class MediaAgent(AgentClient agents, ProvenanceTrail trail)
 
     public Task<VideoAnswer> VideoAsync(VideoRequest request, CancellationToken cancellationToken)
     {
-        trail.Called(VideoRoute, request);
+        trail.Called(VideoRoute, request, request.Language);
         return agents.PostAsync<VideoRequest, VideoAnswer>(VideoRoute, request, VideoTimeout, cancellationToken);
     }
 }

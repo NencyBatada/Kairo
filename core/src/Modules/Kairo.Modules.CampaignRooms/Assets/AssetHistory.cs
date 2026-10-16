@@ -4,7 +4,7 @@ using Kairo.Modules.CampaignRooms.Rooms;
 
 namespace Kairo.Modules.CampaignRooms.Assets;
 
-internal sealed record AgentCallView(string Route, string Digest);
+internal sealed record AgentCallView(string Route, string Digest, string? Language);
 
 internal sealed record AssetInputView(Guid AssetId, int Version, string Kind);
 
@@ -86,7 +86,7 @@ internal sealed class AssetHistory(CampaignRoomsDbContext db, IBrandMembers memb
             version.StageRunId,
             version.Model,
             version.PromptVersion,
-            [.. provenance.AgentCalls.Select(call => new AgentCallView(call.Route, call.Digest))],
+            [.. provenance.AgentCalls.Select(call => new AgentCallView(call.Route, call.Digest, call.Language))],
             new AssetSourcesView(
                 [.. provenance.ProductIds],
                 [.. provenance.PhotoUrls],

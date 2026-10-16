@@ -127,6 +127,40 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Each_language_records_its_own_calls_and_the_shared_footage()
+    {
+        await Connections.ConnectAsync(_world.Api, _world.Admin, _world.BrandId, "youtube");
+        var roomId = await ApprovedAsync(["en", "hi"], ["search", "demand_gen"]);
+        for (var run = 0; run < 3; run++)
+        {
+            Assert.Equal(1, await _world.RunStagesAsync());
+        }
+
+        var set = await Campaigns.AssetsAsync(_world.Marketer, _world.BrandId, roomId);
+        var footage = new List<HashSet<Guid>>();
+        foreach (var language in new[] { "en", "hi" })
+        {
+            foreach (var kind in new[] { "video", "voiceover" })
+            {
+                var asset = Campaigns.AllAssets(set).Single(entry => entry.GetProperty("kind").GetString() == kind && entry.GetProperty("language").GetString() == language);
+                var version = Assert.Single((await HistoryAsync(roomId, asset.GetProperty("id").GetGuid())).GetProperty("versions").EnumerateArray());
+                Assert.Equal(
+                    [("create/footage", null), ("create/video", language)],
+                    version.GetProperty("agentCalls").EnumerateArray().Select(call => (call.GetProperty("route").GetString(), call.GetProperty("language").GetString())));
+                var inputs = version.GetProperty("sources").GetProperty("inputs").EnumerateArray().ToList();
+                Assert.All(inputs, input => Assert.Equal(("footage", 1), (input.GetProperty("kind").GetString(), input.GetProperty("version").GetInt32())));
+                footage.Add([.. inputs.Select(input => input.GetProperty("assetId").GetGuid())]);
+            }
+        }
+
+        Assert.Equal(2, footage[0].Count);
+        Assert.All(footage, ids => Assert.True(ids.SetEquals(footage[0])));
+        var hindiAd = Campaigns.AllAssets(set).Single(entry => entry.GetProperty("kind").GetString() == "search_ad" && entry.GetProperty("language").GetString() == "hi");
+        var written = Assert.Single((await HistoryAsync(roomId, hindiAd.GetProperty("id").GetGuid())).GetProperty("versions").EnumerateArray());
+        Assert.Equal([("create/copy", "hi")], written.GetProperty("agentCalls").EnumerateArray().Select(call => (call.GetProperty("route").GetString(), call.GetProperty("language").GetString())));
+    }
+
+    [Fact]
     public async Task Regenerating_a_video_keeps_a_locked_voiceover_and_updates_the_length()
     {
         var roomId = await VideoRoomAsync();
@@ -176,6 +210,9 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
         set.GetProperty("groups").EnumerateArray()
             .Where(group => group.GetProperty("language").GetString() != "zxx")
             .Select(group => (group.GetProperty("campaignType").GetString(), group.GetProperty("language").GetString(), group.GetProperty("languageName").GetString()));
+
+    private Task<JsonElement> HistoryAsync(Guid roomId, Guid assetId) =>
+        _world.Marketer.GetFromJsonAsync<JsonElement>($"{Campaigns.Base(_world.BrandId)}/{roomId}/assets/{assetId}/history", Token);
 
     private Task<JsonElement> AssetsAsync(Guid roomId, string query) =>
         _world.Marketer.GetFromJsonAsync<JsonElement>($"{Campaigns.Base(_world.BrandId)}/{roomId}/assets{query}", Token);

@@ -108,13 +108,13 @@ internal sealed class CopyAgent(AgentClient agents, ProvenanceTrail trail)
 
     public Task<CopyAnswer> WriteAsync(CopyRequest request, CancellationToken cancellationToken)
     {
-        trail.Called(CopyRoute, request);
+        trail.Called(CopyRoute, request, request.Language);
         return agents.PostAsync<CopyRequest, CopyAnswer>(CopyRoute, request, CopyTimeout, cancellationToken);
     }
 
     public Task<CopyInstructionAnswer> ReviseAsync(CopyInstructionRequest request, CancellationToken cancellationToken)
     {
-        trail.Called(InstructionRoute, request);
+        trail.Called(InstructionRoute, request, request.Language);
         return agents.PostAsync<CopyInstructionRequest, CopyInstructionAnswer>(InstructionRoute, request, InstructionTimeout, cancellationToken);
     }
 }

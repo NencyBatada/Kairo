@@ -40,6 +40,8 @@ internal sealed class AgentCallRecord
     public string Route { get; set; } = "";
 
     public string Digest { get; set; } = "";
+
+    public string? Language { get; set; }
 }
 
 internal sealed class AssetInput
@@ -60,6 +62,7 @@ internal sealed class ProvenanceTrail
 
     private static readonly JsonSerializerOptions Requests = new(JsonSerializerDefaults.Web);
 
+    private readonly Lock _gate = new();
     private readonly List<AgentCallRecord> _calls = [];
     private readonly Dictionary<string, List<string>> _photos = new(StringComparer.Ordinal);
     private readonly List<AssetInput> _inputs = [];
@@ -68,30 +71,62 @@ internal sealed class ProvenanceTrail
     public static string Digest<T>(T request) =>
         $"sha256:{Convert.ToHexStringLower(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, Requests)))}";
 
-    public void Called<T>(string route, T request) => _calls.Add(new AgentCallRecord { Route = route, Digest = Digest(request) });
+    public void Called<T>(string route, T request, string? language = null)
+    {
+        var call = new AgentCallRecord { Route = route, Digest = Digest(request), Language = language };
+        lock (_gate)
+        {
+            _calls.Add(call);
+        }
+    }
 
     public void Photos(Guid productId, IEnumerable<string> urls)
     {
-        var list = _photos.TryGetValue(productId.ToString(), out var known) ? known : _photos[productId.ToString()] = [];
-        list.AddRange(urls.Where(url => !list.Contains(url, StringComparer.Ordinal)));
+        lock (_gate)
+        {
+            var list = _photos.TryGetValue(productId.ToString(), out var known) ? known : _photos[productId.ToString()] = [];
+            list.AddRange(urls.Where(url => !list.Contains(url, StringComparer.Ordinal)));
+        }
     }
 
     public void Used(Asset asset, int version, string? fileKey)
     {
-        if (!_inputs.Any(input => input.AssetId == asset.Id && input.Version == version))
+        lock (_gate)
         {
-            _inputs.Add(new AssetInput { AssetId = asset.Id, Version = version, Kind = asset.Kind, FileKey = fileKey });
+            if (!_inputs.Any(input => input.AssetId == asset.Id && input.Version == version))
+            {
+                _inputs.Add(new AssetInput { AssetId = asset.Id, Version = version, Kind = asset.Kind, FileKey = fileKey });
+            }
         }
     }
 
-    public void BrandKit(int? version) => _brandKitVersion = version ?? _brandKitVersion;
+    public void BrandKit(int? version)
+    {
+        lock (_gate)
+        {
+            _brandKitVersion = version ?? _brandKitVersion;
+        }
+    }
 
     public AssetProvenance For(Asset asset, int? previousVersion, IReadOnlyList<string>? changedFields)
+    {
+        lock (_gate)
+        {
+            return Snapshot(asset, previousVersion, changedFields);
+        }
+    }
+
+    private AssetProvenance Snapshot(Asset asset, int? previousVersion, IReadOnlyList<string>? changedFields)
     {
         var media = !AssetKinds.IsText(asset.Kind);
         return new AssetProvenance
         {
-            AgentCalls = [.. _calls.Select(call => new AgentCallRecord { Route = call.Route, Digest = call.Digest })],
+            AgentCalls =
+            [
+                .. _calls
+                    .Where(call => call.Language is null || call.Language == asset.Language)
+                    .Select(call => new AgentCallRecord { Route = call.Route, Digest = call.Digest, Language = call.Language }),
+            ],
             ProductIds = [.. asset.ProductIds],
             PhotoUrls = media
                 ? [.. asset.ProductIds.SelectMany(id => _photos.TryGetValue(id, out var urls) ? urls : []).Distinct(StringComparer.Ordinal).Take(MostPhotos)]

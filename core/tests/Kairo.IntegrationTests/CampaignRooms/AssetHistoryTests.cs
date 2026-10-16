@@ -120,7 +120,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
         var current = await CurrentAsync(roomId);
         var clip = current.First(asset => asset.Kind == "footage");
         Assert.True(clip.Hidden);
-        Assert.Equal(2, clip.Provenance.PromptDigests.Count);
+        Assert.Single(clip.Provenance.PromptDigests);
     }
 
     [Fact]
