@@ -15,7 +15,7 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
 
     [Fact]
     public async Task Generated_copy_records_the_agent_call_the_products_and_the_brief()
@@ -147,12 +147,14 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task Approving_the_assets_records_the_approver_and_keeps_the_media_out_of_drafts()
     {
+        await CheckedWorldAsync();
         var roomId = await CreatedAsync();
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         var before = await CurrentAsync(roomId);
         var image = before.First(asset => asset.Kind == "image");
         Assert.StartsWith("drafts/", image.File!.Key);
-        Assert.Equal(CampaignAdvance.Moved, await _world.SignalAsync(roomId, CampaignSignals.AssetsChecked));
+        Assert.All(before.Where(asset => !asset.Hidden), asset => Assert.Equal(("passed", 100), (asset.CheckState, asset.Score)));
 
         using var approved = await ApproveAssetsAsync(roomId);
 
@@ -176,11 +178,12 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task A_missing_media_file_stops_asset_approval_without_changing_anything()
     {
+        await CheckedWorldAsync();
         var roomId = await CreatedAsync();
+        Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(1, await _world.RunStagesAsync());
         var image = (await CurrentAsync(roomId)).First(asset => asset.Kind == "image");
         File.Delete(PathOf(image.File!.Key));
-        Assert.Equal(CampaignAdvance.Moved, await _world.SignalAsync(roomId, CampaignSignals.AssetsChecked));
 
         using var refused = await ApproveAssetsAsync(roomId);
 
@@ -219,6 +222,12 @@ public sealed class AssetHistoryTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     public async ValueTask DisposeAsync() => await _world.DisposeAsync();
+
+    private async Task CheckedWorldAsync()
+    {
+        await _world.DisposeAsync();
+        _world = await CampaignWorld.CreateAsync(sqlServer);
+    }
 
     private async Task<Guid> CreatedAsync()
     {

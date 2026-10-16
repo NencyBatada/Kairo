@@ -7,6 +7,7 @@ using Kairo.IntegrationTests.Api;
 using Kairo.IntegrationTests.Live;
 using Kairo.IntegrationTests.Opportunities;
 using Kairo.IntegrationTests.Triggers;
+using Kairo.Modules.CampaignRooms.Checks;
 using Kairo.Modules.CampaignRooms.Stages;
 using Kairo.SharedKernel.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,8 +25,9 @@ public sealed class CampaignWorld : IAsyncDisposable
         ("1007809", "Chennai", "Tamil Nadu"),
     ];
 
-    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof, FakeCreate create, FakeMedia media)
+    private CampaignWorld(string database, KairoApiFactory api, KairoWorkerFactory worker, RadarBrand brand, Member approver, FakeBriefPlan plan, FakeProof proof, FakeCreate create, FakeMedia media, FakeCheck check)
     {
+        Check = check;
         Proof = proof;
         Create = create;
         Media = media;
@@ -55,16 +57,18 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public FakeMedia Media { get; }
 
+    public FakeCheck Check { get; }
+
     public Guid BrandId => Brand.BrandId;
 
     public HttpClient Marketer => Brand.Marketer.Browser;
 
     public HttpClient Admin => Brand.Admin.Browser;
 
-    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null)
+    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null, bool holdChecks = false)
     {
         var database = await IsolatedDatabase.CreateAsync(sqlServer);
-        var api = new KairoApiFactory(database);
+        var api = new KairoApiFactory(database, holdChecks ? WithoutChecks : null);
         var worker = new KairoWorkerFactory(database, api.GoogleApis, api.Clock.GetUtcNow());
         var sense = new FakeSense();
         sense.Attach(worker.Agents);
@@ -80,6 +84,9 @@ public sealed class CampaignWorld : IAsyncDisposable
         var media = new FakeMedia();
         media.Attach(api.Agents);
         media.Attach(worker.Agents);
+        var check = new FakeCheck();
+        check.Attach(api.Agents);
+        check.Attach(worker.Agents);
         FakeMedia.ServePhotos(api.Websites);
         FakeMedia.ServePhotos(worker.Websites);
         Radar.PlanDemand(api.GoogleApis.Keywords);
@@ -89,9 +96,17 @@ public sealed class CampaignWorld : IAsyncDisposable
         var brand = await Radar.BrandAsync(api);
         var approver = await Workspaces.JoinAsync(api, brand.Admin.Browser, brand.BrandId, "approver");
         await Radar.RefreshAsync(worker);
-        var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof, create, media);
+        var world = new CampaignWorld(database, api, worker, brand, approver, plan, proof, create, media, check);
         await world.AssignApproversAsync(approver.UserId, approver.UserId, approver.UserId);
         return world;
+    }
+
+    private static void WithoutChecks(IServiceCollection services)
+    {
+        foreach (var work in services.Where(service => service.ServiceType == typeof(IStageWork) && (service.ImplementationType == typeof(CheckWork) || service.ImplementationType == typeof(CheckFixWork))).ToList())
+        {
+            services.Remove(work);
+        }
     }
 
     public async Task<Guid> OpportunityAsync() =>

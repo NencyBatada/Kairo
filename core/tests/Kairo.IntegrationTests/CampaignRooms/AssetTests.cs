@@ -13,7 +13,7 @@ public sealed class AssetTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
 
     [Fact]
     public async Task Approving_the_brief_writes_the_ads_in_the_brief_language()

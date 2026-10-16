@@ -14,7 +14,7 @@ public sealed class MediaTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
 
     [Fact]
     public async Task Images_follow_the_copy_in_each_size_the_campaign_needs()

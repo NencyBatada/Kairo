@@ -12,7 +12,7 @@ public sealed class LanguageTests(SqlServer sqlServer) : IAsyncLifetime
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
+    public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer, holdChecks: true);
 
     [Fact]
     public async Task Every_brief_language_gets_its_own_ads_and_shopping_titles_stay_in_the_feed_language()
