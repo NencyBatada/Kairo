@@ -153,8 +153,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Performance screen**: Pacing against plan, daily spend and results, early readings and the pause log, with one-click undo.
-- [ ] **Recommendations screen**: Each recommendation with its expected effect, approve or dismiss, and the option to end a test early.
+- [/] **Performance screen**: Pacing against plan, daily spend and results, early readings and the pause log, with one-click undo. *Planning started. Stock pause/resume APIs are merged; pacing API integration awaits Talha's pacing changes in develop. Next: approve the frontend plan, implement in a dedicated worktree, test and verify in development. Measured lift readings depend on section 11.*
+- [/] **Recommendations screen**: Each recommendation with its expected effect, approve or dismiss, and the option to end a test early. *Planning started against Talha's recommendation and test-end contracts; integration awaits those changes in develop. Next: approve the frontend plan, implement in a dedicated worktree, test and verify in development.*
 
 ## 11. Impact report and Brand Memory
 
