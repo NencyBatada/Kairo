@@ -13,6 +13,7 @@ public sealed class FakeLaunchGoogle
     public bool MerchantLinked { get; set; } = true;
     public bool FailBuild { get; set; }
     public bool FailActivation { get; set; }
+    public bool FailAdStatus { get; set; }
     public bool LoseBuildResponse { get; set; }
     public bool LoseActivationResponse { get; set; }
     public bool TimeoutBuild { get; set; }
@@ -99,6 +100,7 @@ public sealed class FakeLaunchGoogle
         var operations = json.GetProperty("mutateOperations").EnumerateArray().ToArray();
         var building = operations.Any(operation => operation.TryGetProperty("campaignOperation", out var op) && op.TryGetProperty("create", out _));
         var activating = operations.Any(operation => operation.TryGetProperty("campaignOperation", out var op) && op.TryGetProperty("update", out _));
+        if (FailAdStatus && operations.Any(operation => operation.TryGetProperty("adGroupAdOperation", out var op) && op.TryGetProperty("update", out _))) return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         if (building && FailBuild || activating && FailActivation) return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = JsonContent.Create(new { error = new { message = "Fixture failure", details = new[] { new { errors = new[] { new { errorCode = new { policyFindingError = "POLICY_FINDING" } } } } } } }) };
         if (json.GetProperty("validateOnly").GetBoolean()) return Json(new { });
         var temporary = new Dictionary<string, string>();

@@ -98,12 +98,12 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
         var held = Hold(plan.Pause);
         var applied = new List<StockAd>();
         var resumed = new List<AdPause>();
-        foreach (var launch in ads.Select(ad => ad.Launch).DistinctBy(record => record.Id))
+        foreach (var launch in ads.GroupBy(ad => ad.Launch.Id))
         {
-            var pause = plan.Pause.Where(ad => ad.Launch.Id == launch.Id && !held.ContainsKey(ad.AdResource)).ToArray();
-            var resume = plan.Resume.Where(row => row.LaunchId == launch.Id).ToArray();
+            var pause = plan.Pause.Where(ad => ad.Launch.Id == launch.Key && !held.ContainsKey(ad.AdResource)).ToArray();
+            var resume = plan.Resume.Where(row => row.LaunchId == launch.Key).ToArray();
             if (pause.Length + resume.Length == 0) continue;
-            var account = pause.Length > 0 ? pause[0].Plan.GoogleAdsAccountId! : ads.First(ad => ad.Launch.Id == launch.Id).Plan.GoogleAdsAccountId!;
+            var account = launch.First().Plan.GoogleAdsAccountId!;
             try
             {
                 await SetStatusAsync(google, account, [.. pause.Select(ad => (ad.AdResource, "PAUSED")), .. resume.Select(row => (row.AdResource, "ENABLED"))], cancellationToken);
@@ -112,7 +112,7 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
             }
             catch (Exception exception) when (exception is LaunchException or ConnectionUnavailableException)
             {
-                logger.LogWarning(exception, "Stock changes for launch {LaunchId} couldn't be sent to Google; the next check retries them.", launch.Id);
+                logger.LogWarning(exception, "Stock changes for launch {LaunchId} couldn't be sent to Google; the next check retries them.", launch.Key);
             }
         }
 

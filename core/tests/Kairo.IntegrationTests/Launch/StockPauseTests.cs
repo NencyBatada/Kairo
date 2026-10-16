@@ -83,6 +83,27 @@ public sealed class StockPauseTests(SqlServer sqlServer) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_failed_google_change_records_nothing_and_is_retried_on_the_next_check()
+    {
+        await StockAsync(rain1: "out_of_stock");
+        _google.FailAdStatus = true;
+        Assert.Equal(1, await RunAsync());
+        Assert.Null(Status(RunnerAd));
+        Assert.Empty((await LogAsync()).GetProperty("pauses").EnumerateArray());
+
+        _google.FailAdStatus = false;
+        _api.Clock.Advance(StockPauser.Interval);
+        Assert.Equal(1, await RunAsync());
+        Assert.Equal("PAUSED", Status(RunnerAd));
+        var pause = (await LogAsync()).GetProperty("pauses")[0];
+
+        _google.FailAdStatus = true;
+        using var undo = await _brand.Marketer.Browser.PostAsJsonAsync($"{Base}/{pause.GetProperty("id").GetGuid()}/undo", new { version = pause.GetProperty("version").GetInt32() }, Token);
+        Assert.Equal(HttpStatusCode.BadGateway, undo.StatusCode);
+        Assert.Equal("paused", (await LogAsync()).GetProperty("pauses")[0].GetProperty("state").GetString());
+    }
+
+    [Fact]
     public async Task The_worker_job_checks_stock_for_every_due_workspace()
     {
         await StockAsync(rain1: "out_of_stock");
