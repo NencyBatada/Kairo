@@ -4176,6 +4176,56 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/history": {
+      "get": {
+        "tags": [
+          "AssetEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetHistoryView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/campaigns/{campaignId}/assets/skip-video": {
       "post": {
         "tags": [
@@ -4868,6 +4918,21 @@
           }
         }
       },
+      "AgentCallView": {
+        "required": [
+          "route",
+          "digest"
+        ],
+        "type": "object",
+        "properties": {
+          "route": {
+            "type": "string"
+          },
+          "digest": {
+            "type": "string"
+          }
+        }
+      },
       "ApplyProposalRequest": {
         "required": [
           "version"
@@ -5130,6 +5195,46 @@
           }
         }
       },
+      "AssetDisclosureView": {
+        "required": [
+          "rules",
+          "aiGenerated",
+          "syntheticMedia",
+          "watermark",
+          "platformLabels",
+          "blocker"
+        ],
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "string"
+          },
+          "aiGenerated": {
+            "type": "boolean"
+          },
+          "syntheticMedia": {
+            "type": "boolean"
+          },
+          "watermark": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "platformLabels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlatformLabelView"
+            }
+          },
+          "blocker": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AssetEditRequest": {
         "required": [
           "version",
@@ -5241,6 +5346,237 @@
             "items": {
               "$ref": "#/components/schemas/AssetView"
             }
+          }
+        }
+      },
+      "AssetHistoryVersionView": {
+        "required": [
+          "version",
+          "origin",
+          "createdAt",
+          "createdBy",
+          "instruction",
+          "stageRunId",
+          "model",
+          "promptVersion",
+          "agentCalls",
+          "sources",
+          "brandKitVersion",
+          "briefVersion",
+          "previousVersion",
+          "changedFields",
+          "approvedBy",
+          "approvedAt",
+          "memoryUses",
+          "content",
+          "mediaUrl",
+          "disclosure"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "origin": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CampaignPersonView"
+              }
+            ]
+          },
+          "instruction": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "stageRunId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "promptVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "agentCalls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentCallView"
+            }
+          },
+          "sources": {
+            "$ref": "#/components/schemas/AssetSourcesView"
+          },
+          "brandKitVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "briefVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "previousVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "changedFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "approvedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CampaignPersonView"
+              }
+            ]
+          },
+          "approvedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "memoryUses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "$ref": "#/components/schemas/AssetContentView"
+          },
+          "mediaUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "disclosure": {
+            "$ref": "#/components/schemas/AssetDisclosureView"
+          }
+        }
+      },
+      "AssetHistoryView": {
+        "required": [
+          "assetId",
+          "campaignId",
+          "kind",
+          "campaignType",
+          "language",
+          "status",
+          "locked",
+          "currentVersion",
+          "versions"
+        ],
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campaignId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "campaignType": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "locked": {
+            "type": "boolean"
+          },
+          "currentVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "versions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetHistoryVersionView"
+            }
+          }
+        }
+      },
+      "AssetInputView": {
+        "required": [
+          "assetId",
+          "version",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "kind": {
+            "type": "string"
           }
         }
       },
@@ -5394,6 +5730,34 @@
           }
         }
       },
+      "AssetSourcesView": {
+        "required": [
+          "productIds",
+          "photoUrls",
+          "inputs"
+        ],
+        "type": "object",
+        "properties": {
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "photoUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssetInputView"
+            }
+          }
+        }
+      },
       "AssetVersionRequest": {
         "required": [
           "version"
@@ -5430,6 +5794,7 @@
           "editedByPerson",
           "mediaUrl",
           "content",
+          "disclosure",
           "updatedAt"
         ],
         "type": "object",
@@ -5520,6 +5885,9 @@
           },
           "content": {
             "$ref": "#/components/schemas/AssetContentView"
+          },
+          "disclosure": {
+            "$ref": "#/components/schemas/AssetDisclosureView"
           },
           "updatedAt": {
             "type": "string",
@@ -9579,6 +9947,29 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PlatformLabelView": {
+        "required": [
+          "platform",
+          "setting",
+          "reason",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "platform": {
+            "type": "string"
+          },
+          "setting": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
           }
         }
       },

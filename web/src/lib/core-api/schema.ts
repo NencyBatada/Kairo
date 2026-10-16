@@ -3915,6 +3915,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/assets/{assetId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    assetId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AssetHistoryView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns/{campaignId}/assets/skip-video": {
         parameters: {
             query?: never;
@@ -4520,6 +4564,10 @@ export interface components {
             roomId: string;
             opportunity: components["schemas"]["OpportunityDetail"];
         };
+        AgentCallView: {
+            route: string;
+            digest: string;
+        };
         ApplyProposalRequest: {
             version: null | number | string;
         };
@@ -4558,6 +4606,14 @@ export interface components {
             offerId: null | string;
             script: null | components["schemas"]["AssetScriptLineView"][];
         };
+        AssetDisclosureView: {
+            rules: string;
+            aiGenerated: boolean;
+            syntheticMedia: boolean;
+            watermark: null | string;
+            platformLabels: components["schemas"]["PlatformLabelView"][];
+            blocker: null | string;
+        };
         AssetEditRequest: {
             version: null | number | string;
             keywords: null | components["schemas"]["AssetKeywordInput"][];
@@ -4574,6 +4630,44 @@ export interface components {
             campaignType: string;
             label: string;
             assets: components["schemas"]["AssetView"][];
+        };
+        AssetHistoryVersionView: {
+            version: number | string;
+            origin: string;
+            createdAt: string;
+            createdBy: null | components["schemas"]["CampaignPersonView"];
+            instruction: null | string;
+            stageRunId: null | string;
+            model: null | string;
+            promptVersion: null | string;
+            agentCalls: components["schemas"]["AgentCallView"][];
+            sources: components["schemas"]["AssetSourcesView"];
+            brandKitVersion: null | number | string;
+            briefVersion: number | string;
+            previousVersion: null | number | string;
+            changedFields: string[];
+            approvedBy: null | components["schemas"]["CampaignPersonView"];
+            approvedAt: null | string;
+            memoryUses: string[];
+            content: components["schemas"]["AssetContentView"];
+            mediaUrl: null | string;
+            disclosure: components["schemas"]["AssetDisclosureView"];
+        };
+        AssetHistoryView: {
+            assetId: string;
+            campaignId: string;
+            kind: string;
+            campaignType: string;
+            language: string;
+            status: string;
+            locked: boolean;
+            currentVersion: number | string;
+            versions: components["schemas"]["AssetHistoryVersionView"][];
+        };
+        AssetInputView: {
+            assetId: string;
+            version: number | string;
+            kind: string;
         };
         AssetKeywordInput: {
             text: null | string;
@@ -4605,6 +4699,11 @@ export interface components {
             languages: string[];
             groups: components["schemas"]["AssetGroupView"][];
         };
+        AssetSourcesView: {
+            productIds: string[];
+            photoUrls: string[];
+            inputs: components["schemas"]["AssetInputView"][];
+        };
         AssetVersionRequest: {
             version: null | number | string;
         };
@@ -4626,6 +4725,7 @@ export interface components {
             editedByPerson: boolean;
             mediaUrl: null | string;
             content: components["schemas"]["AssetContentView"];
+            disclosure: components["schemas"]["AssetDisclosureView"];
             updatedAt: string;
         };
         AuditActionOption: {
@@ -5360,6 +5460,12 @@ export interface components {
             name: string;
             kind: string;
             stateId: null | string;
+        };
+        PlatformLabelView: {
+            platform: string;
+            setting: string;
+            reason: string;
+            source: string;
         };
         ProductAccount: {
             id: string;
