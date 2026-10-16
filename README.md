@@ -231,6 +231,16 @@ The worker uploads approved videos as unlisted to the approved YouTube channel u
 
 A worker loop processes launches promptly, and `POST /jobs/launches/run` provides a durable scheduler fallback every minute. Set `Kairo:Launch:Loop=off` for manual local job control. Progress uses `launch.changed` and `campaign.changed` events; launch completion and failures also create notifications and audit entries. No live-account verification or deployment has been performed for this feature.
 
+## Launch retries and next-day health
+
+`GET /api/brands/{brandId}/campaigns/{campaignId}/launch` returns launch progress, attempt history, external resource and video IDs, a plain-language cause and suggested fix, retry availability, and health-check results. Upload session URLs and OAuth credentials stay private. Marketers can submit `POST` to the same path followed by `/retry`, with the current launch `version`. Concurrent or stale retries cannot enqueue a second execution. Every retry rechecks the exact approved snapshot.
+
+Known transient failures receive at most three automatic retries, after 30 seconds, two minutes and ten minutes. Permission, policy, configuration and approval failures wait for correction. Saved write intents survive process restarts and lease expiry. Uncertain media, campaign-build and activation results are reconciled through Google before further writes; missing or ambiguous results require attention. Resumable YouTube uploads recover the completed video ID or continue after the confirmed byte offset. No create request is repeated merely because its response was lost.
+
+Approvers can send a confirmed failed launch back through the existing send-back endpoint for fresh approval. Previously built campaigns must still be paused or removed. The previous execution, its approved snapshot and resource IDs remain in history, and a new approval queues a separate execution. Uncertain launches must be reconciled first.
+
+Activation durably schedules a health check for 24 hours later. The worker checks the approved account's ad disapprovals and campaign delivery, publishes actionable `health.problem` notifications, and deduplicates them transactionally. Read failures use bounded retries. `POST /jobs/launches/health` and a fifteen-minute scheduler fallback process due checks. Proof-plan amendments retain their history and do not replace the launch snapshot or trigger Google changes. Development-account validation, real-account activation and launch-time performance verification remain pending; this implementation has only been verified locally with simulated Google APIs.
+
 ## Run the tests
 
 From the repository root:

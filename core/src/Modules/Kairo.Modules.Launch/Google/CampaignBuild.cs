@@ -8,13 +8,14 @@ namespace Kairo.Modules.Launch.Google;
 internal sealed record BuiltAd(string Key, string CampaignKey, string CampaignType, string[] ProductIds);
 internal sealed record CampaignMutations(object[] Operations, string[] Keys, BuiltAd[] Ads);
 
-internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string, string> media, IReadOnlyDictionary<string, string> languages)
+internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string, string> media, IReadOnlyDictionary<string, string> languages, Guid? executionId = null)
 {
     private readonly List<object> _operations = [];
     private readonly List<string> _keys = [];
     private readonly List<BuiltAd> _ads = [];
     private int _next = -1;
     private string Account => plan.GoogleAdsAccountId!;
+    private string Name(string key) => Marker(executionId ?? plan.RoomId, key);
     public static string Marker(Guid roomId, string key) => $"Kairo {roomId:N} {key}";
     private string Temporary(string type) => $"customers/{Account}/{type}/{_next--}";
 
@@ -26,13 +27,13 @@ internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string,
             var budget = Temporary("campaignBudgets");
             Add("campaignBudget", $"budget:{channel.CampaignType}", new JsonObject
             {
-                ["resourceName"] = budget, ["name"] = Marker(plan.RoomId, $"budget {channel.CampaignType}"),
+                ["resourceName"] = budget, ["name"] = Name($"budget {channel.CampaignType}"),
                 ["totalAmountMicros"] = Micros(channel.Budget), ["period"] = "CUSTOM", ["deliveryMethod"] = "STANDARD", ["explicitlyShared"] = false,
             });
             var campaign = Temporary("campaigns");
             var body = new JsonObject
             {
-                ["resourceName"] = campaign, ["name"] = Marker(plan.RoomId, channel.CampaignType),
+                ["resourceName"] = campaign, ["name"] = Name(channel.CampaignType),
                 ["advertisingChannelType"] = channel.CampaignType.ToUpperInvariant(), ["status"] = "PAUSED", ["campaignBudget"] = budget,
                 ["startDateTime"] = plan.Start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 00:00:00",
                 ["endDateTime"] = plan.End.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + " 23:59:59",
@@ -109,7 +110,7 @@ internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string,
         var audience = Temporary("audiences");
         Add("audience", "audience:demand_gen", new JsonObject
         {
-            ["resourceName"] = audience, ["name"] = Marker(plan.RoomId, "audience"),
+            ["resourceName"] = audience, ["name"] = Name("audience"),
             ["dimensions"] = new JsonArray(new JsonObject { ["audienceSegments"] = new JsonObject { ["segments"] = new JsonArray((plan.Settings.AudienceIds ?? []).Select(id => (JsonNode)new JsonObject { ["userList"] = new JsonObject { ["userList"] = $"customers/{Account}/userLists/{id}" } }).ToArray()) } }),
         });
         foreach (var text in plan.Assets.Where(asset => asset.Kind == "demand_gen_text"))
@@ -124,11 +125,11 @@ internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string,
                 ["marketingImages"] = Images("landscape"), ["squareMarketingImages"] = Images("square"), ["portraitMarketingImages"] = Images("portrait"),
                 ["logoImages"] = new JsonArray(new JsonObject { ["asset"] = media["logo"] }),
             };
-            Ad(key, campaignKey, "demand_gen", group, new JsonObject { ["name"] = Marker(plan.RoomId, key), ["finalUrls"] = Urls(text), ["demandGenMultiAssetAd"] = imageAd }, text.ProductIds);
+            Ad(key, campaignKey, "demand_gen", group, new JsonObject { ["name"] = Name(key), ["finalUrls"] = Urls(text), ["demandGenMultiAssetAd"] = imageAd }, text.ProductIds);
             var videos = plan.Assets.Where(asset => asset.Kind == "video" && asset.Language == text.Language).ToArray();
             var action = Temporary("assets");
             if (videos.Length > 0)
-                Add("asset", $"action:{text.Id:N}", new JsonObject { ["resourceName"] = action, ["name"] = Marker(plan.RoomId, $"action:{text.Id:N}"),
+                Add("asset", $"action:{text.Id:N}", new JsonObject { ["resourceName"] = action, ["name"] = Name($"action:{text.Id:N}"),
                     ["callToActionAsset"] = new JsonObject { ["callToAction"] = LaunchPreflight.Text(text.Content, "callToAction").ToUpperInvariant() } });
             foreach (var video in videos)
             {
@@ -141,7 +142,7 @@ internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string,
                     ["callToActions"] = new JsonArray(new JsonObject { ["asset"] = action }),
                 };
                 var videoKey = $"video:{text.Id:N}:{video.Id:N}";
-                Ad(videoKey, campaignKey, "demand_gen", group, new JsonObject { ["name"] = Marker(plan.RoomId, videoKey), ["finalUrls"] = Urls(text), ["demandGenVideoResponsiveAd"] = videoAd }, video.ProductIds);
+                Ad(videoKey, campaignKey, "demand_gen", group, new JsonObject { ["name"] = Name(videoKey), ["finalUrls"] = Urls(text), ["demandGenVideoResponsiveAd"] = videoAd }, video.ProductIds);
             }
         }
     }
@@ -149,7 +150,7 @@ internal sealed class CampaignBuild(LaunchPlan plan, IReadOnlyDictionary<string,
     private string Group(string campaign, string key, string? type, bool grouped = false)
     {
         var group = Temporary("adGroups");
-        var body = new JsonObject { ["resourceName"] = group, ["name"] = Marker(plan.RoomId, key), ["campaign"] = campaign, ["status"] = "ENABLED" };
+        var body = new JsonObject { ["resourceName"] = group, ["name"] = Name(key), ["campaign"] = campaign, ["status"] = "ENABLED" };
         if (type is not null) body["type"] = type;
         if (grouped)
         {

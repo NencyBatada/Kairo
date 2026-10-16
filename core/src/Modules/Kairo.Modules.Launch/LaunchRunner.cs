@@ -20,7 +20,8 @@ internal sealed class LostLaunchLeaseException : Exception;
 
 internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, ILaunchPlans plans, LaunchPreflight preflight,
     LaunchGoogle google, YouTubeUpload youtube, IFileStore files, IBrandKit kits, ICampaignLifecycle lifecycle,
-    ILiveUpdates live, IAuditLog audit, INotifications notifications, IBrandDirectory brands, TimeProvider time, IServiceScopeFactory scopes)
+    ILiveUpdates live, IAuditLog audit, INotifications notifications, IBrandDirectory brands, TimeProvider time, IServiceScopeFactory scopes,
+    LaunchReconciler reconciler)
 {
     public static readonly TimeSpan Lease = TimeSpan.FromMinutes(10);
     public static readonly AuditActor Actor = new(AuditActorType.System, "Launch service", "launch");
@@ -29,11 +30,27 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
     {
         var record = await db.Launches.SingleAsync(row => row.Id == id, cancellationToken);
         var plan = JsonSerializer.Deserialize<LaunchPlan>(record.Plan, JsonSerializerOptions.Web)!;
+        var reconciling = record.AttemptingStep is not null;
         try
         {
-            if (record.AttemptingStep is not null)
-                throw new LaunchException("reconciliation_required", "The last launch step has an uncertain outcome.", "Reconcile the recorded Google operation before creating anything else.", uncertain: true);
             await VerifyAsync(record, cancellationToken);
+            if (record.AttemptingStep is not null)
+            {
+                reconciling = true;
+                var activated = false;
+                await SaveAsync(record, claim, async () =>
+                {
+                    activated = await reconciler.ReconcileAsync(record, plan, cancellationToken);
+                    var prior = await db.Steps.Where(row => row.LaunchId == id && row.Name == record.AttemptingStep).OrderByDescending(row => row.Attempt).FirstOrDefaultAsync(cancellationToken);
+                    if (prior is not null) { prior.Outcome = "reconciled"; prior.FinishedAt = time.GetUtcNow(); }
+                    record.Uncertain = false;
+                    record.AttemptingStep = null;
+                    await audit.RecordAsync(new AuditRecord("launch.reconciled", "campaign_room", record.RoomId.ToString(), null, new { record.Step }, Actor), cancellationToken);
+                    if (activated) await CompleteAsync(record, cancellationToken);
+                }, true, cancellationToken);
+                reconciling = false;
+                if (activated) return;
+            }
             if (await lifecycle.AdvanceAsync(plan.RoomId, CampaignSignals.LaunchStarted, Actor, cancellationToken) != CampaignAdvance.Moved)
                 throw new LaunchException("wrong_state", "This campaign isn't waiting to launch.", "Open the current campaign state before trying again.");
             var languages = await preflight.CheckAsync(plan, cancellationToken);
@@ -55,7 +72,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
                     if (uploads[key].VideoId is null)
                         await StepAsync(record, claim, $"upload:{key}", async () =>
                         {
-                            uploads[key] = uploads[key] with { VideoId = await youtube.UploadAsync(plan, asset, uploads[key].Session, cancellationToken) };
+                            uploads[key] = uploads[key] with { VideoId = await youtube.UploadAsync(plan, asset, uploads[key].Session, cancellationToken, uploads[key].Offset) };
                             record.Uploads = Write(uploads);
                         }, cancellationToken);
                     await youtube.ReadyAsync(plan, uploads[key].VideoId!, cancellationToken);
@@ -63,7 +80,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
 
                 await StepAsync(record, claim, $"media:{key}", async () =>
                 {
-                    var body = new JsonObject { ["name"] = CampaignBuild.Marker(plan.RoomId, $"asset {key} v{asset.Version}") };
+                    var body = new JsonObject { ["name"] = CampaignBuild.Marker(record.Id, $"asset {key} v{asset.Version}") };
                     if (asset.Kind == "image") body["imageAsset"] = new JsonObject { ["data"] = Convert.ToBase64String(await ReadFileAsync(asset.FileKey!, cancellationToken)) };
                     else body["youtubeVideoAsset"] = new JsonObject { ["youtubeVideoId"] = uploads[key].VideoId };
                     if (asset.SyntheticMedia) body["syntheticContentInfo"] = Attestation();
@@ -79,11 +96,11 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
                     var file = await kits.OpenFileAsync(logo.FileId, cancellationToken);
                     if (file is null || Convert.ToHexStringLower(SHA256.HashData(file.Content)) != logo.Digest)
                         throw new LaunchException("logo_changed", "The approved logo changed or is missing.", "Approve the current logo in a new launch plan.");
-                    resources["media:logo"] = (await google.MutateAsync(plan.GoogleAdsAccountId!, [new { assetOperation = new { create = new { name = CampaignBuild.Marker(plan.RoomId, "logo"), imageAsset = new { data = Convert.ToBase64String(file.Content) } } } }], false, cancellationToken))[0];
+                    resources["media:logo"] = (await google.MutateAsync(plan.GoogleAdsAccountId!, [new { assetOperation = new { create = new { name = CampaignBuild.Marker(record.Id, "logo"), imageAsset = new { data = Convert.ToBase64String(file.Content) } } } }], false, cancellationToken))[0];
                     record.Resources = Write(resources);
                 }, cancellationToken);
             var media = resources.Where(pair => pair.Key.StartsWith("media:", StringComparison.Ordinal)).ToDictionary(pair => pair.Key[6..], pair => pair.Value);
-            var build = new CampaignBuild(plan, media, languages).Build();
+            var build = new CampaignBuild(plan, media, languages, record.Id).Build();
             if (!resources.ContainsKey("built"))
             {
                 await google.MutateAsync(plan.GoogleAdsAccountId!, build.Operations, true, cancellationToken);
@@ -97,7 +114,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
                     foreach (var product in ad.ProductIds.Distinct())
                         db.ProductAds.Add(new ProductAdMap { Id = Guid.NewGuid(), RoomId = plan.RoomId, ProductId = product,
                             CampaignType = ad.CampaignType, CampaignResource = resources[ad.CampaignKey], AdResource = resources[ad.Key] });
-                }, cancellationToken);
+                }, cancellationToken, Write(build));
             }
 
             var activate = plan.Settings.Channels.Select(channel => (object)new
@@ -108,13 +125,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
             await StepAsync(record, claim, "activate", async () =>
             {
                 await google.MutateAsync(plan.GoogleAdsAccountId!, activate, false, cancellationToken);
-                record.Status = "live";
-                record.ActivatedAt = time.GetUtcNow();
-                record.ClaimedUntil = null;
-                record.ClaimToken = null;
-                await lifecycle.AdvanceAsync(plan.RoomId, CampaignSignals.LaunchFinished, Actor, cancellationToken);
-                await audit.RecordAsync(new AuditRecord("launch.finished", "campaign_room", plan.RoomId.ToString(), null, new { record.Id, record.Hash }, Actor), cancellationToken);
-                await NotifyAsync(record, "launch.finished", "Campaign launched", "All approved campaigns are enabled in Google Ads.", cancellationToken);
+                await CompleteAsync(record, cancellationToken);
             }, cancellationToken);
         }
         catch (LostLaunchLeaseException) { }
@@ -124,21 +135,33 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
             var error = exception as LaunchException ?? (exception is ConnectionUnavailableException
                 ? new LaunchException("connection_missing", "An approved Google account needs reconnecting.", "Reconnect the account and retry.")
                 : new LaunchException("launch_interrupted", "Kairo couldn't finish this launch step.", "Check the saved launch progress before retrying.", uncertain: record.AttemptingStep is not null));
+            if (reconciling && !error.Uncertain) error = new LaunchException(error.Code, error.Message, error.Fix, error.Transient, true);
             await using var failureScope = scopes.CreateAsyncScope();
             await failureScope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(record.BrandId, cancellationToken);
             await failureScope.ServiceProvider.GetRequiredService<LaunchFailureRecorder>().RecordAsync(record.Id, claim, error, cancellationToken);
         }
     }
 
-    private async Task StepAsync(LaunchRecord record, Guid claim, string step, Func<Task> operation, CancellationToken cancellationToken)
+    private async Task StepAsync(LaunchRecord record, Guid claim, string step, Func<Task> operation, CancellationToken cancellationToken, string? journal = null)
     {
-        await SaveAsync(record, claim, () => { record.Step = step; record.AttemptingStep = step; return Task.CompletedTask; }, true, cancellationToken);
+        Guid stepId = Guid.NewGuid();
+        await SaveAsync(record, claim, async () =>
+        {
+            record.Step = step;
+            record.AttemptingStep = step;
+            if (journal is not null) record.PendingBuild = journal;
+            var attempt = (await db.Steps.Where(row => row.LaunchId == record.Id && row.Name == step).MaxAsync(row => (int?)row.Attempt, cancellationToken) ?? 0) + 1;
+            db.Steps.Add(new LaunchStep { Id = stepId, LaunchId = record.Id, Name = step, Attempt = attempt, StartedAt = time.GetUtcNow() });
+        }, true, cancellationToken);
         try
         {
             await SaveAsync(record, claim, async () =>
             {
                 await operation();
                 record.AttemptingStep = null;
+                var completed = await db.Steps.SingleAsync(row => row.Id == stepId, cancellationToken);
+                completed.Outcome = "confirmed";
+                completed.FinishedAt = time.GetUtcNow();
                 await audit.RecordAsync(new AuditRecord("launch.step_finished", "campaign_room", record.RoomId.ToString(), null, new { step }, Actor), cancellationToken);
             }, true, cancellationToken);
         }
@@ -159,6 +182,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
             if (record.ClaimToken != claim || record.ClaimedUntil <= time.GetUtcNow()) throw new LostLaunchLeaseException();
             if (verify) await VerifyAsync(record, cancellationToken);
             record.ClaimedUntil = time.GetUtcNow() + Lease;
+            record.Version++;
             await change();
             await db.SaveChangesAsync(cancellationToken);
             await live.PublishAsync(new LiveEvent("launch.changed", new { campaignId = record.RoomId, record.Status, record.Step }, LiveAudience.Everyone), cancellationToken);
@@ -170,6 +194,22 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
             await database.RollbackAsync(CancellationToken.None);
             throw;
         }
+    }
+
+    private async Task CompleteAsync(LaunchRecord record, CancellationToken cancellationToken)
+    {
+        record.Status = "live";
+        record.ActivatedAt ??= time.GetUtcNow();
+        record.ClaimedUntil = null;
+        record.ClaimToken = null;
+        record.NextAttemptAt = null;
+        record.ErrorCode = record.ErrorMessage = record.SuggestedFix = null;
+        if (!await db.Health.AnyAsync(row => row.LaunchId == record.Id, cancellationToken))
+            db.Health.Add(new LaunchHealth { Id = Guid.NewGuid(), LaunchId = record.Id, DueAt = record.ActivatedAt.Value + TimeSpan.FromHours(24) });
+        if (await lifecycle.AdvanceAsync(record.RoomId, CampaignSignals.LaunchFinished, Actor, cancellationToken) != CampaignAdvance.Moved)
+            throw new LaunchException("wrong_state", "The campaign state couldn't be updated after activation.", "Reconcile the saved activation before continuing.", uncertain: true);
+        await audit.RecordAsync(new AuditRecord("launch.finished", "campaign_room", record.RoomId.ToString(), null, new { record.Id, record.Hash }, Actor), cancellationToken);
+        await NotifyAsync(record, "launch.finished", "Campaign launched", "All approved campaigns are enabled in Google Ads.", cancellationToken);
     }
 
     private async Task VerifyAsync(LaunchRecord record, CancellationToken cancellationToken)

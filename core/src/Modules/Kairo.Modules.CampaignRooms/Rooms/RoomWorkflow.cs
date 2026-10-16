@@ -53,6 +53,7 @@ internal sealed class RoomWorkflow(
     IApprovalLocks approvalLocks,
     LaunchPlanDesk launchPlans,
     ILaunchQueue launches,
+    ILaunchRecovery launchRecovery,
     TimeProvider time)
 {
     public const string AuditTarget = "campaign_room";
@@ -62,6 +63,7 @@ internal sealed class RoomWorkflow(
     public static string LockName(Guid roomId) => $"room:{roomId:N}";
 
     public static string GateSubject(Guid roomId, string gate) => $"room:{roomId:N}:{gate}";
+    public Task<bool> CanReturnLaunchAsync(Guid roomId, CancellationToken cancellationToken) => launchRecovery.CanReturnAsync(roomId, cancellationToken);
 
     public static ApprovalDuty DutyOf(string gate) => gate switch
     {
@@ -317,12 +319,14 @@ internal sealed class RoomWorkflow(
             return opened;
         }
 
-        if (!RoomLifecycle.SendBackTargets(room.State, room.PendingGate).Contains(to))
+        var returningLaunch = room.State == RoomStates.Launching && room.RunStatus == StageRunStatuses.Failed;
+        IReadOnlyList<string> targets = returningLaunch ? [RoomStates.ReadyToLaunch, RoomStates.AssetReview, RoomStates.Creating, RoomStates.BriefDraft] : RoomLifecycle.SendBackTargets(room.State, room.PendingGate);
+        if (!targets.Contains(to))
         {
             return MoveResult.Failed(MoveError.NotAllowed, "This campaign can't be sent back to that stage.");
         }
 
-        var gate = room.PendingGate ?? RoomLifecycle.GateFor(room.State);
+        var gate = returningLaunch ? RoomGates.Launch : room.PendingGate ?? RoomLifecycle.GateFor(room.State);
         if (gate is null || !await MaySendBackAsync(room, gate, member, cancellationToken))
         {
             return MoveResult.Failed(MoveError.NotApprover, "You aren't an approver for this step.");
@@ -330,6 +334,8 @@ internal sealed class RoomWorkflow(
 
         var before = Snapshot(room);
         var from = room.State;
+        if (returningLaunch && !await launchRecovery.ReturnAsync(room.Id, cancellationToken))
+            return MoveResult.Failed(MoveError.NotAllowed, "Confirm the failed launch outcome and keep all its campaigns paused before sending it back.");
         if (room.PendingGate is { } pending)
         {
             await notifications.ResolveAsync(GateSubject(room.Id, pending), cancellationToken);

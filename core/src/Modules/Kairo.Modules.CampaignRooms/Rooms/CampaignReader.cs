@@ -180,7 +180,8 @@ internal sealed class CampaignReader(
     private async Task<CampaignActionsView> ActionsAsync(Room room, bool hasBrief, StageRun? latest, CancellationToken cancellationToken)
     {
         var marketer = member.Has(BrandRoles.Marketer);
-        var gate = room.PendingGate ?? RoomLifecycle.GateFor(room.State);
+        var returningLaunch = room.State == RoomStates.Launching && room.RunStatus == StageRunStatuses.Failed && await workflow.CanReturnLaunchAsync(room.Id, cancellationToken);
+        var gate = returningLaunch ? RoomGates.Launch : room.PendingGate ?? RoomLifecycle.GateFor(room.State);
         var route = room.PendingGate is { } pending ? await workflow.RouteAsync(room, pending, cancellationToken) : BriefRoute.Approvers;
         var mayApprove = gate is not null && await workflow.MayApproveAsync(room.BrandId, gate, route.Route, member, cancellationToken);
         var maySendBack = gate is not null && (mayApprove || await workflow.MaySendBackAsync(room, gate, member, cancellationToken));
@@ -204,7 +205,7 @@ internal sealed class CampaignReader(
         return new CampaignActionsView(
             canRequest && blocker is null ? stateGate : null,
             room.PendingGate is not null && mayApprove && approveBlocker is null ? room.PendingGate : null,
-            maySendBack ? [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
+            maySendBack ? returningLaunch ? [RoomStates.ReadyToLaunch, RoomStates.AssetReview, RoomStates.Creating, RoomStates.BriefDraft] : [.. RoomLifecycle.SendBackTargets(room.State, room.PendingGate)] : [],
             marketer && RoomLifecycle.CanDiscard(room.State),
             marketer && latest is { Status: StageRunStatuses.Failed } failed ? failed.Id : null,
             blocker,

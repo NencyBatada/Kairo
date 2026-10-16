@@ -91,6 +91,7 @@ public sealed class CampaignBuildTests(SqlServer sqlServer) : IAsyncLifetime
         _google.FailActivation = !failBuild;
         await RunAsync();
         Assert.Equal("failed", (await RecordAsync(roomId))!.Status);
+        Assert.Contains("policy finding", (await RecordAsync(roomId))!.ErrorMessage);
         var campaigns = _google.Resources.Where(pair => pair.Key.Contains("/campaigns/", StringComparison.Ordinal)).Select(pair => pair.Value).ToArray();
         if (failBuild) Assert.Empty(campaigns);
         else Assert.Equal(2, campaigns.Length);

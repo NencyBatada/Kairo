@@ -75,6 +75,20 @@ internal sealed class LaunchGoogle(IHttpClientFactory http, IConnections connect
 
         if (response.IsSuccessStatusCode || (int)response.StatusCode == 308) return response;
         var status = response.StatusCode;
+        string? reason = null;
+        if (status == HttpStatusCode.BadRequest)
+        {
+            try
+            {
+                var failure = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+                if (failure.TryGetProperty("error", out var error) && error.TryGetProperty("details", out var details))
+                    foreach (var detail in details.EnumerateArray())
+                        if (detail.TryGetProperty("errors", out var errors))
+                            foreach (var item in errors.EnumerateArray())
+                                if (item.TryGetProperty("errorCode", out var code)) reason ??= code.EnumerateObject().FirstOrDefault().Value.ToString();
+            }
+            catch (JsonException) { }
+        }
         response.Dispose();
         if (status is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
@@ -86,6 +100,7 @@ internal sealed class LaunchGoogle(IHttpClientFactory http, IConnections connect
             throw new LaunchException("google_unavailable", "Google is busy or temporarily unavailable.", "Try again after the retry delay.", transient: true, uncertain: write && status != HttpStatusCode.TooManyRequests);
         }
 
-        throw new LaunchException("google_validation", "Google rejected this launch step.", "Check the account links, targeting, bids and approved creative against Google Ads requirements.");
+        var safeReason = reason is { Length: > 0 and <= 100 } && reason.All(character => char.IsAsciiLetterUpper(character) || character == '_') ? reason.Replace('_', ' ').ToLowerInvariant() : null;
+        throw new LaunchException("google_validation", safeReason is null ? "Google rejected this launch step." : "Google rejected this launch step: " + safeReason + ".", "Check the account links, targeting, bids and approved creative against Google Ads requirements.");
     }
 }

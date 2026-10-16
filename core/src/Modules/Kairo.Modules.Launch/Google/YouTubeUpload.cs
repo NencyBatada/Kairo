@@ -7,7 +7,7 @@ using Kairo.SharedKernel.Files;
 
 namespace Kairo.Modules.Launch.Google;
 
-internal sealed record VideoUpload(string Session, string? VideoId = null);
+internal sealed record VideoUpload(string Session, string? VideoId = null, long Offset = 0);
 
 internal sealed class YouTubeUpload(LaunchGoogle google, IFileStore files)
 {
@@ -39,18 +39,55 @@ internal sealed class YouTubeUpload(LaunchGoogle google, IFileStore files)
         return session;
     }
 
-    public async Task<string> UploadAsync(LaunchPlan plan, LaunchAsset asset, string session, CancellationToken cancellationToken)
+    public async Task<string> UploadAsync(LaunchPlan plan, LaunchAsset asset, string session, CancellationToken cancellationToken, long offset = 0)
     {
         if (!AllowedSession(session)) throw new LaunchException("upload_session", "The saved upload session isn't valid.", "Start a new approved video upload session.");
         await using var stream = await files.OpenAsync(FileBuckets.GeneratedMedia, asset.FileKey!, cancellationToken);
+        if (offset < 0 || offset >= asset.Bytes) throw new LaunchException("upload_offset", "YouTube returned an invalid upload position.", "Check the saved upload session before retrying.", uncertain: true);
+        if (offset > 0)
+        {
+            var buffer = new byte[81920];
+            var remaining = offset;
+            while (remaining > 0)
+            {
+                var count = await stream.ReadAsync(buffer.AsMemory(0, (int)Math.Min(buffer.Length, remaining)), cancellationToken);
+                if (count == 0) throw new LaunchException("upload_offset", "The approved video is shorter than the saved upload position.", "Review the retained video file.", uncertain: true);
+                remaining -= count;
+            }
+        }
         using var content = new StreamContent(stream);
         content.Headers.ContentType = new MediaTypeHeaderValue(asset.ContentType!);
-        content.Headers.ContentLength = asset.Bytes;
+        content.Headers.ContentLength = asset.Bytes - offset;
+        if (offset > 0) content.Headers.ContentRange = new ContentRangeHeaderValue(offset, asset.Bytes - 1, asset.Bytes);
         using var response = await google.SendAsync(ConnectedProduct.YouTube, plan.YouTubeChannelId!, HttpMethod.Put, session, content, true, cancellationToken);
         if ((int)response.StatusCode == 308) throw new LaunchException("upload_incomplete", "The video upload isn't complete yet.", "Resume the saved upload session.", transient: true, uncertain: true);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
         return body.TryGetProperty("id", out var id) && !string.IsNullOrEmpty(id.GetString()) ? id.GetString()!
             : throw new LaunchException("upload_response", "YouTube didn't confirm the uploaded video ID.", "Check the saved upload session before retrying.", uncertain: true);
+    }
+
+    public async Task<VideoUpload> ReconcileAsync(LaunchPlan plan, LaunchAsset asset, VideoUpload upload, CancellationToken cancellationToken)
+    {
+        if (!AllowedSession(upload.Session)) throw new LaunchException("upload_session", "The saved upload session isn't valid.", "Check the saved session before retrying.", uncertain: true);
+        using var content = new ByteArrayContent([]);
+        content.Headers.ContentRange = new ContentRangeHeaderValue(asset.Bytes);
+        using var response = await google.SendAsync(ConnectedProduct.YouTube, plan.YouTubeChannelId!, HttpMethod.Put, upload.Session, content, false, cancellationToken);
+        if ((int)response.StatusCode != 308)
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken);
+            if (body.TryGetProperty("id", out var id) && !string.IsNullOrWhiteSpace(id.GetString())) return upload with { VideoId = id.GetString() };
+            throw new LaunchException("upload_response", "YouTube couldn't confirm the saved video's outcome.", "Inspect the saved upload in YouTube before continuing.", uncertain: true);
+        }
+
+        long offset = 0;
+        if (response.Headers.TryGetValues("Range", out var values))
+        {
+            var range = values.Single();
+            if (!range.StartsWith("bytes=0-", StringComparison.Ordinal) || !long.TryParse(range[8..], out var last) || last < 0 || last >= asset.Bytes - 1)
+                throw new LaunchException("upload_offset", "YouTube returned an invalid upload range.", "Inspect the saved upload before retrying.", uncertain: true);
+            offset = last + 1;
+        }
+        return upload with { Offset = offset };
     }
 
     public async Task ReadyAsync(LaunchPlan plan, string videoId, CancellationToken cancellationToken)
@@ -67,5 +104,5 @@ internal sealed class YouTubeUpload(LaunchGoogle google, IFileStore files)
     }
 
     public static bool AllowedSession(string session) => Uri.TryCreate(session, UriKind.Absolute, out var uri)
-        && uri.Scheme == "https" && uri.Host is "www.googleapis.com" or "upload.youtube.com";
+        && uri.Scheme == "https" && uri.IsDefaultPort && string.IsNullOrEmpty(uri.UserInfo) && uri.Host is "www.googleapis.com" or "upload.youtube.com";
 }

@@ -54,6 +54,8 @@ public sealed class CampaignMutationTests
         Assert.True(YouTubeUpload.AllowedSession("https://www.googleapis.com/upload-session/1"));
         Assert.False(YouTubeUpload.AllowedSession("https://attacker.example/upload"));
         Assert.False(YouTubeUpload.AllowedSession("http://www.googleapis.com/upload-session/1"));
+        Assert.False(YouTubeUpload.AllowedSession("https://www.googleapis.com:444/upload-session/1"));
+        Assert.False(YouTubeUpload.AllowedSession("https://attacker@www.googleapis.com/upload-session/1"));
     }
 
     private static JsonElement[] Build(LaunchPlan plan) => new CampaignBuild(plan, new Dictionary<string, string>(), new Dictionary<string, string> { ["en"] = "1000" }).Build()

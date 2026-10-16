@@ -22,6 +22,56 @@ namespace Kairo.Modules.Launch.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Kairo.Modules.Launch.Data.LaunchHealth", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Alerts")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Cause")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("CheckedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ClaimToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ClaimedUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("DueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("LaunchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LaunchId")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "DueAt");
+
+                    b.ToTable("Health", "launch");
+                });
+
             modelBuilder.Entity("Kairo.Modules.Launch.Data.LaunchRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -42,6 +92,7 @@ namespace Kairo.Modules.Launch.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ClaimToken")
+                        .IsConcurrencyToken()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset?>("ClaimedUntil")
@@ -63,6 +114,12 @@ namespace Kairo.Modules.Launch.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<DateTimeOffset?>("NextAttemptAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PendingBuild")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -70,6 +127,9 @@ namespace Kairo.Modules.Launch.Data.Migrations
                     b.Property<string>("Resources")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RetryCount")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uniqueidentifier");
@@ -95,14 +155,57 @@ namespace Kairo.Modules.Launch.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BrandId", "RoomId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Status] <> N'superseded'");
 
                     b.HasIndex("Status", "ClaimedUntil");
 
                     b.ToTable("Launches", "launch");
+                });
+
+            modelBuilder.Entity("Kairo.Modules.Launch.Data.LaunchStep", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempt")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("LaunchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BrandId", "LaunchId", "Name", "Attempt")
+                        .IsUnique();
+
+                    b.ToTable("Steps", "launch");
                 });
 
             modelBuilder.Entity("Kairo.Modules.Launch.Data.ProductAdMap", b =>

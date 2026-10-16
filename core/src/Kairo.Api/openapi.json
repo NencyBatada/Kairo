@@ -4642,6 +4642,98 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch": {
+      "get": {
+        "tags": [
+          "LaunchEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/launch/retry": {
+      "post": {
+        "tags": [
+          "LaunchEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetryLaunch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaunchStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -9282,6 +9374,67 @@
           }
         }
       },
+      "HealthAlert": {
+        "required": [
+          "kind",
+          "resource",
+          "cause",
+          "suggestedFix"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "cause": {
+            "type": "string"
+          },
+          "suggestedFix": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthView": {
+        "required": [
+          "status",
+          "dueAt",
+          "checkedAt",
+          "cause",
+          "alerts"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "checkedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthAlert"
+            }
+          }
+        }
+      },
       "HoldoutRequest": {
         "required": [
           "regionIds",
@@ -10573,6 +10726,151 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "LaunchStatus": {
+        "required": [
+          "id",
+          "version",
+          "status",
+          "step",
+          "attempts",
+          "uncertain",
+          "cause",
+          "suggestedFix",
+          "retryAvailable",
+          "nextAttemptAt",
+          "activatedAt",
+          "externalIds",
+          "videoIds",
+          "steps",
+          "health"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "status": {
+            "type": "string"
+          },
+          "step": {
+            "type": "string"
+          },
+          "attempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "uncertain": {
+            "type": "boolean"
+          },
+          "cause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "suggestedFix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "retryAvailable": {
+            "type": "boolean"
+          },
+          "nextAttemptAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "activatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "externalIds": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "videoIds": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LaunchStepView"
+            }
+          },
+          "health": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/HealthView"
+              }
+            ]
+          }
+        }
+      },
+      "LaunchStepView": {
+        "required": [
+          "name",
+          "attempt",
+          "outcome",
+          "startedAt",
+          "finishedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "attempt": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -12202,6 +12500,22 @@
           }
         }
       },
+      "RetryLaunch": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "RevisionRequest": {
         "required": [
           "revision"
@@ -13649,6 +13963,9 @@
     },
     {
       "name": "CheckEndpoints"
+    },
+    {
+      "name": "LaunchEndpoints"
     },
     {
       "name": "FeedEndpoints"
