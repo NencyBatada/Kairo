@@ -19,6 +19,8 @@ public sealed class FakeMedia
 
     public bool ImagesFail { get; set; }
 
+    public (int Width, int Height)? ImageSize { get; set; }
+
     public bool FootageFails { get; set; }
 
     public int Generation { get; set; } = 1;
@@ -78,8 +80,8 @@ public sealed class FakeMedia
                 productId = shot.GetProperty("productId").GetString(),
                 style = shot.GetProperty("style").GetString(),
                 format = format.GetString(),
-                width = Sizes[format.GetString()!].Width,
-                height = Sizes[format.GetString()!].Height,
+                width = ImageSize?.Width ?? Sizes[format.GetString()!].Width,
+                height = ImageSize?.Height ?? Sizes[format.GetString()!].Height,
                 mimeType = "image/jpeg",
                 data = Convert.ToBase64String(ImageBytes(format.GetString()!, Generation)),
                 prompt = "data",
