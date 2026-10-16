@@ -40,7 +40,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
             {
                 await ReleaseStuckAsync(test, cancellationToken);
                 if (!test.Running && await DraftAsync(brand, test, cancellationToken)) drafted++;
-                if (await RefreshGoogleAsync(test, cancellationToken)) refreshed++;
+                if (await RefreshGoogleAsync(brand, test, cancellationToken)) refreshed++;
                 await NotifyAsync(brand, test, cancellationToken);
             }
             catch (CampaignChangeException exception)
@@ -87,7 +87,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
         }, cancellationToken);
     }
 
-    private async Task<bool> RefreshGoogleAsync(CampaignTest test, CancellationToken cancellationToken)
+    private async Task<bool> RefreshGoogleAsync(BrandSummary brand, CampaignTest test, CancellationToken cancellationToken)
     {
         var suggestions = await changes.GoogleRecommendationsAsync(test.RoomId, cancellationToken);
         return await SaveAsync(test.RoomId, async () =>
@@ -97,7 +97,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
             var changed = false;
             foreach (var suggestion in suggestions)
             {
-                var (title, effect, reasoning, evidence) = Describe(suggestion);
+                var (title, effect, reasoning, evidence) = Describe(suggestion, brand.Currency);
                 if (existing.FirstOrDefault(row => row.GoogleResource == suggestion.ResourceName) is { } known)
                 {
                     if (known.State == RecommendationStates.Proposed && (known.ExpectedEffect != effect || known.Evidence != evidence))
@@ -153,7 +153,8 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
                 if (RecommendationRules.NeedsBudgetOwner(recommendation.Source, recommendation.Type))
                 {
                     var owners = await approvers.ForAsync(brand.Id, ApprovalDuty.BudgetOwner, cancellationToken);
-                    assigned = [.. (assigned.Count > 0 ? assigned.IntersectBy(owners.Select(owner => owner.UserId), member => member.UserId) : owners)];
+                    var both = assigned.IntersectBy(owners.Select(owner => owner.UserId), member => member.UserId).ToList();
+                    assigned = assigned.Count > 0 && both.Count > 0 ? both : owners;
                 }
 
                 var audience = assigned.Count > 0 ? LiveAudience.Users([.. assigned.Select(member => member.UserId)]) : LiveAudience.Roles(BrandRoles.Approver);
@@ -220,7 +221,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
         }
     }
 
-    private static (string Title, string Effect, string Reasoning, string Evidence) Describe(GoogleRecommendation suggestion)
+    private static (string Title, string Effect, string Reasoning, string Evidence) Describe(GoogleRecommendation suggestion, string currency)
     {
         var name = suggestion.Type.Replace('_', ' ').ToLowerInvariant();
         var label = RecommendationRules.Label(suggestion.CampaignType);
@@ -231,7 +232,7 @@ internal sealed class RecommendationDrafter(CareDbContext db, KairoDatabase data
         var cost = impact.PotentialCost - impact.BaseCost;
         if (conversions != 0) parts.Add($"{Signed(conversions)} conversions");
         if (clicks != 0) parts.Add($"{Signed(clicks)} clicks");
-        if (cost != 0) parts.Add($"{Signed(cost)} in cost");
+        if (cost != 0) parts.Add($"{(cost > 0 ? "+" : "-")}{RecommendationRules.Money(currency, Math.Abs(cost))} in cost");
         var effect = parts.Count == 0 ? "Google Ads didn't estimate the effect of this change." : $"Google Ads expects about {string.Join(", ", parts)} a week.";
         return (char.ToUpperInvariant(name[0]) + name[1..] + " for " + label, effect, $"Google Ads suggests this for the {label} campaign.",
             Write(new { impact, details = suggestion.Details }));
