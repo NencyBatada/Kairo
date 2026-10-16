@@ -1,0 +1,11 @@
+import { beforeEach, expect, test, vi } from "vitest";
+import Page from "./page";
+import { room, view, brief, proof, set, brandId, campaignId } from "./fixtures.test-data";
+const { getRoom, getWorkspace, get, unwrap } = vi.hoisted(() => ({ getRoom: vi.fn(), getWorkspace: vi.fn(), get: vi.fn(), unwrap: vi.fn() }));
+vi.mock("../_lib/room", () => ({ getRoom }));
+vi.mock("@/lib/core-api/queries", () => ({ getWorkspace }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap }));
+beforeEach(() => { vi.clearAllMocks(); getRoom.mockResolvedValue({ room: room(), brandId, timeZone: "Asia/Kolkata" }); getWorkspace.mockResolvedValue({ roles: ["marketer"] }); get.mockImplementation(async (url: string) => ({ response: new Response(null, { status: url.endsWith("/launch") ? 404 : 200 }), data: url.endsWith("/launch-plan") ? view() : url.endsWith("/brief") ? brief : url.endsWith("/proof-plan") ? proof : set })); unwrap.mockImplementation(async result => { if (!result.response.ok) throw new Error(`API ${result.response.status}`); return result.data; }); });
+test("scopes all reads to the resolved campaign, handles only progress 404 as empty", async () => { const result = await Page({ params: Promise.resolve({ workspace: "acme", id: "input-id" }) }); expect(getRoom).toHaveBeenCalledWith("acme", "input-id"); expect(get).toHaveBeenCalledTimes(5); for (const call of get.mock.calls) expect(call[1].params.path).toEqual({ brandId, campaignId }); expect(result.props.launch).toBeNull(); expect(result.props.marketer).toBe(true); expect(result.props.timeZone).toBe("Asia/Kolkata"); });
+test("permission and service failures reach the error boundary instead of hiding launch progress", async () => { get.mockResolvedValueOnce({ response: new Response(null, { status: 403 }) }); await expect(Page({ params: Promise.resolve({ workspace: "acme", id: campaignId }) })).rejects.toThrow("API 403"); });
+test("members without marketer access remain read-only", async () => { getWorkspace.mockResolvedValue({ roles: ["approver"] }); expect((await Page({ params: Promise.resolve({ workspace: "acme", id: campaignId }) })).props.marketer).toBe(false); });

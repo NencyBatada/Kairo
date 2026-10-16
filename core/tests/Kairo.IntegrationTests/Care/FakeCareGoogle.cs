@@ -21,6 +21,8 @@ public sealed partial class FakeCareGoogle(FakeLaunchGoogle launch)
     public bool FailWrites { get; set; }
     public int TransientReads { get; set; }
     public int SuggestionReads { get; private set; }
+    public Dictionary<string, (long Clicks, decimal Cost, decimal Conversions)> AdMetrics { get; } = [];
+    public List<string> AdQueries { get; } = [];
 
     public HttpResponseMessage? Respond(Uri uri, string body) => Handle(uri, body) ?? launch.Respond(uri, body);
 
@@ -65,7 +67,8 @@ public sealed partial class FakeCareGoogle(FakeLaunchGoogle launch)
         if (uri.AbsolutePath.EndsWith("/googleAds:mutate", StringComparison.Ordinal)) return Mutate(body);
         if (!uri.AbsolutePath.EndsWith("/googleAds:search", StringComparison.Ordinal)) return null;
         var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
-        var mine = query.Contains("FROM recommendation", StringComparison.Ordinal) || query.Contains("campaign_budget.total_amount_micros", StringComparison.Ordinal)
+        if (query.Contains("FROM ad_group_ad", StringComparison.Ordinal) && query.Contains("metrics.clicks", StringComparison.Ordinal)) return AdResults(query);
+        var mine =query.Contains("FROM recommendation", StringComparison.Ordinal) || query.Contains("campaign_budget.total_amount_micros", StringComparison.Ordinal)
             || query.Contains("metrics.conversions_value", StringComparison.Ordinal) && query.Contains("segments.date,", StringComparison.Ordinal);
         if (!mine) return null;
         if (TransientReads > 0) { TransientReads--; return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable); }
@@ -111,6 +114,25 @@ public sealed partial class FakeCareGoogle(FakeLaunchGoogle launch)
                     segments = new { date = day.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) },
                     metrics = new { costMicros = ((long)(day.Cost * 1_000_000m)).ToString(CultureInfo.InvariantCulture), conversions = (double)day.Conversions, conversionsValue = (double)day.Value },
                 })),
+        });
+    }
+
+    private HttpResponseMessage AdResults(string query)
+    {
+        var range = Between().Match(query);
+        AdQueries.Add(query);
+        return Json(new
+        {
+            results = AdMetrics.Where(pair => query.Contains("'" + pair.Key + "'", StringComparison.Ordinal)).SelectMany(pair => new[] { 0, 1 }.Select(half => new
+            {
+                adGroupAd = new { resourceName = pair.Key },
+                segments = new { date = range.Groups[1 + half].Value },
+                metrics = new
+                {
+                    impressions = (pair.Value.Clicks * 10 / 2).ToString(CultureInfo.InvariantCulture), clicks = (pair.Value.Clicks / 2).ToString(CultureInfo.InvariantCulture),
+                    costMicros = ((long)(pair.Value.Cost / 2 * 1_000_000m)).ToString(CultureInfo.InvariantCulture), conversions = (double)pair.Value.Conversions / 2, conversionsValue = 0.0,
+                },
+            })),
         });
     }
 

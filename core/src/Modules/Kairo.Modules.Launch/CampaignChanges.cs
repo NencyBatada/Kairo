@@ -51,7 +51,7 @@ internal sealed class CampaignChanges(LaunchDbContext db, LaunchGoogle google, T
             states.Add(new CampaignState(channel.CampaignType, LaunchPreflight.Text(campaign, "status"), live.Plan.End,
                 row.TryGetProperty("campaignBudget", out var budget) ? Micros(budget, "totalAmountMicros") : 0m,
                 mine.Sum(day => Micros(day.Metrics, "costMicros")), strategy, target,
-                window.Sum(day => Micros(day.Metrics, "costMicros")), window.Sum(day => Number(day.Metrics, "conversions")), window.Sum(day => Number(day.Metrics, "conversionsValue"))));
+                window.Sum(day => Micros(day.Metrics, "costMicros")), window.Sum(day => Number(day.Metrics, "conversions")), window.Sum(day => Number(day.Metrics, "conversionsValue")), name));
         }
 
         return (IReadOnlyList<CampaignState>)states;
@@ -115,6 +115,42 @@ internal sealed class CampaignChanges(LaunchDbContext db, LaunchGoogle google, T
             JsonContent.Create(new { operations = new[] { new { resourceName } }, partialFailure = false }), true, cancellationToken);
         return true;
     });
+
+    public Task<IReadOnlyList<AdResult>> AdResultsAsync(Guid roomId, DateOnly from, DateOnly to, CancellationToken cancellationToken) => GuardAsync(async () =>
+    {
+        var live = await LiveAsync(roomId, cancellationToken);
+        var assets = live.Plan.Assets.ToDictionary(asset => asset.Id.ToString("N"), StringComparer.Ordinal);
+        var ads = live.Resources.Where(pair => pair.Key.StartsWith("ad:", StringComparison.Ordinal))
+            .Select(pair => (Key: pair.Key, Resource: pair.Value, Assets: AdAssets(pair.Key, live.Plan, assets)))
+            .Where(ad => ad.Assets.Count > 0).ToList();
+        if (ads.Count == 0) return (IReadOnlyList<AdResult>)[];
+        var filter = string.Join(',', ads.Select(ad => "'" + ad.Resource + "'"));
+        var rows = await google.SearchAsync(live.Account, $"SELECT ad_group_ad.resource_name, segments.date, metrics.impressions, metrics.clicks, metrics.cost_micros, metrics.conversions, metrics.conversions_value FROM ad_group_ad WHERE ad_group_ad.resource_name IN ({filter}) AND segments.date BETWEEN '{Iso(from)}' AND '{Iso(to)}'", cancellationToken);
+        var metrics = rows.Select(row => (Resource: LaunchPreflight.Text(row.GetProperty("adGroupAd"), "resourceName"), Metrics: row.TryGetProperty("metrics", out var value) ? value : default))
+            .ToLookup(row => row.Resource, row => row.Metrics, StringComparer.Ordinal);
+        return (IReadOnlyList<AdResult>)[.. ads.Select(ad =>
+        {
+            var days = metrics[ad.Resource].ToList();
+            var main = ad.Assets[0];
+            return new AdResult(ad.Key, main.CampaignType, main.Language,
+                [.. ad.Assets.Select(asset => new AdAsset(asset.Id, asset.Kind, asset.Language, asset.Format, asset.Content))],
+                (long)days.Sum(day => Number(day, "impressions")), (long)days.Sum(day => Number(day, "clicks")),
+                days.Sum(day => Micros(day, "costMicros")), days.Sum(day => Number(day, "conversions")), days.Sum(day => Number(day, "conversionsValue")));
+        })];
+    });
+
+    private static List<LaunchAsset> AdAssets(string key, LaunchPlan plan, Dictionary<string, LaunchAsset> assets)
+    {
+        var parts = key.Split(':');
+        LaunchAsset? Find(int index) => parts.Length > index ? assets.GetValueOrDefault(parts[index]) : null;
+        return parts.ElementAtOrDefault(1) switch
+        {
+            "search" or "shopping" when Find(2) is { } asset => [asset],
+            "demand_gen" when Find(2) is { } text => [text, .. plan.Assets.Where(asset => asset.Kind == "image" && asset.Format is "landscape" or "square" or "portrait")],
+            "video" when Find(2) is { } text && Find(3) is { } video => [text, video],
+            _ => [],
+        };
+    }
 
     private async Task MutateAsync(LiveCampaigns live, object[] operations, CancellationToken cancellationToken)
     {

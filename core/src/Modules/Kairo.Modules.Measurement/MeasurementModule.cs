@@ -2,6 +2,7 @@ using Kairo.Contracts.Measurement;
 using Kairo.Modules.Measurement.Data;
 using Kairo.Modules.Measurement.Feeds;
 using Kairo.Modules.Measurement.History;
+using Kairo.Modules.Measurement.Impact;
 using Kairo.Modules.Measurement.Lift;
 
 namespace Kairo.Modules.Measurement;
@@ -16,12 +17,16 @@ public sealed class MeasurementModule : IModule
         services.AddScoped<IRegionHistory, RegionHistoryReader>();
         services.AddScoped<DataCoverage>();
         services.AddScoped<LiftMeasurer>();
+        services.AddScoped<AccountActivity>();
+        services.AddScoped<ImpactReporter>();
+        services.AddScoped<IImpactReports, ImpactReports>();
     }
 
     public void MapApi(IEndpointRouteBuilder api)
     {
         api.MapFeeds();
         api.MapLift();
+        api.MapImpact();
     }
 
     public void MapJobs(IEndpointRouteBuilder jobs)
