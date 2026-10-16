@@ -147,7 +147,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Stock pause and resume**: Pauses ads within an hour when products sell out and resumes them on restock, with the stale-feed and 30% safeguards.
+- [x] **Stock pause and resume**: Pauses ads within an hour when products sell out and resumes them on restock, with the stale-feed and 30% safeguards.
 - [/] **Pacing alerts**: Flags campaigns more than 20% off plan for 2 days, with the likely cause.
 - [/] **Recommendations**: Budget and bid-target recommendations after the test, plus Google Ads' own, each applied after one approval.
 
