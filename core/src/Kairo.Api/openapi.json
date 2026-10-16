@@ -4734,6 +4734,204 @@
         }
       }
     },
+    "/api/brands/{brandId}/campaigns/{campaignId}/stock-pauses": {
+      "get": {
+        "tags": [
+          "StockPauseEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPauseLog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/stock-pauses/{pauseId}/undo": {
+      "post": {
+        "tags": [
+          "StockPauseEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pauseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockPauseChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPauseLog"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/stock-pauses/batches/{batchId}/confirm": {
+      "post": {
+        "tags": [
+          "StockPauseEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPauseLog"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/brands/{brandId}/campaigns/{campaignId}/stock-pauses/batches/{batchId}/dismiss": {
+      "post": {
+        "tags": [
+          "StockPauseEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "batchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockPauseLog"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/analytics/feeds": {
       "get": {
         "tags": [
@@ -13518,6 +13716,141 @@
           }
         }
       },
+      "StockPauseChange": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "StockPauseLog": {
+        "required": [
+          "feedUpdatedAt",
+          "feedStale",
+          "pauses"
+        ],
+        "type": "object",
+        "properties": {
+          "feedUpdatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "feedStale": {
+            "type": "boolean"
+          },
+          "pauses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockPauseView"
+            }
+          }
+        }
+      },
+      "StockPauseView": {
+        "required": [
+          "id",
+          "version",
+          "state",
+          "campaignType",
+          "campaignResource",
+          "adResource",
+          "productIds",
+          "batchId",
+          "createdAt",
+          "pausedAt",
+          "resumedAt",
+          "decidedAt",
+          "decidedBy",
+          "canUndo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "state": {
+            "type": "string"
+          },
+          "campaignType": {
+            "type": "string"
+          },
+          "campaignResource": {
+            "type": "string"
+          },
+          "adResource": {
+            "type": "string"
+          },
+          "productIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "batchId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "pausedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "resumedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "decidedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "decidedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "canUndo": {
+            "type": "boolean"
+          }
+        }
+      },
       "TopicRequest": {
         "required": [
           "phrase",
@@ -13966,6 +14299,9 @@
     },
     {
       "name": "LaunchEndpoints"
+    },
+    {
+      "name": "StockPauseEndpoints"
     },
     {
       "name": "FeedEndpoints"
