@@ -109,8 +109,8 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Copy generation**: Keywords, search ads, Demand Gen text and shopping titles in the brand's voice, within Google Ads limits.
-- [ ] **Images and video**: Product images from catalogue photos in every size, and a short 9:16 video with voiceover, captions and logo.
+- [/] **Copy generation**: Keywords, search ads, Demand Gen text and shopping titles in the brand's voice, within Google Ads limits.
+- [/] **Images and video**: Product images from catalogue photos in every size, and a short 9:16 video with voiceover, captions and logo.
 - [ ] **Regional languages**: Copy and voiceover in each language in the brief, starting with Hindi.
 - [ ] **Asset history and AI labels**: Records how each asset was made and adds AI disclosure labels where platforms require them.
 
