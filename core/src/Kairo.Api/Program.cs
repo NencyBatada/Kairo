@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kairo.Api;
 using Kairo.Modules.Approvals;
+using Kairo.Modules.Ask;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
 using Kairo.Modules.BrandMemory;
@@ -56,6 +57,7 @@ IModule[] modules =
     new NotificationsModule(),
     new LiveModule(),
     new AuditModule(),
+    new AskModule(),
 ];
 
 foreach (var module in modules)

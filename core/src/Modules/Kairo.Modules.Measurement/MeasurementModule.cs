@@ -12,6 +12,8 @@ public sealed class MeasurementModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.Measurement.Impact.ReportAskResource>();
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.Measurement.Impact.LabAskResource>();
         services.AddDbContext<MeasurementDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, MeasurementDbContext.SchemaName));
         services.AddFeeds();

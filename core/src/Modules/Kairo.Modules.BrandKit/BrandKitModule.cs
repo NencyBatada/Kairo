@@ -8,6 +8,7 @@ public sealed class BrandKitModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.BrandKit.Kit.KitAskResource>();
         services.AddDbContext<BrandKitDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, BrandKitDbContext.SchemaName));
         services.AddBrandKit();

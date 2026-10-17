@@ -7,6 +7,7 @@ public sealed class CatalogueModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.Catalogue.Products.CatalogueAskResource>();
         services.AddDbContext<CatalogueDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, CatalogueDbContext.SchemaName));
         services.AddCatalogue();

@@ -56,7 +56,7 @@ internal sealed class AssetInput
     public string? FileKey { get; set; }
 }
 
-internal sealed record ProvenanceState(List<AgentCallRecord> Calls, Dictionary<string, List<string>> Photos, List<AssetInput> Inputs, List<MemoryNote> Memory);
+internal sealed record ProvenanceState(List<AgentCallRecord> Calls, Dictionary<string, List<string>> Photos, List<AssetInput> Inputs, List<MemoryNote> Memory, int? BrandKitVersion = null);
 
 internal sealed class ProvenanceTrail
 {
@@ -138,7 +138,8 @@ internal sealed class ProvenanceTrail
                 [.. _calls],
                 _photos.ToDictionary(entry => entry.Key, entry => entry.Value.ToList(), StringComparer.Ordinal),
                 [.. _inputs],
-                [.. _memory]);
+                [.. _memory],
+                _brandKitVersion);
             _calls.Clear();
             _photos.Clear();
             _inputs.Clear();
@@ -151,6 +152,7 @@ internal sealed class ProvenanceTrail
     {
         lock (_gate)
         {
+            _brandKitVersion = state.BrandKitVersion;
             _calls.Clear();
             _calls.AddRange(state.Calls);
             _photos.Clear();

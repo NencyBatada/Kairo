@@ -29,6 +29,8 @@ var api = builder.AddProject<Projects.Kairo_Api>("api")
     .WithEnvironment("Kairo__PublicOrigin", "http://localhost:8000")
     .WithHttpHealthCheck("/health");
 
+agents.WithEnvironment("KAIRO_API_URL", api.GetEndpoint("http"));
+
 var mailSender = builder.Configuration["Kairo:MailSender"];
 var mailSenderRefreshToken = builder.Configuration["Kairo:MailSenderRefreshToken"];
 if (!string.IsNullOrWhiteSpace(mailSender) && !string.IsNullOrWhiteSpace(mailSenderRefreshToken))
