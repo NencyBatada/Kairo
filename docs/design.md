@@ -442,6 +442,14 @@ Every list and page has all three.
 - Report date, campaign/report identifiers and page numbers remain visible. Long text wraps across pages; headings stay with following content. Inconclusive results remain neutral and every lift includes its range.
 - The download action announces progress and errors, allows retry, and offers sign-in recovery when the session expires. Downloads require workspace access and are private and uncached.
 
+### 9.14 Impact Lab
+
+- History links to saved analyses and states the service's latest-100 limit. Setup, Data, Comparison and Result are numbered steps with the current step named; unsaved drafts must be checked, saved or explicitly discarded before moving on.
+- Source-specific outcome choices stay within the API's supported options. Loaded coverage and comparison warnings appear before the run action. Suggested comparisons show fit scores and remain subject to the user's knowledge of what the change affected.
+- Actual-versus-expected uses a solid chart-1 line for actuals, a dashed muted-foreground line for expected values and a dotted foreground marker for the change start. A day selector and data table provide the same values without pointer interaction. Gaps represent missing values.
+- Every effect estimate includes its complete 90% range. Inconclusive results use neutral badges and explain the next step. Workspace links disclose access requirements; CSV exports contain daily values without inventing daily confidence bounds.
+- Live refresh preserves drafts and blocks stale submissions. Replacing loaded data, a result or a draft requires confirmation with Cancel initially focused.
+
 ## 10. Accessibility
 
 Kairo's core screens meet **WCAG 2.2 AA**.
