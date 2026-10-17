@@ -50,6 +50,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public HttpStatusCode AdsWrite { get; set; } = HttpStatusCode.OK;
 
+    public bool AdsTestHierarchy { get; set; }
+
+    public string AdsTestAccountStatus { get; set; } = "CLOSED";
+
     public string[] YouTubeChannels { get; set; } = ["UC-acme"];
 
     public string[] MerchantAccessRights { get; set; } = ["ADMIN"];
@@ -313,12 +317,13 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         return (uri.Host, path) switch
         {
             ("googleads.googleapis.com", "/v25/customers:listAccessibleCustomers") =>
-                Json(HttpStatusCode.OK, new { resourceNames = new[] { "customers/1111111111", "customers/2222222222", "customers/3333333333" } }),
+                Json(HttpStatusCode.OK, new { resourceNames = new[] { "customers/1111111111", "customers/2222222222", "customers/3333333333" }
+                    .Concat(AdsTestHierarchy ? ["customers/6666666666"] : []) }),
             ("googleads.googleapis.com", _) when !AdsReachable(path, login) => new HttpResponseMessage(HttpStatusCode.Forbidden),
             ("googleads.googleapis.com", _) when Keywords.Handle(path, body) is { } planned => planned,
             ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:searchStream", StringComparison.Ordinal) => AdsStream(path, body, login),
             ("googleads.googleapis.com", _) when path.EndsWith("/googleAds:search", StringComparison.Ordinal) =>
-                body.Contains("FROM customer_client", StringComparison.Ordinal) ? AdsClients(path) : AdsCustomer(path),
+                body.Contains("FROM customer_client", StringComparison.Ordinal) ? AdsClients(path, body) : AdsCustomer(path),
             ("googleads.googleapis.com", _) when path.EndsWith("/campaignBudgets:mutate", StringComparison.Ordinal) =>
                 body.Contains("\"validateOnly\":true", StringComparison.Ordinal) ? Json(AdsWrite, new { }) : new HttpResponseMessage(HttpStatusCode.BadRequest),
             ("www.googleapis.com", "/youtube/v3/channels") =>
@@ -540,13 +545,33 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         metricValues = metrics.Select(value => new { value }).ToArray(),
     };
 
-    private static bool AdsReachable(string path, string? login) =>
-        path.Split('/') is not [_, _, _, "4444444444", ..] || login == "2222222222";
+    private static bool AdsReachable(string path, string? login) => path.Split('/') switch
+    {
+        [_, _, _, "4444444444", ..] => login == "2222222222",
+        [_, _, _, "7777777777", ..] => login == "6666666666",
+        _ => true,
+    };
 
-    private static HttpResponseMessage AdsClients(string path) =>
-        path.Split('/')[3] == "2222222222"
-            ? Json(HttpStatusCode.OK, new { results = new[] { new { customerClient = new { id = "4444444444", descriptiveName = "Agency Client Shoes", manager = false } } } })
-            : Json(HttpStatusCode.OK, new { results = Array.Empty<object>() });
+    private HttpResponseMessage AdsClients(string path, string body)
+    {
+        var query = JsonDocument.Parse(body).RootElement.GetProperty("query").GetString()!;
+        List<AdsClient> accounts = path.Split('/')[3] switch
+        {
+            "2222222222" => [new("4444444444", "Agency Client Shoes", false, "ENABLED", false)],
+            "6666666666" when AdsTestHierarchy => [new("7777777777", "Sandbox Shoes", false, AdsTestAccountStatus, true)],
+            _ => [],
+        };
+        if (AdsTestHierarchy && path.Split('/')[3] == "2222222222")
+        {
+            accounts.Add(new("8888888888", "Canceled Shoes", false, "CANCELED", false));
+            accounts.Add(new("9999999999", "Suspended Shoes", false, "SUSPENDED", false));
+        }
+
+        var selected = query.Contains("customer_client.status = 'ENABLED'", StringComparison.Ordinal)
+            ? accounts.Where(account => account.Status == "ENABLED")
+            : accounts;
+        return Json(HttpStatusCode.OK, new { results = selected.Select(account => new { customerClient = account }) });
+    }
 
     private static HttpResponseMessage AdsCustomer(string path)
     {
@@ -557,6 +582,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
             "2222222222" => new { id, descriptiveName = "Acme Agency", manager = true },
             "3333333333" => new { id, descriptiveName = "Acme Outlet", manager = false },
             "4444444444" => new { id, descriptiveName = "Agency Client Shoes", manager = false },
+            "6666666666" => new { id, descriptiveName = "Sandbox Manager", manager = true, testAccount = true },
+            "7777777777" => new { id, descriptiveName = "Sandbox Shoes", manager = false, testAccount = true },
             _ => null,
         };
         return customer is null
@@ -573,6 +600,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     private static string Encode(object value) => WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(value));
 
     private sealed record ClientToken(string ClientId, string Scopes, string? Subject);
+
+    private sealed record AdsClient(string Id, string DescriptiveName, bool Manager, string Status, bool TestAccount);
 
     private sealed record PendingCode(IssuedCode Issued, string Challenge, string RedirectUri, string Scopes);
 }
