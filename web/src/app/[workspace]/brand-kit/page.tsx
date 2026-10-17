@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
 import { Alert } from "@/components/ui/alert";
@@ -33,7 +34,7 @@ export default async function BrandKitPage({ params }: { params: Promise<{ works
   const canEdit = workspace.roles.includes("admin");
   const names = Object.fromEntries(members.map((member) => [member.userId, member.name]));
   return <div className="flex flex-col gap-8">
-    <PageHeader title="Brand Kit" description="Your brand's voice, visuals and rules, approved by you and used by every agent." />
+    <PageHeader title="Brand Kit" description="Your brand's voice, visuals and rules, approved by you and used by every agent." actions={<Link className="inline-flex min-h-11 items-center text-small text-primary hover:underline" href={`/${handle}/brand-kit/memory`}>View Brand Memory</Link>} />
     <Alert variant={kit.approved ? "success" : "warning"}>{kit.approved ? `Agents use approved version ${kit.approved.number}. Draft changes need approval before agents use them.` : "No approved Brand Kit yet. Review and approve a version so agents can use it."}</Alert>
     <DraftingForm run={run ?? null} hasDraft={!!kit.draft} canEdit={canEdit} action={draftKit.bind(null, workspace.id)} />
     <KitEditor key={workspace.id} version={kit.draft ?? kit.approved} draftRevision={kit.draft?.revision ?? 0} files={files} canEdit={canEdit} save={saveKit.bind(null, workspace.id)} approve={approveKit.bind(null, workspace.id)} discard={discardKit.bind(null, workspace.id)} />
