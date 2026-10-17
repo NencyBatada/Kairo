@@ -4,6 +4,8 @@ The Python service that runs Kairo's agents (Sense, Plan, Create, Check, Prove a
 
 Run it on its own with `uv run uvicorn kairo_agents.main:app --reload`, or start the whole stack as described in the [root README](../README.md).
 
+Prove's impact reports and Impact Lab explanations use `gemini-3.1-pro-preview` by default. Set `KAIRO_PROVE_MODEL` to override it with a model available to the configured Google Cloud project and location.
+
 | Folder | Holds |
 | --- | --- |
 | `src/kairo_agents/agents/` | One package per agent. When an agent is built, its `agent.py` exposes `root_agent`, so `uv run adk web src/kairo_agents/agents` opens it in ADK's development UI. Brand Kit drafting (`brand_kit/`) is a single structured Gemini call through the Gen AI SDK, so it has no `root_agent`; its prompt is versioned in `brand_kit/prompts/`. |

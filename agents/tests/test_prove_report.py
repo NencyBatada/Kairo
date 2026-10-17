@@ -118,7 +118,7 @@ def test_report_uses_a_pro_model_by_default(models, monkeypatch) -> None:
 
     response = TestClient(app).post("/prove/report", json=WORKED)
 
-    assert response.json()["model"] == "gemini-3.5-pro"
+    assert response.json()["model"] == "gemini-3.1-pro-preview"
 
 
 def test_inconclusive_reports_must_explain_themselves(models) -> None:

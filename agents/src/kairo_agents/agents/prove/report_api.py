@@ -14,7 +14,7 @@ from kairo_agents.agents.prove.report import clean_report
 from kairo_agents.agents.prove.report_models import DraftedReport, ReportRequest, ReportResponse
 from kairo_agents.agents.sense.prompt import data_block
 
-DEFAULT_MODEL = "gemini-3.5-pro"
+DEFAULT_MODEL = "gemini-3.1-pro-preview"
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
