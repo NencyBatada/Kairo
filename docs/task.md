@@ -188,7 +188,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Ask Kairo panel**: The chat panel on every screen, aware of the current item, with streamed answers and change previews to confirm.
+- [/] **Ask Kairo panel**: The chat panel on every screen, aware of the current item, with streamed answers and change previews to confirm. *Started against Talha's merged PR #28: private history, item context, live answer segments and explicitly confirmed previews using the existing APIs and Warm Editorial design.*
 
 ## 14. Running Kairo
 
