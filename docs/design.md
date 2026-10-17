@@ -435,6 +435,13 @@ Every list and page has all three.
   - from `xl` it is a single line, with the destructive action at the far right
   - an action button that sits outside its form joins it with the `form` attribute, so the layout never forces a form around the whole row
 
+### 9.13 Downloaded impact reports
+
+- Reports download as A4 PDFs, generated on demand from the saved report. Their figures, confidence ranges, next steps and caveats use the same presentation rules as Results.
+- Print uses the light Warm Editorial palette, defined in `pdf-theme.ts` and tested against the existing light tokens. The document uses Instrument Serif for display and static Geist for reading text, with Noto Sans Devanagari for Hindi. Fonts and their licences are bundled locally under `web/public/fonts/reports/`.
+- Report date, campaign/report identifiers and page numbers remain visible. Long text wraps across pages; headings stay with following content. Inconclusive results remain neutral and every lift includes its range.
+- The download action announces progress and errors, allows retry, and offers sign-in recovery when the session expires. Downloads require workspace access and are private and uncached.
+
 ## 10. Accessibility
 
 Kairo's core screens meet **WCAG 2.2 AA**.
