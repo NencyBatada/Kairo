@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ export function MemoryEditor({ detail, brandId, canEdit }: { detail: Detail; bra
   const [state, setState] = useState<MemoryState>({ status: "idle" }), [removal, setRemoval] = useState<{ id: string; title: string; version: number } | null>(null);
   const [pending, start] = useTransition(), busy = useRef(false), cancelRef = useRef<HTMLButtonElement>(null), noticeRef = useRef<HTMLDivElement>(null), removeErrorRef = useRef<HTMLDivElement>(null), removeTrigger = useRef<HTMLButtonElement>(null);
   const stale = baseline.id !== current.entry.id || Number(baseline.version) !== Number(current.entry.version) || current.entry.state !== "active" || state.conflict === true;
+  useAskEditGuard(title !== baseline.title || lesson !== baseline.lesson || pending || removal !== null);
   const removalStale = !!removal && (removal.id !== current.entry.id || removal.version !== Number(current.entry.version) || current.entry.state !== "active" || state.conflict === true);
   const removed = state.removed || current.entry.state === "removed";
   useEffect(() => { if (state.status !== "idle") (removal && state.status === "error" ? removeErrorRef : noticeRef).current?.focus(); }, [state, removal]);

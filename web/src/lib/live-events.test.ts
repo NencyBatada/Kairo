@@ -4,6 +4,7 @@ import path from "node:path";
 import { expect, test } from "vitest";
 
 import { HANDLED_LIVE_EVENTS, liveStreamUrl, WORKSPACE_LIVE_EVENTS } from "./live-events";
+import { ASK_EVENTS } from "./ask-kairo/model";
 
 const coreSource = path.resolve(__dirname, "../../../core/src");
 
@@ -37,7 +38,7 @@ test.skipIf(!existsSync(coreSource))("handles every live event the core publishe
 
   expect(published.length).toBeGreaterThan(0);
   expect(published).toContain("agent.progress");
-  expect([...HANDLED_LIVE_EVENTS].sort()).toEqual([...new Set([...published, "catalogue.imported", "catalogue.product_changed"])].sort());
+  expect([...HANDLED_LIVE_EVENTS].sort()).toEqual([...new Set([...published, "catalogue.imported", "catalogue.product_changed", ...ASK_EVENTS])].sort());
 });
 
 test("builds the workspace stream URL", () => {

@@ -32,7 +32,9 @@ export const WORKSPACE_LIVE_EVENTS = [
 
 export const AGENT_PROGRESS_EVENT = "agent.progress";
 
-export const HANDLED_LIVE_EVENTS: readonly string[] = [...WORKSPACE_LIVE_EVENTS, AGENT_PROGRESS_EVENT];
+import { ASK_EVENTS } from "@/lib/ask-kairo/model";
+
+export const HANDLED_LIVE_EVENTS: readonly string[] = [...WORKSPACE_LIVE_EVENTS, AGENT_PROGRESS_EVENT, ...ASK_EVENTS];
 
 export function liveStreamUrl(brandId: string) {
   return `/api/brands/${brandId}/live`;

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { FieldError } from "@/components/field-error";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { FormStatus } from "@/components/form-status";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function ProductFixes({ product, canFix, action }: { product: ProductDeta
     if (result.status === "saved") { setDirty(false); setClear({}); }
     return result;
   }, idle);
+  useAskEditGuard(dirty || pending);
   if (token !== seen) {
     setSeen(token);
     if (dirty) setStale(true);

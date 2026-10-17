@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { FieldError } from "@/components/field-error";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { FormStatus } from "@/components/form-status";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function BriefEditor({ detail, brandId, campaignId, disabled, onDirty, on
   useEffect(() => { onBusy(pending); return () => onBusy(false); }, [pending, onBusy]);
   useEffect(() => { if (state.status === "error") summary.current?.focus(); }, [state]);
   const brief = baseline.brief!;
+  useAskEditGuard(drafting || pending);
   const stale = String(detail.campaignVersion) !== String(baseline.campaignVersion) || String(detail.brief?.version) !== String(brief.version);
   const errors = state.fieldErrors ?? {};
   function group(field: string, label: string, child: (props: { id: string; "aria-describedby": string; "aria-invalid": boolean }) => ReactNode, reason = field) {

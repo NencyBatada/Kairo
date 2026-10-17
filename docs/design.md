@@ -371,6 +371,11 @@ Every list and page has all three.
   - opened from the PageHeader button
   - knows the current item and streams its answers
   - cites sources as chips, and says plainly when it doesn't know
+  - private history discloses the latest-50 conversation and recent-100 message/preview limits; each question retains its saved item context
+  - answer segments arrive on the existing workspace live stream; refresh recovers saved text and evidence after interruptions without clearing the composer
+  - source links come from validated evidence metadata; model text is rendered as text
+  - change previews show changed fields, before and after, warnings, candidate media and expiry in the workspace time zone; Apply opens a confirmation with Cancel initially focused
+  - unsaved page edits block Apply; stale, expired or unauthorized previews cannot be applied. Closing, resizing and workspace navigation keep the composer, while account or workspace changes clear private chat state
 
 ### 9.8 Status vocabulary
 

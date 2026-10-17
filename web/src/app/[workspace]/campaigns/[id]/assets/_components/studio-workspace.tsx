@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import type { components } from "@/lib/core-api/schema";
@@ -11,6 +12,7 @@ import { AssetControls } from "./asset-controls";
 type Run = components["schemas"]["CampaignRunView"];
 export function StudioWorkspace(props: { set: AssetSet; brandId: string; campaignId: string; timeZone: string; handle: string; language: string; campaignType: string; runs: Run[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  useAskEditGuard(activeId !== null);
   const [activeSource, setActiveSource] = useState<{ asset: Asset; group: AssetSet["groups"][number] } | null>(null);
   const [queuedId, setQueuedId] = useState<string | null>(null);
   const [notice, setNotice] = useState(false);

@@ -1,10 +1,16 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import { useAgentJobs, useLiveConnection, WorkspaceLiveProvider } from "@/components/workspace-live-provider";
+import { useAgentJobs, useAskSessionRecovery, useAskUpdates, useLiveConnection, WorkspaceLiveProvider } from "@/components/workspace-live-provider";
 import { WORKSPACE_LIVE_EVENTS } from "@/lib/live-events";
 
 import { RECONNECT_MAX_DELAY_MS, reconnectDelay, WorkspaceLiveUpdates } from "./workspace-live-updates";
+import { conversationId, messageId } from "@/lib/ask-kairo/fixtures.test-data";
+import { ASK_EVENTS } from "@/lib/ask-kairo/model";
+
+const askListener = vi.fn();
+function AskProbe() { useAskUpdates(askListener); return null; }
+function DraftProbe() { useAskSessionRecovery(true); return null; }
 
 const router = vi.hoisted(() => ({
   refresh: vi.fn(),
@@ -130,6 +136,7 @@ function progress(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+  askListener.mockReset();
   MockEventSource.instances = [];
   router.refresh.mockReset();
   router.replace.mockReset();
@@ -140,6 +147,32 @@ beforeEach(() => {
     "fetch",
     vi.fn(async () => new Response(null, { status: 200 })),
   );
+});
+
+test("Ask events use the existing stream without refreshing the page for every segment", async () => {
+  vi.useFakeTimers();
+  render(<WorkspaceLiveProvider><WorkspaceLiveUpdates brandId="brand-1" /><AskProbe /></WorkspaceLiveProvider>);
+  const payload = { conversationId, messageId, index: 0, segment: { text: "The first part", evidenceIds: [] } };
+  act(() => latest().emit("ask.answer.segment", JSON.stringify(payload)));
+  expect(askListener).toHaveBeenCalledWith({ ...payload, type: "ask.answer.segment" });
+  expect(MockEventSource.instances).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(router.refresh).not.toHaveBeenCalled();
+  for (const type of ASK_EVENTS) act(() => latest().emit(type, "{invalid"));
+  expect(askListener).toHaveBeenLastCalledWith(null);
+  act(() => latest().open());
+  expect(askListener).toHaveBeenLastCalledWith(null);
+});
+
+test("an unsent Ask draft stays available for sign-in recovery instead of a redirect", async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 401 })));
+  render(<WorkspaceLiveProvider><WorkspaceLiveUpdates brandId="brand-1" /><DraftProbe /></WorkspaceLiveProvider>);
+  act(() => latest().failClosed());
+  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(navigation.navigateTo).not.toHaveBeenCalled();
+  expect(MockEventSource.instances.length).toBeGreaterThan(1);
 });
 
 afterEach(() => {

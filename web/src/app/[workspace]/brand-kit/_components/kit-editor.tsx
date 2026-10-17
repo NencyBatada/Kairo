@@ -4,6 +4,7 @@ import { Sparkles } from "lucide-react";
 import { useActionState, useState } from "react";
 
 import { FormStatus } from "@/components/form-status";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { FieldError } from "@/components/field-error";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ export function KitEditor({ version, draftRevision, files, canEdit, save, approv
     }
     return result;
   }, idle);
+  useAskEditGuard(dirty || pending);
   if (serverToken !== seenServerToken) {
     setSeenServerToken(serverToken);
     if (dirty) setStale(true);
