@@ -184,7 +184,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend. *Implemented in draft PR #28: private history, evidence-backed streaming, scoped tools and confirmed edit/media previews. Local core, Python, web and deployment checks passed. Left: live Cloud Run/Gemini verification and user-confirmed merge into develop.*
+- [/] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend. *PR #28 merged into develop and integration verified: private history, evidence-backed streaming, scoped tools and confirmed edit/media previews. Local core, Python, web and deployment checks passed. Task worktree archived after merge confirmation. Left: live Cloud Run/Gemini verification; core CI is still running.*
 
 ### Nency (web app)
 
