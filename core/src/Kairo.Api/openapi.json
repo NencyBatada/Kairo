@@ -692,6 +692,66 @@
         }
       }
     },
+    "/api/brands/{brandId}/connections/{product}/credentials": {
+      "post": {
+        "tags": [
+          "CredentialEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "brandId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCredentialsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/brands/{brandId}/connections/{product}/accounts": {
       "get": {
         "tags": [
@@ -10244,6 +10304,34 @@
           }
         }
       },
+      "ClientCredentialsRequest": {
+        "required": [
+          "clientId",
+          "clientSecret",
+          "refreshToken"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "clientSecret": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "refreshToken": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "ColourRole": {
         "enum": [
           "primary",
@@ -10390,6 +10478,13 @@
           }
         }
       },
+      "ConnectionMethod": {
+        "enum": [
+          "google",
+          "clientCredentials",
+          null
+        ]
+      },
       "ConnectionState": {
         "enum": [
           "notConnected",
@@ -10409,7 +10504,10 @@
           "connectedByName",
           "connectedAt",
           "checkedAt",
-          "reconnectReason"
+          "reconnectReason",
+          "method",
+          "clientId",
+          "scopes"
         ],
         "type": "object",
         "properties": {
@@ -10466,6 +10564,28 @@
               "null",
               "string"
             ]
+          },
+          "method": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ConnectionMethod"
+              }
+            ]
+          },
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -18145,6 +18265,9 @@
     },
     {
       "name": "ConnectionEndpoints"
+    },
+    {
+      "name": "CredentialEndpoints"
     },
     {
       "name": "AccountEndpoints"

@@ -27,11 +27,32 @@ internal sealed class ConnectionTokens(
     IServiceScopeFactory scopes,
     ILogger<ConnectionTokens> logger)
 {
-    public async Task SealAsync(Connection connection, string refreshToken, CancellationToken cancellationToken)
+    public async Task SealAsync(Connection connection, string refreshToken, OAuthClient? client, CancellationToken cancellationToken)
     {
         var sealedToken = await cipher.SealAsync(refreshToken, Context(connection), cancellationToken);
         connection.RefreshToken = sealedToken.Ciphertext;
         connection.KeyVersion = sealedToken.KeyVersion;
+        connection.ClientId = client?.Id;
+        connection.ClientSecret = client is null
+            ? null
+            : (await cipher.SealAsync(client.Secret, ClientContext(connection), cancellationToken)).Ciphertext;
+    }
+
+    public async Task<OAuthClient?> OpenClientAsync(Connection connection, CancellationToken cancellationToken)
+    {
+        if (connection is not { ClientId: { } clientId, ClientSecret: { } clientSecret })
+        {
+            return null;
+        }
+
+        try
+        {
+            return new OAuthClient(clientId, await cipher.OpenAsync(clientSecret, ClientContext(connection), cancellationToken));
+        }
+        catch (CryptographicException)
+        {
+            return null;
+        }
     }
 
     public async Task<string?> OpenAsync(Connection connection, CancellationToken cancellationToken)
@@ -59,6 +80,11 @@ internal sealed class ConnectionTokens(
 
     public async Task<string?> OpenForRevocationAsync(Connection connection, CancellationToken cancellationToken)
     {
+        if (connection.ClientId is not null)
+        {
+            return null;
+        }
+
         try
         {
             return await OpenAsync(connection, cancellationToken);
@@ -77,13 +103,15 @@ internal sealed class ConnectionTokens(
             return cached;
         }
 
-        if (await OpenAsync(connection, cancellationToken) is not { } refreshToken)
+        var refreshToken = await OpenAsync(connection, cancellationToken);
+        var client = await OpenClientAsync(connection, cancellationToken);
+        if (refreshToken is null || (connection.ClientId is not null && client is null))
         {
             await LoseOnItsOwnAsync(connection, ReconnectReasons.TokenUnreadable, cancellationToken);
             return null;
         }
 
-        if (await oauth.RefreshAsync(refreshToken, cancellationToken) is not { } grant)
+        if (await oauth.RefreshAsync(refreshToken, client, cancellationToken) is not { } grant)
         {
             await LoseOnItsOwnAsync(connection, ReconnectReasons.TokenRejected, cancellationToken);
             return null;
@@ -99,6 +127,7 @@ internal sealed class ConnectionTokens(
         var before = ConnectionLifecycle.Snapshot(connection);
         connection.State = ConnectionState.NeedsReconnect;
         connection.RefreshToken = null;
+        connection.ClientSecret = null;
         connection.KeyVersion = null;
         connection.ReconnectReason = reason;
         cache.Forget(connection.Id);
@@ -133,6 +162,7 @@ internal sealed class ConnectionTokens(
                     .ExecuteUpdateAsync(setters => setters
                         .SetProperty(row => row.State, ConnectionState.NeedsReconnect)
                         .SetProperty(row => row.RefreshToken, (byte[]?)null)
+                        .SetProperty(row => row.ClientSecret, (byte[]?)null)
                         .SetProperty(row => row.KeyVersion, (string?)null)
                         .SetProperty(row => row.ReconnectReason, reason), cancellationToken);
                 if (lost == 1)
@@ -147,4 +177,6 @@ internal sealed class ConnectionTokens(
     }
 
     private static string Context(Connection connection) => $"{connection.BrandId}:{connection.Id}";
+
+    private static string ClientContext(Connection connection) => $"{Context(connection)}:client";
 }

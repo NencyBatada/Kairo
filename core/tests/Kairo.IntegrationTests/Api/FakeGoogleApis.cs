@@ -26,6 +26,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     private readonly ConcurrentDictionary<string, PendingCode> _codes = new();
     private readonly ConcurrentDictionary<string, string> _refreshTokens = new();
     private readonly ConcurrentDictionary<string, bool> _accessTokens = new();
+    private readonly ConcurrentDictionary<string, string> _clients = new();
+    private readonly ConcurrentDictionary<string, ClientToken> _clientTokens = new();
     private readonly object _adsReportsLock = new();
     private int _adsReportsInFlight;
 
@@ -35,6 +37,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public Func<HttpRequestMessage, string, HttpResponseMessage?>? LaunchRequest { get; set; }
 
     public ConcurrentQueue<string> Revoked { get; } = new();
+
+    public ConcurrentQueue<string> RefreshClients { get; } = new();
 
     public FakeBigQuery BigQuery { get; } = new();
 
@@ -111,6 +115,17 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     public void Reject(string refreshToken) => _refreshTokens.TryRemove(refreshToken, out _);
 
     public void AllowRefreshToken(string refreshToken) => _refreshTokens[refreshToken] = "sender";
+
+    public void RegisterClient(string clientId, string clientSecret) => _clients[clientId] = clientSecret;
+
+    public void ForgetClient(string clientId) => _clients.TryRemove(clientId, out _);
+
+    public string IssueClientToken(string clientId, IEnumerable<string> scopes, string? subject = null)
+    {
+        var refreshToken = $"client-refresh-{Guid.NewGuid():N}";
+        _clientTokens[refreshToken] = new ClientToken(clientId, string.Join(' ', scopes), subject);
+        return refreshToken;
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -203,7 +218,13 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     private HttpResponseMessage Token(Dictionary<string, string> form)
     {
-        if (form.GetValueOrDefault("client_id") != FakeGoogle.ClientId || form.GetValueOrDefault("client_secret") != ClientSecret)
+        var clientId = form.GetValueOrDefault("client_id") ?? "";
+        if (clientId != FakeGoogle.ClientId)
+        {
+            return CustomClientToken(clientId, form);
+        }
+
+        if (form.GetValueOrDefault("client_secret") != ClientSecret)
         {
             return Error(HttpStatusCode.Unauthorized, "invalid_client");
         }
@@ -226,6 +247,25 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
         _refreshTokens[pending.Issued.RefreshToken] = pending.Issued.Subject;
         return Tokens(pending.Issued.RefreshToken, pending.Scopes, pending.Issued.Subject);
+    }
+
+    private HttpResponseMessage CustomClientToken(string clientId, Dictionary<string, string> form)
+    {
+        if (!_clients.TryGetValue(clientId, out var secret) || secret != form.GetValueOrDefault("client_secret"))
+        {
+            return Error(HttpStatusCode.Unauthorized, "invalid_client");
+        }
+
+        if (form.GetValueOrDefault("grant_type") != "refresh_token")
+        {
+            return Error(HttpStatusCode.BadRequest, "unsupported_grant_type");
+        }
+
+        Requests.Enqueue("refresh_token");
+        RefreshClients.Enqueue(clientId);
+        return _clientTokens.TryGetValue(form.GetValueOrDefault("refresh_token") ?? "", out var token) && token.ClientId == clientId
+            ? Tokens(null, token.Scopes, token.Subject)
+            : Error(HttpStatusCode.BadRequest, "invalid_grant");
     }
 
     private HttpResponseMessage Tokens(string? refreshToken, string? scope, string? subject)
@@ -262,6 +302,7 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var token = form.GetValueOrDefault("token") ?? "";
         Revoked.Enqueue(token);
         _refreshTokens.TryRemove(token, out _);
+        _clientTokens.TryRemove(token, out _);
         return new HttpResponseMessage(HttpStatusCode.OK);
     }
 
@@ -530,6 +571,8 @@ public sealed class FakeGoogleApis : HttpMessageHandler
     private static string Challenge(string verifier) => WebEncoders.Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));
 
     private static string Encode(object value) => WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(value));
+
+    private sealed record ClientToken(string ClientId, string Scopes, string? Subject);
 
     private sealed record PendingCode(IssuedCode Issued, string Challenge, string RedirectUri, string Scopes);
 }

@@ -24,6 +24,10 @@ internal sealed class Connection : IBrandOwned
 
     public byte[]? RefreshToken { get; set; }
 
+    public string? ClientId { get; set; }
+
+    public byte[]? ClientSecret { get; set; }
+
     public string? KeyVersion { get; set; }
 
     public Guid ConnectedBy { get; set; }

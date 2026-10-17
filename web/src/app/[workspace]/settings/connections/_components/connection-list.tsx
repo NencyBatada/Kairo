@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { AccountPicker } from "./account-picker";
 import { ConnectionControls } from "./connection-controls";
+import { CredentialsSheet } from "./credentials-sheet";
 
 type ConnectionListProps = {
   connections: ConnectionView[];
@@ -20,6 +21,7 @@ type ConnectionListProps = {
   chooseAccount?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
   checkConnection?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
   disconnectConnection?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
+  connectWithCredentials?: (product: string, state: FormState, formData: FormData) => Promise<FormState>;
 };
 
 const states = {
@@ -42,7 +44,7 @@ function callbackMessage(code: string) {
   }
 }
 
-export function ConnectionList({ connections, canManage, brandId, timeZone, callbackError, callbackChoose, accountChoices, chooseAccount, checkConnection, disconnectConnection }: ConnectionListProps) {
+export function ConnectionList({ connections, canManage, brandId, timeZone, callbackError, callbackChoose, accountChoices, chooseAccount, checkConnection, disconnectConnection, connectWithCredentials }: ConnectionListProps) {
   const format = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
   return (
     <section aria-labelledby="connections-heading" className="flex flex-col gap-4">
@@ -74,6 +76,9 @@ export function ConnectionList({ connections, canManage, brandId, timeZone, call
                       </div>
                       {connection.displayName && <p className="text-small wrap-anywhere text-foreground">{connection.displayName}</p>}
                       {connection.externalId && <p className="text-small text-subtle-foreground">Account ID <span className="font-mono break-all">{connection.externalId}</span></p>}
+                      {connection.method === "clientCredentials" && connection.clientId && (
+                        <p className="text-small text-subtle-foreground">Connected with client credentials · Client ID <span className="font-mono break-all">{connection.clientId}</span></p>
+                      )}
                       {connection.connectedByName && <p className="text-small wrap-anywhere text-subtle-foreground">Connected by <span>{connection.connectedByName}</span></p>}
                       {connection.checkedAt && (
                         <p className="text-small text-subtle-foreground">
@@ -85,9 +90,18 @@ export function ConnectionList({ connections, canManage, brandId, timeZone, call
                     {canManage && (
                       <div className="flex min-w-0 flex-col items-start gap-2">
                         {connection.state !== "connected" && (
-                          <a className={buttonVariants({ variant: "secondary", size: "sm" })} href={connectHref}>
-                            {connection.state === "needsReconnect" ? "Reconnect" : connection.state === "choosingAccount" ? "Connect again" : "Connect"}
-                          </a>
+                          <div className="flex flex-wrap gap-2">
+                            <a className={buttonVariants({ variant: "secondary", size: "sm" })} href={connectHref}>
+                              {connection.state === "needsReconnect" ? "Reconnect with Google" : connection.state === "choosingAccount" ? "Connect again with Google" : "Connect with Google"}
+                            </a>
+                            {connectWithCredentials && (
+                              <CredentialsSheet
+                                productName={connection.name}
+                                scopes={connection.scopes}
+                                action={connectWithCredentials.bind(null, connection.product)}
+                              />
+                            )}
+                          </div>
                         )}
                         {connection.state !== "notConnected" && checkConnection && disconnectConnection && (
                           <ConnectionControls

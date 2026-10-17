@@ -28,6 +28,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 - [x] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports. *Note: each later feature calls the existing notification kinds when its events happen.*
 - [x] **Audit log**: Records every user and agent action, approval, override and automatic change. *Note: sign-ins aren't recorded, since they aren't tied to a workspace.*
 - [x] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
+- [/] **Client credential connections**: Connect each Google product with the brand's own OAuth client ID, client secret and refresh token, as an alternative to Google sign-in. *Done: backend, Connections screen option and tests merged into develop. Left: verify the journey with a real refresh token in a running development environment, including whether Google Ads accepts Kairo's developer token with a brand's own OAuth client.*
 
 ### Nency (web app)
 
@@ -184,7 +185,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend. *Implemented in draft PR #28: private history, evidence-backed streaming, scoped tools and confirmed edit/media previews. Local core, Python, web and deployment checks passed. Left: live Cloud Run/Gemini verification and user-confirmed merge into develop.*
+- [/] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend. *PR #28 merged into develop and integration verified: private history, evidence-backed streaming, scoped tools and confirmed edit/media previews. Local core, Python, web and deployment checks passed. Task worktree archived after merge confirmation. Left: live Cloud Run/Gemini verification; core CI is still running.*
 
 ### Nency (web app)
 

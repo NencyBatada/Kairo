@@ -40,7 +40,7 @@ test("discovers accounts for an admin only when a product is choosing an account
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["admin"] });
   getConnections.mockResolvedValue({ data: [{
     product: "youtube", name: "YouTube", state: "choosingAccount", externalId: null, displayName: null,
-    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null,
+    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null, method: null, clientId: null, scopes: [],
   }] });
   getAccounts.mockResolvedValue({ data: [{ id: "yt-1", name: "Channel", managerId: null }], response: { status: 200, ok: true } });
   const get = vi.fn((path) => path.endsWith("/accounts") ? getAccounts() : getConnections());
@@ -62,7 +62,7 @@ test("keeps a failed account lookup local to its product", async () => {
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["admin"] });
   getConnections.mockResolvedValue({ data: [{
     product: "youtube", name: "YouTube", state: "choosingAccount", externalId: null, displayName: null,
-    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null,
+    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null, method: null, clientId: null, scopes: [],
   }] });
   getAccounts.mockResolvedValue({ error: { title: "Google didn't answer." }, response: { status: 409, ok: false } });
   coreApi.mockResolvedValue({ GET: vi.fn((path) => path.endsWith("/accounts") ? getAccounts() : getConnections()) });
@@ -78,7 +78,7 @@ test("redirects to sign-in when account discovery loses the session", async () =
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["admin"] });
   getConnections.mockResolvedValue({ data: [{
     product: "youtube", name: "YouTube", state: "choosingAccount", externalId: null, displayName: null,
-    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null,
+    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: null, reconnectReason: null, method: null, clientId: null, scopes: [],
   }] });
   getAccounts.mockResolvedValue({ response: { status: 401, ok: false } });
   coreApi.mockResolvedValue({ GET: vi.fn((path: string) => path.endsWith("/accounts") ? getAccounts() : getConnections()) });
@@ -93,7 +93,7 @@ test("formats the last access check in the workspace time zone", async () => {
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["marketer"] });
   getConnections.mockResolvedValue({ data: [{
     product: "youtube", name: "YouTube", state: "connected", externalId: "channel-1", displayName: "Channel",
-    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: "2026-10-14T05:00:00Z", reconnectReason: null,
+    connectedBy: null, connectedByName: null, connectedAt: null, checkedAt: "2026-10-14T05:00:00Z", reconnectReason: null, method: null, clientId: null, scopes: [],
   }] });
   const getDetails = vi.fn().mockResolvedValue({ data: { timeZone: "Asia/Kolkata" } });
   const get = vi.fn((path: string) => path === "/api/brands/{brandId}" ? getDetails() : getConnections());

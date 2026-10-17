@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
-import { checkConnection, chooseConnectionAccount, disconnectConnection } from "./actions";
+import { checkConnection, chooseConnectionAccount, connectWithCredentials, disconnectConnection } from "./actions";
 
 const { coreApi, signInAgain, refresh, post, del } = vi.hoisted(() => ({
   coreApi: vi.fn(),
@@ -44,6 +44,42 @@ test("returns to sign-in when account selection loses the session", async () => 
   post.mockResolvedValue({ response: { status: 401, ok: false } });
   signInAgain.mockImplementation(() => { throw new Error("sign-in redirect"); });
   await expect(chooseConnectionAccount("brand-1", "google-ads", { status: "idle" }, new FormData())).rejects.toThrow("sign-in redirect");
+});
+
+test("posts trimmed client credentials to the scoped product and refreshes", async () => {
+  post.mockResolvedValue({ data: { state: "choosingAccount" }, response: { status: 200, ok: true } });
+  const formData = new FormData();
+  formData.set("clientId", " brand.apps.googleusercontent.com ");
+  formData.set("clientSecret", " secret ");
+  formData.set("refreshToken", " token ");
+
+  const result = await connectWithCredentials("brand-1", "ga4", { status: "idle" }, formData);
+
+  expect(post).toHaveBeenCalledWith("/api/brands/{brandId}/connections/{product}/credentials", {
+    params: { path: { brandId: "brand-1", product: "ga4" } },
+    body: { clientId: "brand.apps.googleusercontent.com", clientSecret: "secret", refreshToken: "token" },
+  });
+  expect(result).toEqual({ status: "saved", message: "Credentials accepted. Choose the account to use." });
+  expect(refresh).toHaveBeenCalledOnce();
+});
+
+test("returns the core problem when Google rejects the credentials", async () => {
+  post.mockResolvedValue({ error: { title: "Google rejected these credentials." }, response: { status: 400, ok: false } });
+  const result = await connectWithCredentials("brand-1", "ga4", { status: "idle" }, new FormData());
+  expect(result).toEqual({ status: "error", message: "Google rejected these credentials." });
+  expect(refresh).not.toHaveBeenCalled();
+});
+
+test("returns to sign-in when connecting with credentials loses the session", async () => {
+  post.mockResolvedValue({ response: { status: 401, ok: false } });
+  signInAgain.mockImplementation(() => { throw new Error("sign-in redirect"); });
+  await expect(connectWithCredentials("brand-1", "ga4", { status: "idle" }, new FormData())).rejects.toThrow("sign-in redirect");
+});
+
+test("reports an unreachable service when connecting with credentials fails to send", async () => {
+  post.mockRejectedValue(new Error("offline"));
+  const result = await connectWithCredentials("brand-1", "ga4", { status: "idle" }, new FormData());
+  expect(result).toEqual({ status: "error", message: "Could not reach the service. Please try again." });
 });
 
 test("checks the scoped product and confirms access when the core reports no problem", async () => {

@@ -775,6 +775,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/connections/{product}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    product: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ClientCredentialsRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConnectionView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/connections/{product}/accounts": {
         parameters: {
             query?: never;
@@ -6948,6 +7003,11 @@ export interface components {
         ChooseAccountRequest: {
             externalId: null | string;
         };
+        ClientCredentialsRequest: {
+            clientId: null | string;
+            clientSecret: null | string;
+            refreshToken: null | string;
+        };
         ColourRole: "primary" | "secondary" | "accent" | "background" | "text";
         CompetitorPolicy: "never" | "neutral";
         ConditionRequest: {
@@ -6967,6 +7027,7 @@ export interface components {
             daysBefore: null | number | string;
             minUnits: null | number | string;
         };
+        ConnectionMethod: "google" | "clientCredentials" | null;
         ConnectionState: "notConnected" | "choosingAccount" | "connected" | "needsReconnect";
         ConnectionView: {
             product: string;
@@ -6979,6 +7040,9 @@ export interface components {
             connectedAt: null | string;
             checkedAt: null | string;
             reconnectReason: null | string;
+            method: null | components["schemas"]["ConnectionMethod"];
+            clientId: null | string;
+            scopes: string[];
         };
         ConversationDetail: {
             conversation: components["schemas"]["ConversationView"];
