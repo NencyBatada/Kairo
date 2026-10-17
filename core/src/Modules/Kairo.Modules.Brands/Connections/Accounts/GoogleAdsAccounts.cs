@@ -35,14 +35,14 @@ internal sealed class GoogleAdsAccounts(IHttpClientFactory http, IConfiguration 
 
             if (!customer.Manager)
             {
-                direct.Add(new ProductAccount(id, customer.DescriptiveName ?? id));
+                direct.Add(new ProductAccount(id, AccountName(customer)));
                 continue;
             }
 
             var managerName = customer.DescriptiveName ?? id;
             foreach (var clientAccount in await ClientsAsync(client, accessToken, id, cancellationToken))
             {
-                managed.Add(new ProductAccount(clientAccount.Id!, $"{clientAccount.DescriptiveName ?? clientAccount.Id} (through {managerName})", id));
+                managed.Add(new ProductAccount(clientAccount.Id!, $"{AccountName(clientAccount)} (through {managerName})", id));
             }
         }
 
@@ -89,7 +89,7 @@ internal sealed class GoogleAdsAccounts(IHttpClientFactory http, IConfiguration 
             accessToken,
             id,
             managerId,
-            "SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1",
+            "SELECT customer.id, customer.descriptive_name, customer.manager, customer.test_account FROM customer LIMIT 1",
             cancellationToken);
         return page?.Results?.FirstOrDefault()?.Customer;
     }
@@ -101,13 +101,14 @@ internal sealed class GoogleAdsAccounts(IHttpClientFactory http, IConfiguration 
             accessToken,
             managerId,
             managerId,
-            "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager FROM customer_client "
-                + "WHERE customer_client.manager = FALSE AND customer_client.status = 'ENABLED'",
+            "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, "
+                + "customer_client.status, customer_client.test_account FROM customer_client "
+                + "WHERE customer_client.manager = FALSE",
             cancellationToken);
         return (page?.Results ?? [])
             .Select(row => row.CustomerClient)
             .OfType<CustomerRow>()
-            .Where(row => row is { Id: not null, Manager: false })
+            .Where(row => row is { Id: not null, Manager: false } && (row.Status == "ENABLED" || row.TestAccount))
             .ToList();
     }
 
@@ -134,11 +135,14 @@ internal sealed class GoogleAdsAccounts(IHttpClientFactory http, IConfiguration 
     private static (string Name, string Value)[] Login(string? managerId) =>
         managerId is null ? [] : [(LoginHeader, managerId)];
 
+    private static string AccountName(CustomerRow account) =>
+        account.TestAccount ? $"{account.DescriptiveName ?? account.Id} (test account)" : account.DescriptiveName ?? account.Id!;
+
     private sealed record AccessibleCustomers(string[]? ResourceNames);
 
     private sealed record SearchPage(SearchRow[]? Results);
 
     private sealed record SearchRow(CustomerRow? Customer, CustomerRow? CustomerClient);
 
-    private sealed record CustomerRow(string? Id, string? DescriptiveName, bool Manager);
+    private sealed record CustomerRow(string? Id, string? DescriptiveName, bool Manager, string? Status, bool TestAccount);
 }

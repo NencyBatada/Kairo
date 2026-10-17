@@ -39,7 +39,7 @@ public sealed class ConnectionAccountTests(SqlServer sqlServer) : IAsyncDisposab
     }
 
     [Fact]
-    public async Task Google_Ads_lists_only_accounts_that_can_run_campaigns()
+    public async Task Google_Ads_lists_advertiser_accounts_and_preserves_their_manager()
     {
         var (admin, brandId) = await ConsentedAsync("google-ads");
 
@@ -50,6 +50,31 @@ public sealed class ConnectionAccountTests(SqlServer sqlServer) : IAsyncDisposab
         Assert.Equal("2222222222", throughManager.GetProperty("managerId").GetString());
         Assert.Equal("Agency Client Shoes (through Acme Agency)", throughManager.GetProperty("name").GetString());
         Assert.Equal(JsonValueKind.Null, accounts[0].GetProperty("managerId").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("CLOSED")]
+    [InlineData("CANCELED")]
+    public async Task An_inactive_Google_Ads_test_account_is_listed_and_connects_through_its_test_manager(string status)
+    {
+        _api.GoogleApis.AdsTestHierarchy = true;
+        _api.GoogleApis.AdsTestAccountStatus = status;
+        var (admin, brandId) = await ConsentedAsync("google-ads");
+
+        var accounts = await admin.GetFromJsonAsync<JsonElement>($"/api/brands/{brandId}/connections/google-ads/accounts", Token);
+        var sandbox = Assert.Single(accounts.EnumerateArray(), account => account.GetProperty("id").GetString() == "7777777777");
+        Assert.Equal("Sandbox Shoes (test account) (through Sandbox Manager)", sandbox.GetProperty("name").GetString());
+        Assert.Equal("6666666666", sandbox.GetProperty("managerId").GetString());
+        Assert.DoesNotContain(accounts.EnumerateArray(), account => account.GetProperty("id").GetString() is "6666666666" or "8888888888" or "9999999999");
+
+        var chosen = await admin.PostAsJsonAsync($"/api/brands/{brandId}/connections/google-ads/account", new { externalId = "7777777777" }, Token);
+        var check = await admin.PostAsync($"/api/brands/{brandId}/connections/google-ads/check", null, Token);
+
+        Assert.Equal(HttpStatusCode.OK, chosen.StatusCode);
+        var connection = await Connections.GetAsync(admin, brandId, "google-ads");
+        Assert.Equal("connected", connection.GetProperty("state").GetString());
+        Assert.Equal("7777777777", connection.GetProperty("externalId").GetString());
+        Assert.Equal(JsonValueKind.Null, (await check.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("problem").ValueKind);
     }
 
     [Fact]
