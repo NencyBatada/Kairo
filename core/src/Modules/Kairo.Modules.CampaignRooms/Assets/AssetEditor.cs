@@ -37,7 +37,8 @@ internal sealed class AssetEditor(
     AssetApproval approval,
     IAuditLog audit,
     TimeProvider time,
-    CurrentMember member)
+    CurrentMember member,
+    ProvenanceTrail trail)
 {
     public const string NotCreating = "Assets can be changed only while Kairo is creating them.";
     public const string AgentBusy = "Wait for the Create agent to finish.";
@@ -117,35 +118,10 @@ internal sealed class AssetEditor(
         }
 
         var current = await store.CurrentAsync(asset, cancellationToken);
-        var content = current!.Read();
-        var errors = new Dictionary<string, string[]>();
+        var validation = ValidateEdit(asset, current!.Read(), request);
+        if (validation.Error != AssetError.None) return new AssetResult<AssetView>(null, validation.Error, validation.Message, validation.Errors);
+        var next = validation.Value!;
         var fields = Provided(request);
-        foreach (var field in fields.Where(field => !allowed.Contains(field)))
-        {
-            errors[field] = ["This kind of asset doesn't have this field."];
-        }
-
-        if (fields.Count == 0)
-        {
-            return AssetResult<AssetView>.Failed(AssetError.NotAllowed, "Nothing in the asset changed.");
-        }
-
-        if (errors.Count > 0)
-        {
-            return AssetResult<AssetView>.Invalid(errors);
-        }
-
-        var next = Apply(content, request);
-        var problems = AdLimits.Check(asset.Kind, next);
-        if (problems.Count > 0)
-        {
-            return AssetResult<AssetView>.Invalid(problems);
-        }
-
-        if (next.SameAs(content))
-        {
-            return AssetResult<AssetView>.Failed(AssetError.NotAllowed, "Nothing in the asset changed.");
-        }
 
         var version = store.AddVersion(asset, next, AssetOrigins.Edited, null, null, null, member.UserId, null, fields);
         await FinishAsync(room, new AuditRecord("asset.edited", RoomWorkflow.AuditTarget, room.Id.ToString(), new { assetId = asset.Id, version = current.Version }, new { assetId = asset.Id, asset.Kind, version = version.Version, fields }), cancellationToken);
@@ -231,6 +207,80 @@ internal sealed class AssetEditor(
         next.CallToAction = request.CallToAction is { } action ? Optional(action)?.ToLowerInvariant() : next.CallToAction;
         next.Title = request.Title is { } title ? Optional(title) : next.Title;
         return next;
+    }
+
+    private static AssetResult<AssetContent> ValidateEdit(Asset asset, AssetContent content, AssetEditRequest request)
+    {
+        if (!EditableFields.TryGetValue(asset.Kind, out var allowed))
+            return AssetResult<AssetContent>.Failed(AssetError.NotAllowed, "Only text assets can be edited here.");
+        var errors = new Dictionary<string, string[]>();
+        var fields = Provided(request);
+        foreach (var field in fields.Where(field => !allowed.Contains(field)))
+        {
+            errors[field] = ["This kind of asset doesn't have this field."];
+        }
+
+        if (fields.Count == 0)
+        {
+            return AssetResult<AssetContent>.Failed(AssetError.NotAllowed, "Nothing in the asset changed.");
+        }
+
+        if (errors.Count > 0)
+        {
+            return AssetResult<AssetContent>.Invalid(errors);
+        }
+
+        var next = Apply(content, request);
+        var problems = AdLimits.Check(asset.Kind, next);
+        if (problems.Count > 0)
+        {
+            return AssetResult<AssetContent>.Invalid(problems);
+        }
+
+        if (next.SameAs(content))
+        {
+            return AssetResult<AssetContent>.Failed(AssetError.NotAllowed, "Nothing in the asset changed.");
+        }
+
+        return AssetResult<AssetContent>.Done(next);
+    }
+
+    public static AssetContent PreviewEdit(Asset asset, AssetContent content, AssetEditRequest request)
+    {
+        var result = ValidateEdit(asset, content, request);
+        return result.Value ?? throw new Kairo.Contracts.Ask.AskResourceException(result.Message ?? System.Text.Json.JsonSerializer.Serialize(result.Errors), 400);
+    }
+
+    public async Task ApplyPreviewAsync(Guid roomId, Guid assetId, AssetPreviewPayload preview, CancellationToken ct)
+    {
+        var opened = await OpenAsync(roomId, assetId, preview.Version, true, ct)
+            ?? throw new Kairo.Contracts.Ask.AskResourceException("This asset is unavailable.", 404);
+        if (opened.Error is { } error) throw new Kairo.Contracts.Ask.AskResourceException(error.Message ?? "This asset cannot change.");
+        var (room, asset) = (opened.Room, opened.Asset);
+        if (asset.Locked) throw new Kairo.Contracts.Ask.AskResourceException("This asset is locked.");
+        var generated = preview.Generated!;
+        if (preview.Provenance is { } provenance) trail.Restore(provenance);
+        var now = time.GetUtcNow();
+        var run = new StageRun
+        {
+            Id = Guid.NewGuid(), BrandId = room.BrandId, RoomId = room.Id, Stage = room.State,
+            Agent = StageAgents.Create, Kind = StageKinds.AssetRegenerate, Status = StageRunStatuses.Succeeded,
+            Attempts = 1, RequestedBy = member.UserId, QueuedAt = now, StartedAt = now, FinishedAt = now,
+            Model = generated.Model, PromptVersion = generated.PromptVersion,
+            Input = AssetRegenerateWork.Input(asset.Id, preview.Version, preview.Instruction ?? "", asset.Kind),
+            Output = System.Text.Json.JsonSerializer.Serialize(generated, System.Text.Json.JsonSerializerOptions.Web),
+            InputTokens = generated.Usage?.InputTokens, OutputTokens = generated.Usage?.OutputTokens,
+        };
+        db.StageRuns.Add(run);
+        var outcome = new StageOutcome(generated, generated.Model, generated.PromptVersion, generated.Usage, generated.Summary);
+        if (generated.Companions is { Count: > 0 } companions)
+            await store.SaveCompanionsAsync(room, asset, companions, run, outcome, preview.Instruction ?? "", AssetOrigins.Regenerated, member.UserId, ct);
+        store.AddVersion(asset, generated.Content, AssetOrigins.Regenerated, run.Id, generated.Model, generated.PromptVersion, member.UserId, preview.Instruction);
+        if (generated.DurationSeconds is { } duration) asset.DurationSeconds = duration;
+        await store.RecordMemoryAsync(ct);
+        if (queue.Find(StageKinds.Check) is not null) await queue.EnqueueAsync(room, StageKinds.Check, member.UserId, ct);
+        await FinishAsync(room, new AuditRecord("asset.regenerated", RoomWorkflow.AuditTarget, room.Id.ToString(),
+            new { assetId, version = preview.Version }, new { assetId, version = asset.CurrentVersion, preview = true }), ct);
     }
 
     private static List<string> Provided(AssetEditRequest request)

@@ -7,6 +7,7 @@ public sealed class TriggersModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.Triggers.Rules.RuleAskResource>();
         services.AddDbContext<TriggersDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, TriggersDbContext.SchemaName));
         services.AddTriggers();

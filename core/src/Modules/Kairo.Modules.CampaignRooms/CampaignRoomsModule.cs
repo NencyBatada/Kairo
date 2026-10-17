@@ -8,6 +8,9 @@ public sealed class CampaignRoomsModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Briefs.BriefAskResource>();
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Assets.AssetAskResource>();
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Rooms.CampaignAskResource>();
         services.AddDbContext<CampaignRoomsDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, CampaignRoomsDbContext.SchemaName));
         services.AddCampaignRooms();

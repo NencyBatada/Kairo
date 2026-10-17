@@ -464,6 +464,24 @@ To add a module:
 
 **Agents.** Each agent has its own package in `agents/src/kairo_agents/agents/`. See the [agent service README](agents/README.md).
 
+### Ask Kairo backend
+
+Ask Kairo stores private conversations per user and brand. Its agent uses read and proposal tools; only a signed-in user's explicit confirmation can apply a stored proposal. It cannot approve gates, launch campaigns or raise spend. Nency's chat panel integration remains a separate task.
+
+All conversation routes start at `/api/brands/{brandId}/ask/conversations`:
+
+- `POST` creates a conversation, `GET` lists the caller's conversations, and `GET /{conversationId}` reopens its recent messages and proposals.
+- `POST /{conversationId}/messages` accepts `{requestId, text, context}`. Use a new UUID for each question and reuse it when retrying the same request. Context is `{kind, id?, campaignId?}`. Supported kinds are `workspace`, `opportunity`, `campaign`, `brief`, `asset`, `report`, `impact_lab`, `brand_kit`, `catalogue`, `trigger_rule` and `brand_memory`. Reports use the campaign ID; assets require both their asset ID and campaign ID. Workspace and Brand Kit need no ID.
+- `GET /{conversationId}/proposals/{proposalId}` returns the proposal's state, before/after preview, warnings and private candidate file URLs. `POST .../confirm` applies exactly the stored candidate; `POST .../reject` discards it. Confirmation accepts no replacement changes. A ready preview expires after 30 minutes, and changed targets require a new preview.
+
+Subscribe to the existing brand live stream for `ask.answer.segment`, `ask.message.completed`, `ask.message.failed` and `ask.proposal.changed`. These events go only to the conversation owner and support the stream's existing replay cursor. Answer segments contain evidence IDs; the saved message supplies their titles, workspace links, linked sources and retrieved data. Render those links from metadata. Model-generated links are rejected. Reopening a conversation recovers saved segments after an interrupted connection.
+
+Marketers can edit draft briefs and assets. Admins can edit Brand Kit drafts and existing trigger definitions. Admins and marketers can correct permitted catalogue fields and edit Brand Memory titles and lessons. Feed-owned fields, stock, trigger activation, creation, deletion and workspace settings are unavailable through chat. All confirmed edits keep the existing validation, audit records, locks, checks and approval requirements.
+
+Image and video regeneration creates a separate preview, including companion media, without replacing the original asset. Proposals move through `queued`, `generating` and `ready`, then `applied` or `rejected`; generation errors become `failed`. The API processes previews in the background and `/jobs/ask/previews` recovers queued or interrupted work every minute, with leases and a maximum of two generation attempts. Generation uses model resources before confirmation.
+
+The Python endpoint is `POST /ask/turn`. `KAIRO_ASK_MODEL` defaults to `gemini-3.5-pro`. The core supplies bounded history and a five-minute invocation credential; Python keeps no persistent session. Each invocation permits at most eight model calls and 24 tool calls. Internal tools authenticate that credential, recheck brand membership and expose only reads, proposals and cited answer segments. Local Aspire wiring and deployment configure `KAIRO_API_URL`; Cloud Run also uses `KAIRO_API_AUDIENCE` for authenticated callbacks. `Kairo:Ask:PreviewLoop=off` disables the API preview loop for tests or worker-only operation.
+
 **Web screens.** Each screen from PRD section 4 is a route under `web/src/app/[workspace]/`. See the [web app README](web/README.md).
 
 **Commits.** Commit messages never carry AI attribution.

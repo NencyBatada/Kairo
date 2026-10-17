@@ -52,9 +52,10 @@ function Invoke-KairoDeploy {
         $apiSecrets += "Kairo__Notifications__SenderRefreshToken=$($script:MailSecret):latest"
     }
     $apiMinInstances = if ($mailConfigured) { [Math]::Max(1, [int]$Environment.MinInstances.api) } else { $Environment.MinInstances.api }
+    $apiAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-api'
 
     Publish-KairoService -Environment $Environment -Service 'kairo-agents' -Image (Get-KairoImage -Environment $Environment -Name 'agents' -Tag $tag) `
-        -Settings @('--no-allow-unauthenticated', '--timeout', '3600', '--memory', '2Gi', '--cpu', '2', "--set-env-vars=GOOGLE_CLOUD_PROJECT=$($Environment.Project),GOOGLE_CLOUD_LOCATION=$($script:AiLocation)")
+        -Settings @('--no-allow-unauthenticated', '--timeout', '3600', '--memory', '2Gi', '--cpu', '2', "--set-env-vars=GOOGLE_CLOUD_PROJECT=$($Environment.Project),GOOGLE_CLOUD_LOCATION=$($script:AiLocation),KAIRO_API_URL=$($urls['kairo-api']),KAIRO_API_AUDIENCE=$apiAudience")
 
     $agentsAudience = Get-KairoServiceAudience -Environment $Environment -Service 'kairo-agents'
     $agentsSettings = "Kairo__Agents__Url=$($urls['kairo-agents']),Kairo__Agents__Audience=$agentsAudience"
@@ -93,6 +94,7 @@ function Invoke-KairoDeploy {
         )
 
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-api' -Caller 'kairo-web'
+    Grant-KairoInvoker -Environment $Environment -Service 'kairo-api' -Caller 'kairo-agents'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-agents' -Caller 'kairo-api'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-agents' -Caller 'kairo-worker'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-worker' -Caller 'kairo-scheduler'

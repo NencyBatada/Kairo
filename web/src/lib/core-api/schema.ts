@@ -6042,6 +6042,332 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/ask/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationView"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConversationDetail"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SendMessage"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}/proposals/{proposalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    proposalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalView"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}/proposals/{proposalId}/files/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    proposalId: string;
+                    name: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}/proposals/{proposalId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    proposalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/conversations/{conversationId}/proposals/{proposalId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    conversationId: string;
+                    proposalId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProposalView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/ask/invocations/{messageId}/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    messageId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ToolRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6054,6 +6380,10 @@ export interface components {
             route: string;
             digest: string;
             language: null | string;
+        };
+        AnswerSegment: {
+            text: string;
+            evidenceIds: string[];
         };
         ApplyProposalRequest: {
             version: null | number | string;
@@ -6080,6 +6410,11 @@ export interface components {
             gate: null | string;
             version: null | number | string;
             comment: null | string;
+        };
+        AskTarget: {
+            kind: string;
+            id?: null | string;
+            campaignId?: null | string;
         };
         AssetCheckRequest: {
             version: null | number | string;
@@ -6645,6 +6980,16 @@ export interface components {
             checkedAt: null | string;
             reconnectReason: null | string;
         };
+        ConversationDetail: {
+            conversation: components["schemas"]["ConversationView"];
+            messages: components["schemas"]["MessageView"][];
+            proposals: components["schemas"]["ProposalView"][];
+        };
+        ConversationView: {
+            id: string;
+            title: string;
+            updatedAt: string;
+        };
         CreatedWorkspace: {
             id: string;
             handle: string;
@@ -6734,6 +7079,14 @@ export interface components {
         };
         EndTestRequest: {
             version: null | number | string;
+        };
+        Evidence: {
+            id: string;
+            target: components["schemas"]["AskTarget"];
+            title: string;
+            path: string;
+            data: components["schemas"]["JsonElement"];
+            sources?: null | string[];
         };
         FeedRequest: {
             url: null | string;
@@ -7347,6 +7700,19 @@ export interface components {
             email: string;
             pictureUrl: null | string;
         };
+        MessageView: {
+            id: string;
+            requestId: string;
+            question: string;
+            context: components["schemas"]["AskTarget"];
+            status: string;
+            segments: components["schemas"]["AnswerSegment"][];
+            evidence: components["schemas"]["Evidence"][];
+            error: null | string;
+            createdAt: string;
+            model: null | string;
+            promptVersion: null | string;
+        };
         MissingCounts: {
             title: number | string;
             price: number | string;
@@ -7500,6 +7866,11 @@ export interface components {
             reason: string;
             source: string;
         };
+        PreviewFileView: {
+            name: string;
+            url: string;
+            contentType: string;
+        };
         ProductAccount: {
             id: string;
             name: string;
@@ -7619,6 +7990,19 @@ export interface components {
             start: null | string;
             end: null | string;
             days: null | number | string;
+        };
+        ProposalView: {
+            id: string;
+            messageId: string;
+            target: components["schemas"]["AskTarget"];
+            status: string;
+            before: null | components["schemas"]["JsonElement"];
+            after: null | components["schemas"]["JsonElement"];
+            warnings: string[];
+            files: components["schemas"]["PreviewFileView"][];
+            error: null | string;
+            expiresAt: string;
+            appliedAt: null | string;
         };
         ReasonSourceView: {
             title: string;
@@ -7798,6 +8182,11 @@ export interface components {
             comment: null | string;
             version: null | number | string;
         };
+        SendMessage: {
+            requestId: string;
+            text: string;
+            context: components["schemas"]["AskTarget"];
+        };
         SmartBriefView: {
             version: number | string;
             origin: string;
@@ -7864,6 +8253,13 @@ export interface components {
             decidedAt: null | string;
             decidedBy: null | string;
             canUndo: boolean;
+        };
+        ToolRequest: {
+            operation: string;
+            target?: null | components["schemas"]["AskTarget"];
+            changes?: unknown;
+            text?: null | string;
+            evidenceIds?: null | string[];
         };
         TopicRequest: {
             phrase: null | string;

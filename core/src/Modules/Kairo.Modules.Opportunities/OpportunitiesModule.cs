@@ -7,6 +7,7 @@ public sealed class OpportunitiesModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.Opportunities.Radar.OpportunityAskResource>();
         services.AddDbContext<OpportunitiesDbContext>((provider, options) =>
             options.UseKairoDatabase(provider, OpportunitiesDbContext.SchemaName));
         services.AddOpportunities();

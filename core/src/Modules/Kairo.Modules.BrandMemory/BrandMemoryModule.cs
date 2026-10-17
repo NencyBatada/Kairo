@@ -9,6 +9,7 @@ public sealed class BrandMemoryModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.BrandMemory.Memory.MemoryAskResource>();
         services.AddDbContext<BrandMemoryDbContext>((provider, options) => options.UseKairoDatabase(provider, BrandMemoryDbContext.SchemaName));
         services.AddScoped<IBrandMemory, BrandMemoryReader>();
         services.AddScoped<LearnAgent>();

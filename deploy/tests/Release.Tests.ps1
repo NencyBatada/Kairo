@@ -410,6 +410,22 @@ Describe 'Invoke-KairoDeploy' {
         $agents | Should -BeLike '*--timeout 3600*'
     }
 
+    It 'configures private Ask Kairo callbacks to the API and its invocation audience' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'run deploy kairo-agents *' }) |
+            Should -BeLike '*KAIRO_API_URL=https://kairo-api-123.asia-south1.run.app,KAIRO_API_AUDIENCE=https://kairo-api-abc123-el.a.run.app*'
+        ($calls | Where-Object { $_ -like 'run services add-iam-policy-binding kairo-api *--member serviceAccount:kairo-agents@*' }) |
+            Should -BeLike '*--role roles/run.invoker*'
+    }
+
+    It 'schedules durable Ask preview recovery every minute' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+
+        ($calls | Where-Object { $_ -like 'scheduler jobs create http kairo-ask-previews *' }) |
+            Should -BeLike '*--schedule * * * * * --time-zone Asia/Kolkata --uri https://kairo-worker-abc123-el.a.run.app/jobs/ask/previews *--attempt-deadline 1800s*'
+    }
+
     It 'gives the agent service room to put videos together' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
@@ -451,8 +467,9 @@ Describe 'Invoke-KairoDeploy' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 
         $grants = $calls | Where-Object { $_ -like 'run services add-iam-policy-binding*' }
-        $grants | Should -HaveCount 4
+        $grants | Should -HaveCount 5
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-api --region asia-south1 --project kairo-test --member serviceAccount:kairo-web@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
+        $grants | Should -Contain 'run services add-iam-policy-binding kairo-api --region asia-south1 --project kairo-test --member serviceAccount:kairo-agents@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-agents --region asia-south1 --project kairo-test --member serviceAccount:kairo-api@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-agents --region asia-south1 --project kairo-test --member serviceAccount:kairo-worker@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
         $grants | Should -Contain 'run services add-iam-policy-binding kairo-worker --region asia-south1 --project kairo-test --member serviceAccount:kairo-scheduler@kairo-test.iam.gserviceaccount.com --role roles/run.invoker'
