@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReportDownload } from "./report-download";
 import { Sparkles } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ export function ResultsReport({ impact, entries, handle, timeZone }: { impact: I
   const states = { measuring: ["Measuring the test", impact.stage === "live" ? "The test is still running or waiting for final data. Follow interim readings in Performance." : "Kairo is waiting for the final measurement. Results appear after the test ends and its data is loaded."], writing: ["Writing the impact report", "The final measurement is available. Kairo is preparing the summary and recommended next step."], failed: ["The impact report could not be written", "Kairo could not finish the report after its scheduled attempts. Ask an admin to check the connections and agent service, then reload this page."] };
   const pending = states[impact.state as keyof typeof states] ?? ["Report unavailable", "A ready impact report is not available. Reload this page to check its status."];
   return <div className="min-w-0 space-y-8"><div className="flex flex-wrap items-center gap-3"><h2 className="text-base font-semibold">Impact report</h2><Badge variant={report ? "neutral" : impact.state === "failed" ? "destructive" : "info"}>{report ? outcomeName(report.outcome) : label(impact.state)}</Badge></div>
+    {report && <ReportDownload key={report.id} base={`${base}/results`} reportId={report.id} campaignId={impact.campaignId} />}
     {!report && <Alert variant={impact.state === "failed" ? "destructive" : "info"}><strong>{pending[0]}</strong><p>{pending[1]}</p></Alert>}
     {(report || impact.final) && <Card><CardContent className="space-y-6"><FinalReading impact={impact} />{report && <p className="text-small text-muted-foreground">Report prepared {timestamp(report.readyAt, timeZone)}. Measurement calculated {timestamp(impact.final?.createdAt ?? null, timeZone)}.</p>}</CardContent></Card>}
     {report && <><section aria-labelledby="result-numbers" className="space-y-3"><h2 id="result-numbers" className="text-base font-semibold">Spend and results</h2><dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{reportFigures(report, impact.final).map(figure => <div key={figure.label} className="min-w-0 space-y-2 rounded-lg border border-border bg-card p-4 md:p-5"><dt className="text-small text-muted-foreground">{figure.label}</dt><dd className="font-display text-display-md wrap-anywhere tabular-nums">{figure.value}</dd>{figure.note && <dd className="text-small text-muted-foreground">{figure.note}</dd>}</div>)}</dl></section>

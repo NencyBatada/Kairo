@@ -27,6 +27,13 @@ test("lets the sign-in page through without a session", () => {
   expect(response.status).toBe(200);
 });
 
+test("PDF routes require the normal session and preserve the report return target", () => {
+  const path = "/acme/campaigns/22222222-2222-2222-2222-222222222222/results/report.pdf?reportId=report";
+  expect(proxy(request(path)).status).toBe(307);
+  expect(proxy(request(path)).headers.get("location")).toContain(encodeURIComponent(path));
+  expect(proxy(request(path, true)).status).toBe(200);
+});
+
 test("remembers the workspace a signed-in user opened", () => {
   const response = proxy(request("/acme/settings/team", true)) as WithCookies;
 
