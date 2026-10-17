@@ -184,7 +184,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend.
+- [/] **Ask Kairo agent**: Answers with evidence and sources, proposes changes, and never approves, launches or raises spend.
 
 ### Nency (web app)
 
