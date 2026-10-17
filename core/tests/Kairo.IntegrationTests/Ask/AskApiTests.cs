@@ -29,6 +29,32 @@ public sealed class AskApiTests(SqlServer sqlServer) : IAsyncLifetime
     public ValueTask DisposeAsync() => _api.DisposeAsync();
 
     [Fact]
+    public async Task Impact_lab_evidence_links_to_the_validated_analysis()
+    {
+        var today = DateOnly.FromDateTime(_api.Clock.GetUtcNow().UtcDateTime);
+        using var created = await _owner.Browser.PostAsJsonAsync($"/api/brands/{_brand}/impact-lab/analyses", new
+        {
+            name = "Price change", whatChanged = "Reduced prices", start = today.AddDays(-30), end = today.AddDays(-10),
+            affectsKind = "products", source = new { kind = "file", metric = "units sold" },
+        }, Token);
+        var id = (await AskHarness.JsonAsync(created)).GetProperty("id").GetGuid();
+        AskHarness.AnswerWith(_api, async invocation =>
+        {
+            using var read = await AskHarness.ToolAsync(_api, invocation, new { operation = "read", target = new AskTarget("impact_lab", id) });
+            var evidence = await AskHarness.JsonAsync(read);
+            Assert.EndsWith($"/impact-lab/{id}", evidence.GetProperty("path").GetString());
+            Assert.Equal(id, evidence.GetProperty("data").GetProperty("id").GetGuid());
+            using var missing = await AskHarness.ToolAsync(_api, invocation, new { operation = "read", target = new AskTarget("impact_lab", Guid.NewGuid()) });
+            Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+            using var answer = await AskHarness.ToolAsync(_api, invocation, new { operation = "answer", text = "The analysis is still in setup.", evidenceIds = new[] { evidence.GetProperty("id").GetString() } });
+            await AskHarness.JsonAsync(answer);
+        });
+        var conversation = await AskHarness.CreateAsync(_owner.Browser, _brand);
+        using var response = await _owner.Browser.PostAsJsonAsync($"{AskHarness.Root(_brand)}/{conversation}/messages", new SendMessage(Guid.NewGuid(), "Explain this analysis.", new AskTarget("impact_lab", id)), Token);
+        Assert.Equal("completed", (await AskHarness.JsonAsync(response)).GetProperty("status").GetString());
+    }
+
+    [Fact]
     public async Task Answers_stream_privately_reopen_and_deduplicate_message_requests()
     {
         var other = await Workspaces.JoinAsync(_api, _owner.Browser, _brand, "marketer");

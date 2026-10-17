@@ -32,7 +32,7 @@ internal sealed class LabAskResource(MeasurementDbContext db) : IAskResource
         try
         {
             var data = AskJson.Result(await LabEndpoints.GetAsync(target.Id!.Value, db, ct));
-            return new("Impact Lab result", "impact-lab", data, AskJson.Revision(data));
+            return new("Impact Lab result", $"impact-lab/{target.Id}", data, AskJson.Revision(data));
         }
         catch (AskResourceException exception) when (exception.Status == 404) { return null; }
     }
