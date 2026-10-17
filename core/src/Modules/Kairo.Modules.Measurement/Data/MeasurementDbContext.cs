@@ -1,5 +1,6 @@
 using Kairo.Modules.Measurement.Feeds;
 using Kairo.Modules.Measurement.Impact;
+using Kairo.Modules.Measurement.Lab;
 using Kairo.Modules.Measurement.Lift;
 
 namespace Kairo.Modules.Measurement.Data;
@@ -18,6 +19,10 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
     public DbSet<LiftReading> LiftReadings => Set<LiftReading>();
 
     public DbSet<ImpactReport> ImpactReports => Set<ImpactReport>();
+
+    public DbSet<LabAnalysis> LabAnalyses => Set<LabAnalysis>();
+
+    public DbSet<LabDataset> LabDatasets => Set<LabDataset>();
 
     protected override string Schema => SchemaName;
 
@@ -94,6 +99,38 @@ internal sealed class MeasurementDbContext(DbContextOptions<MeasurementDbContext
             report.Property(r => r.Model).HasMaxLength(80);
             report.Property(r => r.PromptVersion).HasMaxLength(80);
             report.Property(r => r.Version).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<LabAnalysis>(analysis =>
+        {
+            analysis.ToTable("LabAnalyses");
+            analysis.HasIndex(a => new { a.BrandId, a.CreatedAt });
+            analysis.HasIndex(a => new { a.State, a.ClaimedUntil });
+            analysis.Property(a => a.Name).HasMaxLength(200);
+            analysis.Property(a => a.WhatChanged).HasMaxLength(1000);
+            analysis.Property(a => a.AffectsKind).HasMaxLength(20);
+            analysis.Property(a => a.Source).HasMaxLength(1000);
+            analysis.Property(a => a.State).HasMaxLength(20);
+            analysis.Property(a => a.Outcome).HasMaxLength(20);
+            analysis.Property(a => a.Summary).HasMaxLength(1200);
+            analysis.Property(a => a.Explanation).HasMaxLength(1000);
+            analysis.Property(a => a.InconclusiveReason).HasMaxLength(800);
+            analysis.Property(a => a.NextAdvice).HasMaxLength(800);
+            analysis.Property(a => a.Method).HasMaxLength(40);
+            analysis.Property(a => a.Model).HasMaxLength(80);
+            analysis.Property(a => a.PromptVersion).HasMaxLength(80);
+            analysis.Property(a => a.Problem).HasMaxLength(1000);
+            analysis.Property(a => a.Version).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<LabDataset>(dataset =>
+        {
+            dataset.ToTable("LabDatasets");
+            dataset.HasKey(d => d.AnalysisId);
+            dataset.HasIndex(d => d.BrandId);
+            dataset.Property(d => d.FileName).HasMaxLength(200);
+            dataset.Property(d => d.Currency).HasMaxLength(3);
+            dataset.HasOne<LabAnalysis>().WithOne().HasForeignKey<LabDataset>(d => d.AnalysisId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

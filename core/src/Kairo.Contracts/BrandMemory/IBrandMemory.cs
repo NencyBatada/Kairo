@@ -7,7 +7,20 @@ public interface IBrandMemory
     Task RecordUsesAsync(IReadOnlyCollection<Guid> entryIds, string usedIn, Guid targetId, Guid? roomId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<MemoryNote>> UsedByAsync(string usedIn, Guid targetId, CancellationToken cancellationToken);
+
+    Task<Guid> SaveAsync(MemoryDraft draft, CancellationToken cancellationToken);
 }
+
+public sealed record MemoryDraft(
+    string Kind,
+    string Outcome,
+    string Title,
+    string Lesson,
+    string Evidence,
+    IReadOnlyList<string> Products,
+    IReadOnlyList<string> Categories,
+    IReadOnlyList<string> Regions,
+    string CreatedBy);
 
 public sealed record MemoryQuery(
     IReadOnlyCollection<string>? Products = null,
@@ -40,8 +53,9 @@ public static class MemoryKinds
     public const string Visual = "visual";
     public const string Audience = "audience";
     public const string Region = "region";
+    public const string Change = "change";
 
-    public static readonly string[] All = [Message, Visual, Audience, Region];
+    public static readonly string[] All = [Message, Visual, Audience, Region, Change];
 
     public static bool IsKnown(string? kind) => kind is not null && All.Contains(kind);
 }

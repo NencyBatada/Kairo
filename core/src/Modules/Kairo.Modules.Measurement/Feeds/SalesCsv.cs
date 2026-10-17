@@ -18,22 +18,13 @@ internal static partial class SalesCsv
 
     private static readonly string[] Columns = ["date", "region", "orders", "revenue"];
 
+    public const string NotText = "the file isn't UTF-8 text";
+
     public static SalesFile Parse(Stream stream, DateOnly today)
     {
-        string text;
-        try
+        if (Text(stream) is not { } text)
         {
-            using var reader = new StreamReader(stream, new UTF8Encoding(false, true), false);
-            text = reader.ReadToEnd();
-        }
-        catch (DecoderFallbackException)
-        {
-            return Invalid("the file isn't UTF-8 text");
-        }
-
-        if (text.Length > 0 && text[0] == '\uFEFF')
-        {
-            text = text[1..];
+            return Invalid(NotText);
         }
 
         var records = Records(text, out var unclosed);
@@ -136,7 +127,23 @@ internal static partial class SalesCsv
 
     private static SalesFile Invalid(string error) => new([], [error]);
 
-    private static List<List<string>> Records(string text, out bool unclosed)
+    public static string? Text(Stream stream)
+    {
+        string text;
+        try
+        {
+            using var reader = new StreamReader(stream, new UTF8Encoding(false, true), false);
+            text = reader.ReadToEnd();
+        }
+        catch (DecoderFallbackException)
+        {
+            return null;
+        }
+
+        return text.Length > 0 && text[0] == '﻿' ? text[1..] : text;
+    }
+
+    public static List<List<string>> Records(string text, out bool unclosed)
     {
         var records = new List<List<string>>();
         var record = new List<string>();

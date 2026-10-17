@@ -95,6 +95,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
 
     public ConcurrentQueue<JsonElement> Ga4Requests { get; } = new();
 
+    public List<(string Date, string Name, string Value)> Ga4ItemRows { get; } = [];
+
+    public List<object> AdsProductRows { get; } = [];
+
     public int Refreshes => Requests.Count(request => request == "refresh_token");
 
     public IssuedCode IssueCode(string challenge, string redirectUri, IEnumerable<string> scopes, string subject)
@@ -371,6 +375,10 @@ public sealed class FakeGoogleApis : HttpMessageHandler
                 ? [new { geoTargetConstant = new { resourceName = "geoTargetConstants/1007785", id = "1007785", name = "Mumbai", countryCode = "IN", canonicalName = "Mumbai,Maharashtra,India" } }]
                 : [new { geoTargetConstant = new { resourceName = "geoTargetConstants/21342", id = "21342", name = "Maharashtra", countryCode = "IN", canonicalName = "Maharashtra,India" } }];
         }
+        else if (query.Contains("FROM shopping_performance_view", StringComparison.Ordinal))
+        {
+            results = [.. AdsProductRows];
+        }
         else if (query.Contains("DURING LAST_90_DAYS", StringComparison.Ordinal))
         {
             results = BestAdRows;
@@ -453,8 +461,24 @@ public sealed class FakeGoogleApis : HttpMessageHandler
         var range = request.GetProperty("dateRanges")[0];
         var from = DateOnly.ParseExact(range.GetProperty("startDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var to = DateOnly.ParseExact(range.GetProperty("endDate").GetString()!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var cities = request.GetProperty("dimensions").EnumerateArray().Any(dimension => dimension.GetProperty("name").GetString() == "city");
+        var dimensions = request.GetProperty("dimensions").EnumerateArray().Select(dimension => dimension.GetProperty("name").GetString()).ToList();
+        var cities = dimensions.Contains("city");
         var rows = new List<object>();
+        if (dimensions.Contains("itemName") || dimensions.Contains("itemCategory"))
+        {
+            var first = from.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            var last = to.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+            rows.AddRange(Ga4ItemRows
+                .Where(row => string.CompareOrdinal(row.Date, first) >= 0 && string.CompareOrdinal(row.Date, last) <= 0)
+                .Select(row => new
+                {
+                    dimensionValues = new[] { new { value = row.Date }, new { value = row.Name } },
+                    metricValues = new[] { new { value = row.Value } },
+                }));
+            var skipped = request.TryGetProperty("offset", out var skip) ? skip.GetInt32() : 0;
+            return Json(HttpStatusCode.OK, new { rows = rows.Skip(skipped).Take(Ga4PageRows).ToArray(), rowCount = rows.Count });
+        }
+
         for (var day = from; day <= to; day = day.AddDays(1))
         {
             var date = day.ToString("yyyyMMdd", CultureInfo.InvariantCulture);

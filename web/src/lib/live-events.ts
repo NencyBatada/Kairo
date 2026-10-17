@@ -24,6 +24,7 @@ export const WORKSPACE_LIVE_EVENTS = [
   "care.recommendations_changed",
   "measurement.lift_changed",
   "measurement.report_changed",
+  "impact_lab.changed",
   "brand_memory.changed",
   "notification.created",
   "notifications.read",

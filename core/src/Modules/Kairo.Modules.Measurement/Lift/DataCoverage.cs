@@ -17,7 +17,7 @@ internal sealed class DataCoverage(MeasurementDbContext db)
         return await CoveredAsync(FeedNames.Ga4, cancellationToken) ?? await CoveredAsync(FeedNames.GoogleAds, cancellationToken);
     }
 
-    private Task<DateOnly?> CoveredAsync(string feed, CancellationToken cancellationToken) =>
+    public Task<DateOnly?> CoveredAsync(string feed, CancellationToken cancellationToken) =>
         db.FeedRuns
             .Where(run => run.Feed == feed && run.Status == RunStatuses.Succeeded)
             .MaxAsync(run => run.ToDate, cancellationToken);

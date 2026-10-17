@@ -5118,6 +5118,419 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/impact-lab/analyses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisList"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabSetupRequest"];
+                };
+            };
+            responses: {
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabSetupRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: {
+                    version?: number | string;
+                };
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        file?: components["schemas"]["IFormFile"];
+                    };
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}/load": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabVersionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabSelectionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabVersionRequest"];
+                };
+            };
+            responses: {
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/impact-lab/analyses/{analysisId}/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    analysisId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LabVersionRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LabAnalysisView"];
+                    };
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/brand-memory": {
         parameters: {
             query?: never;
@@ -6585,6 +6998,137 @@ export interface components {
             donts?: string[];
             examples?: string[];
             sources?: components["schemas"]["KitSource"][];
+        };
+        LabAnalysisList: {
+            analyses: components["schemas"]["LabAnalysisSummary"][];
+        };
+        LabAnalysisSummary: {
+            id: string;
+            name: string;
+            state: string;
+            start: string;
+            end: string;
+            sourceKind: string;
+            metric: string;
+            outcome: null | string;
+            conclusive: boolean;
+            lift: null | number | string;
+            low: null | number | string;
+            high: null | number | string;
+            memoryEntryId: null | string;
+            createdBy: string;
+            createdAt: string;
+            updatedAt: string;
+        };
+        LabAnalysisView: {
+            id: string;
+            version: number | string;
+            name: string;
+            whatChanged: string;
+            start: string;
+            end: string;
+            affectsKind: string;
+            source: components["schemas"]["LabSourceView"];
+            state: string;
+            data: null | components["schemas"]["LabDataView"];
+            affected: string[];
+            comparison: string[];
+            candidates: components["schemas"]["LabCandidateView"][];
+            fit: null | number | string;
+            detectable: null | number | string;
+            warnings: components["schemas"]["LabWarningView"][];
+            result: null | components["schemas"]["LabResultView"];
+            problem: null | string;
+            runBy: null | string;
+            runAt: null | string;
+            memoryEntryId: null | string;
+            createdBy: string;
+            createdAt: string;
+            updatedAt: string;
+        };
+        LabCandidateView: {
+            key: string;
+            name: string;
+            fit: null | number | string;
+            suggested: boolean;
+        };
+        LabDataView: {
+            from: string;
+            to: string;
+            historyDays: number | string;
+            changeDays: number | string;
+            plannedDays: number | string;
+            currency: null | string;
+            series: components["schemas"]["LabSeriesView"][];
+        };
+        LabDayView: {
+            date: string;
+            actual: number | string;
+            expected: number | string;
+            during: boolean;
+        };
+        LabResultView: {
+            status: string;
+            reason: null | string;
+            outcome: string;
+            conclusive: boolean;
+            figures: null | components["schemas"]["LiftFigures"];
+            currency: null | string;
+            daily: components["schemas"]["LabDayView"][];
+            summary: null | string;
+            explanation: null | string;
+            inconclusiveReason: null | string;
+            nextAdvice: null | string;
+            method: null | string;
+            model: null | string;
+            promptVersion: null | string;
+            finishedAt: null | string;
+        };
+        LabSelectionRequest: {
+            version: null | number | string;
+            affected: null | string[];
+            comparison: null | string[];
+        };
+        LabSeriesView: {
+            key: string;
+            name: string;
+            total: number | string;
+        };
+        LabSetupRequest: {
+            version: null | number | string;
+            name: null | string;
+            whatChanged: null | string;
+            start: null | string;
+            end: null | string;
+            affectsKind: null | string;
+            source: null | components["schemas"]["LabSourceRequest"];
+        };
+        LabSourceRequest: {
+            kind: null | string;
+            metric: null | string;
+            grain: null | string;
+            table: null | string;
+            dateColumn: null | string;
+            valueColumn: null | string;
+            seriesColumn: null | string;
+        };
+        LabSourceView: {
+            kind: string;
+            metric: string;
+            grain: string;
+            table: null | string;
+            dateColumn: null | string;
+            valueColumn: null | string;
+            seriesColumn: null | string;
+            fileName: null | string;
+        };
+        LabVersionRequest: {
+            version: null | number | string;
+        };
+        LabWarningView: {
+            code: string;
+            value: null | number | string;
+            message: string;
         };
         LaunchAsset: {
             id: string;
