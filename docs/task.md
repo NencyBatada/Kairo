@@ -178,7 +178,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Impact Lab screens**: Guided setup, comparison picker and warnings, and the result with an actual-versus-expected chart, ready to save or share.
+- [/] **Impact Lab screens**: Guided setup, comparison picker and warnings, and the result with an actual-versus-expected chart, ready to save or share. *Implementation started against Talha's integrated APIs: guided setup, comparisons, results, authenticated links, CSV and Brand Memory integration. End-to-end verification and merge remain outstanding.*
 
 ## 13. Ask Kairo
 
