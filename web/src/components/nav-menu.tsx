@@ -38,6 +38,7 @@ export function NavMenu({ workspace }: { workspace: string }) {
               {segment === "brand-kit" && isCurrentPath(pathname, href) && (
                 <ul aria-label="Brand Kit pages" className="mt-1 ml-7 border-l border-border pl-2">
                   <li><Link href={`${href}/catalogue`} aria-current={isCurrentPath(pathname, `${href}/catalogue`) ? "page" : undefined} className="flex min-h-9 items-center rounded-md px-2 text-small text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:font-semibold aria-[current=page]:text-primary pointer-coarse:min-h-11">Catalogue</Link></li>
+                  <li><Link href={`${href}/memory`} aria-current={isCurrentPath(pathname, `${href}/memory`) ? "page" : undefined} className="flex min-h-9 items-center rounded-md px-2 text-small text-muted-foreground hover:bg-accent hover:text-foreground aria-[current=page]:font-semibold aria-[current=page]:text-primary pointer-coarse:min-h-11">Brand Memory</Link></li>
                 </ul>
               )}
             </li>

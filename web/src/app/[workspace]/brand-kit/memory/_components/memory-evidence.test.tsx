@@ -1,0 +1,7 @@
+import { render, screen } from "@testing-library/react";
+import { expect, test } from "vitest";
+import { MemoryEvidence } from "./memory-evidence";
+test("evidence is escaped text, including nested objects, arrays and booleans", () => { render(<MemoryEvidence value={{ adId: "<script>unsafe</script>", enoughData: true, citations: ["Ad 1"] }} />); expect(screen.getByText("<script>unsafe</script>")).toBeTruthy(); expect(document.querySelector("script")).toBeNull(); expect(screen.getByText("Yes")).toBeTruthy(); expect(screen.getByText("Ad 1")).toBeTruthy(); });
+test("lift always includes its range", () => { render(<MemoryEvidence value={{ lift: .12, low: -.03, high: .2 }} />); expect(screen.getByText("+12.0% (90% range: −3.0% to +20.0%)")).toBeTruthy(); });
+test("incomplete lift evidence does not display a standalone estimate", () => { render(<MemoryEvidence value={{ lift: .12, low: null, high: .2 }} />); expect(screen.getByText(/complete lift estimate and range were not supplied/)).toBeTruthy(); expect(screen.queryByText("0.12")).toBeNull(); });
+test("empty evidence is explicit and deep nesting is bounded", () => { const view = render(<MemoryEvidence value={{}} />); expect(screen.getByText("No supporting evidence supplied.")).toBeTruthy(); view.rerender(<MemoryEvidence depth={6} value={{ nested: {} }} />); expect(screen.getByText("Further nested details are not displayed.")).toBeTruthy(); });

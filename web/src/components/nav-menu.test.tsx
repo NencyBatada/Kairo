@@ -40,3 +40,10 @@ test("the Brand Kit area exposes Catalogue without adding an eighth main area", 
   render(<NavMenu workspace="acme" />);
   expect(screen.getByRole("link", { name: "Catalogue" }).getAttribute("href")).toBe("/acme/brand-kit/catalogue");
 });
+
+test("Brand Memory is reachable under Brand Kit and remains selected on detail pages", () => {
+  navigation.pathname = "/acme/brand-kit/memory/entry";
+  render(<NavMenu workspace="acme" />);
+  expect(screen.getByRole("link", { name: "Brand Memory" }).getAttribute("href")).toBe("/acme/brand-kit/memory");
+  expect(screen.getByRole("link", { name: "Brand Memory" }).getAttribute("aria-current")).toBe("page");
+});
