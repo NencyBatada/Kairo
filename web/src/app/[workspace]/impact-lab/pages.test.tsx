@@ -1,0 +1,24 @@
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, test, vi } from "vitest";
+import List from "./page";
+import Detail from "./[analysisId]/page";
+import New from "./new/page";
+import ErrorPage from "./error";
+import Loading from "./loading";
+import { analysis, analysisId, brandId, summary } from "./fixtures.test-data";
+const { get, workspace, refresh, missing } = vi.hoisted(() => ({ get: vi.fn(), workspace: vi.fn(), refresh: vi.fn(), missing: vi.fn(() => { throw new Error("not found"); }) }));
+vi.mock("@/lib/core-api/queries", () => ({ getWorkspace: workspace }));
+vi.mock("@/lib/core-api/client", () => ({ coreApi: async () => ({ GET: get }), unwrap: async (result: { data: unknown; response: Response }) => { if (!result.response.ok) throw new Error(`API ${result.response.status}`); return result.data; } }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }), notFound: missing }));
+vi.mock("./actions", () => ({ changeAnalysis: vi.fn(), createAnalysis: vi.fn() }));
+beforeEach(() => { vi.clearAllMocks(); workspace.mockResolvedValue({ id: brandId, roles: ["marketer"] }); get.mockImplementation(async (path: string) => ({ response: new Response(), data: path.endsWith("/{analysisId}") ? analysis() : { analyses: [summary()] } })); });
+const params = Promise.resolve({ workspace: "acme" });
+
+test("history is brand-scoped, discloses list limit and links setup and saved results", async () => { render(await List({ params })); expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/impact-lab/analyses", { params: { path: { brandId } } }); expect(screen.getByText(/latest 100 analyses/)).toBeTruthy(); expect(screen.getByText(/\+12.0% \(90% range:/)).toBeTruthy(); expect(screen.getByRole("link", { name: "New analysis" }).getAttribute("href")).toBe("/acme/impact-lab/new"); expect(screen.getByRole("link", { name: /Running shoe price cut/ }).getAttribute("href")).toBe(`/acme/impact-lab/${analysisId}`); });
+test("incomplete list estimates are not presented as standalone lift", async () => { get.mockResolvedValue({ response: new Response(), data: { analyses: [summary({ low: null })] } }); render(await List({ params })); expect(screen.queryByText(/\+12.0%/)).toBeNull(); expect(screen.getByText(/complete estimate and range are not available/)).toBeTruthy(); });
+test("empty history has an explanation and read-only users have no create action", async () => { workspace.mockResolvedValue({ id: brandId, roles: ["approver"] }); get.mockResolvedValue({ response: new Response(), data: { analyses: [] } }); render(await List({ params })); expect(screen.getByRole("heading", { name: "No analyses yet" })).toBeTruthy(); expect(screen.queryByRole("link", { name: "New analysis" })).toBeNull(); });
+test("detail resolves a brand-scoped GUID and provides guided comparison", async () => { render(await Detail({ params: Promise.resolve({ workspace: "acme", analysisId }) })); expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/impact-lab/analyses/{analysisId}", { params: { path: { brandId, analysisId } } }); expect(screen.getByRole("heading", { name: "Choose a fair comparison" })).toBeTruthy(); });
+test("invalid and mismatching analysis identities are rejected", async () => { await expect(Detail({ params: Promise.resolve({ workspace: "acme", analysisId: "bad" }) })).rejects.toThrow("not found"); expect(get).not.toHaveBeenCalled(); get.mockResolvedValue({ response: new Response(), data: analysis({ id: brandId }) }); await expect(Detail({ params: Promise.resolve({ workspace: "acme", analysisId }) })).rejects.toThrow("not found"); });
+test.each([401, 403, 404, 500])("failed reads are errors, never empty success (%s)", async status => { get.mockResolvedValue({ response: new Response(null, { status }) }); await expect(List({ params })).rejects.toThrow(`API ${status}`); await expect(Detail({ params: Promise.resolve({ workspace: "acme", analysisId }) })).rejects.toThrow(`API ${status}`); });
+test("new page respects workspace roles", async () => { workspace.mockResolvedValue({ id: brandId, roles: ["approver"] }); render(await New({ params })); expect(screen.queryByRole("textbox")).toBeNull(); expect(screen.getByText(/Only marketers and admins can create/)).toBeTruthy(); });
+test("loading is announced and errors have a working retry", () => { const view = render(<Loading />); expect(screen.getByRole("status").getAttribute("aria-label")).toBe("Loading Impact Lab"); view.unmount(); const reset = vi.fn(); render(<ErrorPage reset={reset} />); screen.getByRole("button", { name: "Reload Impact Lab" }).click(); expect(reset).toHaveBeenCalledOnce(); });
