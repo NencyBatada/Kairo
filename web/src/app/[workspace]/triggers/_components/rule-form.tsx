@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { FieldError } from "@/components/field-error";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { FormStatus } from "@/components/form-status";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,17 +17,20 @@ export function RuleForm({ action, options, festivals, rule, handle }: { action:
   const [source, setSource] = useState(rule?.source ?? "weather");
   const [kind, setKind] = useState(rule?.condition.kind ?? "heavy_rain");
   const [dirty, setDirty] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [state, submit, pending] = useActionState(async (previous: RuleFormState, form: FormData) => {
     const next = await action(previous, form);
     setDirty(false);
+    if (next.status === "saved") setEditing(false);
     return next;
   }, { status: "idle" });
+  useAskEditGuard(editing || pending);
   const weather = options.weatherKinds.find((value) => value.kind === kind);
   const regions = options.regions.filter((value) => source === "weather" ? value.kind === "city" : value.kind !== "country");
   const fieldProps = (key: string) => ({ "aria-invalid": !!state.fieldErrors?.[key], "aria-describedby": state.fieldErrors?.[key] ? `${key}-error` : undefined });
   const error = (key: string) => <FieldError id={`${key}-error`} errors={state.fieldErrors?.[key]} />;
   if (state.status === "saved") return <div className="flex flex-col gap-4"><FormStatus state={state} /><Link href={`/${handle}/triggers`} className="text-primary hover:underline">Back to trigger rules</Link></div>;
-  return <form action={submit} onReset={(event) => event.preventDefault()} onChange={() => setDirty(true)} className="flex max-w-160 flex-col gap-5">
+  return <form action={submit} onReset={(event) => event.preventDefault()} onChange={() => { setDirty(true); setEditing(true); }} className="flex max-w-160 flex-col gap-5">
     <fieldset disabled={pending} className="flex min-w-0 flex-col gap-5" role={state.fieldErrors ? "alert" : undefined}>
       <Field><label htmlFor="rule-name">Rule name</label><Input id="rule-name" name="name" defaultValue={rule?.name} required minLength={2} maxLength={80} {...fieldProps("name")} />{error("name")}</Field>
       <Field><label htmlFor="rule-source">Source</label><NativeSelect id="rule-source" name="source" value={source} onChange={(event) => setSource(event.target.value)} {...fieldProps("source")}><option value="weather">Weather forecast</option><option value="festival">Festival or event</option><option value="stock">Stock level</option></NativeSelect>{error("source")}</Field>

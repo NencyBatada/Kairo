@@ -464,9 +464,13 @@ To add a module:
 
 **Agents.** Each agent has its own package in `agents/src/kairo_agents/agents/`. See the [agent service README](agents/README.md).
 
-### Ask Kairo backend
+### Ask Kairo
 
-Ask Kairo stores private conversations per user and brand. Its agent uses read and proposal tools; only a signed-in user's explicit confirmation can apply a stored proposal. It cannot approve gates, launch campaigns or raise spend. Nency's chat panel integration remains a separate task.
+Ask Kairo stores private conversations per user and brand. Open it from a workspace page header; it docks at 1440px and above and uses a sheet on smaller screens. The panel follows the current saved item, and Creative Studio offers an explicit asset context. Its agent uses read and proposal tools; only a signed-in user's explicit confirmation can apply a stored proposal. It cannot approve gates, launch campaigns or raise spend.
+
+The panel keeps its composer and conversation through closing, resizing and navigation within a workspace. History discloses the latest 50 conversations and recent 100 messages and previews. Answers stream in saved segments through the existing workspace live connection, with evidence chips linking to validated workspace and external source metadata. Refresh recovers interrupted answers without clearing drafts; retries reuse the question's request ID and original context. Signing in again can use a new tab while an unsent question is retained. Changing accounts or workspaces clears private chat state.
+
+Change previews show before and after, warnings, media candidates and expiry. The panel respects the backend's exact role combinations, blocks Apply while a page editor has unsaved work, and rechecks the displayed preview before confirming or discarding it. Applying a candidate still leaves normal validation, checks and approvals in force.
 
 All conversation routes start at `/api/brands/{brandId}/ask/conversations`:
 

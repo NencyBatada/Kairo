@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AskAboutAsset } from "@/components/ask-kairo/ask-about-asset";
 import { Images, LockKeyhole, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Alert } from "@/components/ui/alert";
@@ -35,6 +36,7 @@ export function AssetGallery({ set, brandId, campaignId, timeZone, handle, langu
         <div lang={asset.language === "zxx" ? undefined : asset.language} className="min-w-0"><AdPreview asset={asset} assets={all} brandId={brandId} campaignId={campaignId} /></div>
         {(asset.content.headlines?.length || asset.content.script?.length) ? <details className="min-w-0"><summary className="cursor-pointer py-2 text-sm font-medium">All copy{asset.content.script?.length ? " and captions" : ""}</summary><div lang={asset.language === "zxx" ? undefined : asset.language} className="mt-3"><AssetCopy asset={asset} /></div></details> : null}
         <AssetDisclosure asset={asset} />
+        <AskAboutAsset id={asset.id} campaignId={campaignId} label={assetName(asset)} />
         {controls?.(asset)}
         <AssetHistory asset={asset} brandId={brandId} campaignId={campaignId} timeZone={timeZone} />
       </article>)}</div>

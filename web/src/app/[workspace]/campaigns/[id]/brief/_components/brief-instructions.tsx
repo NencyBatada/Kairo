@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useEffect, useId, useRef, useState } from "react";
 
 import { FieldError } from "@/components/field-error";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import { FormStatus } from "@/components/form-status";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,14 +18,17 @@ export function BriefInstructions({ detail, brandId, campaignId, disabled, now, 
   const [clock, setClock] = useState(now);
   const [preview, setPreview] = useState<{ proposal: Proposal; version: string } | null>(null);
   const [applying, setApplying] = useState(false);
+  const [instructionDirty, setInstructionDirty] = useState(false);
   const [applyState, setApplyState] = useState<BriefState>({ status: "idle" });
   const [state, action, pending] = useActionState<BriefState, FormData>(async (_, form) => {
     setApplyState({ status: "idle" });
     setPreview(null);
     const result = await proposeBrief(brandId, campaignId, form);
+    if (result.status === "saved") setInstructionDirty(false);
     if (result.proposal) setPreview({ proposal: result.proposal, version: String(form.get("version")) });
     return result;
   }, { status: "idle" });
+  useAskEditGuard(instructionDirty || pending || applying || !!preview);
   useEffect(() => { onBusy(pending || applying || !!preview); return () => onBusy(false); }, [pending, applying, preview, onBusy]);
   useEffect(() => { if (state.status === "error" || applyState.status !== "idle" || preview) statusRef.current?.focus(); }, [state, applyState, preview]);
   useEffect(() => { if (!preview) return; const timer = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(timer); }, [preview]);
@@ -43,7 +47,7 @@ export function BriefInstructions({ detail, brandId, campaignId, disabled, now, 
     <form action={action} onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); startTransition(() => action(form)); }} className="space-y-3">
       <input type="hidden" name="version" value={String(detail.campaignVersion)} /><input type="hidden" name="briefVersion" value={String(detail.brief!.version)} />
       <label htmlFor={`${id}-instruction`} className="block text-small font-semibold">What should change?</label>
-      <Textarea id={`${id}-instruction`} name="instruction" maxLength={500} rows={3} placeholder="Add Hindi and lead with quick-dry." disabled={disabled || pending || applying} aria-invalid={!!state.fieldErrors?.instruction} aria-describedby={`${id}-instruction-error`} />
+      <Textarea id={`${id}-instruction`} name="instruction" maxLength={500} rows={3} placeholder="Add Hindi and lead with quick-dry." disabled={disabled || pending || applying} onChange={event => setInstructionDirty(!!event.target.value.trim())} aria-invalid={!!state.fieldErrors?.instruction} aria-describedby={`${id}-instruction-error`} />
       <FieldError id={`${id}-instruction-error`} errors={state.fieldErrors?.instruction} />
       <Button variant="secondary" type="submit" disabled={disabled || applying} pending={pending} className="w-full sm:w-auto">Preview changes</Button>
     </form>

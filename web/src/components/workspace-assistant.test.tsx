@@ -3,6 +3,12 @@ import { beforeEach, expect, test, vi } from "vitest";
 
 import { PageHeader } from "./page-header";
 import { WorkspaceAssistant } from "./workspace-assistant";
+import { workspace } from "@/lib/ask-kairo/fixtures.test-data";
+import { AskAboutAsset } from "@/components/ask-kairo/ask-about-asset";
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/acme/today" }));
+vi.mock("@/components/workspace-live-provider", async original => ({ ...await original<typeof import("@/components/workspace-live-provider")>(), useLiveWorkspace: () => workspace }));
+vi.mock("@/lib/ask-kairo/api", async original => ({ ...await original<typeof import("@/lib/ask-kairo/api")>(), history: vi.fn().mockResolvedValue([]) }));
 
 beforeEach(() => {
   Object.defineProperty(window, "matchMedia", {
@@ -20,7 +26,7 @@ test("only workspace pages offer Ask Kairo", () => {
   expect(screen.queryByRole("button", { name: "Ask Kairo" })).toBeNull();
 });
 
-test("opens a labelled panel without a fake chat and closes on Escape", async () => {
+test("opens the real labelled composer and closes on Escape", async () => {
   render(
     <WorkspaceAssistant>
       <PageHeader title="Today" />
@@ -31,9 +37,9 @@ test("opens a labelled panel without a fake chat and closes on Escape", async ()
   fireEvent.click(trigger);
   const panel = await screen.findByRole("dialog", { name: "Ask Kairo" });
   expect(panel.querySelector(".min-h-0.overflow-y-auto")).toBeTruthy();
-  expect(within(panel).getByText(/conversations will be available/i)).toBeTruthy();
-  expect(within(panel).getByText("Today")).toBeTruthy();
-  expect(within(panel).queryByRole("textbox")).toBeNull();
+  expect(within(panel).getByText(/Private to you in Acme/)).toBeTruthy();
+  expect(within(panel).getByText(/Today ·/)).toBeTruthy();
+  expect(within(panel).getByRole("textbox", { name: "Your question" })).toBeTruthy();
   await waitFor(() => expect(panel.contains(document.activeElement)).toBe(true));
 
   fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
@@ -83,12 +89,34 @@ test("updates the panel area when a workspace page changes", async () => {
   );
   fireEvent.click(screen.getByRole("button", { name: "Ask Kairo" }));
   const panel = await screen.findByRole("complementary", { name: "Ask Kairo" });
-  expect(within(panel).getByText("Today")).toBeTruthy();
+  expect(within(panel).getByText(/Today ·/)).toBeTruthy();
 
   view.rerender(
     <WorkspaceAssistant>
       <PageHeader title="Settings" />
     </WorkspaceAssistant>,
   );
-  expect(within(panel).getByText("Settings")).toBeTruthy();
+  expect(within(panel).getByText(/Settings ·/)).toBeTruthy();
+});
+
+test("closing and reopening the panel retains the unsent question", async () => {
+  render(<WorkspaceAssistant><PageHeader title="Today" /></WorkspaceAssistant>);
+  const trigger = screen.getByRole("button", { name: "Ask Kairo" });
+  fireEvent.click(trigger);
+  fireEvent.change(await screen.findByLabelText("Your question"), { target: { value: "Keep my draft across panels" } });
+  const dialog = screen.getByRole("dialog");
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.click(trigger);
+  expect((await screen.findByLabelText("Your question") as HTMLTextAreaElement).value).toBe("Keep my draft across panels");
+});
+
+test("closing an asset question returns keyboard focus to its actual trigger", async () => {
+  render(<WorkspaceAssistant><PageHeader title="Creative Studio" /><AskAboutAsset id="44444444-4444-4444-4444-444444444444" campaignId="55555555-5555-5555-5555-555555555555" label="Hindi image" /></WorkspaceAssistant>);
+  const trigger = screen.getByRole("button", { name: "Ask about this asset" });
+  trigger.focus(); fireEvent.click(trigger);
+  await screen.findByRole("dialog", { name: "Ask Kairo" });
+  fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Ask Kairo" })).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
 });

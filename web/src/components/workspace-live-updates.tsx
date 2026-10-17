@@ -3,10 +3,11 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-import { useLiveDispatch } from "@/components/workspace-live-provider";
+import { useLiveDispatch, type LiveWorkspace } from "@/components/workspace-live-provider";
 import { parseAgentProgress } from "@/lib/agent-progress";
 import { AGENT_PROGRESS_EVENT, liveStreamUrl, WORKSPACE_LIVE_EVENTS } from "@/lib/live-events";
 import { navigateTo } from "@/lib/navigation";
+import { ASK_EVENTS, parseAskEvent } from "@/lib/ask-kairo/model";
 
 export const REFRESH_DELAY_MS = 100;
 export const RECONNECT_BASE_DELAY_MS = 1_000;
@@ -36,13 +37,15 @@ async function checkAccess(brandId: string): Promise<Access> {
 
 type WorkspaceLiveUpdatesProps = {
   brandId: string;
+  workspace?: LiveWorkspace;
 };
 
-export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
+export function WorkspaceLiveUpdates({ brandId, workspace }: WorkspaceLiveUpdatesProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { reportProgress, setConnection, clearJobs } = useLiveDispatch();
+  const { reportProgress, setConnection, clearJobs, setWorkspace, publishAsk, hasAskDraft } = useLiveDispatch();
   const pathnameRef = useRef(pathname);
+  useEffect(() => { setWorkspace(workspace ?? null); }, [workspace, setWorkspace]);
 
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -81,7 +84,7 @@ export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
       if (disposed) {
         return;
       }
-      if (access === "signed-out") {
+      if (access === "signed-out" && !hasAskDraft()) {
         const returnUrl = pathnameRef.current || "/";
         router.replace(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
         return;
@@ -106,6 +109,10 @@ export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
       for (const type of WORKSPACE_LIVE_EVENTS) {
         stream.addEventListener(type, scheduleRefresh);
       }
+      for (const type of ASK_EVENTS) {
+        stream.addEventListener(type, event => publishAsk(parseAskEvent(type, String((event as MessageEvent).data ?? ""))));
+      }
+      stream.addEventListener("reset", () => publishAsk(null));
       stream.addEventListener("reset", scheduleRefresh);
       stream.addEventListener(AGENT_PROGRESS_EVENT, onProgress);
 
@@ -116,6 +123,7 @@ export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
           catchUpOnOpen = false;
           scheduleRefresh();
         }
+        publishAsk(null);
       };
 
       stream.onerror = () => {
@@ -145,7 +153,7 @@ export function WorkspaceLiveUpdates({ brandId }: WorkspaceLiveUpdatesProps) {
       source?.close();
       source = null;
     };
-  }, [brandId, router, reportProgress, setConnection, clearJobs]);
+  }, [brandId, router, reportProgress, setConnection, clearJobs, publishAsk, hasAskDraft]);
 
   return null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, type ReactNode } from "react";
+import { useAskEditGuard } from "@/components/ask-kairo/edit-guard";
 import type { components } from "@/lib/core-api/schema";
 import { Alert } from "@/components/ui/alert";
 import { dates } from "../../_lib/presentation";
@@ -16,6 +17,7 @@ export function BriefWorkspace({ detail, room, proof, brandId, canEdit, timeZone
   const [saving, setSaving] = useState(false);
   const [instructing, setInstructing] = useState(false);
   const [proofBusy, setProofBusy] = useState(false);
+  useAskEditGuard(dirty || saving || instructing || proofBusy);
   const [applied, setApplied] = useState<BriefDetail | null>(null);
   const [editorKey, setEditorKey] = useState(0);
   const current = applied && Number(applied.campaignVersion) > Number(detail.campaignVersion) ? applied : detail;
