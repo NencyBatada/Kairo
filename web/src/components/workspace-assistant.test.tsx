@@ -4,6 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { PageHeader } from "./page-header";
 import { WorkspaceAssistant } from "./workspace-assistant";
 import { workspace } from "@/lib/ask-kairo/fixtures.test-data";
+import { AskAboutAsset } from "@/components/ask-kairo/ask-about-asset";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/acme/today" }));
 vi.mock("@/components/workspace-live-provider", async original => ({ ...await original<typeof import("@/components/workspace-live-provider")>(), useLiveWorkspace: () => workspace }));
@@ -108,4 +109,14 @@ test("closing and reopening the panel retains the unsent question", async () => 
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   fireEvent.click(trigger);
   expect((await screen.findByLabelText("Your question") as HTMLTextAreaElement).value).toBe("Keep my draft across panels");
+});
+
+test("closing an asset question returns keyboard focus to its actual trigger", async () => {
+  render(<WorkspaceAssistant><PageHeader title="Creative Studio" /><AskAboutAsset id="44444444-4444-4444-4444-444444444444" campaignId="55555555-5555-5555-5555-555555555555" label="Hindi image" /></WorkspaceAssistant>);
+  const trigger = screen.getByRole("button", { name: "Ask about this asset" });
+  trigger.focus(); fireEvent.click(trigger);
+  await screen.findByRole("dialog", { name: "Ask Kairo" });
+  fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Ask Kairo" })).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
 });

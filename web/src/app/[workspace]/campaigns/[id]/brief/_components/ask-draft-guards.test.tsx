@@ -1,0 +1,14 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useState, type ReactNode } from "react";
+import { beforeEach, expect, test, vi } from "vitest";
+import { AskEditGuard } from "@/components/ask-kairo/edit-guard";
+import { detail, draftRoom, proof } from "../fixtures.test-data";
+import { BriefWorkspace } from "./brief-workspace";
+import { RegionsPlan } from "./regions-plan";
+const actions = vi.hoisted(() => ({ saveBrief: vi.fn(), proposeBrief: vi.fn(), applyBrief: vi.fn(), requestBriefApproval: vi.fn(), decideBrief: vi.fn() }));
+vi.mock("../actions", () => actions);
+vi.mock("../proof-actions", () => ({ chooseHoldouts: vi.fn(), changeLockedPlan: vi.fn() }));
+function Host({ children }: { children?: ReactNode }) { const [guards, setGuards] = useState<Record<string, boolean>>({}); return <AskEditGuard.Provider value={setGuards}><output aria-label="Chat Apply guard">{Object.values(guards).some(Boolean) ? "Blocked" : "Allowed"}</output><BriefWorkspace detail={detail} room={draftRoom} proof={proof} brandId="brand" canEdit timeZone="Asia/Kolkata" now={Date.parse("2026-10-16T01:00:00Z")}>{children}</BriefWorkspace></AskEditGuard.Provider>; }
+beforeEach(() => { vi.clearAllMocks(); actions.proposeBrief.mockResolvedValue({ status: "error", message: "Try the instruction again", fieldErrors: { instruction: ["Make the instruction clearer"] } }); });
+test("unsent and rejected brief instructions protect their text from chat Apply", async () => { render(<Host />); expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Allowed"); fireEvent.change(screen.getByLabelText("What should change?"), { target: { value: "Preserve this Hindi instruction" } }); expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Blocked"); fireEvent.click(screen.getByRole("button", { name: "Preview changes" })); await screen.findByText("Try the instruction again"); expect((screen.getByLabelText("What should change?") as HTMLTextAreaElement).value).toBe("Preserve this Hindi instruction"); expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Blocked"); fireEvent.change(screen.getByLabelText("What should change?"), { target: { value: "" } }); await waitFor(() => expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Allowed")); });
+test("unsaved holdout selections protect the page until discarded", async () => { render(<Host><RegionsPlan result={proof} brandId="brand" campaignId="campaign" campaignVersion="1" canEdit /></Host>); expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Allowed"); fireEvent.click(screen.getByRole("checkbox", { name: /1. Pune/ })); expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Blocked"); fireEvent.click(screen.getByRole("button", { name: "Discard choices" })); await waitFor(() => expect(screen.getByLabelText("Chat Apply guard").textContent).toBe("Allowed")); });

@@ -23,7 +23,7 @@ export function AskKairoTrigger({ area }: { area: string }) {
       id="ask-kairo-trigger"
       variant="secondary"
       aria-expanded={assistant.open}
-      onClick={() => { assistant.clearTarget(); assistant.setOpen(!assistant.open); }}
+      onClick={event => { assistant.clearTarget(); assistant.setOpen(!assistant.open, event.currentTarget); }}
     >
       <Sparkles className="size-4" aria-hidden="true" />
       Ask Kairo

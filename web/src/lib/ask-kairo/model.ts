@@ -22,6 +22,7 @@ const kinds = ["workspace", "campaign", "opportunity", "brief", "asset", "report
 
 export function isTarget(value: unknown): value is Target {
   return object(value) && typeof value.kind === "string" && kinds.includes(value.kind) &&
+    (value.id == null || typeof value.id === "string") && (value.campaignId == null || typeof value.campaignId === "string") &&
     (["workspace", "brand_kit"].includes(value.kind) || isId(value.id)) &&
     (value.kind !== "asset" || isId(value.campaignId));
 }
@@ -73,6 +74,13 @@ export function targetPath(target: Target, handle: string) {
   const base = `/${encodeURIComponent(handle)}`;
   const paths: Record<string, string> = { workspace: "today", campaign: `campaigns/${target.id}`, brief: `campaigns/${target.id}/brief`, asset: `campaigns/${target.campaignId}/assets#asset-${target.id}`, report: `campaigns/${target.id}/results`, opportunity: `opportunities/${target.id}`, impact_lab: `impact-lab/${target.id}`, brand_kit: "brand-kit", catalogue: `brand-kit/catalogue/products/${target.id}`, trigger_rule: `triggers/${target.id}`, brand_memory: `brand-kit/memory/${target.id}` };
   return `${base}/${paths[target.kind]}`;
+}
+
+export function campaignLinks(target: Target, handle: string) {
+  if (!isTarget(target) || !["campaign", "brief", "asset", "report"].includes(target.kind)) return [];
+  const id = target.kind === "asset" ? target.campaignId : target.id;
+  const base = `/${encodeURIComponent(handle)}/campaigns/${id}`;
+  return [{ label: "Open brief approval", href: `${base}/brief#brief-approval` }, { label: "Open asset review", href: `${base}/review` }, { label: "Open launch setup", href: `${base}/launch` }];
 }
 
 export function evidencePath(evidence: Evidence, handle: string) {

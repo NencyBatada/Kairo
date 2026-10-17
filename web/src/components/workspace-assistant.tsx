@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { createContext, Suspense, useContext, useEffect, useState, useSyncExternalStore, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { createContext, Suspense, useContext, useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
 import { AskKairoPanel } from "@/components/ask-kairo-panel";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,9 @@ import type { Target } from "@/lib/ask-kairo/model";
 
 type AssistantContextValue = {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: (open: boolean, trigger?: HTMLElement) => void;
   setArea: Dispatch<SetStateAction<string>>;
-  askAbout: (target: Target, label: string) => void;
+  askAbout: (target: Target, label: string, trigger?: HTMLElement) => void;
   clearTarget: () => void;
 };
 
@@ -52,6 +52,7 @@ function AssistantLocation({ onChange }: { onChange: (pathname: string) => void 
 
 export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const [area, setArea] = useState("Workspace");
   const [selected, setSelected] = useState<{ pathname: string; target: Target; label: string } | null>(null);
   const [guards, setGuards] = useState<Record<string, boolean>>({});
@@ -62,15 +63,16 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   const panel = <AskKairoPanel area={area} workspace={workspace} controller={controller} selected={selected} editing={Object.values(guards).some(Boolean)} />;
   const wide = useSyncExternalStore(subscribeToWide, getWideSnapshot, getServerWideSnapshot);
 
-  function changeOpen(next: boolean) {
+  function changeOpen(next: boolean, trigger?: HTMLElement) {
+    if (next) returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : document.getElementById("ask-kairo-trigger"));
     setOpen(next);
     if (!next) {
-      window.setTimeout(() => document.getElementById("ask-kairo-trigger")?.focus(), 0);
+      window.setTimeout(() => (returnFocus.current?.isConnected ? returnFocus.current : document.getElementById("ask-kairo-trigger"))?.focus(), 0);
     }
   }
 
   return (
-    <AssistantContext.Provider value={{ open, setOpen: changeOpen, setArea, askAbout: (target, label) => { setSelected({ pathname, target, label }); setOpen(true); }, clearTarget: () => setSelected(null) }}>
+    <AssistantContext.Provider value={{ open, setOpen: changeOpen, setArea, askAbout: (target, label, trigger) => { setSelected({ pathname, target, label }); changeOpen(true, trigger); }, clearTarget: () => setSelected(null) }}>
       <AskEditGuard.Provider value={setGuards}>
       <Suspense fallback={null}><AssistantLocation onChange={setPathname} /></Suspense>
       <div className={open && wide ? "min-w-0 wide:grid wide:grid-cols-[minmax(0,1fr)_26.25rem]" : "min-w-0"}>
@@ -87,7 +89,7 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
           </aside>
         )}
       </div>
-      <Sheet open={open && !wide} onOpenChange={changeOpen}>
+      <Sheet open={open && !wide} onOpenChange={next => changeOpen(next)}>
         <SheetContent side="right" style={{ width: "min(100vw, 420px)" }}>
           <div className="shrink-0 border-b border-border px-5 py-5 pr-14">
             <SheetTitle className="font-display text-display-sm">Ask Kairo</SheetTitle>
