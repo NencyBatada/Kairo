@@ -28,6 +28,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 - [x] **Notifications**: Sends in-app and email alerts for approvals, triggers, launches, pauses, pacing and reports. *Note: each later feature calls the existing notification kinds when its events happen.*
 - [x] **Audit log**: Records every user and agent action, approval, override and automatic change. *Note: sign-ins aren't recorded, since they aren't tied to a workspace.*
 - [x] **Analytics data feeds**: Brings daily Google Ads data, the GA4 export and the brand's sales data into BigQuery.
+- [/] **Client credential connections**: Connect each Google product with the brand's own OAuth client ID, client secret and refresh token, as an alternative to Google sign-in.
 
 ### Nency (web app)
 
