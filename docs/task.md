@@ -189,7 +189,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [/] **Ask Kairo panel**: The chat panel on every screen, aware of the current item, with streamed answers and change previews to confirm. *Started against Talha's merged PR #28: private history, item context, live answer segments and explicitly confirmed previews using the existing APIs and Warm Editorial design.*
+- [/] **Ask Kairo panel**: The chat panel on every screen, aware of the current item, with streamed answers and change previews to confirm. *Implemented in PR #29 against Talha's merged APIs and the latest develop: private history, saved item and selected-asset context, live answer segments, validated evidence links, direct campaign decision links, retained drafts, same-request retries and explicitly confirmed edit/media previews. Exact roles, preview freshness and unsaved fields, instructions and holdout choices guard Apply. All 1,349 web tests across 161 files, 141 focused checks, lint, production build, unchanged API regeneration and diff checks pass. An isolated headless component/API fixture browser passes 23 checks covering streaming before POST completion, navigation and resize retention, request recovery, confirmation cancellation/focus, stale previews, draft protection, 320-1440px layouts, light/dark themes, long content and 200% CSS layout scaling. Worktree and local branch retained for user merge. Left: CI completion, user-confirmed merge, authenticated Next.js/development, live Gemini and deployed verification.*
 
 ## 14. Running Kairo
 
