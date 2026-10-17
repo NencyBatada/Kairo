@@ -107,16 +107,20 @@ internal sealed record ConnectionView(
     string? ConnectedByName,
     DateTimeOffset? ConnectedAt,
     DateTimeOffset? CheckedAt,
-    string? ReconnectReason)
+    string? ReconnectReason,
+    ConnectionMethod? Method,
+    string? ClientId,
+    string[] Scopes)
 {
     public static ConnectionView Of(ProductInfo product, Connection? connection, DateTimeOffset now)
     {
         var state = ConnectionLifecycle.StateOf(connection, now);
         return connection is null || state == ConnectionState.NotConnected
-            ? new(product.Slug, product.Name, ConnectionState.NotConnected, null, null, null, null, null, null, null)
+            ? new(product.Slug, product.Name, ConnectionState.NotConnected, null, null, null, null, null, null, null, null, null, product.Scopes)
             : new(product.Slug, product.Name, state, connection.ExternalId, connection.DisplayName, connection.ConnectedBy,
                 connection.ConnectedByName, connection.ConnectedAt, connection.CheckedAt,
-                connection.ReconnectReason is null ? null : ConnectionNotices.Explain(product.Product, connection.ReconnectReason));
+                connection.ReconnectReason is null ? null : ConnectionNotices.Explain(product.Product, connection.ReconnectReason),
+                ConnectionLifecycle.MethodOf(connection), connection.ClientId, product.Scopes);
     }
 }
 

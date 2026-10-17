@@ -66,6 +66,20 @@ internal static class Connections
         return await command.ExecuteScalarAsync() as byte[];
     }
 
+    public static async Task<byte[]?> StoredClientSecretAsync(string connectionString, Guid brandId, string product)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            SELECT ClientSecret FROM brands.Connections WHERE BrandId = @brand AND Product = @product;
+            """;
+        command.Parameters.AddWithValue("@brand", brandId);
+        command.Parameters.AddWithValue("@product", StoredProducts[product]);
+        return await command.ExecuteScalarAsync() as byte[];
+    }
+
     public static string DefaultAccount(string product) => product switch
     {
         "google-ads" => "1111111111",

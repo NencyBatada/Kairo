@@ -44,6 +44,7 @@ internal static class ConnectionSetup
         services.AddSingleton<ProductCatalog>();
         services.AddScoped<ConnectionTokens>();
         services.AddScoped<GoogleRevocations>();
+        services.AddScoped<ConnectionGrants>();
         services.AddScoped<IConnections, BrandConnections>();
     }
 
@@ -56,6 +57,7 @@ internal static class ConnectionSetup
 
         var product = connections.MapGroup("/{product}").RequireBrandRole(BrandRoles.Admin);
         product.MapGet("/connect", ConsentEndpoints.Connect);
+        product.MapPost("/credentials", CredentialEndpoints.ConnectAsync);
         product.MapGet("/accounts", AccountEndpoints.ListAsync);
         product.MapPost("/account", AccountEndpoints.ChooseAsync);
         product.MapPost("/check", ConnectionEndpoints.CheckAsync);

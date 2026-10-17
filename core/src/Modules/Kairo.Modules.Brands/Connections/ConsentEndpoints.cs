@@ -1,7 +1,4 @@
 using System.Security.Claims;
-using Kairo.Contracts.Audit;
-using Kairo.Contracts.Connections;
-using Kairo.Contracts.Live;
 using Kairo.Modules.Brands.Data;
 using Microsoft.Data.SqlClient;
 
@@ -35,10 +32,8 @@ internal static class ConsentEndpoints
         IBrandAccess access,
         KairoDatabase database,
         BrandsDbContext db,
-        ConnectionTokens tokens,
+        ConnectionGrants grants,
         GoogleRevocations revocations,
-        IAuditLog audit,
-        ILiveUpdates live,
         TimeProvider time,
         HttpRequest request,
         CancellationToken cancellationToken)
@@ -90,53 +85,9 @@ internal static class ConsentEndpoints
             return Failed(settings, "scopes_missing");
         }
 
-        (string Subject, string Token)? replaced = null;
-        await database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            var connection = await ConnectionLifecycle.FindAsync(db, product.Product, cancellationToken);
-            var before = connection is null ? null : ConnectionLifecycle.Snapshot(connection);
-            if (connection is not null && await tokens.OpenForRevocationAsync(connection, cancellationToken) is { } oldToken)
-            {
-                replaced = (connection.GoogleSubject, oldToken);
-            }
-
-            if (connection is null)
-            {
-                connection = new Connection { BrandId = consent.BrandId, Product = product.Product };
-                db.Connections.Add(connection);
-            }
-
-            connection.State = ConnectionState.ChoosingAccount;
-            connection.ExternalId = null;
-            connection.DisplayName = null;
-            connection.ManagerId = null;
-            connection.Scopes = string.Join(' ', product.Scopes);
-            connection.GoogleSubject = subject;
-            connection.ConnectedBy = userId;
-            connection.ConnectedByName = principal.FindFirstValue(KairoClaims.Name) ?? "";
-            connection.ConnectedAt = now;
-            connection.CheckedAt = null;
-            connection.ReconnectReason = null;
-            await tokens.SealAsync(connection, refreshToken, cancellationToken);
-            await db.SaveChangesAsync(cancellationToken);
-            await audit.RecordAsync(
-                new AuditRecord("connection.connected", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
-                cancellationToken);
-            await live.PublishAsync(ConnectionEvents.Changed(product.Product), cancellationToken);
-            await database.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await database.RollbackAsync(CancellationToken.None);
-            throw;
-        }
-
-        if (replaced is { } previous)
-        {
-            await revocations.RevokeIfUnusedAsync(previous.Subject, previous.Token, cancellationToken);
-        }
-
+        await grants.StoreAsync(
+            new NewGrant(consent.BrandId, product, subject, refreshToken, null, userId, principal.FindFirstValue(KairoClaims.Name) ?? ""),
+            cancellationToken);
         return TypedResults.Redirect($"{settings}?choose={product.Slug}");
     }
 

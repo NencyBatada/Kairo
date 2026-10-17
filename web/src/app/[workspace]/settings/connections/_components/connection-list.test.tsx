@@ -17,6 +17,9 @@ function connection(overrides: Partial<ConnectionView>): ConnectionView {
     connectedAt: null,
     checkedAt: null,
     reconnectReason: null,
+    method: null,
+    clientId: null,
+    scopes: ["https://www.googleapis.com/auth/adwords"],
     ...overrides,
   };
 }
@@ -60,11 +63,11 @@ test("offers admin consent links through the same-origin API proxy with encoded 
   );
 
   const googleAds = screen.getByRole("listitem", { name: "Google Ads" });
-  expect(within(googleAds).getByRole("link", { name: "Connect" }).getAttribute("href")).toBe(
+  expect(within(googleAds).getByRole("link", { name: "Connect with Google" }).getAttribute("href")).toBe(
     "/api/brands/brand-1/connections/x%2Fy/connect",
   );
   const analytics = screen.getByRole("listitem", { name: "Google Analytics" });
-  expect(within(analytics).getByRole("link", { name: "Reconnect" }).getAttribute("href")).toBe(
+  expect(within(analytics).getByRole("link", { name: "Reconnect with Google" }).getAttribute("href")).toBe(
     "/api/brands/brand-1/connections/ga4/connect",
   );
 });
@@ -156,9 +159,49 @@ test("lets an admin restart consent when no account is available", () => {
       chooseAccount={vi.fn(async () => ({ status: "saved" as const }))}
     />,
   );
-  expect(screen.getByRole("link", { name: "Connect again" }).getAttribute("href")).toBe(
+  expect(screen.getByRole("link", { name: "Connect again with Google" }).getAttribute("href")).toBe(
     "/api/brands/brand-1/connections/youtube/connect",
   );
+});
+
+test("offers client credentials beside Google sign-in on every row that is not connected", () => {
+  const action = vi.fn(async () => ({ status: "saved" as const }));
+  render(<ConnectionList connections={states} canManage brandId="brand-1" timeZone="Asia/Kolkata" connectWithCredentials={action} />);
+
+  for (const name of ["Google Ads", "YouTube", "Google Analytics"]) {
+    expect(within(screen.getByRole("listitem", { name })).getByRole("button", { name: "Use client credentials" })).toBeTruthy();
+  }
+  expect(within(screen.getByRole("listitem", { name: "Merchant Center" })).queryByRole("button", { name: "Use client credentials" })).toBeNull();
+});
+
+test("members never receive the client credentials option", () => {
+  const action = vi.fn(async () => ({ status: "saved" as const }));
+  render(<ConnectionList connections={states} canManage={false} brandId="brand-1" timeZone="Asia/Kolkata" connectWithCredentials={action} />);
+  expect(screen.queryByRole("button", { name: "Use client credentials" })).toBeNull();
+});
+
+test("shows the client ID of a connection made with client credentials", () => {
+  render(<ConnectionList
+    connections={[connection({ state: "connected", method: "clientCredentials", clientId: "brand.apps.googleusercontent.com", externalId: "ads-1" })]}
+    canManage={false}
+    brandId="brand-1"
+    timeZone="Asia/Kolkata"
+  />);
+
+  const row = screen.getByRole("listitem", { name: "Google Ads" });
+  expect(within(row).getByText(/Connected with client credentials/)).toBeTruthy();
+  expect(within(row).getByText("brand.apps.googleusercontent.com")).toBeTruthy();
+});
+
+test("does not label Google sign-in connections as client credentials", () => {
+  render(<ConnectionList
+    connections={[connection({ state: "connected", method: "google", externalId: "ads-1" })]}
+    canManage={false}
+    brandId="brand-1"
+    timeZone="Asia/Kolkata"
+  />);
+
+  expect(screen.queryByText(/client credentials/)).toBeNull();
 });
 
 test("offers admin checks only for connected rows and disconnect for active connections", () => {

@@ -11,7 +11,7 @@ internal sealed class GoogleRevocations(BrandsDbContext db, KairoDatabase databa
         await using (await database.EnterSystemScopeAsync(cancellationToken))
         {
             inUse = await db.Connections.AnyAsync(
-                connection => connection.GoogleSubject == subject && connection.RefreshToken != null,
+                connection => connection.GoogleSubject == subject && connection.ClientId == null && connection.RefreshToken != null,
                 cancellationToken);
         }
 

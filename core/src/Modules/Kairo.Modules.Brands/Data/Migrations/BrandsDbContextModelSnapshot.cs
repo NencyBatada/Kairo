@@ -34,6 +34,14 @@ namespace Kairo.Modules.Brands.Data.Migrations
                     b.Property<DateTimeOffset?>("CheckedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<byte[]>("ClientSecret")
+                        .HasMaxLength(4096)
+                        .HasColumnType("varbinary(4096)");
+
                     b.Property<DateTimeOffset>("ConnectedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -93,7 +101,7 @@ namespace Kairo.Modules.Brands.Data.Migrations
 
                     b.HasIndex("GoogleSubject");
 
-                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("GoogleSubject"), new[] { "BrandId", "RefreshToken" });
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("GoogleSubject"), new[] { "BrandId", "RefreshToken", "ClientId" });
 
                     b.HasIndex("BrandId", "Product")
                         .IsUnique();

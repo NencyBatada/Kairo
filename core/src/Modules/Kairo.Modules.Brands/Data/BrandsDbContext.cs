@@ -32,7 +32,7 @@ internal sealed class BrandsDbContext(DbContextOptions<BrandsDbContext> options,
         {
             connection.ToTable("Connections");
             connection.HasIndex(c => new { c.BrandId, c.Product }).IsUnique();
-            connection.HasIndex(c => c.GoogleSubject).IncludeProperties(c => new { c.BrandId, c.RefreshToken });
+            connection.HasIndex(c => c.GoogleSubject).IncludeProperties(c => new { c.BrandId, c.RefreshToken, c.ClientId });
             connection.Property(c => c.Product).HasConversion<string>().HasMaxLength(20);
             connection.Property(c => c.State).HasConversion<string>().HasMaxLength(20);
             connection.Property(c => c.ExternalId).HasMaxLength(100);
@@ -41,6 +41,8 @@ internal sealed class BrandsDbContext(DbContextOptions<BrandsDbContext> options,
             connection.Property(c => c.Scopes).HasMaxLength(1000);
             connection.Property(c => c.GoogleSubject).HasMaxLength(255);
             connection.Property(c => c.RefreshToken).HasMaxLength(4096);
+            connection.Property(c => c.ClientId).HasMaxLength(255);
+            connection.Property(c => c.ClientSecret).HasMaxLength(4096);
             connection.Property(c => c.KeyVersion).HasMaxLength(300);
             connection.Property(c => c.ConnectedByName).HasMaxLength(200);
             connection.Property(c => c.ReconnectReason).HasMaxLength(40);

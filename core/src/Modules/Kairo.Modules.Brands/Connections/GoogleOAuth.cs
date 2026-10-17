@@ -6,6 +6,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Brands.Connections;
 
+internal sealed record OAuthClient(string Id, string Secret)
+{
+    public override string ToString() => Id;
+}
+
 internal sealed record Grant(string AccessToken, DateTimeOffset ExpiresAt, string? RefreshToken, string[] Scopes, string? Subject);
 
 internal sealed class GoogleOAuth(IHttpClientFactory http, IConfiguration configuration, TimeProvider time, ILogger<GoogleOAuth> logger)
@@ -63,19 +68,22 @@ internal sealed class GoogleOAuth(IHttpClientFactory http, IConfiguration config
         return await ReadGrantAsync(response, cancellationToken);
     }
 
-    public async Task<Grant?> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
+    public async Task<Grant?> RefreshAsync(string refreshToken, OAuthClient? client, CancellationToken cancellationToken)
     {
         using var response = await PostAsync(TokenEndpoint, new Dictionary<string, string>
         {
             ["grant_type"] = "refresh_token",
             ["refresh_token"] = refreshToken,
-            ["client_id"] = ClientId,
-            ["client_secret"] = ClientSecret,
+            ["client_id"] = client?.Id ?? ClientId,
+            ["client_secret"] = client?.Secret ?? ClientSecret,
         }, cancellationToken);
-        if (response.StatusCode == HttpStatusCode.BadRequest
-            && (await response.Content.ReadFromJsonAsync<TokenError>(GoogleHttp.SnakeCase, cancellationToken))?.Error == "invalid_grant")
+        if (response.StatusCode == HttpStatusCode.BadRequest || (client is not null && response.StatusCode == HttpStatusCode.Unauthorized))
         {
-            return null;
+            var error = await ErrorOfAsync(response, cancellationToken);
+            if (error == "invalid_grant" || (client is not null && error is "invalid_client" or "unauthorized_client"))
+            {
+                return null;
+            }
         }
 
         response.EnsureSuccessStatusCode();
@@ -114,6 +122,18 @@ internal sealed class GoogleOAuth(IHttpClientFactory http, IConfiguration config
             token.RefreshToken,
             (token.Scope ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries),
             SubjectOf(token.IdToken));
+    }
+
+    private static async Task<string?> ErrorOfAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return (await response.Content.ReadFromJsonAsync<TokenError>(GoogleHttp.SnakeCase, cancellationToken))?.Error;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static string? SubjectOf(string? idToken)

@@ -33,6 +33,34 @@ export async function chooseConnectionAccount(
   return { status: "saved", message: "Account connected." };
 }
 
+export async function connectWithCredentials(
+  brandId: string,
+  product: string,
+  _state: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const result = await (await coreApi()).POST("/api/brands/{brandId}/connections/{product}/credentials", {
+    params: { path: { brandId, product } },
+    body: {
+      clientId: text(formData, "clientId"),
+      clientSecret: text(formData, "clientSecret"),
+      refreshToken: text(formData, "refreshToken"),
+    },
+  }).catch(() => null);
+  if (!result) {
+    return connectionUnavailable();
+  }
+  const { error, response } = result;
+  if (response.status === 401) {
+    return signInAgain();
+  }
+  if (!response.ok) {
+    return problemToFormState(error, response.status);
+  }
+  refresh();
+  return { status: "saved", message: "Credentials accepted. Choose the account to use." };
+}
+
 export async function checkConnection(
   brandId: string,
   product: string,
