@@ -1,9 +1,31 @@
+using System.Text.Json;
 using Kairo.Modules.CampaignRooms.Checks;
+using Kairo.Testing;
 
 namespace Kairo.IntegrationTests.CampaignRooms;
 
 public sealed class CheckRulesTests
 {
+    [Fact]
+    public void Every_critical_evaluation_fixture_uses_a_production_blocking_rule()
+    {
+        var path = Path.GetFullPath(Path.Combine(ModuleFolders.ModulesDirectory, "..", "..", "..",
+            "agents", "evaluations", "v1", "cases.json"));
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        var critical = document.RootElement.GetProperty("guardian").EnumerateArray()
+            .Where(item => item.TryGetProperty("critical", out var value) && value.GetBoolean())
+            .ToArray();
+        Assert.NotEmpty(critical);
+        var settings = EffectiveCheckSettings.From(null);
+        foreach (var item in critical)
+        {
+            var rule = item.GetProperty("expectedRule").GetString()!;
+            Assert.NotNull(CheckRules.Find(rule));
+            Assert.Equal(CheckSeverities.Block, settings.Severity(rule));
+            Assert.False(CheckScore.Passes(1, 100, settings.PassScore));
+        }
+    }
+
     [Fact]
     public void Every_rule_has_a_unique_id_a_name_a_description_and_a_target()
     {

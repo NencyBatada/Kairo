@@ -327,10 +327,10 @@ def build() -> None:
         "guardian": guardian,
     }
     (ROOT / "cases.json").write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
     (ROOT / "golden.json").write_text(
-        json.dumps(golden(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(golden(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
     hashes = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -338,7 +338,9 @@ def build() -> None:
         if path.name != "manifest.json"
     }
     (ROOT / "manifest.json").write_text(
-        json.dumps({"version": VERSION, "sha256": hashes}, indent=2) + "\n", encoding="utf-8"
+        json.dumps({"version": VERSION, "sha256": hashes}, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
     )
 
 
