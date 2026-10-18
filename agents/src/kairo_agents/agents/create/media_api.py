@@ -50,6 +50,7 @@ from kairo_agents.media.captions import WIDTH, Caption
 from kairo_agents.media.compose import END_CARD_SECONDS, body_seconds, compose
 from kairo_agents.media.ffmpeg import FfmpegError
 from kairo_agents.media.formats import FORMATS, BadImage, fit
+from kairo_agents.telemetry import ObservedClient
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image"
@@ -94,10 +95,12 @@ def video_model_name() -> str:
 
 @cache
 def default_media_client() -> genai.Client:
-    return genai.Client(
-        vertexai=True,
-        project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
-        location=os.environ.get("KAIRO_MEDIA_LOCATION") or DEFAULT_MEDIA_LOCATION,
+    return ObservedClient(
+        genai.Client(
+            vertexai=True,
+            project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
+            location=os.environ.get("KAIRO_MEDIA_LOCATION") or DEFAULT_MEDIA_LOCATION,
+        )
     )
 
 

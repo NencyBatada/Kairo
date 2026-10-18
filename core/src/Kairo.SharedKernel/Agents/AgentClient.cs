@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Diagnostics;
+using Kairo.SharedKernel.Observability;
 using Microsoft.Extensions.Configuration;
 
 namespace Kairo.SharedKernel.Agents;
@@ -30,6 +32,12 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         }
 
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (KairoTelemetry.CaptureParent() is { } parent) request.Headers.TryAddWithoutValidation("traceparent", parent);
+        foreach (var name in new[] { "brand", "campaign", "run" })
+            if (Guid.TryParse(Activity.Current?.GetTagItem($"kairo.{name}_id")?.ToString(), out var id))
+                request.Headers.TryAddWithoutValidation($"X-Kairo-{name}-Id", id.ToString());
+        var started = Stopwatch.GetTimestamp();
+        var outcome = "failed";
         deadline.CancelAfter(timeout);
         try
         {
@@ -42,8 +50,10 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
 
             try
             {
-                return JsonSerializer.Deserialize<TResponse>(text, Json)
+                var answer = JsonSerializer.Deserialize<TResponse>(text, Json)
                     ?? throw new AgentCallException(AgentCallException.BadAnswer, "The agent service sent an empty answer.");
+                outcome = "succeeded";
+                return answer;
             }
             catch (JsonException exception)
             {
@@ -57,6 +67,10 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         catch (HttpRequestException exception)
         {
             throw new AgentCallException(AgentCallException.Failed, "Couldn't reach the agent service.", exception);
+        }
+        finally
+        {
+            KairoTelemetry.AgentFinished(path, outcome, Stopwatch.GetElapsedTime(started).TotalSeconds);
         }
     }
 

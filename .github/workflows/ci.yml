@@ -59,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Validate production collector configuration
+        run: docker run --rm -e GOOGLE_CLOUD_PROJECT=kairo-test -v "$PWD/deploy/Kairo.Deploy/collector.yaml:/etc/otel/config.yaml:ro" us-docker.pkg.dev/cloud-ops-agents-artifacts/google-cloud-opentelemetry-collector/otelcol-google:0.162.0 validate --config=/etc/otel/config.yaml
       - shell: pwsh
         run: |
           Install-Module Pester -RequiredVersion 5.9.1 -Scope CurrentUser -Force -SkipPublisherCheck

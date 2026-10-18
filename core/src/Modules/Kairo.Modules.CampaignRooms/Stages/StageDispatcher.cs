@@ -1,6 +1,7 @@
 using Kairo.Modules.CampaignRooms.Data;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Kairo.SharedKernel.Observability;
 
 namespace Kairo.Modules.CampaignRooms.Stages;
 
@@ -21,6 +22,7 @@ internal sealed class StageDispatcher(
     public const int BatchSize = 4;
 
     public static readonly TimeSpan Lease = TimeSpan.FromMinutes(10);
+    private static long _lastSample;
 
     public async Task<int> RunDueAsync(CancellationToken cancellationToken)
     {
@@ -28,6 +30,17 @@ internal sealed class StageDispatcher(
         List<ClaimedStageRun> claimed;
         await using (await database.EnterSystemScopeAsync(cancellationToken))
         {
+            var now = time.GetUtcNow();
+            var stamp = now.ToUnixTimeSeconds();
+            var previous = Interlocked.Read(ref _lastSample);
+            if (stamp - previous >= 60 && Interlocked.CompareExchange(ref _lastSample, stamp, previous) == previous)
+            {
+                var eligible = db.StageRuns.Where(run => (run.Status == "queued" || run.Status == "running")
+                    && run.NextAttemptAt <= now && (run.ClaimedUntil == null || run.ClaimedUntil < now));
+                var oldest = await eligible.Select(run => run.ClaimedUntil > run.NextAttemptAt ? run.ClaimedUntil : (DateTimeOffset?)run.NextAttemptAt).MinAsync(cancellationToken);
+                var count = await eligible.LongCountAsync(cancellationToken);
+                KairoTelemetry.QueueSnapshot(count, oldest is { } since ? (now - since).TotalSeconds : 0);
+            }
             claimed = await ClaimAsync(lease, cancellationToken);
         }
 

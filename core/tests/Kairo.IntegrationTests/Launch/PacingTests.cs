@@ -249,7 +249,11 @@ public sealed class PacingTests(SqlServer sqlServer) : IAsyncLifetime
 
     private async Task<int> PacingAsync() { await using var scope = _world.Api.Services.CreateAsyncScope(); return await scope.ServiceProvider.GetRequiredService<PacingCheck>().RunDueAsync(Token); }
     private async Task<NotificationRow[]> AlertsAsync() => [.. (await NotificationRows.NotificationsAsync(_world.Database, _world.BrandId)).Where(row => row.Kind == "pacing.alert")];
-    private async Task<JsonElement> ViewAsync() => await _world.Marketer.GetFromJsonAsync<JsonElement>($"{Campaigns.Base(_world.BrandId)}/{_room}/pacing", Token);
+    private async Task<JsonElement> ViewAsync()
+    {
+        Assert.Equal("/", await _world.Api.SignInAsync(_world.Marketer, _world.Brand.Marketer.Account, "/"));
+        return await _world.Marketer.GetFromJsonAsync<JsonElement>($"{Campaigns.Base(_world.BrandId)}/{_room}/pacing", Token);
+    }
     private async Task<int> PacingAuditsAsync() { await using var scope = await ScopeAsync(); return (await scope.ServiceProvider.GetRequiredService<IAuditTrail>().ForTargetAsync("campaign_room", _room.ToString(), null, 200, Token)).Entries.Count(entry => entry.Action == "launch.pacing_alerted"); }
     private async Task<int> DaysAsync() { await using var scope = await ScopeAsync(); return await scope.ServiceProvider.GetRequiredService<LaunchDbContext>().Pacing.Select(row => row.Date).Distinct().CountAsync(Token); }
     private async Task<AsyncServiceScope> ScopeAsync() { var scope = _world.Api.Services.CreateAsyncScope(); await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(_world.BrandId, Token); return scope; }

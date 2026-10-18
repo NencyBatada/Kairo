@@ -1,4 +1,5 @@
 import { identityToken } from "@/lib/core-api/identity-token";
+import { traceHeaders } from "@/lib/trace-context";
 import { SERVERLESS_AUTHORIZATION_HEADER } from "@/lib/http-names";
 
 const HOP_BY_HOP = new Set([
@@ -12,6 +13,7 @@ const HOP_BY_HOP = new Set([
   "upgrade",
   "host",
   "content-length",
+  "baggage",
 ]);
 
 const DECODED_BODY = new Set(["content-encoding", "content-length"]);
@@ -33,6 +35,7 @@ async function forward(request: Request): Promise<Response> {
   });
 
   const token = await identityToken();
+  for (const [name, value] of Object.entries(traceHeaders())) headers.set(name, value);
   if (token) {
     headers.set(SERVERLESS_AUTHORIZATION_HEADER, `Bearer ${token}`);
   }

@@ -120,6 +120,7 @@ public sealed class StockPauseTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task Pausing_more_than_thirty_percent_of_a_campaign_is_held_until_an_admin_confirms_or_dismisses()
     {
+        OperationsMail.Enable(_api.Services);
         await StockAsync(rain1: "out_of_stock", rain2: "out_of_stock");
         Assert.Equal(1, await RunAsync());
 
@@ -130,6 +131,7 @@ public sealed class StockPauseTests(SqlServer sqlServer) : IAsyncLifetime
         var searchBatch = pauses.First(pause => pause.GetProperty("campaignType").GetString() == "search").GetProperty("batchId").GetGuid();
         var demandBatch = pauses.Single(pause => pause.GetProperty("campaignType").GetString() == "demand_gen").GetProperty("batchId").GetGuid();
         Assert.NotEqual(searchBatch, demandBatch);
+        Assert.Equal(2, (await NotificationRows.EmailsAsync(_database, _brand.BrandId, "Operations")).Count);
         var held = (await NotificationRows.NotificationsAsync(_database, _brand.BrandId)).Where(row => row.Kind == "mass_pause.held").ToArray();
         Assert.Contains(held, row => row.UserId == _brand.Admin.UserId && row.Body.StartsWith("2 of 4 ads", StringComparison.Ordinal));
         Assert.Contains(held, row => row.UserId == _brand.Marketer.UserId);
@@ -170,6 +172,7 @@ public sealed class StockPauseTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task A_stale_feed_stops_pauses_and_resumes_and_alerts_admins_once()
     {
+        OperationsMail.Enable(_api.Services);
         await StockAsync(rain1: "out_of_stock");
         _api.Clock.Advance(StockPauseWorker.StaleAfter + TimeSpan.FromMinutes(1));
         Assert.Equal(1, await RunAsync());
@@ -179,6 +182,7 @@ public sealed class StockPauseTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Equal(1, await RunAsync());
         var alerts = (await NotificationRows.NotificationsAsync(_database, _brand.BrandId)).Where(row => row.Kind == "connection.problem" && row.Title == "Stock pauses are on hold").ToArray();
         Assert.Equal(_brand.Admin.UserId, Assert.Single(alerts).UserId);
+        Assert.Single(await NotificationRows.EmailsAsync(_database, _brand.BrandId, "Operations"));
 
         await StockAsync(rain1: "out_of_stock");
         _api.Clock.Advance(StockPauser.Interval);

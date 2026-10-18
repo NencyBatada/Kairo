@@ -1,4 +1,8 @@
 using System.Net;
+using System.Diagnostics;
+using System.Collections.Concurrent;
+using Kairo.SharedKernel.Observability;
+using Kairo.IntegrationTests.Notifications;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kairo.IntegrationTests.Api;
@@ -14,6 +18,40 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
+
+    [Fact]
+    public async Task A_persisted_run_keeps_the_request_trace_when_a_later_worker_claims_it()
+    {
+        var stages = new ConcurrentBag<Activity>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == KairoTelemetry.SourceName,
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = stages.Add,
+        };
+        ActivitySource.AddActivityListener(listener);
+        using var parent = new Activity("accept").SetIdFormat(ActivityIdFormat.W3C).Start();
+        _world.Marketer.DefaultRequestHeaders.Add("traceparent", parent.Id);
+        Guid room;
+        try { room = await _world.AcceptAsync(); }
+        finally { _world.Marketer.DefaultRequestHeaders.Remove("traceparent"); }
+        parent.Stop();
+        await using var connection = new SqlConnection(_world.Database);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            EXEC sys.sp_set_session_context @key = N'kairo.all_brands', @value = 1;
+            SELECT TOP (1) TraceParent FROM campaign_rooms.StageRuns WHERE RoomId = @room ORDER BY QueuedAt;
+            """;
+        command.Parameters.AddWithValue("@room", room);
+        var stored = Assert.IsType<string>(await command.ExecuteScalarAsync(Token));
+        Assert.True(ActivityContext.TryParse(stored, null, out var context));
+        Assert.Equal(parent.TraceId, context.TraceId);
+        Assert.Equal(1, await _world.RunStagesAsync());
+        var stage = Assert.Single(stages, activity => activity.GetTagItem("kairo.campaign_id")?.ToString() == room.ToString());
+        Assert.Equal(context.TraceId, stage.TraceId);
+        Assert.Equal(context.SpanId, stage.ParentSpanId);
+    }
 
     [Fact]
     public async Task Accepting_queues_the_Plan_agent_and_its_brief_lands_in_the_room()
@@ -77,13 +115,16 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task A_failing_agent_is_retried_with_backoff_then_the_room_needs_attention()
     {
+        OperationsMail.Enable(_world.Api.Services, _world.Worker.Services);
         _world.Plan.Fails = true;
         var roomId = await _world.AcceptAsync();
 
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
+        Assert.Empty(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(30));
         Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Single(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(119));
         Assert.Equal(0, await _world.RunStagesAsync());
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(1));
@@ -91,6 +132,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
 
         var failed = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal(3, _world.Plan.Requests.Count);
+        Assert.Single(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         Assert.Equal("needs_attention", Campaigns.Status(failed));
         var run = Assert.Single(failed.GetProperty("runs").EnumerateArray());
         Assert.Equal(("failed", 3), (run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));

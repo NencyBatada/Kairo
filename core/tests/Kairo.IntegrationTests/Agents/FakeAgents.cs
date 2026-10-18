@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Kairo.IntegrationTests.Agents;
 
-public sealed record AgentRequest(string Url, string? Authorization, JsonElement Body);
+public sealed record AgentRequest(string Url, string? Authorization, JsonElement Body, string? TraceParent = null, string? BrandId = null, string? RunId = null);
 
 public sealed class FakeAgents : HttpMessageHandler
 {
@@ -29,7 +29,10 @@ public sealed class FakeAgents : HttpMessageHandler
         var body = request.Content is null ? "{}" : await request.Content.ReadAsStringAsync(cancellationToken);
         using var document = JsonDocument.Parse(body);
         var parsed = document.RootElement.Clone();
-        Requests.Enqueue(new AgentRequest(request.RequestUri!.AbsoluteUri, request.Headers.Authorization?.ToString(), parsed));
+        Requests.Enqueue(new AgentRequest(request.RequestUri!.AbsoluteUri, request.Headers.Authorization?.ToString(), parsed,
+            request.Headers.TryGetValues("traceparent", out var trace) ? trace.Single() : null,
+            request.Headers.TryGetValues("X-Kairo-brand-Id", out var brand) ? brand.Single() : null,
+            request.Headers.TryGetValues("X-Kairo-run-Id", out var run) ? run.Single() : null));
         if (Delay > TimeSpan.Zero)
         {
             await Task.Delay(Delay, cancellationToken);

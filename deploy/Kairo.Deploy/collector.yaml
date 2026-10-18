@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:4318
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 65
+    spike_limit_percentage: 20
+  resourcedetection:
+    detectors: [gcp]
+    timeout: 10s
+  resource/project:
+    attributes:
+      - action: insert
+        key: gcp.project_id
+        value: ${env:GOOGLE_CLOUD_PROJECT}
+  transform/privacy:
+    error_mode: propagate
+    trace_statements:
+      - context: span
+        statements:
+          - keep_keys(attributes, ["http.route", "http.request.method", "http.method", "http.response.status_code", "http.status_code", "kairo.brand_id", "kairo.campaign_id", "kairo.run_id", "kairo.stage", "gen_ai.request.model", "next.route", "next.span_type"])
+          - set(status.message, "")
+      - context: spanevent
+        statements:
+          - keep_keys(attributes, ["exception.type"])
+  metricstarttime:
+    strategy: subtract_initial_point
+  batch:
+    send_batch_max_size: 200
+    send_batch_size: 200
+    timeout: 5s
+exporters:
+  otlp_grpc:
+    endpoint: telemetry.googleapis.com:443
+    auth:
+      authenticator: googleclientauth
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  googleclientauth:
+service:
+  extensions: [health_check, googleclientauth]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource/project, transform/privacy, batch]
+      exporters: [otlp_grpc]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, resource/project, metricstarttime, batch]
+      exporters: [otlp_grpc]

@@ -20,6 +20,8 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
 from kairo_agents.agents.ask.models import AskRequest, AskResponse
+from kairo_agents.agents.ask.telemetry import AskModelTelemetry
+from kairo_agents.telemetry import callback_headers
 
 PROMPT_VERSION = "ask/1"
 APP_NAME = "kairo_ask"
@@ -53,6 +55,7 @@ def core_call(request: AskRequest, body: dict[str, Any]) -> Any:
     if address.scheme == "http" and address.hostname not in ("localhost", "127.0.0.1"):
         raise ValueError("Core callbacks require HTTPS outside local development")
     headers = {
+        **callback_headers(),
         "Content-Type": "application/json",
         "X-Kairo-Request": "1",
         "X-Kairo-Ask-Token": request.token,
@@ -127,6 +130,7 @@ def tools_for(
 
 async def run_turn(request: AskRequest) -> AskResponse:
     model = os.environ.get("KAIRO_ASK_MODEL") or "gemini-3.5-pro"
+    telemetry = AskModelTelemetry(model)
     agent = LlmAgent(
         name=APP_NAME,
         model=Gemini(
@@ -139,6 +143,9 @@ async def run_turn(request: AskRequest) -> AskResponse:
         ),
         instruction=instructions(),
         tools=tools_for(request),
+        before_model_callback=telemetry.before,
+        after_model_callback=telemetry.after,
+        on_model_error_callback=telemetry.error,
         generate_content_config=types.GenerateContentConfig(
             temperature=0.2, max_output_tokens=8192
         ),
@@ -172,6 +179,7 @@ async def run_turn(request: AskRequest) -> AskResponse:
                 if event.error_code:
                     raise RuntimeError("Ask agent failed")
     finally:
+        telemetry.finish("failed")
         await runner.close()
     return AskResponse(model=model, prompt_version=PROMPT_VERSION)
 

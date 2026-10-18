@@ -44,6 +44,8 @@ internal sealed class StageRun : IBrandOwned
 
     public string? Input { get; set; }
 
+    public string? TraceParent { get; set; }
+
     public string? Output { get; set; }
 }
 

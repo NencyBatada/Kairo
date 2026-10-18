@@ -14,6 +14,7 @@ internal enum EmailType
     Notification,
     Digest,
     Invitation,
+    Operations,
 }
 
 internal sealed class OutboundEmail : IBrandOwned

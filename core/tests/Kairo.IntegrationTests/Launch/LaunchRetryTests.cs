@@ -35,6 +35,7 @@ public sealed class LaunchRetryTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task Transient_errors_use_bounded_durable_backoff()
     {
+        OperationsMail.Enable(_world.Api.Services);
         var room = await QueuedAsync();
         _google.TransientReads = 5;
         await RunAsync();
@@ -44,6 +45,7 @@ public sealed class LaunchRetryTests(SqlServer sqlServer) : IAsyncLifetime
         var failed = await RecordAsync(room);
         Assert.Equal(("failed", 4, 3), (failed.Status, failed.Attempts, failed.RetryCount));
         Assert.Null(failed.NextAttemptAt);
+        Assert.Equal(4, (await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations")).Count);
         Assert.Empty(_google.Resources);
     }
 

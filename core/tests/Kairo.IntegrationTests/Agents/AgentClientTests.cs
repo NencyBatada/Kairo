@@ -1,4 +1,5 @@
 using Kairo.SharedKernel.Agents;
+using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,24 @@ public sealed class AgentClientTests
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    [Fact]
+    public async Task Carries_the_active_trace_and_safe_correlation_ids_to_python()
+    {
+        var agents = new FakeAgents { Respond = (_, _) => FakeAgents.Json(new { name = "ok", count = 0 }) };
+        using var activity = new Activity("request").SetIdFormat(ActivityIdFormat.W3C).Start();
+        var brand = Guid.NewGuid();
+        var run = Guid.NewGuid();
+        activity.SetTag("kairo.brand_id", brand.ToString());
+        activity.SetTag("kairo.run_id", run.ToString());
+        activity.SetTag("prompt", "private");
+        await Client(agents).PostAsync<Echo, Echo>("brand-kit/draft", new Echo("Acme", 1), Timeout, Token);
+        var request = Assert.Single(agents.Requests);
+        Assert.True(ActivityContext.TryParse(request.TraceParent, null, out var context));
+        Assert.Equal(activity.TraceId, context.TraceId);
+        Assert.Equal(brand.ToString(), request.BrandId);
+        Assert.Equal(run.ToString(), request.RunId);
+    }
 
     [Fact]
     public async Task Posts_camel_case_JSON_to_the_agent_service_and_reads_the_answer()
