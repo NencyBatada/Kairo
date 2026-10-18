@@ -109,6 +109,7 @@ class LiveRunner:
                 "promptVersion": answer.prompt_version,
             }
         errors = []
+        reviews = []
         if kind == "images":
             answer = await media.images(f.images_request(case), self.clients)
             if not hasattr(answer, "images") or answer.failures or len(answer.images) != 2:
@@ -130,8 +131,10 @@ class LiveRunner:
                         self.clients,
                     )
                 )
-                if len(review.results) != 1 or review.results[0].findings:
-                    errors.append("generated_image_guardian_rejected")
+                if len(review.results) != 1:
+                    raise ValueError("incomplete_generated_image_review")
+                self.write(f"{case['id']}-{index}-guardian.json", review.model_dump(mode="json"))
+                reviews.append(review)
         elif kind == "video":
             answer = await media.footage(f.footage_request(case), self.clients, self.clients)
             if not hasattr(answer, "clips") or len(answer.clips) != 1:
@@ -153,8 +156,10 @@ class LiveRunner:
                     self.clients,
                 )
             )
-            if len(review.results) != 1 or review.results[0].findings:
-                errors.append("generated_video_guardian_rejected")
+            if len(review.results) != 1:
+                raise ValueError("incomplete_generated_video_review")
+            self.write(case["id"] + "-guardian.json", review.model_dump(mode="json"))
+            reviews.append(review)
         else:
             raise ValueError("unknown_generation_case")
         return {
@@ -164,6 +169,13 @@ class LiveRunner:
             "failures": errors,
             "model": answer.model,
             "promptVersion": answer.prompt_version,
+            "guardianAccepted": not any(r.findings for review in reviews for r in review.results),
+            "guardianFindings": [
+                finding.model_dump(mode="json")
+                for review in reviews
+                for result in review.results
+                for finding in result.findings
+            ],
         }
 
     def write(self, name: str, data: Any) -> None:

@@ -173,6 +173,38 @@ def test_hindi_campaign_shopping_titles_retain_the_catalogue_language(tmp_path):
     assert result["formatPassed"], result
 
 
+def test_generated_media_guardian_rejections_preserve_evidence_and_format_results(
+    tmp_path, monkeypatch
+):
+    fixtures = Fixtures()
+    case = next(c for c in fixtures.cases if c["id"] == "generated-video")
+    review = CheckResponse(
+        model="test",
+        prompt_version="test/1",
+        results=[
+            AssetFindings(
+                asset_id="generated-video",
+                findings=[
+                    Finding(
+                        rule="accuracy.product",
+                        field="frames",
+                        index=0,
+                        message="The generated product differs from its reference.",
+                    )
+                ],
+            )
+        ],
+    )
+    monkeypatch.setattr(runner.check, "check_video", AsyncMock(return_value=review))
+    live = runner.LiveRunner(fixtures, replay_client(fixtures, case), None, tmp_path)
+    result = asyncio.run(live.generation(case))
+    assert result["complete"] and result["formatPassed"]
+    assert result["guardianAccepted"] is False
+    assert result["guardianFindings"][0]["rule"] == "accuracy.product"
+    evidence = json.loads((tmp_path / "generated-video-guardian.json").read_text())
+    assert evidence["results"][0]["findings"][0]["rule"] == "accuracy.product"
+
+
 def test_timeout_and_partial_runs_cannot_count_as_passing(tmp_path, monkeypatch):
     class Client:
         def __init__(self, **kwargs):

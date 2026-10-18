@@ -97,6 +97,65 @@ def test_unavailable_required_models_stop_further_spending_and_remain_failing(st
     assert len(calls) == 1
 
 
+@pytest.mark.parametrize("status", [429, 503])
+def test_temporary_text_failures_retry_with_a_new_reservation_and_preserved_failure(
+    monkeypatch, status
+):
+    calls = []
+    delays = []
+
+    async def sleep(delay):
+        delays.append(delay)
+
+    async def generate(**kwargs):
+        calls.append(kwargs)
+        if len(calls) < 2:
+            raise errors.ClientError(status, {"error": {"message": "temporary"}})
+        return SimpleNamespace(usage_metadata=None)
+
+    monkeypatch.setattr("kairo_agents.evaluation.budget.asyncio.sleep", sleep)
+    budget = Budget()
+    model = BudgetedModels(SimpleNamespace(generate_content=generate), budget)
+    asyncio.run(model.generate_content(model="text"))
+    assert len(calls) == 2
+    assert delays == [5]
+    assert budget.counts["text"] == 2
+    assert [call["outcome"] for call in budget.calls] == ["failed", "succeeded"]
+
+
+@pytest.mark.parametrize("limit,seconds,expected", [(1, 900, "budget"), (100, 1, "deadline")])
+def test_temporary_failures_never_retry_past_a_request_or_time_limit(
+    monkeypatch, limit, seconds, expected
+):
+    async def generate(**kwargs):
+        raise errors.ClientError(429, {"error": {"message": "temporary"}})
+
+    async def sleep(delay):
+        raise AssertionError("No retry is allowed")
+
+    monkeypatch.setattr("kairo_agents.evaluation.budget.asyncio.sleep", sleep)
+    budget = Budget(Limits(text=limit, seconds=seconds))
+    model = BudgetedModels(SimpleNamespace(generate_content=generate), budget)
+    with pytest.raises(EvaluationStopped, match=expected):
+        asyncio.run(model.generate_content(model="text"))
+    assert budget.counts["text"] == 1
+
+
+def test_persistent_temporary_errors_stop_after_three_counted_attempts(monkeypatch):
+    async def generate(**kwargs):
+        raise errors.ClientError(503, {"error": {"message": "temporary"}})
+
+    async def sleep(delay):
+        pass
+
+    monkeypatch.setattr("kairo_agents.evaluation.budget.asyncio.sleep", sleep)
+    budget = Budget()
+    model = BudgetedModels(SimpleNamespace(generate_content=generate), budget)
+    with pytest.raises(errors.ClientError):
+        asyncio.run(model.generate_content(model="text"))
+    assert budget.counts["text"] == 3
+
+
 def test_images_and_videos_are_reserved_before_calling_the_provider():
     requests = []
 

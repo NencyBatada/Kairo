@@ -1,3 +1,4 @@
+import asyncio
 import threading
 import time
 from collections.abc import Callable
@@ -7,6 +8,25 @@ from typing import Any
 
 class EvaluationStopped(RuntimeError):
     pass
+
+
+async def retry_text(budget: "Budget", operation: Callable[..., Any]) -> Any:
+    for attempt in range(3):
+        try:
+            return await operation()
+        except Exception as error:
+            code = getattr(error, "code", None)
+            if code is None:
+                code = getattr(getattr(error, "response", None), "status_code", None)
+            if code not in (429, 503) or attempt == 2:
+                raise
+            if budget.counts["text"] >= budget.limits.text:
+                raise EvaluationStopped("evaluation_budget_exceeded") from None
+            delay = 5 * (attempt + 1)
+            if budget.remaining() <= delay:
+                raise EvaluationStopped("evaluation_deadline_exceeded") from None
+            await asyncio.sleep(delay)
+    raise EvaluationStopped("incomplete_retry")
 
 
 @dataclass(frozen=True)
@@ -89,6 +109,13 @@ class BudgetedModels:
         return await self.invoke("generate_videos", "videos", count, kwargs)
 
     async def invoke(self, operation: str, kind: str, count: int, kwargs: Any) -> Any:
+        if kind == "text":
+            return await retry_text(
+                self.budget, lambda: self.attempt(operation, kind, count, kwargs)
+            )
+        return await self.attempt(operation, kind, count, kwargs)
+
+    async def attempt(self, operation: str, kind: str, count: int, kwargs: Any) -> Any:
         call = self.budget.reserve(kind, operation, str(kwargs.get("model", "unknown")), count)
         started = self.budget.clock()
         try:

@@ -14,12 +14,19 @@ Live runs use `--live`, production generation and Guardian functions, and Google
 `evaluateInstances` pointwise evaluation service for brief/copy quality. Every brief/copy score
 must be at least 0.8. Guardian must detect at least 95% of planted issues, reject all critical
 issues, and falsely flag at most 5% of clean controls. All generation format checks must pass.
-Generated media also undergoes Guardian screening. Critical findings are evaluated with the
-production default blocking rules; existing authorized human overrides remain separate.
+Generated media also undergoes Guardian screening, with its decision and findings saved as
+observations. The labelled planted/clean fixtures determine Guardian accuracy; new generated
+media has no preassigned clean label. Its deterministic format checks remain mandatory.
+Critical findings are evaluated with the production default blocking rules; existing
+authorized human overrides remain separate. A passing evaluation never approves a rejected
+generated asset for use in a campaign.
 
 The runner reserves each provider request before dispatch, including repair attempts, and
 disables SDK retries. It permits at most 100 text/judge requests, two image requests and one
 video request, with a default fifteen-minute deadline and an absolute twenty-minute ceiling.
+Text/judge HTTP 429 and 503 responses permit at most three counted attempts, with five- and
+ten-second delays. Retries stop before exhausting the request or time limit. Image and video
+requests are not retried automatically.
 There is no automatic rerun when a limit is exhausted. Unknown tokens and unresolved provider
 model versions remain null. Reports include fixture and prompt hashes, reported prompt/model
 versions, scores, usage and failures. Generated synthetic outputs are separate artifact files.
