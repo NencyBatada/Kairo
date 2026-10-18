@@ -76,6 +76,9 @@ class Budget:
                 "outcome": "incomplete",
                 "inputTokens": None,
                 "outputTokens": None,
+                "thoughtTokens": None,
+                "cachedInputTokens": None,
+                "totalTokens": None,
             }
             self.calls.append(call)
             return call
@@ -126,6 +129,9 @@ class BudgetedModels:
             if usage is not None:
                 call["inputTokens"] = getattr(usage, "prompt_token_count", None)
                 call["outputTokens"] = getattr(usage, "candidates_token_count", None)
+                call["thoughtTokens"] = getattr(usage, "thoughts_token_count", None)
+                call["cachedInputTokens"] = getattr(usage, "cached_content_token_count", None)
+                call["totalTokens"] = getattr(usage, "total_token_count", None)
             call["outcome"] = "succeeded"
             return result
         except BaseException as error:

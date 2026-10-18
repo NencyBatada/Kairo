@@ -234,5 +234,34 @@ def test_unknown_usage_stays_unknown_and_zero_tokens_remain_known():
         call = budget.report()["calls"][0]
         assert call["inputTokens"] == 0
         assert call["outputTokens"] is None
+        assert call["thoughtTokens"] is None
+        assert call["cachedInputTokens"] is None
+        assert call["totalTokens"] is None
+
+    asyncio.run(run())
+
+
+def test_thinking_and_cached_token_usage_is_preserved_when_reported():
+    async def generate(**kwargs):
+        return SimpleNamespace(
+            usage_metadata=SimpleNamespace(
+                prompt_token_count=20,
+                candidates_token_count=10,
+                thoughts_token_count=30,
+                cached_content_token_count=5,
+                total_token_count=60,
+            )
+        )
+
+    async def run():
+        budget = Budget()
+        await BudgetedModels(SimpleNamespace(generate_content=generate), budget).generate_content(
+            model="gemini-3.8-flash"
+        )
+        call = budget.report()["calls"][0]
+        assert call["thoughtTokens"] == 30
+        assert call["cachedInputTokens"] == 5
+        assert call["totalTokens"] == 60
+        assert call["outputTokens"] == 10
 
     asyncio.run(run())
