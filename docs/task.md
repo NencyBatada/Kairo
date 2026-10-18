@@ -195,7 +195,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [/] **Monitoring and alerts**: Traces, logs, dashboards and alerts across the web app, core and agents, including launch failures and mass pauses.
+- [/] **Monitoring and alerts**: Traces, logs, dashboards and alerts across the web app, core and agents, including launch failures and mass pauses. *Draft PR #30 implements cross-service and persisted-stage tracing, filtered JSON application logs, model/stage/queue metrics, private Cloud Run collector sidecars, and idempotent operations dashboards/email policies. Deployed to kairo2: a live trace spans all four services, queue metrics return data, and a synthetic quota event opened an alert. Local .NET unit/architecture, Python, web and 118 deployment checks pass; Linux core/SQL verification is pending. Blocker: native Google log alerts are capped at 20 notifications per policy per day, so guaranteed per-event critical emails need either acceptance of that limit or approval to use Kairo's durable Gmail queue. Email receipt and the user-confirmed merge remain unverified. Cloud Run's own automatic platform spans retain URLs outside application redaction. Worktree and feature branch are preserved.*
 - [ ] **AI quality tests**: A test set of briefs and assets that runs on every prompt or model change.
 - [ ] **Cost tracking**: Tracks model use and cost per campaign, and enforces generation limits.
 - [ ] **AI safety screening**: Screens web pages, catalogue text and search results for prompt injection before agents use them.
