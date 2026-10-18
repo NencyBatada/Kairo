@@ -74,6 +74,32 @@ Describe 'Monitoring resource ownership and updates' {
 }
 
 Describe 'Collector deployment' {
+    It 'recognizes the legacy single unnamed ingress' {
+        Mock -ModuleName Kairo.Deploy Test-Gcloud { $true }
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud {
+            '{"spec":{"template":{"spec":{"containers":[{"image":"original","ports":[{"containerPort":8080}]}]}}}}'
+        }
+        Get-KairoApplicationContainer -Environment $environment -Service kairo-api | Should -BeNullOrEmpty
+    }
+
+    It 'names a legacy ingress without changing IAM, networking, traffic, secrets or its image' {
+        $script:replacement = $null
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud {
+            if ($ArgumentList[2] -eq 'describe') {
+                return '{"apiVersion":"serving.knative.dev/v1","kind":"Service","metadata":{"name":"kairo-api","namespace":"kairo-test","resourceVersion":"42","annotations":{"run.googleapis.com/ingress":"internal"}},"spec":{"traffic":[{"latestRevision":true,"percent":100}],"template":{"metadata":{"name":"old-revision","annotations":{"run.googleapis.com/network-interfaces":"private"}},"spec":{"serviceAccountName":"api@kairo-test","containers":[{"image":"original","ports":[{"containerPort":8080}],"env":[{"name":"secret","valueFrom":{"secretKeyRef":{"name":"secret-ref","key":"latest"}}}]}]}}}}'
+            }
+            $script:replacement = Get-Content -Raw -LiteralPath $ArgumentList[3] | ConvertFrom-Json
+        }
+        Initialize-KairoApplicationContainer -Environment $environment -Service kairo-api | Should -Be 'app'
+        $replacement.spec.template.spec.containers[0].name | Should -Be 'app'
+        $replacement.spec.template.spec.containers[0].image | Should -Be 'original'
+        $replacement.spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name | Should -Be 'secret-ref'
+        $replacement.metadata.resourceVersion | Should -Be '42'
+        $replacement.metadata.annotations.'run.googleapis.com/ingress' | Should -Be 'internal'
+        $replacement.spec.template.metadata.annotations.'run.googleapis.com/network-interfaces' | Should -Be 'private'
+        $replacement.spec.template.metadata.name | Should -BeNullOrEmpty
+        $replacement.spec.traffic[0].percent | Should -Be 100
+    }
     It 'retains the existing ingress container when adding the sidecar' {
         Mock -ModuleName Kairo.Deploy Test-Gcloud { $true }
         Mock -ModuleName Kairo.Deploy Invoke-Gcloud {

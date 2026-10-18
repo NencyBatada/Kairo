@@ -46,10 +46,43 @@ function Get-KairoApplicationContainer {
 
     $scope = @('--region', $Environment.Region, '--project', $Environment.Project)
     if (-not (Test-Gcloud -ArgumentList (@('run', 'services', 'describe', $Service) + $scope))) { return 'app' }
-    $description = ((Invoke-Gcloud -ArgumentList (@('run', 'services', 'describe', $Service, '--format=json(spec.template.spec.containers)') + $scope) -Capture) -join "`n") | ConvertFrom-Json
+    $description = ((Invoke-Gcloud -ArgumentList (@('run', 'services', 'describe', $Service, '--format=json') + $scope) -Capture) -join "`n") | ConvertFrom-Json
     $ingress = @($description.spec.template.spec.containers | Where-Object { $_.ports })
+    if ($ingress.Count -eq 1 -and -not $ingress[0].name -and @($description.spec.template.spec.containers).Count -eq 1) { return '' }
     if ($ingress.Count -ne 1 -or -not $ingress[0].name) { throw "Cannot identify $Service's ingress container safely." }
     $ingress[0].name
+}
+
+function Initialize-KairoApplicationContainer {
+    param([Parameter(Mandatory)][hashtable]$Environment, [Parameter(Mandatory)][string]$Service)
+
+    $scope = @('--region', $Environment.Region, '--project', $Environment.Project)
+    $description = ((Invoke-Gcloud -ArgumentList (@('run', 'services', 'describe', $Service, '--format=json') + $scope) -Capture) -join "`n") | ConvertFrom-Json
+    $containers = @($description.spec.template.spec.containers)
+    if ($containers.Count -ne 1 -or $containers[0].name -or -not $containers[0].ports) {
+        throw "$Service changed before its unnamed ingress could be migrated; inspect it before retrying."
+    }
+    $containers[0] | Add-Member -NotePropertyName name -NotePropertyValue app -Force
+    $description.spec.template.metadata.PSObject.Properties.Remove('name')
+    $replacement = @{
+        apiVersion = $description.apiVersion
+        kind = $description.kind
+        metadata = @{
+            name = $description.metadata.name
+            namespace = $description.metadata.namespace
+            resourceVersion = $description.metadata.resourceVersion
+            labels = $description.metadata.labels
+            annotations = $description.metadata.annotations
+        }
+        spec = $description.spec
+    }
+    $file = [IO.Path]::GetTempFileName()
+    try {
+        [IO.File]::WriteAllText($file, ($replacement | ConvertTo-Json -Depth 50))
+        Invoke-Gcloud -ArgumentList (@('run', 'services', 'replace', $file) + $scope) | Out-Null
+    }
+    finally { Remove-Item -LiteralPath $file -Force }
+    'app'
 }
 
 function Set-KairoMonitoringResource {

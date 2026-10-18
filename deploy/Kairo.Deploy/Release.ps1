@@ -195,6 +195,7 @@ function Publish-KairoService {
 
     Write-Host "Deploying $Service"
     $applicationContainer = Get-KairoApplicationContainer -Environment $Environment -Service $Service
+    if (-not $applicationContainer) { $applicationContainer = Initialize-KairoApplicationContainer -Environment $Environment -Service $Service }
     $containerSettings = @()
     $serviceSettings = @()
     $hasEnvironment = $false
