@@ -17,6 +17,9 @@ Describe 'Monitoring definitions' {
         }
         $logRules = $definitions.Policies | Where-Object { $_.conditions[0].conditionMatchedLog }
         $logRules.Count | Should -Be 6
+        foreach ($rule in $logRules) {
+            $rule.conditions[0].conditionMatchedLog.labelExtractors.event_id | Should -Be 'EXTRACT(insertId)'
+        }
         foreach ($event in 'launch.failed', 'stage.failed_twice', 'mass_pause.held', 'feed.stale', 'connection.expired', 'integration.quota_exceeded') {
             ($logRules.conditions.conditionMatchedLog.filter -join ' ') | Should -BeLike "*$event*"
         }

@@ -171,7 +171,7 @@ function Get-KairoMonitoringDefinitions {
                 displayName = "Kairo $($Environment.Name): $event"
                 enabled = $true
                 combiner = 'OR'
-                conditions = @(@{ displayName = $event; conditionMatchedLog = @{ filter = "$serviceFilter jsonPayload.event=`"$event`"" } })
+                conditions = @(@{ displayName = $event; conditionMatchedLog = @{ filter = "$serviceFilter jsonPayload.event=`"$event`""; labelExtractors = @{ event_id = 'EXTRACT(insertId)' } } })
                 alertStrategy = @{ notificationRateLimit = @{ period = '300s' }; autoClose = '1800s' }
             }
         }
