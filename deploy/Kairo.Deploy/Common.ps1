@@ -56,6 +56,22 @@ function Get-KairoServiceAccount {
     "$Name@$($Environment.Project).iam.gserviceaccount.com"
 }
 
+function Get-KairoAgentModels {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $models = [ordered]@{}
+    if (-not $Environment.AgentModels) {
+        return $models
+    }
+    foreach ($entry in $Environment.AgentModels.GetEnumerator()) {
+        if ($entry.Key -notin @('KAIRO_PLAN_BRIEF_MODEL', 'KAIRO_CHECK_MODEL') -or $entry.Value -isnot [string] -or $entry.Value -notmatch '\Agemini-[a-zA-Z0-9._-]+\z') {
+            throw 'Invalid configured brief or Guardian model.'
+        }
+        $models[$entry.Key] = $entry.Value
+    }
+    $models
+}
+
 function Get-KairoTokenKeyName {
     param([Parameter(Mandatory)][hashtable]$Environment)
 

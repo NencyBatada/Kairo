@@ -48,6 +48,19 @@ Describe 'Invoke-KairoDeploy' {
         Should -Invoke -ModuleName Kairo.Deploy Invoke-KairoTests -Times 0
     }
 
+    It 'deploys the configured brief and Guardian models to the agents container' {
+        $modelEnvironment = $environment.Clone()
+        $modelEnvironment.AgentModels = @{
+            KAIRO_PLAN_BRIEF_MODEL = 'gemini-3.8-flash'
+            KAIRO_CHECK_MODEL = 'gemini-3.8-flash'
+        }
+        Invoke-KairoDeploy -Environment $modelEnvironment -Root $root | Out-Null
+        $agents = $calls | Where-Object { $_ -like 'run deploy kairo-agents *' }
+        $agents | Should -BeLike '*KAIRO_PLAN_BRIEF_MODEL=gemini-3.8-flash*'
+        $agents | Should -BeLike '*KAIRO_CHECK_MODEL=gemini-3.8-flash*'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-api *' }) | Should -Not -BeLike '*KAIRO_CHECK_MODEL*'
+    }
+
     It 'stops before building when a test fails' {
         Mock -ModuleName Kairo.Deploy Invoke-KairoTests { throw 'dotnet test failed' }
 

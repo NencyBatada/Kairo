@@ -1,0 +1,185 @@
+{
+  "brief-en": {
+    "DraftedSmartBrief": {
+      "title": "Rain-ready commutes",
+      "objective": "Sell waterproof mesh shoes to commuters in Maharashtra.",
+      "kpi": "orders",
+      "campaignTypes": [
+        "search",
+        "shopping",
+        "demand_gen"
+      ],
+      "budget": 200000,
+      "startDate": "2026-11-02",
+      "endDate": "2026-11-15",
+      "regions": [
+        "Maharashtra"
+      ],
+      "audiences": [
+        "Commuters in Maharashtra"
+      ],
+      "keyMessages": [
+        "Waterproof mesh for rainy days"
+      ],
+      "productIds": [
+        "p1"
+      ],
+      "languages": [
+        "en"
+      ],
+      "reasons": {
+        "objective": "Supported by the supplied opportunity and product data.",
+        "kpi": "Supported by the supplied opportunity and product data.",
+        "campaignTypes": "Supported by the supplied opportunity and product data.",
+        "budget": "Supported by the supplied opportunity and product data.",
+        "dates": "Supported by the supplied opportunity and product data.",
+        "regions": "Supported by the supplied opportunity and product data.",
+        "audiences": "Supported by the supplied opportunity and product data.",
+        "keyMessages": "Supported by the supplied opportunity and product data.",
+        "products": "Supported by the supplied opportunity and product data.",
+        "languages": "Supported by the supplied opportunity and product data."
+      }
+    }
+  },
+  "copy-en": {
+    "DraftSearch": {
+      "adGroups": [
+        {
+          "name": "Rain shoes",
+          "productIds": [
+            "p1"
+          ],
+          "keywords": [
+            {
+              "text": "waterproof shoes",
+              "match": "phrase"
+            }
+          ],
+          "headlines": [
+            "Waterproof Rain Shoes",
+            "Stay Dry On Your Commute",
+            "Shop Acme Rain Shoes"
+          ],
+          "descriptions": [
+            "Waterproof mesh shoes for rainy commutes.",
+            "Explore Acme rain shoes. Free delivery over ₹999."
+          ],
+          "path1": "rain",
+          "path2": "shoes"
+        }
+      ]
+    },
+    "DraftDemandGen": {
+      "headlines": [
+        "Waterproof Rain Shoes"
+      ],
+      "longHeadlines": [
+        "Waterproof mesh rain shoes for your daily commute"
+      ],
+      "descriptions": [
+        "Waterproof mesh shoes for rainy commutes."
+      ],
+      "callToAction": "shop_now"
+    },
+    "DraftTitles": {
+      "titles": [
+        {
+          "productId": "p1",
+          "title": "Acme Waterproof Mesh Rain Shoes"
+        }
+      ]
+    }
+  },
+  "brief-hi": {
+    "DraftedSmartBrief": {
+      "title": "Rain-ready commutes",
+      "objective": "Sell waterproof mesh shoes to commuters in Maharashtra.",
+      "kpi": "orders",
+      "campaignTypes": [
+        "search",
+        "shopping",
+        "demand_gen"
+      ],
+      "budget": 200000,
+      "startDate": "2026-11-02",
+      "endDate": "2026-11-15",
+      "regions": [
+        "Maharashtra"
+      ],
+      "audiences": [
+        "Commuters in Maharashtra"
+      ],
+      "keyMessages": [
+        "Waterproof mesh for rainy days"
+      ],
+      "productIds": [
+        "p1"
+      ],
+      "languages": [
+        "en",
+        "hi"
+      ],
+      "reasons": {
+        "objective": "Supported by the supplied opportunity and product data.",
+        "kpi": "Supported by the supplied opportunity and product data.",
+        "campaignTypes": "Supported by the supplied opportunity and product data.",
+        "budget": "Supported by the supplied opportunity and product data.",
+        "dates": "Supported by the supplied opportunity and product data.",
+        "regions": "Supported by the supplied opportunity and product data.",
+        "audiences": "Supported by the supplied opportunity and product data.",
+        "keyMessages": "Supported by the supplied opportunity and product data.",
+        "products": "Supported by the supplied opportunity and product data.",
+        "languages": "Supported by the supplied opportunity and product data."
+      }
+    }
+  },
+  "copy-hi": {
+    "DraftSearch": {
+      "adGroups": [
+        {
+          "name": "Rain shoes",
+          "productIds": [
+            "p1"
+          ],
+          "keywords": [
+            {
+              "text": "बारिश के जूते",
+              "match": "phrase"
+            }
+          ],
+          "headlines": [
+            "बारिश के लिए जूते",
+            "पैर सूखे रखें",
+            "Acme जूते देखें"
+          ],
+          "descriptions": [
+            "बारिश में रोज़ के सफर के लिए आरामदायक जूते।",
+            "वॉटरप्रूफ जाली वाले Acme जूते देखें।"
+          ],
+          "path1": "rain",
+          "path2": "shoes"
+        }
+      ]
+    },
+    "DraftDemandGen": {
+      "headlines": [
+        "बारिश के लिए जूते"
+      ],
+      "longHeadlines": [
+        "रोज़ के सफर के लिए वॉटरप्रूफ जूते"
+      ],
+      "descriptions": [
+        "बारिश में रोज़ के सफर के लिए आरामदायक जूते।"
+      ],
+      "callToAction": "shop_now"
+    },
+    "DraftTitles": {
+      "titles": [
+        {
+          "productId": "p1",
+          "title": "Acme वॉटरप्रूफ जाली वाले जूते"
+        }
+      ]
+    }
+  }
+}

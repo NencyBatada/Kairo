@@ -1,0 +1,145 @@
+name: AI quality live
+
+on:
+  pull_request_target:
+    branches: [develop, main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pull_request:
+        description: Pull request number to evaluate
+        required: true
+        type: number
+      reviewed_branch:
+        description: Same-repository branch reviewed by a maintainer, with the exact PR head commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-quality-live-${{ github.event.pull_request.number || inputs.pull_request }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    outputs:
+      sha: ${{ steps.target.outputs.sha }}
+      trusted: ${{ steps.target.outputs.trusted }}
+      required: ${{ steps.target.outputs.required }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: develop
+          persist-credentials: false
+      - id: target
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pull_request }}
+          REVIEWED_BRANCH: ${{ inputs.reviewed_branch }}
+        with:
+          script: |
+            const policy = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/ai-quality-policy.cjs`);
+            const pull_number = Number(process.env.PR_NUMBER);
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number });
+            let reviewed;
+            if (context.eventName === 'workflow_dispatch') {
+              const branch = process.env.REVIEWED_BRANCH;
+              if (!branch || branch.startsWith('refs/') || branch.includes('..')) throw new Error('Invalid reviewed branch');
+              const { data } = await github.rest.git.getRef({ ...context.repo, ref: `heads/${branch}` });
+              reviewed = data.object.sha;
+            }
+            const chosen = policy.target(pr, `${context.repo.owner}/${context.repo.repo}`, reviewed);
+            const files = await github.paginate(github.rest.pulls.listFiles, { ...context.repo, pull_number, per_page: 100 });
+            const required = policy.requiresLive(files, pr.changed_files);
+            for (const [key, value] of Object.entries({ ...chosen, required })) core.setOutput(key, String(value));
+            await github.rest.repos.createCommitStatus({ ...context.repo, sha: chosen.sha,
+              context: 'AI quality / live', state: required ? (chosen.trusted ? 'pending' : 'failure') : 'success',
+              description: required ? (chosen.trusted ? 'Bounded live evaluation running' : 'Trusted evaluation required for this fork commit') : 'No AI-affecting files changed',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });
+  live:
+    needs: select
+    if: needs.select.outputs.required == 'true' && needs.select.outputs.trusted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      KAIRO_EVAL_PROJECT: ${{ vars.KAIRO_EVAL_PROJECT }}
+      KAIRO_EVAL_SERVICE_ACCOUNT: ${{ vars.KAIRO_EVAL_SERVICE_ACCOUNT }}
+      KAIRO_EVAL_PROVIDER: ${{ vars.KAIRO_EVAL_PROVIDER }}
+      KAIRO_EVAL_COMMIT: ${{ needs.select.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.select.outputs.sha }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: '0.12.5'
+          enable-cache: false
+      - run: uv sync --locked
+        working-directory: agents
+      - name: Load development model settings
+        shell: pwsh
+        run: |
+          Import-Module ./deploy/Kairo.Deploy -Force
+          $environment = Get-KairoEnvironment -Name development
+          if ($environment.Project -ne $env:KAIRO_EVAL_PROJECT) { throw 'Evaluation project differs from development.' }
+          foreach ($entry in (Get-KairoAgentModels -Environment $environment).GetEnumerator()) {
+            "$($entry.Key)=$($entry.Value)" >> $env:GITHUB_ENV
+          }
+      - name: Initialize failure artifact before authentication
+        working-directory: agents
+        run: |
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from kairo_agents.evaluation.fixtures import Fixtures
+          from kairo_agents.evaluation.runner import prompt_manifest
+          path = Path('../TestResults/evaluation-live')
+          path.mkdir(parents=True, exist_ok=True)
+          data = {'liveEvaluationPassed': False, 'failures': ['live_job_incomplete'],
+                  'commit': os.environ['KAIRO_EVAL_COMMIT'], 'fixtureManifest': Fixtures().manifest,
+                  'promptManifest': prompt_manifest()}
+          (path / 'report.json').write_text(json.dumps(data, indent=2), encoding='utf-8')
+          PY
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.KAIRO_EVAL_PROVIDER }}
+          service_account: ${{ vars.KAIRO_EVAL_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+      - run: uv run python -m kairo_agents.evaluation --live --output ../TestResults/evaluation-live
+        working-directory: agents
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ai-quality-live-${{ needs.select.outputs.sha }}
+          path: TestResults/evaluation-live/
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    needs: [select, live]
+    if: always() && needs.select.outputs.required == 'true' && needs.select.outputs.trusted == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ needs.select.outputs.sha }}
+          LIVE_RESULT: ${{ needs.live.result }}
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({ ...context.repo, sha: process.env.HEAD_SHA,
+              context: 'AI quality / live', state: process.env.LIVE_RESULT === 'success' ? 'success' : 'failure',
+              description: process.env.LIVE_RESULT === 'success' ? 'All live quality gates passed' : 'Live evaluation failed, was cancelled or did not complete',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });

@@ -30,6 +30,7 @@ from kairo_agents.agents.plan.prompt import (
     trigger_brief_instructions,
 )
 from kairo_agents.agents.sense.prompt import data_block
+from kairo_agents.generation import generation_config
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 DEFAULT_BRIEF_MODEL = "gemini-3.5-pro"
@@ -94,7 +95,8 @@ async def smart_brief(request: SmartBriefRequest, clients: ClientSource) -> Any:
         response = await clients().aio.models.generate_content(
             model=model,
             contents=data_block(request),
-            config=types.GenerateContentConfig(
+            config=generation_config(
+                model,
                 system_instruction=brief_instructions(),
                 response_mime_type="application/json",
                 response_schema=DraftedSmartBrief,

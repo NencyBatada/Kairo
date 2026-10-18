@@ -48,6 +48,7 @@ from kairo_agents.agents.create.media_models import Photo, ReferenceProduct
 from kairo_agents.agents.plan.api import usage_of
 from kairo_agents.agents.plan.models import Usage
 from kairo_agents.agents.sense.prompt import data_block
+from kairo_agents.generation import generation_config
 from kairo_agents.media.ffmpeg import FfmpegError
 from kairo_agents.media.frames import SampledFrame, sample_frames
 
@@ -87,7 +88,8 @@ async def review[T: BaseModel](
         response = await clients().aio.models.generate_content(
             model=model,
             contents=contents,
-            config=types.GenerateContentConfig(
+            config=generation_config(
+                model,
                 system_instruction=instructions + (RETRY_NOTE if attempt else ""),
                 response_mime_type="application/json",
                 response_schema=schema,

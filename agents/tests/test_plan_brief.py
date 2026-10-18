@@ -201,6 +201,17 @@ def test_brief_uses_a_pro_model_by_default(models, monkeypatch) -> None:
     assert response.json()["model"] == "gemini-3.5-pro"
 
 
+def test_brief_supports_gemini_38_without_unsupported_temperature(models, monkeypatch) -> None:
+    monkeypatch.setenv("KAIRO_PLAN_BRIEF_MODEL", "gemini-3.8-flash")
+    response = TestClient(app).post("/plan/brief", json=REQUEST)
+    assert response.status_code == 200
+    assert response.json()["model"] == "gemini-3.8-flash"
+    [call] = models.calls
+    assert call["config"].temperature is None
+    assert call["config"].thinking_config.thinking_level == "MEDIUM"
+    assert call["config"].response_schema is DraftedSmartBrief
+
+
 def test_brief_falls_back_to_the_guides_when_the_model_strays(models) -> None:
     models.text = json.dumps(
         {
