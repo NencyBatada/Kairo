@@ -15,6 +15,7 @@ public sealed class ConnectionNotificationTests(SqlServer sqlServer) : IAsyncDis
     [Fact]
     public async Task A_rejected_token_tells_every_admin_and_no_one_else()
     {
+        OperationsMail.Enable(_api.Services);
         var owner = await Workspaces.SignInAsync(_api);
         var brandId = await Workspaces.CreateAsync(owner.Browser);
         var admin = await Workspaces.JoinAsync(_api, owner.Browser, brandId, "admin");
@@ -32,6 +33,7 @@ public sealed class ConnectionNotificationTests(SqlServer sqlServer) : IAsyncDis
             Assert.Equal("Google stopped accepting Kairo's access to Google Ads. Reconnect it so refreshes and changes can continue.", row.Body);
         });
         Assert.Equal(2, (await NotificationRows.EmailsAsync(sqlServer.KairoConnectionString, brandId)).Count);
+        Assert.Single(await NotificationRows.EmailsAsync(sqlServer.KairoConnectionString, brandId, "Operations"));
     }
 
     [Fact]

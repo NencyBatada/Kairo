@@ -4,6 +4,7 @@ BeforeAll {
         Name = 'development'; Project = 'kairo-test'; Region = 'asia-south1'
         SqlTier = 'db-custom-1-3840'; SqlEdition = 'SQLSERVER_2022_EXPRESS'; SqlHighAvailability = $false
         MinInstances = @{ web = 0; api = 1 }
+        OperationsEmail = 'operations@example.com'
     }
     $script:root = Join-Path ([System.IO.Path]::GetTempPath()) 'Kairo'
 }
@@ -104,6 +105,8 @@ Describe 'Invoke-KairoDeploy' {
         $api | Should -BeLike '*--session-affinity*'
         $api | Should -BeLike '*--min-instances=1*'
         $api | Should -BeLike '*--set-env-vars=Kairo__PublicOrigin=https://kairo-web-123.asia-south1.run.app*'
+        $api | Should -BeLike '*Kairo__Operations__Email=operations@example.com*'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike '*Kairo__Operations__Email=operations@example.com*'
         $api | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest,Authentication__Google__ClientId=google-client-id:latest,Authentication__Google__ClientSecret=google-client-secret:latest*'
     }
 

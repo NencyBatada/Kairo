@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Kairo.SharedKernel.Observability;
 using Kairo.Contracts.Audit;
 using Kairo.Contracts.Live;
+using Kairo.Contracts.Notifications;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
 using Kairo.SharedKernel.Agents;
@@ -17,6 +18,7 @@ internal sealed class StageRunner(
     RoomWorkflow workflow,
     IAuditLog audit,
     IAgentProgress progress,
+    IOperationsAlerts operations,
     TimeProvider time,
     ILogger<StageRunner> logger)
 {
@@ -66,7 +68,7 @@ internal sealed class StageRunner(
         {
             KairoTelemetry.StageFinished(run.Kind, "failed", Stopwatch.GetElapsedTime(started).TotalSeconds);
             activity?.SetStatus(ActivityStatusCode.Error);
-            if (run.Attempts == 2) KairoTelemetry.Event(logger, "stage.failed_twice", run.BrandId, run.RoomId, run.Id);
+            await AlertSecondFailureAsync(run, cancellationToken);
             await FailAsync(run, lease, failure.Code, failure.Message, cancellationToken);
             return;
         }
@@ -74,7 +76,7 @@ internal sealed class StageRunner(
         {
             KairoTelemetry.StageFinished(run.Kind, "failed", Stopwatch.GetElapsedTime(started).TotalSeconds);
             activity?.SetStatus(ActivityStatusCode.Error);
-            if (run.Attempts == 2) KairoTelemetry.Event(logger, "stage.failed_twice", run.BrandId, run.RoomId, run.Id);
+            await AlertSecondFailureAsync(run, cancellationToken);
             logger.LogWarning(exception, "Stage run {RunId} ({Kind}) failed on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
             if (exception.Code == AgentCallException.NotConfigured || run.Attempts >= work.AttemptsFor(run))
             {
@@ -91,7 +93,7 @@ internal sealed class StageRunner(
         {
             KairoTelemetry.StageFinished(run.Kind, "failed", Stopwatch.GetElapsedTime(started).TotalSeconds);
             activity?.SetStatus(ActivityStatusCode.Error);
-            if (run.Attempts == 2) KairoTelemetry.Event(logger, "stage.failed_twice", run.BrandId, run.RoomId, run.Id);
+            await AlertSecondFailureAsync(run, cancellationToken);
             logger.LogError(exception, "Stage run {RunId} ({Kind}) stopped unexpectedly on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
             db.ChangeTracker.Clear();
             if (run.Attempts >= work.AttemptsFor(run))
@@ -108,6 +110,13 @@ internal sealed class StageRunner(
 
         await SucceedAsync(run, work, lease, outcome, cancellationToken);
         KairoTelemetry.StageFinished(run.Kind, "succeeded", Stopwatch.GetElapsedTime(started).TotalSeconds);
+    }
+
+    private async Task AlertSecondFailureAsync(StageRun run, CancellationToken cancellationToken)
+    {
+        if (run.Attempts != 2) return;
+        KairoTelemetry.Event(logger, "stage.failed_twice", run.BrandId, run.RoomId, run.Id);
+        await operations.QueueAsync(new OperationsAlert(run.Id, "stage.failed_twice", run.RoomId, run.Id), cancellationToken);
     }
 
     private async Task SucceedAsync(StageRun claimed, IStageWork work, DateTimeOffset lease, StageOutcome outcome, CancellationToken cancellationToken)

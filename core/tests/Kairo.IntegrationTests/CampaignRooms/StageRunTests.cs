@@ -2,6 +2,7 @@ using System.Net;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using Kairo.SharedKernel.Observability;
+using Kairo.IntegrationTests.Notifications;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kairo.IntegrationTests.Api;
@@ -114,13 +115,16 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
     [Fact]
     public async Task A_failing_agent_is_retried_with_backoff_then_the_room_needs_attention()
     {
+        OperationsMail.Enable(_world.Api.Services, _world.Worker.Services);
         _world.Plan.Fails = true;
         var roomId = await _world.AcceptAsync();
 
         Assert.Equal(1, await _world.RunStagesAsync());
         Assert.Equal(0, await _world.RunStagesAsync());
+        Assert.Empty(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(30));
         Assert.Equal(1, await _world.RunStagesAsync());
+        Assert.Single(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(119));
         Assert.Equal(0, await _world.RunStagesAsync());
         _world.Api.Clock.Advance(TimeSpan.FromSeconds(1));
@@ -128,6 +132,7 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
 
         var failed = await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, roomId);
         Assert.Equal(3, _world.Plan.Requests.Count);
+        Assert.Single(await NotificationRows.EmailsAsync(_world.Database, _world.BrandId, "Operations"));
         Assert.Equal("needs_attention", Campaigns.Status(failed));
         var run = Assert.Single(failed.GetProperty("runs").EnumerateArray());
         Assert.Equal(("failed", 3), (run.GetProperty("status").GetString(), run.GetProperty("attempts").GetInt32()));

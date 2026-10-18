@@ -80,7 +80,7 @@ internal sealed class StockPauser(LaunchDbContext db, KairoDatabase database, IS
 }
 
 internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase database, LaunchGoogle google, ICatalogue catalogue, TimeProvider time,
-    INotifications notifications, IBrandDirectory brands, IAuditLog audit, ILiveUpdates live, ILogger<StockPauseWorker> logger)
+    INotifications notifications, IOperationsAlerts operations, IBrandDirectory brands, IAuditLog audit, ILiveUpdates live, ILogger<StockPauseWorker> logger)
 {
     public static readonly TimeSpan StaleAfter = TimeSpan.FromHours(3);
     public const int HoldPercent = 30;
@@ -134,6 +134,7 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
                 if (watch.StaleSince is null)
                 {
                     watch.StaleSince = now;
+                    await operations.QueueAsync(new OperationsAlert(claim, "feed.stale"), cancellationToken);
                     await database.AfterCommitAsync(_ => { KairoTelemetry.Event(logger, "feed.stale", brand.Id); return Task.CompletedTask; }, cancellationToken);
                     await notifications.NotifyAsync(new Notification("connection.problem", LiveAudience.Roles(BrandRoles.Admin),
                         "Stock pauses are on hold", "Kairo hasn't had a stock update for 3 hours, so it isn't pausing or resuming ads for stock. Check the product feed.",
@@ -186,6 +187,7 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
             foreach (var batch in held.Values.GroupBy(entry => entry.BatchId))
             {
                 var first = batch.First();
+                await operations.QueueAsync(new OperationsAlert(batch.Key, "mass_pause.held", first.Ad.Launch.RoomId, batch.Key), cancellationToken);
                 await database.AfterCommitAsync(_ => { KairoTelemetry.Event(logger, "mass_pause.held", brand.Id, first.Ad.Launch.RoomId, batch.Key); return Task.CompletedTask; }, cancellationToken);
                 foreach (var entry in batch) db.AdPauses.Add(Row(entry.Ad, PauseStates.Held, batch.Key, now));
                 await audit.RecordAsync(new AuditRecord("launch.mass_pause_held", "campaign_room", first.Ad.Launch.RoomId.ToString(), null,

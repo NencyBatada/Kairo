@@ -3,6 +3,7 @@ using Kairo.Contracts.Identity;
 using Kairo.Modules.Notifications.Data;
 using Kairo.Modules.Notifications.Kinds;
 using Kairo.Modules.Notifications.Publishing;
+using Kairo.SharedKernel.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Notifications.Delivery;
@@ -76,6 +77,8 @@ internal sealed class EmailDispatcher(
             try
             {
                 var result = await sender.SendAsync(message(), cancellationToken);
+                if (email.Type == EmailType.Operations && result != SendResult.Sent)
+                    throw new EmailSendException("The operations mail sender is not configured.", mayPass: true);
                 email.Status = result == SendResult.Sent ? EmailStatus.Sent : EmailStatus.Logged;
                 email.SentAt = time.GetUtcNow();
                 email.LastError = null;
@@ -101,6 +104,10 @@ internal sealed class EmailDispatcher(
 
     private async Task<Func<EmailMessage>?> RenderAsync(OutboundEmail email, CancellationToken cancellationToken)
     {
+        if (email.Type == EmailType.Operations)
+            return email.Address is { Length: > 0 } recipient
+                ? () => EmailTemplate.RenderOperations(recipient, OperationsDetails.Read(email.Payload))
+                : null;
         var workspace = (await brands.GetAsync([email.BrandId], cancellationToken)).SingleOrDefault();
         if (workspace is null)
         {
@@ -142,6 +149,8 @@ internal sealed class EmailDispatcher(
 
     private void Fail(OutboundEmail email, Exception exception)
     {
+        if (email.Type == EmailType.Operations)
+            KairoTelemetry.Event(logger, "operations.email_failed", email.BrandId);
         var wait = exception is EmailSendException { MayPass: false } ? null : EmailRetries.After(email.Attempts);
         email.LastError = exception.Message.Length > 500 ? exception.Message[..500] : exception.Message;
         if (wait is { } delay)

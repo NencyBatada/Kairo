@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Kairo.Modules.Launch;
 
 internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase database, ICampaignLifecycle lifecycle,
-    IAuditLog audit, ILiveUpdates live, INotifications notifications, IBrandDirectory brands, TimeProvider time, ILogger<LaunchFailureRecorder> logger)
+    IAuditLog audit, ILiveUpdates live, INotifications notifications, IOperationsAlerts operations, IBrandDirectory brands, TimeProvider time, ILogger<LaunchFailureRecorder> logger)
 {
     public async Task RecordAsync(Guid id, Guid claim, LaunchException error, CancellationToken cancellationToken)
     {
@@ -57,6 +57,7 @@ internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase da
             await notifications.NotifyAsync(new Notification("launch.failed", LiveAudience.Roles(BrandRoles.Marketer), "Campaign launch needs attention",
                 error.Message + " " + error.Fix, $"/{brand.Handle}/campaigns/{record.RoomId}/launch", $"launch:{record.RoomId:N}:launch.failed"), cancellationToken);
             await live.PublishAsync(new LiveEvent("launch.changed", new { campaignId = record.RoomId, record.Status, record.Step }, LiveAudience.Everyone), cancellationToken);
+            await operations.QueueAsync(new OperationsAlert(claim, "launch.failed", record.RoomId, record.Id), cancellationToken);
             await database.CommitAsync(cancellationToken);
             KairoTelemetry.Event(logger, "launch.failed", record.BrandId, record.RoomId, record.Id);
         }

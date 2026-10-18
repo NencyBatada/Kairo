@@ -166,7 +166,7 @@ function Get-KairoMonitoringDefinitions {
     $labels = @{ managed_by = 'kairo'; environment = $Environment.Name }
     $serviceFilter = 'resource.type="cloud_run_revision" resource.labels.service_name=~"^kairo-(web|api|worker|agents)$"'
     $policies = @(
-        foreach ($event in 'launch.failed', 'stage.failed_twice', 'mass_pause.held', 'feed.stale', 'connection.expired', 'integration.quota_exceeded') {
+        foreach ($event in 'launch.failed', 'stage.failed_twice', 'mass_pause.held', 'feed.stale', 'connection.expired', 'integration.quota_exceeded', 'operations.email_failed') {
             @{
                 displayName = "Kairo $($Environment.Name): $event"
                 enabled = $true

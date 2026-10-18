@@ -9,18 +9,18 @@ BeforeAll {
 Describe 'Monitoring definitions' {
     It 'routes all policies to operations and covers the agreed incidents and thresholds' {
         $definitions = Get-KairoMonitoringDefinitions -Environment $environment -Channels 'projects/kairo-test/notificationChannels/1'
-        $definitions.Policies.Count | Should -Be 11
+        $definitions.Policies.Count | Should -Be 12
         foreach ($policy in $definitions.Policies) {
             $policy.notificationChannels | Should -Contain 'projects/kairo-test/notificationChannels/1'
             $policy.userLabels.managed_by | Should -Be 'kairo'
             $policy.enabled | Should -BeTrue
         }
         $logRules = $definitions.Policies | Where-Object { $_.conditions[0].conditionMatchedLog }
-        $logRules.Count | Should -Be 6
+        $logRules.Count | Should -Be 7
         foreach ($rule in $logRules) {
             $rule.conditions[0].conditionMatchedLog.labelExtractors.event_id | Should -Be 'EXTRACT(insertId)'
         }
-        foreach ($event in 'launch.failed', 'stage.failed_twice', 'mass_pause.held', 'feed.stale', 'connection.expired', 'integration.quota_exceeded') {
+        foreach ($event in 'launch.failed', 'stage.failed_twice', 'mass_pause.held', 'feed.stale', 'connection.expired', 'integration.quota_exceeded', 'operations.email_failed') {
             ($logRules.conditions.conditionMatchedLog.filter -join ' ') | Should -BeLike "*$event*"
         }
         $queue = $definitions.Policies | Where-Object { $_.displayName -like '*queue backlog' }

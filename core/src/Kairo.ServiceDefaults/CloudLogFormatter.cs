@@ -14,6 +14,7 @@ public sealed class CloudLogFormatter() : ConsoleFormatter("kairo")
     [
         "launch.failed", "launch.succeeded", "stage.failed_twice", "mass_pause.held",
         "feed.stale", "connection.expired", "integration.failed", "integration.quota_exceeded",
+        "operations.email_failed",
     ];
 
     public override void Write<TState>(in LogEntry<TState> entry, IExternalScopeProvider? scopeProvider, TextWriter writer)

@@ -17,6 +17,14 @@ internal static class EmailTemplate
 
     private const string Required = "Emails like this can't be turned off.";
 
+    public static EmailMessage RenderOperations(string recipient, OperationsDetails details)
+    {
+        var title = "Kairo operations: " + details.Kind;
+        var body = $"Event: {details.Key}\nBrand: {details.BrandId}\nCampaign: {details.CampaignId}\nRun: {details.RunId}\nTrace: {details.TraceId}";
+        return new EmailMessage(null, "operations", recipient, "Operations", title,
+            $"<h1>{Encode(title)}</h1><pre>{Encode(body)}</pre>", title + "\n\n" + body);
+    }
+
     public static EmailMessage Render(
         InAppNotification notification,
         NotificationKind kind,
