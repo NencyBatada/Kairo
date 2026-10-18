@@ -19,8 +19,9 @@ internal static class EmailTemplate
 
     public static EmailMessage RenderOperations(string recipient, OperationsDetails details)
     {
-        var title = "Kairo operations: " + details.Kind;
-        var body = $"Event: {details.Key}\nBrand: {details.BrandId}\nCampaign: {details.CampaignId}\nRun: {details.RunId}\nTrace: {details.TraceId}";
+        var title = (details.IsVerification ? "Kairo operations verification: " : "Kairo operations: ") + details.Kind;
+        var body = (details.IsVerification ? "Test alert only. No operational failure occurred.\n\n" : "")
+            + $"Event: {details.Key}\nBrand: {details.BrandId}\nCampaign: {details.CampaignId}\nRun: {details.RunId}\nTrace: {details.TraceId}";
         return new EmailMessage(null, "operations", recipient, "Operations", title,
             $"<h1>{Encode(title)}</h1><pre>{Encode(body)}</pre>", title + "\n\n" + body);
     }

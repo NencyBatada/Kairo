@@ -33,7 +33,7 @@ internal sealed class OperationsAlerts(NotificationsDbContext db, KairoDatabase 
                 {
                     Type = EmailType.Operations,
                     Address = recipient,
-                    Payload = JsonSerializer.Serialize(new OperationsDetails(key, alert.Kind, brand, alert.CampaignId, alert.RunId, Activity.Current?.TraceId.ToString()), JsonSerializerOptions.Web),
+                    Payload = JsonSerializer.Serialize(new OperationsDetails(key, alert.Kind, brand, alert.CampaignId, alert.RunId, Activity.Current?.TraceId.ToString(), alert.IsVerification), JsonSerializerOptions.Web),
                     Status = EmailStatus.Pending,
                     NextAttemptAt = now,
                     CreatedAt = now,
@@ -54,7 +54,7 @@ internal sealed class OperationsAlerts(NotificationsDbContext db, KairoDatabase 
     }
 }
 
-internal sealed record OperationsDetails(string Key, string Kind, Guid BrandId, Guid? CampaignId, Guid? RunId, string? TraceId)
+internal sealed record OperationsDetails(string Key, string Kind, Guid BrandId, Guid? CampaignId, Guid? RunId, string? TraceId, bool IsVerification = false)
 {
     public static OperationsDetails Read(string? payload) =>
         JsonSerializer.Deserialize<OperationsDetails>(payload ?? "", JsonSerializerOptions.Web)
