@@ -10,6 +10,7 @@ const dependencyFiles = new Set([
   'agents/pyproject.toml', 'agents/uv.lock', 'agents/Dockerfile',
   'core/Directory.Packages.props', '.github/workflows/ci.yml',
   'deploy/setup-evaluations.ps1',
+  'deploy/environments.psd1', 'deploy/Kairo.Deploy/Release.ps1',
 ]);
 
 function requiresLive(files, total) {

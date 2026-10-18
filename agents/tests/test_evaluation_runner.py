@@ -4,11 +4,12 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+import requests
 
 from kairo_agents.agents.check.models import AssetFindings, CheckResponse, Finding
 from kairo_agents.evaluation import runner
 from kairo_agents.evaluation.auth import live_credentials
-from kairo_agents.evaluation.budget import Budget, Limits
+from kairo_agents.evaluation.budget import Budget, EvaluationStopped, Limits
 from kairo_agents.evaluation.fixtures import Fixtures
 from kairo_agents.evaluation.judge import GoogleJudge
 from kairo_agents.evaluation.replay import replay_client
@@ -109,6 +110,23 @@ def test_google_judge_calls_the_official_tool_with_fixture_and_candidate(monkeyp
     assert budget.calls[0]["inputTokens"] is None
 
 
+def test_unavailable_required_judge_stops_the_run_before_more_generation(monkeypatch):
+    budget = Budget()
+    judge = GoogleJudge(PROJECT, budget, credentials=object())
+
+    def unavailable(*args):
+        response = requests.Response()
+        response.status_code = 403
+        raise requests.HTTPError(response=response)
+
+    monkeypatch.setattr(judge, "evaluate", unavailable)
+    with pytest.raises(requests.HTTPError):
+        asyncio.run(judge.score({}, {}))
+    with pytest.raises(EvaluationStopped):
+        budget.reserve("images", "generate_content", "image-model")
+    assert budget.calls[0]["statusCode"] == 403
+
+
 @pytest.mark.parametrize(
     "case_id", ["brief-en", "brief-hi", "copy-en", "copy-hi", "generated-images", "generated-video"]
 )
@@ -141,6 +159,18 @@ def test_critical_findings_are_rejected_and_missing_guardian_results_fail(tmp_pa
     assert live.results[0]["accepted"] is False
     with pytest.raises(ValueError, match="incomplete_guardian"):
         live.guardian_results(answer, [case, {"id": "missing"}])
+
+
+def test_hindi_campaign_shopping_titles_retain_the_catalogue_language(tmp_path):
+    fixtures = Fixtures()
+    case = next(c for c in fixtures.cases if c["id"] == "copy-hi")
+    fixtures.golden["copy-hi"]["DraftTitles"]["titles"][0]["title"] = (
+        "Acme Waterproof Rain Shoes - Blue Mesh, White Rubber Sole"
+    )
+    judge = SimpleNamespace(score=AsyncMock(return_value={"score": 0.8}))
+    live = runner.LiveRunner(fixtures, replay_client(fixtures, case), judge, tmp_path)
+    result = asyncio.run(live.generation(case))
+    assert result["formatPassed"], result
 
 
 def test_timeout_and_partial_runs_cannot_count_as_passing(tmp_path, monkeypatch):

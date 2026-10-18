@@ -54,13 +54,15 @@ def copy_errors(answer: CopyResponse, request: CopyRequest) -> list[str]:
         request.brief, request.products, request.brand_kit, request.language, request.brand
     )
 
-    def lines(values: list[str], minimum: int, maximum: int, length: int) -> None:
+    def lines(
+        values: list[str], minimum: int, maximum: int, length: int, script: bool = True
+    ) -> None:
         if not minimum <= len(values) <= maximum:
             errors.append("invalid_text_count")
         for text in values:
             if not text.strip() or limits.length(text) > length:
                 errors.append("invalid_text_length")
-            if guard.findings(text) or not guard.fits(text):
+            if guard.findings(text) or (script and not guard.fits(text)):
                 errors.append("invalid_text_content")
 
     if not limits.AD_GROUPS[0] <= len(assets.ad_groups) <= limits.AD_GROUPS[1]:
@@ -106,7 +108,7 @@ def copy_errors(answer: CopyResponse, request: CopyRequest) -> list[str]:
     if {title.product_id for title in assets.shopping_titles} != {p.id for p in request.products}:
         errors.append("missing_shopping_titles")
     for title in assets.shopping_titles:
-        lines([title.title], 1, 1, limits.SHOPPING_TITLE)
+        lines([title.title], 1, 1, limits.SHOPPING_TITLE, script=False)
     return errors
 
 

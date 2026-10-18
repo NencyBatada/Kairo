@@ -31,6 +31,7 @@ class Budget:
         self.lock = threading.Lock()
         self.calls: list[dict[str, Any]] = []
         self.counts = {"text": 0, "images": 0, "videos": 0}
+        self.fatal_error: str | None = None
 
     def remaining(self) -> float:
         return max(0, self.limits.seconds - (self.clock() - self.started))
@@ -39,6 +40,8 @@ class Budget:
         with self.lock:
             if count < 1 or kind not in self.counts:
                 raise ValueError("Unknown evaluation request")
+            if self.fatal_error is not None:
+                raise EvaluationStopped(self.fatal_error)
             if not self.remaining():
                 raise EvaluationStopped("evaluation_deadline_exceeded")
             if self.counts[kind] + count > getattr(self.limits, kind):
@@ -63,6 +66,7 @@ class Budget:
                 "limits": asdict(self.limits),
                 "requests": self.counts.copy(),
                 "elapsedSeconds": round(self.clock() - self.started, 3),
+                "fatalError": self.fatal_error,
                 "calls": [item.copy() for item in self.calls],
             }
 
@@ -103,6 +107,8 @@ class BudgetedModels:
             code = getattr(error, "code", None)
             if isinstance(code, int):
                 call["statusCode"] = code
+                if code in (403, 404):
+                    self.budget.fatal_error = "required_provider_unavailable"
             raise
         finally:
             call["seconds"] = round(self.budget.clock() - started, 3)

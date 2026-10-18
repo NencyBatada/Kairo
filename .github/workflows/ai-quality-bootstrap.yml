@@ -61,3 +61,20 @@ jobs:
           path: TestResults/evaluation-live/
           if-no-files-found: error
           retention-days: 30
+  publish:
+    needs: live
+    if: always() && github.event.pull_request.number == 31 && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/ai-quality-tests'
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          LIVE_RESULT: ${{ needs.live.result }}
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({ ...context.repo, sha: process.env.HEAD_SHA,
+              context: 'AI quality / live', state: process.env.LIVE_RESULT === 'success' ? 'success' : 'failure',
+              description: process.env.LIVE_RESULT === 'success' ? 'All live quality gates passed' : 'Live evaluation failed, was cancelled or did not complete',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}` });

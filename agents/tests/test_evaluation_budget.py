@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 
 import pytest
-from google.genai import types
+from google.genai import errors, types
 
 from kairo_agents.evaluation.budget import Budget, BudgetedModels, EvaluationStopped, Limits
 
@@ -67,6 +67,31 @@ def test_multiple_image_candidates_consume_multiple_image_slots_before_dispatch(
         with pytest.raises(EvaluationStopped):
             await client.generate_content(model="image", config=config)
         assert budget.counts["images"] == 2
+
+    asyncio.run(run())
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize("status", [403, 404])
+def test_unavailable_required_models_stop_further_spending_and_remain_failing(status):
+    calls = []
+
+    async def unavailable(**kwargs):
+        calls.append(kwargs)
+        raise errors.ClientError(status, {"error": {"message": "private provider text"}})
+
+    async def run():
+        budget = Budget()
+        client = BudgetedModels(SimpleNamespace(generate_content=unavailable), budget)
+        with pytest.raises(errors.ClientError):
+            await client.generate_content(model="required-model")
+        with pytest.raises(EvaluationStopped, match="required_provider_unavailable"):
+            await client.generate_content(
+                model="image", config=types.GenerateContentConfig(response_modalities=["IMAGE"])
+            )
+        assert budget.counts == {"text": 1, "images": 0, "videos": 0}
+        assert budget.calls[0]["statusCode"] == status
+        assert "private provider text" not in str(budget.report())
 
     asyncio.run(run())
     assert len(calls) == 1
