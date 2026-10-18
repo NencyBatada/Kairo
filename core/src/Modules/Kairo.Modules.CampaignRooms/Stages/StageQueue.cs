@@ -35,6 +35,7 @@ internal sealed class StageQueue(
             NextAttemptAt = now,
             RequestedBy = requestedBy,
             Input = input,
+            TraceParent = Kairo.SharedKernel.Observability.KairoTelemetry.CaptureParent(),
             QueuedAt = last is { } previous && previous >= now ? previous.AddTicks(1) : now,
         };
         db.StageRuns.Add(run);

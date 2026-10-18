@@ -420,6 +420,16 @@ You need the gcloud CLI, signed in with an account that owns the project.
 
 In development there is no load balancer: the web app forwards `/api/*` to the core itself, sending a Google identity token. Only the web app is public; the API, worker and agent service accept calls only from Kairo's own service accounts.
 
+## Operations monitoring
+
+The web server, core API, worker and Python agents send OpenTelemetry traces and metrics to a private collector sidecar in each Cloud Run instance. Run `deploy/setup.ps1 development` once before the first monitored deployment, then deploy normally. Setup enables the observability APIs, stores the collector configuration and grants telemetry-only write permissions. Deploy updates Kairo-owned dashboards, alert policies and the operations email channel without replacing unrelated monitoring resources.
+
+Set `OperationsEmail` in `deploy/environments.psd1` to the operations recipient. The development default is `evolixgcpadmin@gmail.com`. Google Cloud may require the recipient to verify the notification channel. Alerts cover failed launches, second failed stage attempts, held mass pauses, stale stock feeds, lost account access, quota-exceeded responses, Cloud Run errors, reported allocation/minute/daily quota above 80%, and an eligible stage waiting over five minutes for ten minutes. Rate-quota rules use matching project-wide minute/day limits, including development's Google Ads test-operation limit. Log-based notifications are rate-limited to one per policy every five minutes. Services that do not publish quota metrics cannot provide an 80% warning; their quota-exceeded responses are still reported.
+
+Open **Monitoring → Dashboards → Kairo development: operations** in the target project. The dashboard shows stage and model durations, launch outcomes, integration errors, queue age and correlated warning/error logs. Stage durations can be compared with the BRD targets: brief 60 seconds, copy/images 300 seconds and video 900 seconds. Logs contain available brand, campaign, run and trace IDs. Production console logs and exported span attributes omit request bodies, credentials, prompts, conversation content and media. Use the trace ID to follow a request into a persisted stage run and the agent service. Historical runs without saved trace context start a new trace.
+
+Aspire continues to receive local telemetry. For a standalone local collector, set `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`; production uses `http://localhost:4318`. Cloud Run services use instance-based CPU allocation so the collector can flush between requests.
+
 ## Conventions
 
 **Core modules.**

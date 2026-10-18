@@ -3,5 +3,6 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Common.ps1')
 . (Join-Path $PSScriptRoot 'Setup.ps1')
 . (Join-Path $PSScriptRoot 'Release.ps1')
+. (Join-Path $PSScriptRoot 'Monitoring.ps1')
 
 Export-ModuleMember -Function *

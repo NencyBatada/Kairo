@@ -8,6 +8,7 @@ using Kairo.Contracts.Notifications;
 using Kairo.Modules.Launch.Data;
 using Kairo.Modules.Launch.Google;
 using Microsoft.Extensions.Logging;
+using Kairo.SharedKernel.Observability;
 
 namespace Kairo.Modules.Launch;
 
@@ -133,6 +134,7 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
                 if (watch.StaleSince is null)
                 {
                     watch.StaleSince = now;
+                    await database.AfterCommitAsync(_ => { KairoTelemetry.Event(logger, "feed.stale", brand.Id); return Task.CompletedTask; }, cancellationToken);
                     await notifications.NotifyAsync(new Notification("connection.problem", LiveAudience.Roles(BrandRoles.Admin),
                         "Stock pauses are on hold", "Kairo hasn't had a stock update for 3 hours, so it isn't pausing or resuming ads for stock. Check the product feed.",
                         $"/{brand.Handle}/brand-kit/catalogue"), cancellationToken);
@@ -184,6 +186,7 @@ internal sealed class StockPauseWorker(LaunchDbContext db, KairoDatabase databas
             foreach (var batch in held.Values.GroupBy(entry => entry.BatchId))
             {
                 var first = batch.First();
+                await database.AfterCommitAsync(_ => { KairoTelemetry.Event(logger, "mass_pause.held", brand.Id, first.Ad.Launch.RoomId, batch.Key); return Task.CompletedTask; }, cancellationToken);
                 foreach (var entry in batch) db.AdPauses.Add(Row(entry.Ad, PauseStates.Held, batch.Key, now));
                 await audit.RecordAsync(new AuditRecord("launch.mass_pause_held", "campaign_room", first.Ad.Launch.RoomId.ToString(), null,
                     new { batchId = batch.Key, first.Ad.CampaignResource, ads = batch.Select(entry => entry.Ad.AdResource).ToArray(), first.Total }, LaunchRunner.Actor), cancellationToken);

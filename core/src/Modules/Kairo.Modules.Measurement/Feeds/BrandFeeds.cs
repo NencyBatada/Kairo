@@ -4,6 +4,7 @@ using Kairo.Contracts.Live;
 using Kairo.Contracts.Notifications;
 using Kairo.Modules.Measurement.Data;
 using Microsoft.Extensions.Logging;
+using Kairo.SharedKernel.Observability;
 
 namespace Kairo.Modules.Measurement.Feeds;
 
@@ -103,6 +104,7 @@ internal sealed class BrandFeeds(
         }
         catch (Exception exception)
         {
+            KairoTelemetry.Event(logger, "integration.failed", brandId);
             logger.LogError(exception, "The {Feed} feed failed for brand {BrandId}.", feed.Name, brandId);
             run.Error = Shorten(exception.Message);
             var alert = await IsNewProblemAsync(run, cancellationToken);

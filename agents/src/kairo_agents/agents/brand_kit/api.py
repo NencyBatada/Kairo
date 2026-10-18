@@ -11,6 +11,7 @@ from google.genai import types
 
 from kairo_agents.agents.brand_kit.models import DraftAnswer, DraftRequest, DraftResponse
 from kairo_agents.agents.brand_kit.prompt import PROMPT_VERSION, data_block, instructions
+from kairo_agents.telemetry import ObservedClient
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 DEFAULT_LOCATION = "global"
@@ -25,10 +26,12 @@ def model_name() -> str:
 
 @cache
 def default_client() -> genai.Client:
-    return genai.Client(
-        vertexai=True,
-        project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
-        location=os.environ.get("GOOGLE_CLOUD_LOCATION") or DEFAULT_LOCATION,
+    return ObservedClient(
+        genai.Client(
+            vertexai=True,
+            project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
+            location=os.environ.get("GOOGLE_CLOUD_LOCATION") or DEFAULT_LOCATION,
+        )
     )
 
 

@@ -99,6 +99,7 @@ function Invoke-KairoDeploy {
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-agents' -Caller 'kairo-worker'
     Grant-KairoInvoker -Environment $Environment -Service 'kairo-worker' -Caller 'kairo-scheduler'
     Publish-KairoSchedule -Environment $Environment -WorkerUrl (Get-KairoServiceAudience -Environment $Environment -Service 'kairo-worker')
+    Publish-KairoMonitoring -Environment $Environment
 
     Write-Host ''
     Write-Host "Kairo $tag is live in $($Environment.Name) at $($urls['kairo-web'])"
@@ -193,13 +194,42 @@ function Publish-KairoService {
     )
 
     Write-Host "Deploying $Service"
+    $applicationContainer = Get-KairoApplicationContainer -Environment $Environment -Service $Service
+    $containerSettings = @()
+    $serviceSettings = @()
+    $hasEnvironment = $false
+    for ($index = 0; $index -lt $Settings.Count; $index++) {
+        $setting = $Settings[$index]
+        $container = $setting -match '^--(memory|cpu|set-env-vars|set-secrets)(=|$)'
+        if ($setting -like '--set-env-vars=*') {
+            $hasEnvironment = $true
+            $setting += ",OTEL_SERVICE_NAME=$Service,OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318,OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf"
+            if ($setting -notlike '*GOOGLE_CLOUD_PROJECT=*') { $setting += ",GOOGLE_CLOUD_PROJECT=$($Environment.Project)" }
+        }
+        if ($container) { $containerSettings += $setting } else { $serviceSettings += $setting }
+        if ($index + 1 -lt $Settings.Count -and $Settings[$index + 1] -notlike '--*') {
+            $index++
+            if ($container) { $containerSettings += $Settings[$index] } else { $serviceSettings += $Settings[$index] }
+        }
+    }
+    if (-not $hasEnvironment) {
+        $containerSettings += "--set-env-vars=OTEL_SERVICE_NAME=$Service,OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318,OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf,GOOGLE_CLOUD_PROJECT=$($Environment.Project)"
+    }
+    if ($serviceSettings -notcontains '--no-cpu-throttling') { $serviceSettings += '--no-cpu-throttling' }
     Invoke-Gcloud -ArgumentList (@(
             'run', 'deploy', $Service,
-            '--image', $Image,
             '--service-account', (Get-KairoServiceAccount -Environment $Environment -Name $Service),
             '--region', $Environment.Region,
             '--project', $Environment.Project
-        ) + $Settings)
+        ) + $serviceSettings + @('--container', $applicationContainer, '--image', $Image, '--port', '8080', '--depends-on', 'collector') +
+        $containerSettings + @(
+            '--container', 'collector', '--image', $script:CollectorImage,
+            '--memory', '256Mi', '--cpu', '1',
+            '--args=--config=/etc/otel/config.yaml',
+            "--set-secrets=/etc/otel/config.yaml=$($script:CollectorSecret):latest",
+            "--set-env-vars=GOOGLE_CLOUD_PROJECT=$($Environment.Project)",
+            '--startup-probe=httpGet.port=13133,httpGet.path=/,periodSeconds=5,timeoutSeconds=3,failureThreshold=12'
+        ))
 }
 
 function Get-KairoServiceAudience {

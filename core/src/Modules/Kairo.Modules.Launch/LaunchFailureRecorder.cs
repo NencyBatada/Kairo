@@ -5,11 +5,13 @@ using Kairo.Contracts.Live;
 using Kairo.Contracts.Notifications;
 using Kairo.Modules.Launch.Data;
 using Kairo.Modules.Launch.Google;
+using Kairo.SharedKernel.Observability;
+using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Launch;
 
 internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase database, ICampaignLifecycle lifecycle,
-    IAuditLog audit, ILiveUpdates live, INotifications notifications, IBrandDirectory brands, TimeProvider time)
+    IAuditLog audit, ILiveUpdates live, INotifications notifications, IBrandDirectory brands, TimeProvider time, ILogger<LaunchFailureRecorder> logger)
 {
     public async Task RecordAsync(Guid id, Guid claim, LaunchException error, CancellationToken cancellationToken)
     {
@@ -56,6 +58,7 @@ internal sealed class LaunchFailureRecorder(LaunchDbContext db, KairoDatabase da
                 error.Message + " " + error.Fix, $"/{brand.Handle}/campaigns/{record.RoomId}/launch", $"launch:{record.RoomId:N}:launch.failed"), cancellationToken);
             await live.PublishAsync(new LiveEvent("launch.changed", new { campaignId = record.RoomId, record.Status, record.Step }, LiveAudience.Everyone), cancellationToken);
             await database.CommitAsync(cancellationToken);
+            KairoTelemetry.Event(logger, "launch.failed", record.BrandId, record.RoomId, record.Id);
         }
         catch
         {

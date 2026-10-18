@@ -11,6 +11,8 @@ dependencies = [
     "google-genai>=2.29.0",
     "imageio-ffmpeg>=0.6.0",
     "numpy>=2.5.4",
+    "opentelemetry-exporter-otlp-proto-grpc==1.42.1",
+    "opentelemetry-exporter-otlp-proto-http==1.42.1",
     "pillow>=12.3.0",
     "uvicorn[standard]>=0.54.0",
 ]

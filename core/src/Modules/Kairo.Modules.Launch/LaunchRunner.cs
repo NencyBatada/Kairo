@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kairo.Contracts.Approvals;
@@ -13,6 +14,8 @@ using Kairo.Contracts.Notifications;
 using Kairo.Modules.Launch.Data;
 using Kairo.Modules.Launch.Google;
 using Kairo.SharedKernel.Files;
+using Kairo.SharedKernel.Observability;
+using Microsoft.Extensions.Logging;
 
 namespace Kairo.Modules.Launch;
 
@@ -21,7 +24,7 @@ internal sealed class LostLaunchLeaseException : Exception;
 internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, ILaunchPlans plans, LaunchPreflight preflight,
     LaunchGoogle google, YouTubeUpload youtube, IFileStore files, IBrandKit kits, ICampaignLifecycle lifecycle,
     ILiveUpdates live, IAuditLog audit, INotifications notifications, IBrandDirectory brands, TimeProvider time, IServiceScopeFactory scopes,
-    LaunchReconciler reconciler)
+    LaunchReconciler reconciler, ILogger<LaunchRunner> logger)
 {
     public static readonly TimeSpan Lease = TimeSpan.FromMinutes(10);
     public static readonly AuditActor Actor = new(AuditActorType.System, "Launch service", "launch");
@@ -29,6 +32,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
     public async Task RunAsync(Guid id, Guid claim, CancellationToken cancellationToken)
     {
         var record = await db.Launches.SingleAsync(row => row.Id == id, cancellationToken);
+        using var activity = KairoTelemetry.StartStage("launch", null, record.BrandId, record.RoomId, record.Id);
         var plan = JsonSerializer.Deserialize<LaunchPlan>(record.Plan, JsonSerializerOptions.Web)!;
         var reconciling = record.AttemptingStep is not null;
         try
@@ -132,6 +136,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)
         {
+            activity?.SetStatus(ActivityStatusCode.Error);
             var error = exception as LaunchException ?? (exception is ConnectionUnavailableException
                 ? new LaunchException("connection_missing", "An approved Google account needs reconnecting.", "Reconnect the account and retry.")
                 : new LaunchException("launch_interrupted", "Kairo couldn't finish this launch step.", "Check the saved launch progress before retrying.", uncertain: record.AttemptingStep is not null));
@@ -144,6 +149,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
 
     private async Task StepAsync(LaunchRecord record, Guid claim, string step, Func<Task> operation, CancellationToken cancellationToken, string? journal = null)
     {
+        using var activity = KairoTelemetry.Activities.StartActivity("launch " + step);
         Guid stepId = Guid.NewGuid();
         await SaveAsync(record, claim, async () =>
         {
@@ -209,6 +215,7 @@ internal sealed class LaunchRunner(LaunchDbContext db, KairoDatabase database, I
         if (await lifecycle.AdvanceAsync(record.RoomId, CampaignSignals.LaunchFinished, Actor, cancellationToken) != CampaignAdvance.Moved)
             throw new LaunchException("wrong_state", "The campaign state couldn't be updated after activation.", "Reconcile the saved activation before continuing.", uncertain: true);
         await audit.RecordAsync(new AuditRecord("launch.finished", "campaign_room", record.RoomId.ToString(), null, new { record.Id, record.Hash }, Actor), cancellationToken);
+        await database.AfterCommitAsync(_ => { KairoTelemetry.Event(logger, "launch.succeeded", record.BrandId, record.RoomId, record.Id); return Task.CompletedTask; }, cancellationToken);
         await NotifyAsync(record, "launch.finished", "Campaign launched", "All approved campaigns are enabled in Google Ads.", cancellationToken);
     }
 

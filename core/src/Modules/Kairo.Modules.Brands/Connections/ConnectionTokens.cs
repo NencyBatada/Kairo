@@ -5,6 +5,7 @@ using Kairo.Contracts.Live;
 using Kairo.Contracts.Notifications;
 using Kairo.Modules.Brands.Data;
 using Microsoft.Extensions.Logging;
+using Kairo.SharedKernel.Observability;
 
 namespace Kairo.Modules.Brands.Connections;
 
@@ -137,6 +138,7 @@ internal sealed class ConnectionTokens(
 
     private async Task RecordLossAsync(Connection connection, object before, string reason, CancellationToken cancellationToken)
     {
+        KairoTelemetry.Event(logger, "connection.expired", connection.BrandId);
         await audit.RecordAsync(
             new AuditRecord("connection.needs_reconnect", "connection", connection.Id.ToString(), before, ConnectionLifecycle.Snapshot(connection)),
             cancellationToken);

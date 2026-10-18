@@ -76,6 +76,7 @@ internal sealed class CampaignRoomsDbContext(DbContextOptions<CampaignRoomsDbCon
             run.Property(r => r.Status).HasMaxLength(20);
             run.Property(r => r.Model).HasMaxLength(100);
             run.Property(r => r.PromptVersion).HasMaxLength(100);
+            run.Property(r => r.TraceParent).HasMaxLength(55);
             run.Property(r => r.ErrorCode).HasMaxLength(40);
             run.Property(r => r.ErrorMessage).HasMaxLength(500);
         });

@@ -19,6 +19,7 @@ using Kairo.Modules.Opportunities;
 using Kairo.Modules.Triggers;
 using Kairo.SharedKernel;
 using Kairo.SharedKernel.Http;
+using Kairo.SharedKernel.Observability;
 using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,6 +72,7 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseKairoTelemetry();
 
 app.MapDefaultEndpoints();
 
