@@ -15,10 +15,10 @@ function Initialize-KairoTelemetry {
     foreach ($service in 'kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents') {
         $member = "serviceAccount:$(Get-KairoServiceAccount -Environment $Environment -Name $service)"
         foreach ($role in 'roles/cloudtrace.agent', 'roles/monitoring.metricWriter', 'roles/logging.logWriter') {
-            Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', $member, '--role', $role, '--condition', 'None')
+            Add-KairoBinding -ArgumentList @('projects', 'add-iam-policy-binding', $Environment.Project, '--member', $member, '--role', $role, '--condition', 'None', '--format=none')
         }
         Add-KairoBinding -ArgumentList @('secrets', 'add-iam-policy-binding', $script:CollectorSecret, '--member', $member,
-            '--role', 'roles/secretmanager.secretAccessor', '--project', $Environment.Project)
+            '--role', 'roles/secretmanager.secretAccessor', '--project', $Environment.Project, '--format=none')
     }
 }
 

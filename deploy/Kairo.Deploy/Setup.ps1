@@ -5,7 +5,8 @@ $script:Apis = @(
     'googleads.googleapis.com', 'youtube.googleapis.com', 'merchantapi.googleapis.com', 'analyticsadmin.googleapis.com',
     'bigquery.googleapis.com', 'gmail.googleapis.com', 'analyticsdata.googleapis.com', 'cloudscheduler.googleapis.com',
     'aiplatform.googleapis.com', 'weather.googleapis.com', 'texttospeech.googleapis.com',
-    'logging.googleapis.com', 'monitoring.googleapis.com', 'cloudtrace.googleapis.com', 'telemetry.googleapis.com'
+    'logging.googleapis.com', 'monitoring.googleapis.com', 'cloudtrace.googleapis.com', 'telemetry.googleapis.com',
+    'cloudresourcemanager.googleapis.com'
 )
 $script:ServiceAccounts = @('kairo-web', 'kairo-api', 'kairo-worker', 'kairo-agents', 'kairo-migrator', 'kairo-build', 'kairo-scheduler')
 $script:FileBuckets = @('brand-files', 'catalogue-imports', 'generated-media')

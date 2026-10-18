@@ -36,7 +36,7 @@ Describe 'Initialize-KairoProject' {
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
                 'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com texttospeech.googleapis.com ' +
-                'logging.googleapis.com monitoring.googleapis.com cloudtrace.googleapis.com telemetry.googleapis.com --project kairo-test')
+                'logging.googleapis.com monitoring.googleapis.com cloudtrace.googleapis.com telemetry.googleapis.com cloudresourcemanager.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {
