@@ -127,7 +127,7 @@ function New-KairoPromqlPolicy {
         combiner = 'OR'
         conditions = @(@{
             displayName = $Name
-            conditionPrometheusQueryLanguage = @{ query = $Query; duration = $Duration; evaluationInterval = '60s'; disableMetricValidation = ($Query -match 'kairo_') }
+            conditionPrometheusQueryLanguage = @{ query = $Query; duration = $Duration; evaluationInterval = '60s'; disableMetricValidation = ($Query -match 'kairo[._]') }
         })
     }
 }
@@ -147,7 +147,7 @@ function Get-KairoMonitoringDefinitions {
                 alertStrategy = @{ notificationRateLimit = @{ period = '300s' }; autoClose = '1800s' }
             }
         }
-        New-KairoPromqlPolicy -Name "Kairo $($Environment.Name): queue backlog" -Query 'max(kairo_stage_queue_age_seconds) > 300' -Duration '600s'
+        New-KairoPromqlPolicy -Name "Kairo $($Environment.Name): queue backlog" -Query 'max({"kairo.stage.queue.age"}) > 300' -Duration '600s'
         New-KairoPromqlPolicy -Name "Kairo $($Environment.Name): service errors" -Query 'sum(increase({"run.googleapis.com/request_count", monitored_resource="cloud_run_revision", service_name=~"kairo-(web|api|worker|agents)", response_code_class="5xx"}[5m])) > 0'
         New-KairoPromqlPolicy -Name "Kairo $($Environment.Name): quota allocation above 80%" -Query '(max by (project_id, quota_metric, location) ({"serviceruntime.googleapis.com/quota/allocation/usage", monitored_resource="consumer_quota"}) / min by (project_id, quota_metric, location) ({"serviceruntime.googleapis.com/quota/limit", monitored_resource="consumer_quota"})) > 0.8'
         New-KairoPromqlPolicy -Name "Kairo $($Environment.Name): minute quota above 80%" -Query '(sum by (project_id, service, quota_metric, location) (increase({"serviceruntime.googleapis.com/quota/rate/net_usage", monitored_resource="consumer_quota"}[1m])) / min by (project_id, service, quota_metric, location) ({"serviceruntime.googleapis.com/quota/limit", monitored_resource="consumer_quota", limit_name=~".*PerMinutePerProject.*|.*QueriesPerMinute$"})) > 0.8'
@@ -162,14 +162,14 @@ function Get-KairoMonitoringDefinitions {
         }
     }
     $charts = [ordered]@{
-        'Stage duration by kind (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, stage) (rate(kairo_stage_duration_seconds_bucket[5m])))'
-        'Oldest eligible stage (seconds)' = 'max(kairo_stage_queue_age_seconds)'
-        'Eligible queued stages' = 'sum(kairo_stage_queue_count)'
-        'Agent request duration (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, operation) (rate(kairo_agent_duration_seconds_bucket[5m])))'
-        'Model latency (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, model) (rate(kairo_model_duration_seconds_bucket[5m])))'
-        'Model failures' = 'sum by (model) (increase(kairo_model_duration_seconds_count{outcome="failed"}[15m]))'
-        'Operational events and launch outcomes' = 'sum by (event) (increase(kairo_operations_total[15m]))'
-        'Google integration request failures' = 'sum by (event) (increase(kairo_operations_total{event=~"integration.*|connection.expired"}[15m]))'
+        'Stage duration by kind (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, stage) (rate({"kairo.stage.duration_bucket"}[5m])))'
+        'Oldest eligible stage (seconds)' = 'max({"kairo.stage.queue.age"})'
+        'Eligible queued stages' = 'max({"kairo.stage.queue.count"})'
+        'Agent request duration (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, operation) (rate({"kairo.agent.duration_bucket"}[5m])))'
+        'Model latency (p95 seconds)' = 'histogram_quantile(0.95, sum by (le, model) (rate({"kairo.model.duration_bucket"}[5m])))'
+        'Model failures' = 'sum by (model) (increase({"kairo.model.duration_count",outcome="failed"}[15m]))'
+        'Operational events and launch outcomes' = 'sum by (event) (increase({"kairo.operations"}[15m]))'
+        'Google integration request failures' = 'sum by (event) (increase({"kairo.operations",event=~"integration.*|connection.expired"}[15m]))'
         'Cloud Run request errors' = 'sum by (service_name) (increase({"run.googleapis.com/request_count", monitored_resource="cloud_run_revision", response_code_class="5xx", service_name=~"kairo-.*"}[5m]))'
     }
     $tiles = @()

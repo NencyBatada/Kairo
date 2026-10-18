@@ -21,7 +21,7 @@ Describe 'Monitoring definitions' {
             ($logRules.conditions.conditionMatchedLog.filter -join ' ') | Should -BeLike "*$event*"
         }
         $queue = $definitions.Policies | Where-Object { $_.displayName -like '*queue backlog' }
-        $queue.conditions[0].conditionPrometheusQueryLanguage.query | Should -Be 'max(kairo_stage_queue_age_seconds) > 300'
+        $queue.conditions[0].conditionPrometheusQueryLanguage.query | Should -Be 'max({"kairo.stage.queue.age"}) > 300'
         $queue.conditions[0].conditionPrometheusQueryLanguage.duration | Should -Be '600s'
         $queue.conditions[0].conditionPrometheusQueryLanguage.disableMetricValidation | Should -BeTrue
         foreach ($quota in ($definitions.Policies | Where-Object { $_.displayName -like '*80%' })) {
