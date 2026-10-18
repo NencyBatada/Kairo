@@ -21,6 +21,10 @@ Describe 'Initialize-KairoProject' {
             if ($line -like 'secrets versions list*' -and $script:exists) { 'projects/1/secrets/kairo-sql-connection/versions/1' }
         }
         Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
+        Mock -ModuleName Kairo.Deploy Initialize-KairoLogPrivacy { }
+        Mock -ModuleName Kairo.Deploy Get-KairoSecretValue {
+            [IO.File]::ReadAllText((Join-Path $PSScriptRoot '../Kairo.Deploy/collector.yaml'))
+        }
         Mock -ModuleName Kairo.Deploy Start-Sleep { }
     }
 
@@ -32,7 +36,8 @@ Describe 'Initialize-KairoProject' {
                 'servicenetworking.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com ' +
                 'secretmanager.googleapis.com iam.googleapis.com storage.googleapis.com cloudkms.googleapis.com ' +
                 'googleads.googleapis.com youtube.googleapis.com merchantapi.googleapis.com analyticsadmin.googleapis.com ' +
-                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com texttospeech.googleapis.com --project kairo-test')
+                'bigquery.googleapis.com gmail.googleapis.com analyticsdata.googleapis.com cloudscheduler.googleapis.com aiplatform.googleapis.com weather.googleapis.com texttospeech.googleapis.com ' +
+                'logging.googleapis.com monitoring.googleapis.com cloudtrace.googleapis.com telemetry.googleapis.com cloudresourcemanager.googleapis.com --project kairo-test')
         }
 
         It 'creates the registry, the build bucket and the network' {

@@ -33,7 +33,13 @@ public static class Extensions
 
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        builder.Logging.AddOpenTelemetry(logging =>
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("K_SERVICE")))
+        {
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole(options => options.FormatterName = "kairo")
+                .AddConsoleFormatter<CloudLogFormatter, Microsoft.Extensions.Logging.Console.ConsoleFormatterOptions>();
+        }
+        else builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
@@ -42,13 +48,13 @@ public static class Extensions
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
-                metrics.AddAspNetCoreInstrumentation()
+                metrics.AddMeter("Kairo").AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation();
             })
             .WithTracing(tracing =>
             {
-                tracing.AddSource(builder.Environment.ApplicationName)
+                tracing.AddSource("Kairo", builder.Environment.ApplicationName)
                     .AddAspNetCoreInstrumentation(tracing =>
                         tracing.Filter = context =>
                             !context.Request.Path.StartsWithSegments(HealthEndpointPath)

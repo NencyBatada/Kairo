@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import createClient from "openapi-fetch";
 
 import { identityToken } from "./identity-token";
+import { traceHeaders } from "@/lib/trace-context";
 import type { paths } from "./schema";
 
 import { PATH_HEADER, REQUEST_HEADER, SERVERLESS_AUTHORIZATION_HEADER, SESSION_COOKIE } from "@/lib/http-names";
@@ -21,6 +22,7 @@ export async function coreApi() {
   return createClient<paths>({
     baseUrl,
     headers: {
+      ...traceHeaders(),
       [REQUEST_HEADER]: "1",
       ...(token ? { [SERVERLESS_AUTHORIZATION_HEADER]: `Bearer ${token}` } : {}),
       ...(session ? { cookie: `${SESSION_COOKIE}=${session.value}` } : {}),

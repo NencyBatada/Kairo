@@ -7,6 +7,7 @@
         SqlHighAvailability = $false
         MinInstances        = @{ web = 0; api = 0 }
         MailSender          = 'evolixgcpadmin@gmail.com'
+        OperationsEmail     = 'evolixgcpadmin@gmail.com'
     }
     staging     = @{ Project = '' }
     production  = @{ Project = '' }

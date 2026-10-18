@@ -14,6 +14,17 @@ public sealed class EmailTemplateTests
     private static readonly BrandMember Priya = new(Guid.NewGuid(), "priya@acme.example", "Priya Shah", BrandRoles.Admin);
 
     [Fact]
+    public void A_verification_email_clearly_distinguishes_a_test_from_an_operational_failure()
+    {
+        var email = EmailTemplate.RenderOperations("operations@example.com",
+            new OperationsDetails("stage.failed_twice:test", "stage.failed_twice", Workspace.Id, null, null, null, IsVerification: true));
+        Assert.StartsWith("Kairo operations verification:", email.Subject);
+        Assert.Contains("Test alert only. No operational failure occurred.", email.Text);
+        Assert.Contains("Test alert only. No operational failure occurred.", email.Html);
+        Assert.DoesNotContain(Workspace.Name, email.Text);
+    }
+
+    [Fact]
     public void The_email_goes_to_the_member_with_the_title_as_its_subject()
     {
         var email = Render(Notification());

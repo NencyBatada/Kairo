@@ -4,6 +4,7 @@ BeforeAll {
         Name = 'development'; Project = 'kairo-test'; Region = 'asia-south1'
         SqlTier = 'db-custom-1-3840'; SqlEdition = 'SQLSERVER_2022_EXPRESS'; SqlHighAvailability = $false
         MinInstances = @{ web = 0; api = 1 }
+        OperationsEmail = 'operations@example.com'
     }
     $script:root = Join-Path ([System.IO.Path]::GetTempPath()) 'Kairo'
 }
@@ -16,6 +17,8 @@ Describe 'Invoke-KairoDeploy' {
         Mock -ModuleName Kairo.Deploy Assert-KairoCleanTree { }
         Mock -ModuleName Kairo.Deploy Get-KairoCommit { 'abc123def456' }
         Mock -ModuleName Kairo.Deploy Invoke-KairoTests { $script:calls.Add('tests') }
+        Mock -ModuleName Kairo.Deploy Publish-KairoMonitoring { }
+        Mock -ModuleName Kairo.Deploy Get-KairoApplicationContainer { 'app' }
         Mock -ModuleName Kairo.Deploy Get-KairoProjectNumber { '123' }
         Mock -ModuleName Kairo.Deploy Test-KairoSecretHasValue { $script:googleConfigured }
         Mock -ModuleName Kairo.Deploy Test-Gcloud { $script:scheduleExists }
@@ -102,6 +105,8 @@ Describe 'Invoke-KairoDeploy' {
         $api | Should -BeLike '*--session-affinity*'
         $api | Should -BeLike '*--min-instances=1*'
         $api | Should -BeLike '*--set-env-vars=Kairo__PublicOrigin=https://kairo-web-123.asia-south1.run.app*'
+        $api | Should -BeLike '*Kairo__Operations__Email=operations@example.com*'
+        ($calls | Where-Object { $_ -like 'run deploy kairo-worker *' }) | Should -BeLike '*Kairo__Operations__Email=operations@example.com*'
         $api | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest,Authentication__Google__ClientId=google-client-id:latest,Authentication__Google__ClientSecret=google-client-secret:latest*'
     }
 
@@ -112,7 +117,7 @@ Describe 'Invoke-KairoDeploy' {
 
         foreach ($service in 'kairo-api', 'kairo-worker') {
             $deploy = $calls | Where-Object { $_ -like "run deploy $service *" }
-            $deploy | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest'
+            $deploy | Should -BeLike '*--set-secrets=ConnectionStrings__kairo=kairo-sql-connection:latest*'
             $deploy | Should -Not -BeLike '*google-client*'
         }
     }
