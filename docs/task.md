@@ -195,7 +195,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Talha (core and agents)
 
-- [ ] **Monitoring and alerts**: Traces, logs, dashboards and alerts across the web app, core and agents, including launch failures and mass pauses.
+- [/] **Monitoring and alerts**: Traces, logs, dashboards and alerts across the web app, core and agents, including launch failures and mass pauses.
 - [ ] **AI quality tests**: A test set of briefs and assets that runs on every prompt or model change.
 - [ ] **Cost tracking**: Tracks model use and cost per campaign, and enforces generation limits.
 - [ ] **AI safety screening**: Screens web pages, catalogue text and search results for prompt injection before agents use them.
