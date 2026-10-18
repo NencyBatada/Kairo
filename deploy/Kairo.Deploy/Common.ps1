@@ -121,7 +121,7 @@ function Invoke-Native {
 function Invoke-Gcloud {
     param([Parameter(Mandatory)][string[]]$ArgumentList, [switch]$Capture)
 
-    Invoke-Native -FilePath 'gcloud' -ArgumentList ($ArgumentList + '--quiet') -Capture:$Capture
+    Invoke-Native -FilePath 'gcloud' -ArgumentList (@('--quiet') + $ArgumentList) -Capture:$Capture
 }
 
 function Test-Native {

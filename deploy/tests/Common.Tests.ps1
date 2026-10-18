@@ -97,7 +97,7 @@ Describe 'Invoke-Gcloud' {
         Invoke-Gcloud -ArgumentList @('run', 'services', 'list')
 
         Should -Invoke -ModuleName Kairo.Deploy Invoke-Native -ParameterFilter {
-            $FilePath -eq 'gcloud' -and ($ArgumentList -join ' ') -eq 'run services list --quiet'
+            $FilePath -eq 'gcloud' -and ($ArgumentList -join ' ') -eq '--quiet run services list'
         }
     }
 }
