@@ -1,0 +1,1016 @@
+{
+  "schemaVersion": 1,
+  "version": "2026-10-18.1",
+  "briefRequest": {
+    "brand": "Acme",
+    "market": "India",
+    "opportunity": {
+      "topic": "Monsoon footwear",
+      "category": "Shoes > Rain",
+      "source": "radar",
+      "summary": "Search demand for waterproof shoes is rising.",
+      "keywords": [
+        "waterproof shoes"
+      ],
+      "lastMonthSearches": 48000,
+      "growth": 0.62,
+      "regions": [
+        {
+          "name": "Maharashtra",
+          "lastMonthSearches": 21000,
+          "growth": 0.8
+        }
+      ]
+    },
+    "products": [
+      {
+        "id": "p1",
+        "title": "Acme Waterproof Rain Shoes",
+        "price": 2499,
+        "currency": "INR"
+      }
+    ],
+    "budget": {
+      "low": 120000,
+      "high": 260000,
+      "suggested": 200000,
+      "currency": "INR",
+      "days": 14,
+      "basis": "Observed search demand"
+    },
+    "dates": {
+      "today": "2026-10-18",
+      "suggestedStart": "2026-11-02",
+      "suggestedEnd": "2026-11-15"
+    },
+    "brandKit": {
+      "rules": {
+        "bannedWords": [
+          "cheap"
+        ],
+        "competitors": [
+          {
+            "name": "Rival",
+            "policy": "never"
+          }
+        ]
+      }
+    }
+  },
+  "context": {
+    "brand": "Acme",
+    "brief": {
+      "title": "Rain-ready commutes",
+      "objective": "Sell waterproof mesh shoes to commuters during the monsoon.",
+      "audiences": [
+        "Commuters in Maharashtra"
+      ],
+      "keyMessages": [
+        "Waterproof mesh for rainy days"
+      ],
+      "offer": "Free delivery over ₹999",
+      "landingPages": [
+        "https://acme.example/rain-shoes"
+      ]
+    },
+    "products": [
+      {
+        "id": "p1",
+        "title": "Acme Waterproof Rain Shoes",
+        "description": "Comfortable blue waterproof mesh shoes with a white rubber sole.",
+        "brand": "Acme",
+        "category": "Shoes > Rain",
+        "price": 2499,
+        "currency": "INR",
+        "link": "https://acme.example/rain-shoes"
+      }
+    ],
+    "brandKit": {
+      "rules": {
+        "bannedWords": [
+          "cheap"
+        ],
+        "competitors": [
+          {
+            "name": "Rival",
+            "policy": "never"
+          }
+        ]
+      }
+    },
+    "rules": [
+      {
+        "id": "brand.banned_words",
+        "name": "brand.banned_words",
+        "description": "No words from the Brand Kit banned list.",
+        "appliesTo": [
+          "text",
+          "image",
+          "video"
+        ]
+      },
+      {
+        "id": "brand.competitors",
+        "name": "brand.competitors",
+        "description": "Never mention competitors marked never in the Brand Kit.",
+        "appliesTo": [
+          "text",
+          "image",
+          "video"
+        ]
+      },
+      {
+        "id": "policy.unsupported_claims",
+        "name": "policy.unsupported_claims",
+        "description": "Every price, offer, health claim and guarantee must be supported by the supplied catalogue or brief.",
+        "appliesTo": [
+          "text",
+          "image",
+          "video"
+        ]
+      },
+      {
+        "id": "language.match",
+        "name": "language.match",
+        "description": "Use the requested language and script, allowing the Acme brand name and price numerals.",
+        "appliesTo": [
+          "text",
+          "video"
+        ]
+      },
+      {
+        "id": "accuracy.product",
+        "name": "accuracy.product",
+        "description": "The product must match the supplied reference photo in shape and colour.",
+        "appliesTo": [
+          "image",
+          "video"
+        ]
+      }
+    ],
+    "customRules": [
+      {
+        "id": "custom.no-sale",
+        "text": "Never use the words sale or discount in an ad.",
+        "appliesTo": "text"
+      },
+      {
+        "id": "custom.delivery",
+        "text": "Never promise delivery within 24 hours.",
+        "appliesTo": "text"
+      }
+    ]
+  },
+  "generation": [
+    {
+      "id": "brief-en",
+      "kind": "brief",
+      "language": "en"
+    },
+    {
+      "id": "copy-en",
+      "kind": "copy",
+      "language": "en"
+    },
+    {
+      "id": "brief-hi",
+      "kind": "brief",
+      "language": "hi"
+    },
+    {
+      "id": "copy-hi",
+      "kind": "copy",
+      "language": "hi"
+    },
+    {
+      "id": "generated-images",
+      "kind": "images",
+      "formats": [
+        "square",
+        "landscape"
+      ]
+    },
+    {
+      "id": "generated-video",
+      "kind": "video",
+      "clips": 1,
+      "seconds": 8
+    }
+  ],
+  "guardian": [
+    {
+      "id": "banned-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "brand.banned_words",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Cheap rain shoes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "banned-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Waterproof rain shoes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "banned-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "brand.banned_words",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "cheap बारिश के जूते",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "banned-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "बारिश के जूते",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "competitor-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "brand.competitors",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Better than Rival",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "competitor-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Acme rain shoes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "competitor-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "brand.competitors",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Rival से बेहतर",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "competitor-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Acme बारिश के जूते",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "price-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Runners only ₹99",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "price-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Runners only ₹2,499",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "price-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "जूते सिर्फ ₹99",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "price-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "जूते सिर्फ ₹2,499",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "medical-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Cures diabetes forever",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "medical-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Waterproof mesh shoes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "medical-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "मधुमेह हमेशा ठीक करे",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "medical-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "बारिश में पैर सूखे रखें",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "guarantee-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Guaranteed lottery win",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "guarantee-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Shoes for rainy commutes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "guarantee-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "हर बीमारी का पक्का इलाज",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "guarantee-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "रोज़ के सफर के लिए जूते",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "language-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "language.match",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "बारिश के लिए जूते",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "language-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Shoes for rainy days",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "language-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "language.match",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Waterproof shoes for rain",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "language-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "बारिश के लिए आरामदायक जूते",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "custom-en-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": "custom.no-sale",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Half-price sale today",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "custom-en-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "Explore rain shoes",
+          "Rain-ready commutes",
+          "Explore Acme Shoes"
+        ],
+        "descriptions": [
+          "Waterproof mesh shoes for rainy commutes.",
+          "Explore Acme shoes and choose your pair."
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "custom-hi-issue",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": "custom.delivery",
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "24 घंटे में घर पहुंचाएं",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "custom-hi-clean",
+      "kind": "guardian",
+      "medium": "text",
+      "language": "hi",
+      "expectedRule": null,
+      "critical": false,
+      "content": {
+        "adGroup": "Rain shoes",
+        "productIds": [
+          "p1"
+        ],
+        "headlines": [
+          "बारिश के जूते देखें",
+          "वॉटरप्रूफ जाली वाले जूते",
+          "Acme ऑनलाइन देखें"
+        ],
+        "descriptions": [
+          "वॉटरप्रूफ जूते रोज़ के सफर के लिए।",
+          "Acme जूते देखें और अपना जोड़ा चुनें।"
+        ],
+        "path1": "rain",
+        "path2": "shoes"
+      }
+    },
+    {
+      "id": "image-medical-issue",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "file": "medical.png"
+    },
+    {
+      "id": "image-medical-clean",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.png"
+    },
+    {
+      "id": "image-price-issue",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": false,
+      "file": "price.png"
+    },
+    {
+      "id": "image-price-clean",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.png"
+    },
+    {
+      "id": "image-product-issue",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": "accuracy.product",
+      "critical": false,
+      "file": "different-product.png"
+    },
+    {
+      "id": "image-product-clean",
+      "kind": "guardian",
+      "medium": "image",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.png"
+    },
+    {
+      "id": "video-medical-issue",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": "policy.unsupported_claims",
+      "critical": true,
+      "file": "medical.mp4",
+      "seconds": 8
+    },
+    {
+      "id": "video-medical-clean",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.mp4",
+      "seconds": 8
+    },
+    {
+      "id": "video-competitor-issue",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": "brand.competitors",
+      "critical": false,
+      "file": "competitor.mp4",
+      "seconds": 8
+    },
+    {
+      "id": "video-competitor-clean",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.mp4",
+      "seconds": 8
+    },
+    {
+      "id": "video-banned-issue",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": "brand.banned_words",
+      "critical": false,
+      "file": "banned.mp4",
+      "seconds": 8
+    },
+    {
+      "id": "video-banned-clean",
+      "kind": "guardian",
+      "medium": "video",
+      "language": "en",
+      "expectedRule": null,
+      "critical": false,
+      "file": "clean.mp4",
+      "seconds": 8
+    }
+  ]
+}

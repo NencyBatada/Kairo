@@ -35,6 +35,14 @@ jobs:
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run pytest
+      - run: uv run python -m kairo_agents.evaluation --offline --output ../TestResults/evaluation-offline
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ai-quality-offline-${{ github.sha }}
+          path: TestResults/evaluation-offline/
+          if-no-files-found: error
+          retention-days: 14
 
   web:
     runs-on: ubuntu-latest

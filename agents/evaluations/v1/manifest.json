@@ -1,0 +1,17 @@
+{
+  "version": "2026-10-18.1",
+  "sha256": {
+    "banned.mp4": "9ecb0c5783993d489a6c58f51d1de3a3c0d91ff2f43510620c34fff080c4f6b2",
+    "banned.png": "b25f25b7f99ab025ce3eef87954f8b47460fb577429c6736f0f4bc24b5867dda",
+    "cases.json": "73ab359e67496c8fd90cffd62558e79852d16d9ffc3d2d8138bfb0c0070340f8",
+    "clean.mp4": "a17f908b9d1bf06c0473139bd2c56a8023f6b55912d760ed0c4c208e58426b1a",
+    "clean.png": "a3a33e2917f2cd6908a2247df70024ef28b5b11760b541a5edae2cf22884126f",
+    "competitor.mp4": "f633f27884838f01379063acc17bfe778c1773d35f92d2c9935300a8b1d7cf64",
+    "competitor.png": "cb52d0a11a279fc9087ee0a3c35fada40c63bdcc600d40f83450b99f6282af29",
+    "different-product.png": "22ac127a18a26b04a3cfaadd582f5a1a19677570f33a86bb0c6411f0812ca8ba",
+    "golden.json": "0a9c0c5a3022b8132b2bd8ba1c0083827588f0b8cea5b42cea412a2c320ff2d3",
+    "medical.mp4": "0c9fc1403fa3a4c3b1f031dc12133a315dbc3b64916dc908022ace0c11675e21",
+    "medical.png": "0f2a95900fa51f9b8e53e3548cbe300b2e53b7b301d7c9d0fbdf74e701c4a1b2",
+    "price.png": "dbcf9e289467d68fca01e0ca255d25f5663e1e49fd8bb41569b5671e781828e9"
+  }
+}
