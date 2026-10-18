@@ -31,6 +31,15 @@ jobs:
           enable-cache: false
       - run: uv sync --locked
         working-directory: agents
+      - name: Load development model settings
+        shell: pwsh
+        run: |
+          Import-Module ./deploy/Kairo.Deploy -Force
+          $environment = Get-KairoEnvironment -Name development
+          if ($environment.Project -ne $env:KAIRO_EVAL_PROJECT) { throw 'Evaluation project differs from development.' }
+          foreach ($entry in (Get-KairoAgentModels -Environment $environment).GetEnumerator()) {
+            "$($entry.Key)=$($entry.Value)" >> $env:GITHUB_ENV
+          }
       - name: Initialize failure artifact before authentication
         working-directory: agents
         run: |

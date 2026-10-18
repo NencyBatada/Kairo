@@ -8,6 +8,10 @@
         MinInstances        = @{ web = 0; api = 0 }
         MailSender          = 'evolixgcpadmin@gmail.com'
         OperationsEmail     = 'evolixgcpadmin@gmail.com'
+        AgentModels         = @{
+            KAIRO_PLAN_BRIEF_MODEL = 'gemini-3.8-flash'
+            KAIRO_CHECK_MODEL      = 'gemini-3.8-flash'
+        }
     }
     staging     = @{ Project = '' }
     production  = @{ Project = '' }

@@ -33,6 +33,12 @@ Live credentials must be GitHub OIDC external-account credentials impersonating 
 The Google judge uses the managed evaluation service. Its underlying model version and token
 usage are not returned by that API and are recorded as unknown.
 
+Development and live CI load their brief and Guardian model overrides from the same
+`AgentModels` map in `deploy/environments.psd1`. Both use `gemini-3.8-flash`. Its generation
+configuration omits unsupported sampling parameters and uses medium thinking. Other model
+configurations keep their existing settings. These overrides do not change image generation,
+Veo, or the managed Google evaluation judge.
+
 Provision development with `deploy/setup-evaluations.ps1 development`. It creates or updates
 the dedicated service account, custom prediction/evaluation role and GitHub workload identity
 provider, then sets repository Actions variables. Trust is bound to numeric repository and

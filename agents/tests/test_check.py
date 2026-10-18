@@ -383,6 +383,15 @@ def test_check_model_comes_from_the_environment(
     assert check_api.model_name() == "gemini-3.5-pro"
 
 
+def test_guardian_supports_gemini_38_without_unsupported_temperature(models, monkeypatch):
+    monkeypatch.setenv("KAIRO_CHECK_MODEL", "gemini-3.8-flash")
+    response = post("/check/copy", base(assets=[KEYWORDS]))
+    assert response.status_code == 200
+    assert response.json()["model"] == "gemini-3.8-flash"
+    assert models.calls[0]["config"].temperature is None
+    assert models.calls[0]["config"].thinking_config.thinking_level == "MEDIUM"
+
+
 REFERENCE = {
     "id": "p1",
     "title": "Acme Monsoon Runner",

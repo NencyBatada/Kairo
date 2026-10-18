@@ -4,6 +4,25 @@ BeforeAll {
     $script:shell = [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
 }
 
+Describe 'Get-KairoAgentModels' {
+    It 'uses the approved development model for both briefs and Guardian' {
+        $models = Get-KairoAgentModels -Environment (Get-KairoEnvironment -Name development)
+        $models.Count | Should -Be 2
+        $models.KAIRO_PLAN_BRIEF_MODEL | Should -Be 'gemini-3.8-flash'
+        $models.KAIRO_CHECK_MODEL | Should -Be 'gemini-3.8-flash'
+    }
+
+    It 'preserves environments without configured model overrides' {
+        (Get-KairoAgentModels -Environment $environment).Count | Should -Be 0
+    }
+
+    It 'rejects settings that could inject workflow variables or deployment options' {
+        { Get-KairoAgentModels -Environment @{ AgentModels = @{ OTHER = 'gemini-3.8-flash' } } } | Should -Throw
+        { Get-KairoAgentModels -Environment @{ AgentModels = @{ KAIRO_CHECK_MODEL = "gemini-3.8-flash`nOTHER=unsafe" } } } | Should -Throw
+        { Get-KairoAgentModels -Environment @{ AgentModels = @{ KAIRO_CHECK_MODEL = 'gemini-3.8-flash,OTHER=unsafe' } } } | Should -Throw
+    }
+}
+
 Describe 'Get-KairoEnvironment' {
     It 'loads development from the environment file' {
         $environment = Get-KairoEnvironment -Name 'development'
