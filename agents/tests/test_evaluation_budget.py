@@ -52,6 +52,26 @@ def test_a_deadline_prevents_any_further_provider_request():
     assert not budget.report()["calls"]
 
 
+def test_multiple_image_candidates_consume_multiple_image_slots_before_dispatch():
+    calls = []
+
+    async def generate(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(usage_metadata=None)
+
+    async def run():
+        budget = Budget()
+        client = BudgetedModels(SimpleNamespace(generate_content=generate), budget)
+        config = types.GenerateContentConfig(response_modalities=["IMAGE"], candidate_count=2)
+        await client.generate_content(model="image", config=config)
+        with pytest.raises(EvaluationStopped):
+            await client.generate_content(model="image", config=config)
+        assert budget.counts["images"] == 2
+
+    asyncio.run(run())
+    assert len(calls) == 1
+
+
 def test_images_and_videos_are_reserved_before_calling_the_provider():
     requests = []
 

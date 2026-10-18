@@ -14,6 +14,9 @@ test('generation, prompt, model, checking, fixtures and dependencies require liv
     'agents/src/kairo_agents/agents/check/api.py', 'agents/evaluations/v1/cases.json',
     'agents/pyproject.toml', 'agents/uv.lock', '.github/workflows/ai-quality-live.yml',
     'core/src/Modules/Kairo.Modules.CampaignRooms/Checks/CheckRules.cs',
+    'core/src/Modules/Kairo.Modules.CampaignRooms/Briefs/BriefDrafter.cs',
+    'core/src/Modules/Kairo.Modules.CampaignRooms/Assets/CopyGenerator.cs',
+    'core/src/Modules/Kairo.Modules.CampaignRooms/Media/ImageGenerator.cs',
   ]) assert.equal(requiresLive([{ filename }], 1), true, filename);
   assert.equal(requiresLive([{ filename: 'docs/README.md' }], 1), false);
   assert.equal(requiresLive([{ filename: 'moved.py', previous_filename: 'agents/src/old.py' }], 1), true);

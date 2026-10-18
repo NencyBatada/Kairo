@@ -1,10 +1,9 @@
 const generationRoots = [
   'agents/src/', 'agents/evaluations/', 'agents/tests/test_evaluation',
   '.github/scripts/ai-quality', '.github/workflows/ai-quality',
-  'core/src/Modules/Kairo.Modules.CampaignRooms/Checks/',
-  'core/src/Modules/Kairo.Modules.CampaignRooms/Create/',
-  'core/src/Modules/Kairo.Modules.CampaignRooms/Plan/',
+  'core/src/Modules/Kairo.Modules.CampaignRooms/',
   'core/src/Modules/Kairo.Modules.Ask/',
+  'core/src/Kairo.SharedKernel/Agents/',
   'core/src/Kairo.Contracts/', 'deploy/Kairo.Deploy/Evaluations.ps1',
 ];
 const dependencyFiles = new Set([

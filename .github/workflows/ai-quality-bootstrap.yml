@@ -31,6 +31,22 @@ jobs:
           enable-cache: false
       - run: uv sync --locked
         working-directory: agents
+      - name: Initialize failure artifact before authentication
+        working-directory: agents
+        run: |
+          uv run python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from kairo_agents.evaluation.fixtures import Fixtures
+          from kairo_agents.evaluation.runner import prompt_manifest
+          path = Path('../TestResults/evaluation-live')
+          path.mkdir(parents=True, exist_ok=True)
+          data = {'liveEvaluationPassed': False, 'failures': ['live_job_incomplete'],
+                  'commit': os.environ['KAIRO_EVAL_COMMIT'], 'fixtureManifest': Fixtures().manifest,
+                  'promptManifest': prompt_manifest()}
+          (path / 'report.json').write_text(json.dumps(data, indent=2), encoding='utf-8')
+          PY
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.KAIRO_EVAL_PROVIDER }}

@@ -42,3 +42,18 @@ def test_clean_video_controls_have_the_same_duration_and_dimensions_as_productio
     fixtures = Fixtures()
     assert asyncio.run(video_errors(fixtures.file("clean.mp4"), 8)) == []
     assert asyncio.run(video_errors(fixtures.file("clean.mp4"), 6))
+
+
+def test_guardian_inputs_do_not_reveal_the_expected_label_or_rule_in_asset_identifiers():
+    fixtures = Fixtures()
+    cases = [
+        case
+        for case in fixtures.data["guardian"]
+        if case["medium"] == "text" and case["language"] == "en"
+    ]
+    request = fixtures.text_request(cases)
+    for case, asset in zip(cases, request.assets, strict=True):
+        assert asset.id == fixtures.asset_id(case)
+        assert asset.id.startswith("eval-")
+        assert not any(word in asset.id for word in ("issue", "clean", "medical", "price"))
+        assert "expectedRule" not in asset.model_dump_json()

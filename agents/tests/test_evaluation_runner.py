@@ -132,7 +132,7 @@ def test_critical_findings_are_rejected_and_missing_guardian_results_fail(tmp_pa
         prompt_version="test/1",
         results=[
             AssetFindings(
-                asset_id=case["id"],
+                asset_id=fixtures.asset_id(case),
                 findings=[Finding(rule=case["expectedRule"], message="synthetic planted issue")],
             )
         ],

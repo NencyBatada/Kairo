@@ -53,8 +53,10 @@ async def offline_regression(fixtures: Fixtures) -> dict[str, Any]:
                 results.append(
                     {
                         "id": case["id"],
-                        "passed": not by_id[case["id"]].findings,
-                        "failures": [finding.rule for finding in by_id[case["id"]].findings],
+                        "passed": not by_id[fixtures.asset_id(case)].findings,
+                        "failures": [
+                            finding.rule for finding in by_id[fixtures.asset_id(case)].findings
+                        ],
                     }
                 )
             elif case["expectedRule"] in {
@@ -63,7 +65,8 @@ async def offline_regression(fixtures: Fixtures) -> dict[str, Any]:
                 "language.match",
             }:
                 found = any(
-                    finding.rule == case["expectedRule"] for finding in by_id[case["id"]].findings
+                    finding.rule == case["expectedRule"]
+                    for finding in by_id[fixtures.asset_id(case)].findings
                 )
                 results.append(
                     {

@@ -77,7 +77,8 @@ class BudgetedModels:
         config = kwargs.get("config")
         modalities = getattr(config, "response_modalities", None) or []
         kind = "images" if "IMAGE" in modalities else "text"
-        return await self.invoke("generate_content", kind, 1, kwargs)
+        count = (getattr(config, "candidate_count", None) or 1) if kind == "images" else 1
+        return await self.invoke("generate_content", kind, count, kwargs)
 
     async def generate_videos(self, **kwargs: Any) -> Any:
         count = getattr(kwargs.get("config"), "number_of_videos", None) or 1
@@ -99,6 +100,9 @@ class BudgetedModels:
         except BaseException as error:
             call["outcome"] = "failed"
             call["errorType"] = type(error).__name__
+            code = getattr(error, "code", None)
+            if isinstance(code, int):
+                call["statusCode"] = code
             raise
         finally:
             call["seconds"] = round(self.budget.clock() - started, 3)

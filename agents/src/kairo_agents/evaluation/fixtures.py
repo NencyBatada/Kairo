@@ -112,6 +112,10 @@ class Fixtures:
     def context(self, language: str = "en") -> dict[str, Any]:
         return {**deepcopy(self.data["context"]), "language": language}
 
+    def asset_id(self, case: dict[str, Any]) -> str:
+        value = (self.data["version"] + ":" + case["id"]).encode()
+        return "eval-" + hashlib.sha256(value).hexdigest()[:20]
+
     def photo(self, name: str = "clean.png") -> Photo:
         return Photo(mime_type="image/png", data=self.file(name))
 
@@ -131,7 +135,7 @@ class Fixtures:
             {
                 **self.context(cases[0]["language"]),
                 "assets": [
-                    {"id": case["id"], "kind": "search_ad", "content": case["content"]}
+                    {"id": self.asset_id(case), "kind": "search_ad", "content": case["content"]}
                     for case in cases
                 ],
             }
@@ -140,7 +144,7 @@ class Fixtures:
     def media_check(self, case: dict[str, Any]) -> ImageCheckRequest | VideoCheckRequest:
         data = {
             **self.context(case["language"]),
-            "assetId": case["id"],
+            "assetId": self.asset_id(case),
             "references": [self.reference()],
         }
         if case["medium"] == "image":

@@ -60,10 +60,14 @@ class LiveRunner:
     def guardian_results(self, answer: Any, cases: list[dict[str, Any]]) -> None:
         answer = checked(answer)
         by_id = {item.asset_id: item for item in answer.results}
-        if len(by_id) != len(answer.results) or set(by_id) != {case["id"] for case in cases}:
+        if len(by_id) != len(answer.results) or set(by_id) != {
+            self.fixtures.asset_id(case) for case in cases
+        }:
             raise ValueError("incomplete_guardian_results")
         for case in cases:
-            rules = sorted({finding.rule for finding in by_id[case["id"]].findings})
+            rules = sorted(
+                {finding.rule for finding in by_id[self.fixtures.asset_id(case)].findings}
+            )
             self.results.append(
                 {
                     "id": case["id"],

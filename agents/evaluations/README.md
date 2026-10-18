@@ -32,3 +32,19 @@ Live credentials must be GitHub OIDC external-account credentials impersonating 
 
 The Google judge uses the managed evaluation service. Its underlying model version and token
 usage are not returned by that API and are recorded as unknown.
+
+Provision development with `deploy/setup-evaluations.ps1 development`. It creates or updates
+the dedicated service account, custom prediction/evaluation role and GitHub workload identity
+provider, then sets repository Actions variables. Trust is bound to numeric repository and
+owner IDs and the protected live workflow. The initial implementation PR uses
+`-BootstrapPullRequest 31`; rerun without that option after merge to remove its temporary trust.
+The bootstrap workflow cannot authenticate any other PR.
+
+The live workflow publishes `AI quality / live` on the exact PR head. Configure this status
+and the ordinary CI checks as required in GitHub branch protection before accepting changes.
+A fork touching AI code receives a failing status until a maintainer reviews its exact commit,
+pushes that commit to a branch in this repository, and dispatches the live workflow with the
+PR number and reviewed branch. A changed PR head invalidates that reviewed-branch match.
+Live jobs have no repository write token. Only the protected selector and separate publisher
+can write statuses. Evaluated code cannot access deployment credentials, database secrets or
+advertising integrations through its dedicated Google identity.

@@ -60,6 +60,8 @@ class GoogleJudge:
         except BaseException as error:
             call["outcome"] = "failed"
             call["errorType"] = type(error).__name__
+            if isinstance(error, requests.HTTPError) and error.response is not None:
+                call["statusCode"] = error.response.status_code
             raise
 
     def evaluate(self, context: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
