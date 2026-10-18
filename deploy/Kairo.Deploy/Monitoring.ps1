@@ -27,12 +27,27 @@ function Initialize-KairoLogPrivacy {
     param([Parameter(Mandatory)][hashtable]$Environment)
 
     $name = 'kairo-request-query-privacy'
-    $scope = @('--project', $Environment.Project)
-    $verb = if (Test-Gcloud -ArgumentList (@('logging', 'exclusions', 'describe', $name) + $scope)) { 'update' } else { 'create' }
     $filter = 'resource.type="cloud_run_revision" resource.labels.service_name=~"^kairo-(web|api|worker|agents)$" log_id("run.googleapis.com/requests") httpRequest.requestUrl:"?"'
-    Invoke-Gcloud -ArgumentList (@('logging', 'exclusions', $verb, $name,
-        '--description=Keep query strings, including OAuth codes, out of Kairo platform request logs.',
-        '--log-filter', $filter) + $scope) | Out-Null
+    $collection = "projects/$($Environment.Project)/exclusions"
+    $existing = Invoke-KairoLoggingApi -Method GET -Path "$collection/$name"
+    $body = @{ name = $name; description = 'Kairo: exclude query strings, including OAuth codes, from platform request logs.'; filter = $filter; disabled = $false }
+    if ($existing) {
+        Invoke-KairoLoggingApi -Method PATCH -Path "$collection/${name}?updateMask=description,filter,disabled" -Body $body | Out-Null
+    }
+    else { Invoke-KairoLoggingApi -Method POST -Path $collection -Body $body | Out-Null }
+}
+
+function Invoke-KairoLoggingApi {
+    param([ValidateSet('GET', 'POST', 'PATCH')][string]$Method, [string]$Path, [hashtable]$Body)
+
+    $token = ((Invoke-Gcloud -ArgumentList @('auth', 'print-access-token') -Capture) -join '').Trim()
+    $arguments = @{ Method = $Method; Uri = "https://logging.googleapis.com/v2/$Path"; Headers = @{ Authorization = "Bearer $token" }; ContentType = 'application/json'; TimeoutSec = 60 }
+    if ($Body) { $arguments.Body = [Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Depth 20 -Compress)) }
+    try { Invoke-RestMethod @arguments }
+    catch {
+        if ($Method -eq 'GET' -and [int]$_.Exception.Response.StatusCode -eq 404) { return $null }
+        throw
+    }
 }
 
 function Invoke-KairoMonitoringApi {

@@ -21,6 +21,7 @@ Describe 'Initialize-KairoProject' {
             if ($line -like 'secrets versions list*' -and $script:exists) { 'projects/1/secrets/kairo-sql-connection/versions/1' }
         }
         Mock -ModuleName Kairo.Deploy Set-KairoSecretValue { }
+        Mock -ModuleName Kairo.Deploy Initialize-KairoLogPrivacy { }
         Mock -ModuleName Kairo.Deploy Get-KairoSecretValue {
             [IO.File]::ReadAllText((Join-Path $PSScriptRoot '../Kairo.Deploy/collector.yaml'))
         }

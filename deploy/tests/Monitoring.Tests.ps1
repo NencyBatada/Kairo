@@ -130,21 +130,20 @@ Describe 'Collector deployment' {
 
 Describe 'Platform request log privacy' {
     It 'excludes query-bearing platform requests without discarding application or collector logs' {
-        $script:privacyArguments = @()
-        Mock -ModuleName Kairo.Deploy Test-Gcloud { $false }
-        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:privacyArguments = $ArgumentList }
+        $script:privacyCall = @{}
+        Mock -ModuleName Kairo.Deploy Invoke-KairoLoggingApi { if ($Method -ne 'GET') { $script:privacyCall = @{ Method=$Method; Path=$Path; Body=$Body } } }
         Initialize-KairoLogPrivacy -Environment $environment
-        $privacyArguments[2] | Should -Be 'create'
-        $privacyArguments[3] | Should -Be 'kairo-request-query-privacy'
-        $privacyArguments -join ' ' | Should -BeLike '*log_id("run.googleapis.com/requests")*httpRequest.requestUrl:"?"*'
-        $privacyArguments -join ' ' | Should -BeLike '*^kairo-(web|api|worker|agents)$*'
+        $privacyCall.Method | Should -Be 'POST'
+        $privacyCall.Body.name | Should -Be 'kairo-request-query-privacy'
+        $privacyCall.Body.filter | Should -BeLike '*log_id("run.googleapis.com/requests")*httpRequest.requestUrl:"?"*'
+        $privacyCall.Body.filter | Should -BeLike '*^kairo-(web|api|worker|agents)$*'
     }
 
     It 'updates its existing exclusion on repeat setup' {
-        $script:privacyArguments = @()
-        Mock -ModuleName Kairo.Deploy Test-Gcloud { $true }
-        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:privacyArguments = $ArgumentList }
+        $script:privacyCall = @{}
+        Mock -ModuleName Kairo.Deploy Invoke-KairoLoggingApi { if ($Method -eq 'GET') { return @{ name='kairo-request-query-privacy' } }; $script:privacyCall = @{ Method=$Method; Path=$Path; Body=$Body } }
         Initialize-KairoLogPrivacy -Environment $environment
-        $privacyArguments[2] | Should -Be 'update'
+        $privacyCall.Method | Should -Be 'PATCH'
+        $privacyCall.Path | Should -BeLike 'projects/kairo-test/exclusions/kairo-request-query-privacy?updateMask=*'
     }
 }
