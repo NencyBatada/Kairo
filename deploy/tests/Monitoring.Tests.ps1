@@ -127,3 +127,24 @@ Describe 'Collector deployment' {
         $arguments | Should -Contain '--no-cpu-throttling'
     }
 }
+
+Describe 'Platform request log privacy' {
+    It 'excludes query-bearing platform requests without discarding application or collector logs' {
+        $script:privacyArguments = @()
+        Mock -ModuleName Kairo.Deploy Test-Gcloud { $false }
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:privacyArguments = $ArgumentList }
+        Initialize-KairoLogPrivacy -Environment $environment
+        $privacyArguments[2] | Should -Be 'create'
+        $privacyArguments[3] | Should -Be 'kairo-request-query-privacy'
+        $privacyArguments -join ' ' | Should -BeLike '*log_id("run.googleapis.com/requests")*httpRequest.requestUrl:"?"*'
+        $privacyArguments -join ' ' | Should -BeLike '*^kairo-(web|api|worker|agents)$*'
+    }
+
+    It 'updates its existing exclusion on repeat setup' {
+        $script:privacyArguments = @()
+        Mock -ModuleName Kairo.Deploy Test-Gcloud { $true }
+        Mock -ModuleName Kairo.Deploy Invoke-Gcloud { $script:privacyArguments = $ArgumentList }
+        Initialize-KairoLogPrivacy -Environment $environment
+        $privacyArguments[2] | Should -Be 'update'
+    }
+}

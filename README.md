@@ -422,6 +422,8 @@ In development there is no load balancer: the web app forwards `/api/*` to the c
 
 ## Operations monitoring
 
+Setup excludes query-bearing Cloud Run platform request logs for Kairo's services from the default log sink, because those URLs can contain OAuth codes. Application logs, collector logs, traces, request metrics and platform requests without query strings remain available. Existing historical logs and unrelated services are untouched.
+
 The web server, core API, worker and Python agents send OpenTelemetry traces and metrics to a private collector sidecar in each Cloud Run instance. Run `deploy/setup.ps1 development` once before the first monitored deployment, then deploy normally. Setup enables the observability APIs, stores the collector configuration and grants telemetry-only write permissions. Deploy updates Kairo-owned dashboards, alert policies and the operations email channel without replacing unrelated monitoring resources.
 
 Set `OperationsEmail` in `deploy/environments.psd1` to the operations recipient. The development default is `evolixgcpadmin@gmail.com`. Google Cloud may require the recipient to verify the notification channel. Alerts cover failed launches, second failed stage attempts, held mass pauses, stale stock feeds, lost account access, quota-exceeded responses, Cloud Run errors, reported allocation/minute/daily quota above 80%, and an eligible stage waiting over five minutes for ten minutes. Rate-quota rules use matching project-wide minute/day limits, including development's Google Ads test-operation limit. Log-based notifications are rate-limited to one per policy every five minutes. Services that do not publish quota metrics cannot provide an 80% warning; their quota-exceeded responses are still reported.

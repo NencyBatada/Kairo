@@ -20,6 +20,19 @@ function Initialize-KairoTelemetry {
         Add-KairoBinding -ArgumentList @('secrets', 'add-iam-policy-binding', $script:CollectorSecret, '--member', $member,
             '--role', 'roles/secretmanager.secretAccessor', '--project', $Environment.Project, '--format=none')
     }
+    Initialize-KairoLogPrivacy -Environment $Environment
+}
+
+function Initialize-KairoLogPrivacy {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $name = 'kairo-request-query-privacy'
+    $scope = @('--project', $Environment.Project)
+    $verb = if (Test-Gcloud -ArgumentList (@('logging', 'exclusions', 'describe', $name) + $scope)) { 'update' } else { 'create' }
+    $filter = 'resource.type="cloud_run_revision" resource.labels.service_name=~"^kairo-(web|api|worker|agents)$" log_id("run.googleapis.com/requests") httpRequest.requestUrl:"?"'
+    Invoke-Gcloud -ArgumentList (@('logging', 'exclusions', $verb, $name,
+        '--description=Keep query strings, including OAuth codes, out of Kairo platform request logs.',
+        '--log-filter', $filter) + $scope) | Out-Null
 }
 
 function Invoke-KairoMonitoringApi {
