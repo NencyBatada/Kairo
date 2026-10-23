@@ -2,6 +2,8 @@
 
 Kairo takes a marketer from a rising demand signal to a live, on-brand Google Ads campaign in under an hour, then proves the extra sales it caused. The [BRD](docs/Kairo-BRD.md), [PRD](docs/Kairo-PRD.md) and [SAD](docs/Kairo-SAD.md) describe the product and its architecture.
 
+Demo Link - [text](https://drive.google.com/file/d/11w1tVw5rSgVugFVLyFU4zWn4Fn958f1m/view)
+
 ## Repository layout
 
 | Folder | What it holds |
