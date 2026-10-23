@@ -30,6 +30,8 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
         Assert.Single(_world.Plan.Requests);
         var run = Assert.Single((await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, room)).GetProperty("runs").EnumerateArray());
         Assert.Equal("failed", run.GetProperty("status").GetString());
+        Assert.Equal("generation_limit_exceeded", run.GetProperty("errorCode").GetString());
+        Assert.Equal("The campaign generation limit was reached.", run.GetProperty("error").GetString());
         await using var connection = new SqlConnection(_world.Database);
         await connection.OpenAsync(Token);
         await using var command = connection.CreateCommand();

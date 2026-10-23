@@ -9929,6 +9929,12 @@
               "null",
               "string"
             ]
+          },
+          "errorCode": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

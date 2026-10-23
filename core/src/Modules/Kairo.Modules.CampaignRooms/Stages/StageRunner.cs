@@ -82,7 +82,9 @@ internal sealed class StageRunner(
             logger.LogWarning(exception, "Stage run {RunId} ({Kind}) failed on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
             if (exception.Code is AgentCallException.NotConfigured or AgentCallException.GenerationLimitExceeded || run.Attempts >= work.AttemptsFor(run))
             {
-                await FailAsync(run, lease, exception.Code, FailedMessage, cancellationToken);
+                await FailAsync(run, lease, exception.Code,
+                    exception.Code == AgentCallException.GenerationLimitExceeded ? "The campaign generation limit was reached." : FailedMessage,
+                    cancellationToken);
             }
             else
             {

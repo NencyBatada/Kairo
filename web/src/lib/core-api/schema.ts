@@ -7027,6 +7027,7 @@ export interface components {
             inputTokens: null | number | string;
             outputTokens: null | number | string;
             error: null | string;
+            errorCode?: null | string;
         };
         CampaignSendBackView: {
             from: string;
