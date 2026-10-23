@@ -48,6 +48,23 @@ public sealed class MediaAlternativeTests(SqlServer sqlServer)
     }
 
     [Fact]
+    public async Task Sql_policy_filters_alternatives_and_blocks_cross_brand_inserts()
+    {
+        await using var world = await CampaignWorld.CreateAsync(sqlServer);
+        var (_, initial) = await GeneratedImageAsync(world);
+        using var saved = await world.Marketer.PutAsJsonAsync($"/api/brands/{world.BrandId}/media-accessibility", new AlternativeWrite(initial.Target, 0, initial.SourceHash, Image()), Token);
+        saved.EnsureSuccessStatusCode();
+        using var scope = world.Api.Services.CreateScope();
+        var database = scope.ServiceProvider.GetRequiredService<Kairo.SharedKernel.Persistence.KairoDatabase>();
+        var db = scope.ServiceProvider.GetRequiredService<Kairo.Modules.Accessibility.Data.AccessibilityDbContext>();
+        await database.UseBrandAsync(world.BrandId, Token);
+        Assert.Single(await db.Alternatives.IgnoreQueryFilters().ToListAsync(Token));
+        await database.UseBrandAsync(Guid.NewGuid(), Token);
+        Assert.Empty(await db.Alternatives.IgnoreQueryFilters().ToListAsync(Token));
+        await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO [accessibility].[MediaAlternatives] (Id, BrandId, TargetKey, SourceHash, Content, Revision, UpdatedAt) VALUES ({Guid.NewGuid()}, {world.BrandId}, {"blocked"}, {"hash"}, {"{}"}, {1}, {DateTimeOffset.UtcNow})", Token));
+    }
+
+    [Fact]
     public async Task Source_changes_reset_review_and_wrong_brand_and_missing_versions_are_unavailable()
     {
         await using var world = await CampaignWorld.CreateAsync(sqlServer);
