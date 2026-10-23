@@ -31,7 +31,9 @@ def default_client() -> genai.Client:
             vertexai=True,
             project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
             location=os.environ.get("GOOGLE_CLOUD_LOCATION") or DEFAULT_LOCATION,
-        )
+            http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)),
+        ),
+        region=os.environ.get("GOOGLE_CLOUD_LOCATION") or DEFAULT_LOCATION,
     )
 
 

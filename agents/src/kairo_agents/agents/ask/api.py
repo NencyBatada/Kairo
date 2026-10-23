@@ -22,6 +22,7 @@ from google.genai import types
 from kairo_agents.agents.ask.models import AskRequest, AskResponse
 from kairo_agents.agents.ask.telemetry import AskModelTelemetry
 from kairo_agents.telemetry import callback_headers
+from kairo_agents.usage import UsageModelCallbacks
 
 PROMPT_VERSION = "ask/1"
 APP_NAME = "kairo_ask"
@@ -131,6 +132,9 @@ def tools_for(
 async def run_turn(request: AskRequest) -> AskResponse:
     model = os.environ.get("KAIRO_ASK_MODEL") or "gemini-3.5-pro"
     telemetry = AskModelTelemetry(model)
+    usage = UsageModelCallbacks(
+        model, os.environ.get("GOOGLE_CLOUD_LOCATION") or "global", telemetry
+    )
     agent = LlmAgent(
         name=APP_NAME,
         model=Gemini(
@@ -139,13 +143,14 @@ async def run_turn(request: AskRequest) -> AskResponse:
                 "vertexai": True,
                 "project": os.environ.get("GOOGLE_CLOUD_PROJECT"),
                 "location": os.environ.get("GOOGLE_CLOUD_LOCATION") or "global",
+                "http_options": types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)),
             },
         ),
         instruction=instructions(),
         tools=tools_for(request),
-        before_model_callback=telemetry.before,
-        after_model_callback=telemetry.after,
-        on_model_error_callback=telemetry.error,
+        before_model_callback=usage.before,
+        after_model_callback=usage.after,
+        on_model_error_callback=usage.error,
         generate_content_config=types.GenerateContentConfig(
             temperature=0.2, max_output_tokens=8192
         ),
@@ -179,8 +184,11 @@ async def run_turn(request: AskRequest) -> AskResponse:
                 if event.error_code:
                     raise RuntimeError("Ask agent failed")
     finally:
-        telemetry.finish("failed")
-        await runner.close()
+        try:
+            await usage.finish()
+        finally:
+            telemetry.finish("failed")
+            await runner.close()
     return AskResponse(model=model, prompt_version=PROMPT_VERSION)
 
 

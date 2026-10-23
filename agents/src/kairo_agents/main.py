@@ -13,9 +13,11 @@ from kairo_agents.agents.prove.lab_api import router as prove_lab_router
 from kairo_agents.agents.prove.report_api import router as prove_report_router
 from kairo_agents.agents.sense.api import router as sense_router
 from kairo_agents.telemetry import TelemetryMiddleware, configure
+from kairo_agents.usage import UsageMiddleware
 
 configure()
 app = FastAPI(title="Kairo agent service")
+app.add_middleware(UsageMiddleware)
 app.add_middleware(TelemetryMiddleware)
 app.include_router(ask_router)
 app.include_router(brand_kit_router)

@@ -157,3 +157,18 @@ function Test-Gcloud {
 
     Test-Native -FilePath 'gcloud' -ArgumentList ($ArgumentList + '--quiet')
 }
+
+function Get-KairoGenerationSettings {
+    param([Parameter(Mandatory)][hashtable]$Environment)
+
+    $limits = [ordered]@{ TextCalls = 100; Images = 50; VideoClips = 10 }
+    if ($Environment.GenerationLimits) {
+        foreach ($entry in $Environment.GenerationLimits.GetEnumerator()) {
+            if ($entry.Key -notin @('TextCalls', 'Images', 'VideoClips') -or $entry.Value -isnot [int] -or $entry.Value -lt 0 -or $entry.Value -gt 1000000) {
+                throw 'Generation limits require TextCalls, Images or VideoClips with integer values from 0 to 1000000.'
+            }
+            $limits[$entry.Key] = $entry.Value
+        }
+    }
+    ($limits.GetEnumerator() | ForEach-Object { "Kairo__Operations__Limits__$($_.Key)=$($_.Value)" }) -join ','
+}

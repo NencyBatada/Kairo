@@ -139,8 +139,10 @@ class TelemetryMiddleware:
 
 
 class ObservedModels:
-    def __init__(self, models: Any):
+    def __init__(self, models: Any, region: str = "global", accounted: bool = False):
         self.models = models
+        self.region = region
+        self.accounted = accounted
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.models, name)
@@ -156,7 +158,14 @@ class ObservedModels:
             model = str(kwargs.get("model", "unknown")).rsplit("/", 1)[-1][:100]
             span.set_attribute("gen_ai.request.model", model)
             try:
-                answer = await getattr(self.models, operation)(**kwargs)
+                if self.accounted:
+                    from kairo_agents.usage import model_call
+
+                    answer = await model_call(
+                        operation, getattr(self.models, operation), kwargs, self.region
+                    )
+                else:
+                    answer = await getattr(self.models, operation)(**kwargs)
                 outcome = "succeeded"
                 return answer
             except Exception:
@@ -176,18 +185,21 @@ class ObservedModels:
 
 
 class ObservedClient:
-    def __init__(self, client: Any):
+    def __init__(self, client: Any, region: str = "global"):
         self.client = client
-        self.aio = ObservedAsyncClient(client.aio)
+        self.aio = ObservedAsyncClient(client.aio, region)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.client, name)
 
 
 class ObservedAsyncClient:
-    def __init__(self, client: Any):
+    def __init__(self, client: Any, region: str):
+        from kairo_agents.usage import UsageOperations
+
         self.client = client
-        self.models = ObservedModels(client.models)
+        self.models = ObservedModels(client.models, region, accounted=True)
+        self.operations = UsageOperations(client.operations)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.client, name)

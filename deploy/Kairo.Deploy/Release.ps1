@@ -43,7 +43,8 @@ function Invoke-KairoDeploy {
             $serviceSecrets += "$($entry.Key)=$($entry.Value):latest"
         }
     }
-    $operations = "Kairo__Operations__Email=$($Environment.OperationsEmail)"
+    $generationSettings = Get-KairoGenerationSettings -Environment $Environment
+    $operations = "Kairo__Operations__Email=$($Environment.OperationsEmail),$generationSettings"
     $apiSettings = "Kairo__PublicOrigin=$($urls['kairo-web']),Kairo__Kms__KeyName=$keyName,$analytics,$files,$operations"
     $apiSecrets = @($serviceSecrets)
     $mailSender = "$($Environment.MailSender)".Trim()

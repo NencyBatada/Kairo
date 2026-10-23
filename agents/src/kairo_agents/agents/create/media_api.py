@@ -51,6 +51,7 @@ from kairo_agents.media.compose import END_CARD_SECONDS, body_seconds, compose
 from kairo_agents.media.ffmpeg import FfmpegError
 from kairo_agents.media.formats import FORMATS, BadImage, fit
 from kairo_agents.telemetry import ObservedClient
+from kairo_agents.usage import UsageSpeech
 
 DEFAULT_MODEL = "gemini-3.5-flash"
 DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image"
@@ -100,13 +101,15 @@ def default_media_client() -> genai.Client:
             vertexai=True,
             project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
             location=os.environ.get("KAIRO_MEDIA_LOCATION") or DEFAULT_MEDIA_LOCATION,
-        )
+            http_options=types.HttpOptions(retry_options=types.HttpRetryOptions(attempts=1)),
+        ),
+        region=os.environ.get("KAIRO_MEDIA_LOCATION") or DEFAULT_MEDIA_LOCATION,
     )
 
 
 @cache
 def default_speech_client() -> texttospeech.TextToSpeechAsyncClient:
-    return texttospeech.TextToSpeechAsyncClient()
+    return UsageSpeech(texttospeech.TextToSpeechAsyncClient())
 
 
 def client_source() -> Callable[[], Any]:

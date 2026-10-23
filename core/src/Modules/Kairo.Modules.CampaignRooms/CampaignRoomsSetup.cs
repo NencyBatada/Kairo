@@ -72,7 +72,8 @@ internal static class CampaignRoomsSetup
     {
         api.ServiceProvider.GetRequiredService<StageLoopSwitch>().TurnOn();
         api.MapCheckSettings();
-        var campaigns = api.MapBrandApi().MapGroup("/campaigns");
+        var campaigns = api.MapBrandApi().MapGroup("/campaigns").AddEndpointFilter<CampaignUsageFilter>();
+        campaigns.MapGet("/{campaignId:guid}/usage", CampaignUsageFilter.ReadAsync);
         campaigns.MapGet("/{campaignId:guid}/launch-plan", LaunchPlanEndpoints.GetAsync);
         campaigns.MapPut("/{campaignId:guid}/launch-plan", LaunchPlanEndpoints.UpdateAsync).RequireBrandRole(BrandRoles.Marketer);
         campaigns.MapGet("", CampaignEndpoints.ListAsync);
