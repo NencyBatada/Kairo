@@ -202,7 +202,7 @@ Tick a feature off once it works end to end. Acceptance criteria are in Kairo-PR
 
 ### Nency (web app)
 
-- [ ] **Accessibility**: Core screens meet WCAG 2.2 AA, with keyboard use, good contrast and labels.
+- [/] **Accessibility**: Core screens meet WCAG 2.2 AA, with keyboard use, good contrast and labels. *Implementation started in a dedicated feature/accessibility worktree. Scope includes core-screen interaction fixes, repeatable browser checks and version-bound media alternatives with human review; AI drafting remains gated on verified Operations accounting. Completion requires authenticated development and manual assistive-technology verification.*
 
 ### Both
 
