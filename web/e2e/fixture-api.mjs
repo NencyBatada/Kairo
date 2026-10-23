@@ -43,10 +43,13 @@ const server = createServer(async (request, response) => {
   if (state === "loading" && !global) await new Promise(resolve => setTimeout(resolve, 2500));
   if (url.pathname.endsWith("/drafting/latest")) return send(204);
   if (url.pathname.endsWith("/launch")) return send(404, { title: "No launch" });
+  if (request.method === "PATCH" && url.pathname === "/api/brands/11111111-1111-1111-1111-111111111111") return send(400, { title: "Validation failed", errors: { name: ["Use the registered brand name."] } });
   if (request.method !== "GET") return send(409, { title: "Fixture action rejected. Your changes were retained." });
   if (!(url.pathname in data)) { missing.add(url.pathname); process.stderr.write(`Missing accessibility fixture: ${url.pathname}\n`); return send(404, { title: "Missing test fixture" }); }
   let value = structuredClone(data[url.pathname]);
   if (state === "media" && url.pathname.endsWith("/assets")) value = structuredClone(data.__mediaAssets);
+  if (state === "review" && url.pathname === "/api/brands/11111111-1111-1111-1111-111111111111/campaigns/22222222-2222-2222-2222-222222222222") value = structuredClone(data.__reviewRoom);
+  if (state === "review" && url.pathname.endsWith("/assets")) { value = structuredClone(data.__reviewAssets); value.check.approveBlocker = null; value.check.flagged = 0; value.check.passed = 1; }
   if (state === "viewer" && url.pathname === "/api/brands") value = value.map(brand => ({ ...brand, roles: ["approver"] }));
   if (state === "empty" && !global && value && typeof value === "object") {
     if (Array.isArray(value)) value = [];

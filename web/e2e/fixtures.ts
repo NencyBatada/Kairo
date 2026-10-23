@@ -13,6 +13,7 @@ import { rule, festival, options } from "../src/app/[workspace]/triggers/fixture
 import { entry, detail as memory } from "../src/app/[workspace]/brand-kit/memory/fixtures.test-data";
 import { analysis, summary as analysisSummary } from "../src/app/[workspace]/impact-lab/fixtures.test-data";
 import { product, imported, summary as catalogueSummary } from "../src/app/[workspace]/brand-kit/catalogue/_lib/fixtures.test-data";
+import { reviewRoom, reviewSet } from "../src/app/[workspace]/campaigns/[id]/review/fixtures.test-data";
 
 export const brandId = "11111111-1111-1111-1111-111111111111";
 export const campaignId = "22222222-2222-2222-2222-222222222222";
@@ -39,6 +40,8 @@ export function fixtureData() {
     [`${root}/opportunities/topics`]: [],
     [`${root}/campaigns`]: { campaigns: [{ ...campaign, id: campaignId }], nextBefore: null },
     [campaignRoot]: { ...room, id: campaignId },
+    __reviewRoom: reviewRoom({ actions: { ...reviewRoom().actions, approve: "assets", approveBlocker: null } }),
+    __reviewAssets: reviewSet([asset({ checkState: "passed", check: { ...asset().check, state: "passed", score: 95, passed: true, settingsVersion: 1 } })]),
     [`${campaignRoot}/activity`]: activity,
     [`${campaignRoot}/brief`]: brief,
     [`${campaignRoot}/proof-plan`]: proof,

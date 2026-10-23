@@ -68,6 +68,19 @@ test("failed saves preserve the editor's work and announce the error", async () 
   expect((input as HTMLTextAreaElement).value).toBe("My corrected description");
 });
 
+test.each([503, 429])("failed AI drafts and exhausted limits retain unreviewed alternatives (%s)", async status => {
+  const fetch = respond(view({ canDraft: true }));
+  render(<AccessibleMedia src="/image.png" metadataUrl={base} contentType="image/png" label="Product image" />);
+  await screen.findByText("Edit media alternatives");
+  fireEvent.click(screen.getByText("Edit media alternatives"));
+  fetch.mockResolvedValueOnce(new Response(JSON.stringify({ title: status === 429 ? "The campaign generation limit was reached." : "AI drafting could not complete." }), { status }));
+  fireEvent.click(screen.getByRole("button", { name: "Draft alternatives from this media" }));
+  await screen.findByRole("alert");
+  expect((screen.getByLabelText("Image description") as HTMLTextAreaElement).value).toBe("लाल जूता");
+  expect(screen.getByText(/Draft alternatives · Not yet reviewed/)).toBeTruthy();
+  expect(screen.queryByText("Alternatives reviewed against this media version.")).toBeNull();
+});
+
 test("read-only users see alternatives without editor or generation controls", async () => {
   respond(view({ canEdit: false }));
   render(<AccessibleMedia src="/media.mp4" metadataUrl={base} contentType="video/mp4" label="Campaign video" />);

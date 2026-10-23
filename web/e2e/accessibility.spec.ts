@@ -134,3 +134,44 @@ test("media alternatives expose captions, transcripts and labelled editors witho
   await expect(page.getByRole("button", { name: "Confirm alternatives reviewed" }).first()).toBeDisabled();
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
 });
+
+test("keyboard form submission announces associated errors and retains entered values", async ({ page }) => {
+  await page.goto("/acme/settings");
+  const name = page.getByRole("textbox", { name: "Brand name" });
+  await name.focus();
+  await name.fill("My retained brand name");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("combobox", { name: "Time zone" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Save changes", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText("Check the highlighted fields and try again.");
+  await expect(name).toHaveValue("My retained brand name");
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await expect(name).toHaveAccessibleDescription("Use the registered brand name.");
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+});
+
+test("approval dialog traps keyboard focus, retains a rejected decision and restores its trigger", async ({ page, context }) => {
+  await context.addCookies([{ name: "__Host-kairo-session", value: "fixture-review", url: "https://127.0.0.1:3214/", httpOnly: true, secure: true, sameSite: "Lax" }]);
+  await page.goto("/acme/campaigns/22222222-2222-2222-2222-222222222222/review");
+  const trigger = page.getByRole("button", { name: "Approve assets", exact: true });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: "Approve assets?" });
+  await expect(dialog).toBeVisible();
+  const confirm = dialog.getByRole("button", { name: "Approve assets", exact: true });
+  await expect(confirm).toBeFocused();
+  for (let index = 0; index < 5; index++) {
+    await page.keyboard.press("Tab");
+    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+  }
+  await confirm.focus();
+  await page.keyboard.press("Enter");
+  await expect(dialog.getByRole("alert")).toHaveText("Fixture action rejected. Your changes were retained.");
+  await expect(dialog).toBeVisible();
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+});

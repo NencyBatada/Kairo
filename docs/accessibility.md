@@ -58,7 +58,7 @@ Use an authenticated development test brand with representative English/Hindi te
 
 Record the commit, deployment revisions, browser/NVDA versions, tested routes/states, findings and unresolved blockers under `TestResults/accessibility`. Keep the tracker in progress until this evidence and the user-confirmed merge are complete.
 
-## Audit findings and evidence — 23 October 2026
+## Audit findings and evidence — 23–24 October 2026
 
 The route inventory is versioned in `web/e2e/fixtures.ts`. Each healthy route is checked in light and dark themes for rendered A/AA violations, a main heading, successful rendering and unexpected API calls. Critical routes and keyboard/media journeys also run in Firefox and WebKit. Loading, empty, error and read-only fixtures supplement the healthy route inventory. Criteria that need human judgement remain open.
 
@@ -68,11 +68,14 @@ The route inventory is versioned in `web/e2e/fixtures.ts`. Each healthy route is
 | Card/account names could replace visible text; event links lacked their visible context | 2.4.4, 2.5.3, 4.1.2 | Native visible content retained; contextual event labels; regression checks. |
 | Desktop Ask opening did not move keyboard focus into the dock | 2.4.3 | Heading focus on open and trigger restoration on close; browser journeys at desktop/mobile widths. |
 | Live notification and answer progress needed bounded announcements | 4.1.3 | Separate status messages; component checks. Actual NVDA announcement quality remains unverified. |
+| Field-only validation was silent and settings actions reset entered values | 3.3.1, 3.3.7, 4.1.3 | Bounded error summary and prevented automatic reset; field descriptions and retained values checked in all three browser engines. |
 | Enlarged text overflowed campaign region actions and page headings | 1.4.4, 1.4.10, 1.4.12 | Wrapping actions/headings; 320px spacing and 200% text checks. Actual Chrome 400% zoom remains unverified. |
 | SVG titles produced production hydration errors on chart/map routes | 4.1.2 | Single text-node titles; route checks fail on rendering/hydration errors. |
 | Media had no reviewed, version-bound alternative workflow; previews included an empty caption track | 1.1.1, 1.2.1–1.2.3, 1.2.5 | Manual editor, authenticated WebVTT/described files, source hashes, explicit review and failure states. Human accuracy/listening checks remain required. |
 | The design document claimed conformance without complete evidence | All applicable A/AA | Changed the claim to a target and recorded this audit's limitations. |
 
-Focused API verification passes eight checks, including OpenAPI generation. Python verification passes 395 tests, including eleven accessibility checks and real synthetic FFmpeg composition. Architecture checks pass 75 tests; deployment Pester checks pass 127 tests. Web lint and the production build pass. Local logs and browser reports are retained under `TestResults/accessibility` and `web/playwright-report`; CI uploads browser evidence for each tested commit.
+Focused API verification passes eight checks, including OpenAPI generation. Python verification passes 395 tests, including eleven accessibility checks and real synthetic FFmpeg composition. Architecture checks pass 75 tests; deployment Pester checks pass 127 tests. Web lint, the production build and the full web unit suite pass; nineteen focused checks also cover the latest form/media changes, including failed AI drafts and exhausted limits. Six added browser checks cover form validation and approval focus trapping/restoration across Chromium, Firefox and WebKit. Local logs and browser reports are retained under `TestResults/accessibility` and `web/playwright-report`; CI uploads browser evidence for each tested commit.
+
+An isolated validation checkout combines this work with the currently deployed PR #32 source. Seven accessibility API checks, twelve Operations integration checks, OpenAPI regeneration and all 413 combined Python tests pass. The original cost-tracking checkout remains unchanged. This compatibility check does not count as PR #32's merge or permission to enable AI drafting.
 
 AI media drafting has not been live-verified and stays disabled. PR #32 is still open. Development has not yet been updated with this branch. Native desktop verification stopped because Computer Use could not reliably identify Chrome's URL; NVDA was not found in the app inventory or standard installation directories. These are release blockers, not passing checks.

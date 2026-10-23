@@ -51,6 +51,18 @@ test("marks the time zone invalid when the core rejects it", async () => {
   expect(screen.getByLabelText("Time zone").getAttribute("aria-invalid")).toBe("true");
 });
 
+test("retains corrected values after rejected submission", async () => {
+  const action = vi.fn(async (): Promise<FormState> => ({ status: "error", fieldErrors: { name: ["Use the registered brand name."] } }));
+  render(<WorkspaceForm action={action} workspace={workspace} timeZones={["Asia/Kolkata", "Europe/London"]} canEdit />);
+  fireEvent.change(screen.getByLabelText("Brand name"), { target: { value: "My corrected name" } });
+  fireEvent.change(screen.getByLabelText("Time zone"), { target: { value: "Europe/London" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await screen.findByRole("alert");
+  expect((screen.getByLabelText("Brand name") as HTMLInputElement).value).toBe("My corrected name");
+  expect((screen.getByLabelText("Time zone") as HTMLSelectElement).value).toBe("Europe/London");
+  expect(screen.getByLabelText("Brand name").getAttribute("aria-describedby")).toBe("name-error");
+});
+
 test("explains that the handle and currency can't be changed", () => {
   render(<WorkspaceForm action={vi.fn()} workspace={workspace} timeZones={["Asia/Kolkata"]} canEdit />);
 
