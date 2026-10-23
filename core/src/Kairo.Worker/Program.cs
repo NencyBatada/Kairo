@@ -1,5 +1,6 @@
 using Kairo.Modules.Approvals;
 using Kairo.Modules.Ask;
+using Kairo.Modules.Accessibility;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
 using Kairo.Modules.BrandMemory;
@@ -40,6 +41,7 @@ IModule[] modules =
     new LiveModule(),
     new AuditModule(),
     new AskModule(),
+    new AccessibilityModule(),
 ];
 
 foreach (var module in modules)

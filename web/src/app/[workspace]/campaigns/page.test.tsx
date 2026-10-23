@@ -21,7 +21,7 @@ beforeEach(() => {
 test("loads scoped real campaigns with every filter and local dates", async () => {
   render(await page({ q: "Rain Runner", stage: "brief_draft", status: "waiting_approval", owner: ownerId, from: "2026-10-01", to: "2026-10-31" }));
   expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/campaigns", { params: { path: { brandId: "brand-1" }, query: { Q: "Rain Runner", Stage: "brief_draft", Status: "waiting_approval", Owner: ownerId, From: "2026-10-01", To: "2026-10-31", Before: undefined } } });
-  expect(screen.getByRole("link", { name: campaign.title }).getAttribute("href")).toBe("/acme/campaigns/room-1");
+  expect(screen.getByRole("link", { name: new RegExp(campaign.title) }).getAttribute("href")).toBe("/acme/campaigns/room-1");
   expect(screen.getByText("Rain Runner")).toBeTruthy(); expect(screen.getByText("Gate 1 · Brief waiting")).toBeTruthy();
   expect(screen.getByText(/15 Oct 2026, 9:00/i)).toBeTruthy();
   expect((screen.getByLabelText("Owner") as HTMLSelectElement).value).toBe(ownerId);
@@ -69,7 +69,7 @@ test("retains former members as owner filter options and handles missing product
   list = { campaigns: [{ ...campaign, products: [], owner: { id: formerId, name: "Former member" }, status: "needs_attention", pendingGate: null }], nextBefore: null };
   render(await page({ owner: formerId }));
   expect((screen.getByLabelText("Owner") as HTMLSelectElement).value).toBe(formerId);
-  expect(screen.getByText("No product names are available.")).toBeTruthy(); expect(screen.getByRole("link", { name: campaign.title }).textContent).toContain("Needs attention");
+  expect(screen.getByText("No product names are available.")).toBeTruthy(); expect(screen.getByRole("link", { name: new RegExp(campaign.title) }).textContent).toContain("Needs attention");
 });
 
 test("passes API failures to the retry boundary", async () => {

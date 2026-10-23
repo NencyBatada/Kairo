@@ -17,6 +17,23 @@ test("shows no count when everything is read", () => {
   expect(screen.getByRole("link", { name: "Notifications, none unread" }).textContent).toBe("");
 });
 
+test("invalid count data cannot crash the notification control", () => {
+  render(<NotificationBell href="/n" unreadCount={Number.NaN} />);
+  expect(screen.getByRole("link", { name: "Notifications, none unread" })).toBeTruthy();
+});
+
+test("announces changed counts once in context without moving focus", () => {
+  const view = render(<NotificationBell href="/n" unreadCount={1} />);
+  expect(screen.getByRole("status").textContent).toBe("");
+  const link = screen.getByRole("link", { name: "Notifications, 1 unread" });
+  link.focus();
+  view.rerender(<NotificationBell href="/n" unreadCount={3} />);
+  expect(screen.getByRole("status").textContent).toBe("Notifications, 3 unread");
+  expect(document.activeElement).toBe(link);
+  view.rerender(<NotificationBell href="/n" unreadCount={3} />);
+  expect(screen.getAllByRole("status")).toHaveLength(1);
+});
+
 test("says one unread in the singular and caps a long count", () => {
   const { rerender } = render(<NotificationBell href="/n" unreadCount={1} />);
   expect(screen.getByRole("link", { name: "Notifications, 1 unread" })).toBeTruthy();

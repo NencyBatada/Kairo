@@ -54,7 +54,8 @@ internal sealed record AssetView(
     DateTimeOffset UpdatedAt,
     AssetCheckView Check,
     bool CanOverride,
-    bool CanSendBack);
+    bool CanSendBack,
+    string? AccessibilityUrl = null);
 
 internal sealed record AssetGroupView(string CampaignType, string Label, string Language, string? LanguageName, AssetView[] Assets);
 
@@ -118,7 +119,8 @@ internal static class AssetViews
             asset.UpdatedAt,
             checkView,
             reviewing && CheckViews.CanOverride(checkView),
-            reviewing);
+            reviewing,
+            content.Media is null ? null : Kairo.Contracts.Media.MediaAccessibilityLinks.For(brandId, new("asset", asset.Id, version.Version, asset.RoomId)));
     }
 
     public static AssetDisclosureView Disclosure(AssetDisclosure disclosure) => new(

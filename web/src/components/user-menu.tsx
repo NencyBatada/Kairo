@@ -22,14 +22,14 @@ export function UserMenu({ name, email, pictureUrl }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`Account: ${name}`}
         className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors duration-120 hover:bg-accent data-popup-open:bg-accent"
       >
+        <span className="sr-only">Account:</span>{" "}
         <UserAvatar name={name} pictureUrl={pictureUrl} isYou />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-small font-semibold text-foreground" title={name}>
             {name}
-          </span>
+          </span>{" "}
           <span className="block truncate text-xs text-subtle-foreground" title={email}>
             {email}
           </span>

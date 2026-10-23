@@ -53,6 +53,7 @@ function AssistantLocation({ onChange }: { onChange: (pathname: string) => void 
 export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const returnFocus = useRef<HTMLElement | null>(null);
+  const dockHeading = useRef<HTMLHeadingElement | null>(null);
   const [area, setArea] = useState("Workspace");
   const [selected, setSelected] = useState<{ pathname: string; target: Target; label: string } | null>(null);
   const [guards, setGuards] = useState<Record<string, boolean>>({});
@@ -62,6 +63,9 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   const controller = useConversations(workspace, open);
   const panel = <AskKairoPanel area={area} workspace={workspace} controller={controller} selected={selected} editing={Object.values(guards).some(Boolean)} />;
   const wide = useSyncExternalStore(subscribeToWide, getWideSnapshot, getServerWideSnapshot);
+  useEffect(() => {
+    if (open && wide) dockHeading.current?.focus();
+  }, [open, wide]);
 
   function changeOpen(next: boolean, trigger?: HTMLElement) {
     if (next) returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : document.getElementById("ask-kairo-trigger"));
@@ -80,7 +84,7 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
         {open && wide && (
           <aside aria-label="Ask Kairo" className="sticky top-0 flex h-dvh min-w-0 flex-col border-l border-border bg-card">
             <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="font-display text-display-sm text-foreground">Ask Kairo</h2>
+              <h2 ref={dockHeading} tabIndex={-1} className="font-display text-display-sm text-foreground">Ask Kairo</h2>
               <Button variant="ghost" size="icon" aria-label="Close" onClick={() => changeOpen(false)}>
                 <X className="size-4" aria-hidden="true" />
               </Button>

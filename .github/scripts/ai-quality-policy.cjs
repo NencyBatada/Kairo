@@ -3,6 +3,7 @@ const generationRoots = [
   '.github/scripts/ai-quality', '.github/workflows/ai-quality',
   'core/src/Modules/Kairo.Modules.CampaignRooms/',
   'core/src/Modules/Kairo.Modules.Ask/',
+  'core/src/Modules/Kairo.Modules.Accessibility/',
   'core/src/Kairo.SharedKernel/Agents/',
   'core/src/Kairo.Contracts/', 'deploy/Kairo.Deploy/Evaluations.ps1',
 ];

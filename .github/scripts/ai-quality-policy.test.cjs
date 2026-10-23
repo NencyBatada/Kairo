@@ -17,6 +17,7 @@ test('generation, prompt, model, checking, fixtures and dependencies require liv
     'core/src/Modules/Kairo.Modules.CampaignRooms/Briefs/BriefDrafter.cs',
     'core/src/Modules/Kairo.Modules.CampaignRooms/Assets/CopyGenerator.cs',
     'core/src/Modules/Kairo.Modules.CampaignRooms/Media/ImageGenerator.cs',
+    'core/src/Modules/Kairo.Modules.Accessibility/AlternativeService.cs',
   ]) assert.equal(requiresLive([{ filename }], 1), true, filename);
   assert.equal(requiresLive([{ filename: 'docs/README.md' }], 1), false);
   assert.equal(requiresLive([{ filename: 'moved.py', previous_filename: 'agents/src/old.py' }], 1), true);

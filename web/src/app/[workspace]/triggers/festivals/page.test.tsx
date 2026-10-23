@@ -22,7 +22,7 @@ test("loads date ranges in the workspace and includes national events in a marke
   expect(get).toHaveBeenCalledWith("/api/brands/{brandId}/triggers/festivals", { params: { path: { brandId: "brand-1" }, query: { from: "2026-11-01", to: "2026-11-30" } } });
   expect(screen.getByRole("heading", { name: "November 2026" })).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Diwali" })).toBeTruthy(); expect(screen.queryByText("Karnataka day")).toBeNull();
-  expect(screen.getByRole("link", { name: "Edit Diwali" }).getAttribute("href")).toBe("/acme/triggers/festivals/event-1");
+  expect(screen.getByRole("link", { name: "Edit event: Diwali" }).getAttribute("href")).toBe("/acme/triggers/festivals/event-1");
 });
 test("invalid date queries show an actionable message without calling the calendar API", async () => {
   render(await CalendarPage({ params, searchParams: Promise.resolve({ from: "2026-02-30" }) }));
@@ -31,7 +31,7 @@ test("invalid date queries show an actionable message without calling the calend
 test("members see events without editing controls", async () => {
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["marketer"] });
   render(await CalendarPage({ params, searchParams: Promise.resolve({}) }));
-  expect(screen.queryByRole("link", { name: "Add event" })).toBeNull(); expect(screen.queryByRole("link", { name: /Edit Diwali/ })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Add event" })).toBeNull(); expect(screen.queryByRole("link", { name: /Edit event: Diwali/ })).toBeNull();
 });
 test("direct editing and creation require an admin", async () => {
   getWorkspace.mockResolvedValue({ id: "brand-1", roles: ["marketer"] });

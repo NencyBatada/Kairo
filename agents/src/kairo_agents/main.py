@@ -12,6 +12,7 @@ from kairo_agents.agents.prove.api import router as prove_router
 from kairo_agents.agents.prove.lab_api import router as prove_lab_router
 from kairo_agents.agents.prove.report_api import router as prove_report_router
 from kairo_agents.agents.sense.api import router as sense_router
+from kairo_agents.media.accessibility import router as accessibility_router
 from kairo_agents.telemetry import TelemetryMiddleware, configure
 
 configure()
@@ -29,6 +30,7 @@ app.include_router(prove_router)
 app.include_router(prove_report_router)
 app.include_router(prove_lab_router)
 app.include_router(learn_router)
+app.include_router(accessibility_router)
 
 
 @app.get("/health")

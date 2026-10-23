@@ -8,6 +8,9 @@
 !.yarn/versions
 
 /coverage
+/test-results
+/playwright-report
+/.cache
 
 /.next/
 /out/

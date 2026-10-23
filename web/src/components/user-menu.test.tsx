@@ -16,7 +16,7 @@ test("shows who is signed in and signs them out from the menu", async () => {
   vi.stubGlobal("fetch", fetchMock);
   render(<UserMenu name="Neha Kapoor" email="neha@acme.example" pictureUrl={null} />);
 
-  fireEvent.click(screen.getByRole("button", { name: "Account: Neha Kapoor" }));
+  fireEvent.click(screen.getByRole("button", { name: /Account: Neha Kapoor.*neha/i }));
   const menu = await screen.findByRole("menu", { name: "Account" });
   expect(within(menu).getByText("neha@acme.example")).toBeTruthy();
 

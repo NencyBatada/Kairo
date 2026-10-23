@@ -1,5 +1,8 @@
+"use client";
+
 import { Bell } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,16 +21,21 @@ export function unreadLabel(count: number) {
 }
 
 export function NotificationBell({ href, unreadCount, className }: NotificationBellProps) {
-  const count = Math.max(0, Math.floor(unreadCount));
+  const count = Number.isFinite(unreadCount) ? Math.max(0, Math.floor(unreadCount)) : 0;
+  const [previous, remember] = useState(count);
+  const [announcement, announce] = useState("");
+  if (previous !== count) {
+    remember(count);
+    announce(unreadLabel(count));
+  }
 
   return (
-    <Link
+    <span className={cn("inline-flex", className)}><Link
       href={href}
       aria-label={unreadLabel(count)}
       title={unreadLabel(count)}
       className={cn(
         "relative inline-grid size-9 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-120 hover:bg-accent hover:text-foreground pointer-coarse:size-11",
-        className,
       )}
     >
       <Bell className="size-5" aria-hidden="true" />
@@ -39,6 +47,6 @@ export function NotificationBell({ href, unreadCount, className }: NotificationB
           {count > 99 ? "99+" : count}
         </span>
       )}
-    </Link>
+    </Link><span role="status" aria-atomic="true" className="sr-only">{announcement}</span></span>
   );
 }

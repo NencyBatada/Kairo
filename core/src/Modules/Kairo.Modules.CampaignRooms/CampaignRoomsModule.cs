@@ -8,6 +8,7 @@ public sealed class CampaignRoomsModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Media.IAccessibleMedia, Assets.AssetAccessibleMedia>();
         services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Briefs.BriefAskResource>();
         services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Assets.AssetAskResource>();
         services.AddScoped<Kairo.Contracts.Ask.IAskResource, Kairo.Modules.CampaignRooms.Rooms.CampaignAskResource>();
