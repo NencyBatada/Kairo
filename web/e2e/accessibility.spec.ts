@@ -162,9 +162,12 @@ test("approval dialog traps keyboard focus, retains a rejected decision and rest
   await expect(dialog).toBeVisible();
   const confirm = dialog.getByRole("button", { name: "Approve assets", exact: true });
   await expect(confirm).toBeFocused();
-  for (let index = 0; index < 5; index++) {
-    await page.keyboard.press("Tab");
-    expect(await dialog.evaluate(element => element.contains(document.activeElement))).toBe(true);
+  for (const key of ["Tab", "Shift+Tab"]) for (let index = 0; index < 5; index++) {
+    await page.keyboard.press(key);
+    await expect.poll(() => dialog.evaluate(element => ({
+      inside: element.contains(document.activeElement),
+      focused: document.activeElement?.outerHTML.slice(0, 300),
+    })), { message: "Modal focus guards must return focus inside the approval dialog" }).toMatchObject({ inside: true });
   }
   await confirm.focus();
   await page.keyboard.press("Enter");

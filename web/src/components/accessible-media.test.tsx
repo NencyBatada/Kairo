@@ -90,12 +90,14 @@ test("read-only users see alternatives without editor or generation controls", a
 });
 
 test("failed caption delivery cannot display a reviewed-complete message", async () => {
-  const fetch = respond(view({ status: "reviewed" }));
+  const fetch = respond(view({ status: "reviewed", describedMediaUrl: `${base}&file=described&revision=1&sourceHash=${"A".repeat(64)}` }));
   const { container } = render(<AccessibleMedia src="/media.mp4" metadataUrl={base} contentType="video/mp4" label="Campaign video" />);
   await screen.findByText("Alternatives reviewed against this media version.");
   fireEvent.error(container.querySelector("track")!);
   await screen.findByRole("alert");
   await waitFor(() => expect(screen.queryByText("Alternatives reviewed against this media version.")).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Play audio-described video" }));
+  expect(screen.queryByText("Alternatives reviewed against this media version.")).toBeNull();
   fireEvent.click(screen.getByText("Edit media alternatives"));
   expect((screen.getByLabelText(/I checked these saved alternatives/) as HTMLInputElement).disabled).toBe(true);
   fireEvent.change(screen.getByLabelText("Essential visual information"), { target: { value: "Corrected visual description" } });

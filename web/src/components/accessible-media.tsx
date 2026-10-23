@@ -41,7 +41,7 @@ function MediaVersion({ src, contentType, metadataUrl, label, ratio }: { src: st
             return () => node.removeEventListener("error", failed);
           }} />}
         </video>}
-      {description && <Button variant="secondary" className="mt-3 h-auto min-h-11 whitespace-normal" onClick={() => { setDescribed(value => !value); setFailed(false); }}>{described ? "Play original video" : "Play audio-described video"}</Button>}
+      {description && <Button variant="secondary" className="mt-3 h-auto min-h-11 whitespace-normal" onClick={() => setDescribed(value => !value)}>{described ? "Play original video" : "Play audio-described video"}</Button>}
     </div>
     <p id={`${id}-state`} className="text-xs wrap-anywhere text-muted-foreground">{view?.status === "reviewed" && !failed && !invalidFiles ? "Alternatives reviewed against this media version." : view?.status === "draft" ? "Draft alternatives · Not yet reviewed against this media." : "Media alternatives are incomplete."}</p>
     {invalidFiles && <Alert variant="warning" role="alert">These media links do not match this alternatives version. Reload the item.</Alert>}
