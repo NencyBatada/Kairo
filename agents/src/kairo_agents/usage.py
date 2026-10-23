@@ -119,11 +119,13 @@ def token_usage(response: Any) -> dict[str, Any]:
     details = getattr(usage, "candidates_tokens_details", None)
     image_tokens = None
     if details is not None:
-        image_tokens = sum(
-            getattr(part, "token_count", 0)
+        counts = [
+            count(part, "token_count")
             for part in details
             if str(getattr(part, "modality", "")).split(".")[-1] == "IMAGE"
-        )
+        ]
+        if counts and all(value is not None for value in counts):
+            image_tokens = sum(counts)
     return {
         "resolvedModel": getattr(response, "model_version", None),
         "inputTokens": count(usage, "prompt_token_count"),

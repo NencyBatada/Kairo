@@ -268,6 +268,22 @@ def test_session_tokens_are_not_printable():
     assert "a" * 64 not in repr(session())
 
 
+@pytest.mark.parametrize(
+    "details,expected",
+    [
+        (None, None),
+        ([], None),
+        ([NS(modality="TEXT", token_count=12)], None),
+        ([NS(modality="IMAGE", token_count=None)], None),
+        ([NS(modality="IMAGE", token_count=0)], 0),
+        ([NS(modality="IMAGE", token_count=1290)], 1290),
+    ],
+)
+def test_image_token_details_preserve_unknown_instead_of_pricing_them_as_text(details, expected):
+    response = NS(usage_metadata=NS(candidates_tokens_details=details))
+    assert usage.token_usage(response)["imageTokens"] == expected
+
+
 def test_reporting_outage_cannot_downgrade_a_known_generation_limit(monkeypatch):
     def core(current, path, body):
         raise OSError("outage")
