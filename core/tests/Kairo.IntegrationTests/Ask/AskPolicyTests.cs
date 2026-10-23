@@ -9,6 +9,25 @@ namespace Kairo.IntegrationTests.Ask;
 public sealed class AskPolicyTests
 {
     [Theory]
+    [InlineData("campaign")]
+    [InlineData("brief")]
+    [InlineData("report")]
+    public void Campaign_context_uses_the_validated_resource_id(string kind)
+    {
+        var id = Guid.NewGuid();
+        Assert.Equal(id, AskPolicy.Campaign(new(kind, id, Guid.NewGuid())));
+    }
+
+    [Fact]
+    public void Only_asset_context_uses_its_explicit_campaign_id()
+    {
+        var id = Guid.NewGuid();
+        Assert.Equal(id, AskPolicy.Campaign(new("asset", Guid.NewGuid(), id)));
+        Assert.Null(AskPolicy.Campaign(new("opportunity", Guid.NewGuid(), id)));
+        Assert.Null(AskPolicy.Campaign(new("workspace", CampaignId: id)));
+    }
+
+    [Theory]
     [InlineData("approve")]
     [InlineData("launch")]
     [InlineData("budget")]

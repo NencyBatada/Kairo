@@ -110,7 +110,7 @@ internal sealed class AskService(
                 new { role = "user", text = row.Question },
                 new { role = "model", text = HistoryText(row) },
             }).ToArray();
-            var campaignId = request.Context.Kind is "campaign" or "brief" ? request.Context.Id : request.Context.Kind == "asset" ? request.Context.CampaignId : null;
+            var campaignId = AskPolicy.Campaign(request.Context);
             using var usageScope = usage.Enter(new AgentUsageScope(member.BrandId, campaignId, message.Id));
             answer = await agent.PostAsync<AgentTurn, AgentAnswer>("/ask/turn", new AgentTurn(member.BrandId, message.Id, token,
                 message.Question, request.Context, turns, now), AskPolicy.InvocationLifetime, ct);

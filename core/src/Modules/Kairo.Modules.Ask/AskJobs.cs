@@ -65,7 +65,7 @@ internal sealed class AskPreviewRunner(AskDbContext db, KairoDatabase database, 
             var target = AskPolicy.Read<AskTarget>(row.Target);
             var resource = ask.Resource(target, true);
             AskJson.Unchanged(row.Revision, await resource.ReadAsync(target, ct));
-            var campaignId = target.Kind is "campaign" or "brief" ? target.Id : target.Kind == "asset" ? target.CampaignId : null;
+            var campaignId = AskPolicy.Campaign(target);
             using var usageScope = usage.Enter(new AgentUsageScope(row.BrandId, campaignId, row.Id));
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
             deadline.CancelAfter(TimeSpan.FromMinutes(18));
