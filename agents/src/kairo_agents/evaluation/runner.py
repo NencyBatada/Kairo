@@ -267,7 +267,7 @@ async def evaluate(output: Path, live: bool, limits: Limits | None = None) -> bo
                     location=location,
                     credentials=credentials,
                     http_options=types.HttpOptions(
-                        timeout=180000, retry_options=types.HttpRetryOptions(attempts=1)
+                        timeout=600000, retry_options=types.HttpRetryOptions(attempts=1)
                     ),
                 )
             )
