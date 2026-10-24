@@ -225,4 +225,36 @@ def test_timeout_and_partial_runs_cannot_count_as_passing(tmp_path, monkeypatch)
     report = json.loads((tmp_path / "report.json").read_text())
     assert report["failures"] == ["TimeoutError"]
     assert not report["liveEvaluationPassed"]
-    assert report["results"] == [{"id": "brief-en", "complete": False}]
+    assert report["results"][0] == {"id": "brief-en", "complete": False}
+    assert {r["id"] for r in report["results"]} == {c["id"] for c in Fixtures().cases}
+    assert "incomplete:brief-en" in report["scores"]["failures"]
+
+
+def test_independent_fixtures_overlap_without_losing_failed_case_results(tmp_path, monkeypatch):
+    async def run():
+        fixtures = Fixtures()
+        fixtures.data["generation"] = fixtures.data["generation"][:4]
+        fixtures.data["guardian"] = []
+        live = runner.LiveRunner(fixtures, None, None, tmp_path)
+        active = peak = 0
+
+        async def generate(case):
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.01)
+            active -= 1
+            if case["id"] == "brief-en":
+                raise ValueError("private provider detail")
+            return {"id": case["id"], "complete": True}
+
+        monkeypatch.setattr(live, "generation", generate)
+        monkeypatch.setattr(runner.check, "check_copy", AsyncMock(return_value=None))
+        monkeypatch.setattr(live, "guardian_results", lambda *args: None)
+        await live.run()
+        assert peak == 2
+        assert len(live.results) == 4
+        failed = next(r for r in live.results if r["id"] == "brief-en")
+        assert failed == {"id": "brief-en", "complete": False, "errorType": "ValueError"}
+
+    asyncio.run(run())

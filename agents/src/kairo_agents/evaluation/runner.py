@@ -184,42 +184,54 @@ class LiveRunner:
         )
 
     async def run(self) -> None:
-        for case in self.fixtures.data["generation"]:
-            try:
-                self.results.append(await self.generation(case))
-            except Exception as error:
-                self.results.append(
-                    {"id": case["id"], "complete": False, "errorType": type(error).__name__}
-                )
-        for language in ("en", "hi"):
-            cases = [
-                c
-                for c in self.fixtures.data["guardian"]
-                if c["medium"] == "text" and c["language"] == language
-            ]
-            try:
-                answer = await check.check_copy(self.fixtures.text_request(cases), self.clients)
-                self.guardian_results(answer, cases)
-            except Exception as error:
-                self.results.extend(
-                    {"id": c["id"], "complete": False, "errorType": type(error).__name__}
-                    for c in cases
-                )
-        for case in self.fixtures.data["guardian"]:
-            if case["medium"] == "text":
-                continue
-            try:
-                request = self.fixtures.media_check(case)
-                answer = await (
-                    check.check_image(request, self.clients)
-                    if case["medium"] == "image"
-                    else check.check_video(request, self.clients)
-                )
-                self.guardian_results(answer, [case])
-            except Exception as error:
-                self.results.append(
-                    {"id": case["id"], "complete": False, "errorType": type(error).__name__}
-                )
+        # Independent fixtures share two workers and a provider-call semaphore. Long
+        # media checks must not consume the entire deadline before other cases start.
+        jobs = [("generation", [case]) for case in self.fixtures.data["generation"]]
+        jobs += [
+            (
+                "text",
+                [
+                    c
+                    for c in self.fixtures.data["guardian"]
+                    if c["medium"] == "text" and c["language"] == language
+                ],
+            )
+            for language in ("en", "hi")
+        ]
+        jobs += [("media", [c]) for c in self.fixtures.data["guardian"] if c["medium"] != "text"]
+        queue = asyncio.Queue()
+        for job in jobs:
+            queue.put_nowait(job)
+
+        async def worker() -> None:
+            while not queue.empty():
+                kind, cases = queue.get_nowait()
+                try:
+                    if kind == "generation":
+                        self.results.append(await self.generation(cases[0]))
+                    elif kind == "text":
+                        answer = await check.check_copy(
+                            self.fixtures.text_request(cases), self.clients
+                        )
+                        self.guardian_results(answer, cases)
+                    else:
+                        case = cases[0]
+                        request = self.fixtures.media_check(case)
+                        answer = await (
+                            check.check_image(request, self.clients)
+                            if case["medium"] == "image"
+                            else check.check_video(request, self.clients)
+                        )
+                        self.guardian_results(answer, cases)
+                except Exception as error:
+                    self.results.extend(
+                        {"id": c["id"], "complete": False, "errorType": type(error).__name__}
+                        for c in cases
+                    )
+
+        async with asyncio.TaskGroup() as group:
+            for _ in range(2):
+                group.create_task(worker())
 
 
 async def evaluate(output: Path, live: bool, limits: Limits | None = None) -> bool:
@@ -255,7 +267,7 @@ async def evaluate(output: Path, live: bool, limits: Limits | None = None) -> bo
                     location=location,
                     credentials=credentials,
                     http_options=types.HttpOptions(
-                        timeout=90000, retry_options=types.HttpRetryOptions(attempts=1)
+                        timeout=180000, retry_options=types.HttpRetryOptions(attempts=1)
                     ),
                 )
             )
@@ -279,7 +291,14 @@ async def evaluate(output: Path, live: bool, limits: Limits | None = None) -> bo
         return False
     finally:
         if runner is not None:
+            completed = {result["id"] for result in runner.results}
+            runner.results.extend(
+                {"id": case["id"], "complete": False, "errorType": "evaluation_incomplete"}
+                for case in fixtures.cases
+                if case["id"] not in completed
+            )
             report["results"] = runner.results
+            report["scores"] = score_run(fixtures.cases, runner.results)
         report["usage"] = budget.report()
         (output / "report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"

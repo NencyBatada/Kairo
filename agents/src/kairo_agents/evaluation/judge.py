@@ -47,6 +47,10 @@ class GoogleJudge:
         return await retry_text(self.budget, lambda: self.score_once(context, response))
 
     async def score_once(self, context: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
+        async with self.budget.provider_slots:
+            return await self.dispatch(context, response)
+
+    async def dispatch(self, context: dict[str, Any], response: dict[str, Any]) -> dict[str, Any]:
         call = self.budget.reserve("text", "google.evaluateInstances", "google-evaluation-service")
         started = self.budget.clock()
         try:

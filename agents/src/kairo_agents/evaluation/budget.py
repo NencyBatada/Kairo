@@ -18,11 +18,11 @@ async def retry_text(budget: "Budget", operation: Callable[..., Any]) -> Any:
             code = getattr(error, "code", None)
             if code is None:
                 code = getattr(getattr(error, "response", None), "status_code", None)
-            if code not in (429, 503) or attempt == 2:
+            if code not in (429, 500, 503, 504) or attempt == 2:
                 raise
             if budget.counts["text"] >= budget.limits.text:
                 raise EvaluationStopped("evaluation_budget_exceeded") from None
-            delay = 5 * (attempt + 1)
+            delay = 5 * (2**attempt)
             if budget.remaining() <= delay:
                 raise EvaluationStopped("evaluation_deadline_exceeded") from None
             await asyncio.sleep(delay)
@@ -34,7 +34,7 @@ class Limits:
     text: int = 100
     images: int = 2
     videos: int = 1
-    seconds: float = 900
+    seconds: float = 1080
 
     def __post_init__(self) -> None:
         if not (0 < self.text <= 100 and 0 <= self.images <= 2 and 0 <= self.videos <= 1):
@@ -49,6 +49,7 @@ class Budget:
         self.clock = clock
         self.started = clock()
         self.lock = threading.Lock()
+        self.provider_slots = asyncio.Semaphore(2)
         self.calls: list[dict[str, Any]] = []
         self.counts = {"text": 0, "images": 0, "videos": 0}
         self.fatal_error: str | None = None
@@ -119,6 +120,10 @@ class BudgetedModels:
         return await self.attempt(operation, kind, count, kwargs)
 
     async def attempt(self, operation: str, kind: str, count: int, kwargs: Any) -> Any:
+        async with self.budget.provider_slots:
+            return await self.dispatch(operation, kind, count, kwargs)
+
+    async def dispatch(self, operation: str, kind: str, count: int, kwargs: Any) -> Any:
         call = self.budget.reserve(kind, operation, str(kwargs.get("model", "unknown")), count)
         started = self.budget.clock()
         try:
