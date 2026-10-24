@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Kairo.IntegrationTests.Agents;
 
@@ -7,6 +8,7 @@ namespace Kairo.IntegrationTests.CampaignRooms;
 public sealed class FakeCreate
 {
     public bool Fails { get; set; }
+    public string? ErrorCode { get; set; }
 
     public List<JsonElement> Requests { get; } = [];
 
@@ -86,6 +88,8 @@ public sealed class FakeCreate
             lock (Requests)
             {
                 (writing ? Requests : Instructions).Add(body);
+                if (ErrorCode is { } code)
+                    return new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = JsonContent.Create(new { error = code }) };
                 if (Fails)
                 {
                     return new HttpResponseMessage(HttpStatusCode.BadGateway);

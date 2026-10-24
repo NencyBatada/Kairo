@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Kairo.SharedKernel.Agents;
 using Kairo.Contracts.Ask;
 using Kairo.Modules.CampaignRooms.Data;
 using Kairo.Modules.CampaignRooms.Rooms;
@@ -8,7 +9,7 @@ namespace Kairo.Modules.CampaignRooms.Assets;
 internal sealed record AssetPreviewPayload(int Version, AssetEditRequest? Edit, AssetRegeneration? Generated, ProvenanceState? Provenance, string? Instruction);
 
 internal sealed class AssetAskResource(CampaignRoomsDbContext db, AssetStore store, AssetEditor editor, RoomWorkflow workflow,
-    IEnumerable<IAssetRegenerator> regenerators, ProvenanceTrail trail) : IAskResource
+    IEnumerable<IAssetRegenerator> regenerators, ProvenanceTrail trail, AgentUsageContext usage) : IAskResource
 {
     public string Kind => "asset";
     public BrandRoles Editors => BrandRoles.Marketer;
@@ -26,6 +27,7 @@ internal sealed class AssetAskResource(CampaignRoomsDbContext db, AssetStore sto
     {
         var asset = await AssetAsync(target, ct) ?? throw new AskResourceException("This asset is unavailable.", 404);
         var room = await db.Rooms.AsNoTracking().SingleAsync(row => row.Id == asset.RoomId, ct);
+        using var usageScope = usage.Enter(new AgentUsageScope(room.BrandId, room.Id, usage.Current?.RunId));
         if (AssetEditor.EditBlocker(room) is { } blocker) throw new AskResourceException(blocker);
         if (asset.Locked) throw new AskResourceException("This asset is locked.");
         var current = await store.CurrentAsync(asset, ct) ?? throw new AskResourceException("This asset has no current version.");

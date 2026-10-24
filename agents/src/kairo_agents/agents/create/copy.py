@@ -83,6 +83,7 @@ class Guard:
     numbers: set[str] = field(default_factory=set)
     language: str = "en"
     names: frozenset[str] = frozenset()
+    delivery_minimum: str | None = None
 
     def fits(self, text: str) -> bool:
         return languages.fits(text, self.language, self.names)
@@ -141,7 +142,45 @@ class Guard:
                         claim,
                     )
                 )
+        delivery = next(
+            (claim for claim in ("free delivery", "free shipping") if whole(claim, lowered)), None
+        )
+        delivery = delivery or next(
+            (
+                claim
+                for claim, meaning in TRANSLATED_CLAIMS.items()
+                if meaning in ("free delivery", "free shipping") and mentions(text, claim)
+            ),
+            None,
+        )
+        if (
+            delivery
+            and self.delivery_minimum is not None
+            and not any(
+                item.rule == UNSUPPORTED_CLAIMS and item.evidence == delivery for item in found
+            )
+        ):
+            if self.delivery_minimum not in qualified_delivery_amounts(text):
+                found.append(
+                    GuardFinding(
+                        UNSUPPORTED_CLAIMS,
+                        "The delivery offer must retain its supported currency, "
+                        "minimum and condition.",
+                        delivery,
+                    )
+                )
         return found
+
+
+def qualified_delivery_amounts(text: str) -> set[str]:
+    amounts = set()
+    for match in AMOUNT.finditer(text):
+        before, after = text[: match.start()].casefold(), text[match.end() :]
+        if re.search(r"\b(?:over|above|more than)\s*$", before) or re.match(
+            r"\s*से\s+(?:ऊपर|अधिक|ज्यादा|ज़्यादा)", after
+        ):
+            amounts.add(normalized(match.group(1) or match.group(2)))
+    return amounts
 
 
 def whole(phrase: str, text: str) -> bool:
@@ -186,6 +225,7 @@ def guard_for(
     names = {word.casefold() for word in brand.split()}
     for product in products:
         names.update(word.casefold() for word in (product.brand or "").split())
+    delivery_minimums = qualified_delivery_amounts(brief.offer or "")
     return Guard(
         banned=banned,
         competitors=[name for name in competitors if name],
@@ -193,6 +233,13 @@ def guard_for(
         numbers=numbers,
         language=language,
         names=frozenset(names),
+        delivery_minimum=next(iter(delivery_minimums))
+        if len(delivery_minimums) == 1
+        and any(
+            claim in (brief.offer or "").casefold()
+            for claim in ("free delivery", "free shipping", "फ्री डिलीवरी", "मुफ्त डिलीवरी")
+        )
+        else None,
     )
 
 

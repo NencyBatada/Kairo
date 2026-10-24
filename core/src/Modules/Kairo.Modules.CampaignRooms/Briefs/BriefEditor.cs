@@ -19,6 +19,7 @@ internal enum BriefError
     NotAllowed,
     Invalid,
     AgentFailed,
+    GenerationLimitExceeded,
 }
 
 internal sealed record BriefResult<T>(T? Value, BriefError Error, string? Message = null, Dictionary<string, string[]>? Errors = null)
@@ -182,6 +183,8 @@ internal sealed class BriefEditor(
         }
         catch (AgentCallException exception)
         {
+            if (exception.Code == AgentCallException.GenerationLimitExceeded)
+                return BriefResult<BriefProposalView>.Failed(BriefError.GenerationLimitExceeded, "The campaign generation limit was reached.");
             logger.LogWarning(exception, "The Plan agent couldn't follow a brief instruction for room {RoomId}.", room.Id);
             return BriefResult<BriefProposalView>.Failed(BriefError.AgentFailed, "Kairo couldn't work out that change. Try again, or edit the fields directly.");
         }

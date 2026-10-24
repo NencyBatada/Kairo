@@ -1,6 +1,7 @@
 using Kairo.Contracts.Ask;
 using Kairo.Contracts.Live;
 using Kairo.Modules.Ask.Data;
+using Kairo.SharedKernel.Agents;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -48,7 +49,7 @@ internal sealed class AskJobs(AskDbContext db, KairoDatabase database, IServiceS
 }
 
 internal sealed class AskPreviewRunner(AskDbContext db, KairoDatabase database, CurrentMember member, IBrandAccess access,
-    AskService ask, TimeProvider time)
+    AskService ask, TimeProvider time, AgentUsageContext usage)
 {
     public async Task RunAsync(Guid id, Guid lease, CancellationToken ct)
     {
@@ -64,13 +65,17 @@ internal sealed class AskPreviewRunner(AskDbContext db, KairoDatabase database, 
             var target = AskPolicy.Read<AskTarget>(row.Target);
             var resource = ask.Resource(target, true);
             AskJson.Unchanged(row.Revision, await resource.ReadAsync(target, ct));
+            var campaignId = AskPolicy.Campaign(target);
+            using var usageScope = usage.Enter(new AgentUsageScope(row.BrandId, campaignId, row.Id));
             using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
             deadline.CancelAfter(TimeSpan.FromMinutes(18));
             preview = await resource.PreviewAsync(target, AskPolicy.Read<System.Text.Json.JsonElement>(row.Changes), deadline.Token);
         }
         catch (Exception exception) when (!ct.IsCancellationRequested)
         {
-            error = exception is AskResourceException known ? known.Message : "Kairo couldn't generate this preview. Ask for a new preview.";
+            error = exception is AgentCallException { Code: AgentCallException.GenerationLimitExceeded }
+                ? AgentCallException.GenerationLimitExceeded
+                : exception is AskResourceException known ? known.Message : "Kairo couldn't generate this preview. Ask for a new preview.";
             if (error.Length > 500) error = error[..500];
         }
         await database.BeginTransactionAsync(ct);

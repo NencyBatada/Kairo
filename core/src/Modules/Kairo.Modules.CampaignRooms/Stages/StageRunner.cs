@@ -20,7 +20,8 @@ internal sealed class StageRunner(
     IAgentProgress progress,
     IOperationsAlerts operations,
     TimeProvider time,
-    ILogger<StageRunner> logger)
+    ILogger<StageRunner> logger,
+    AgentUsageContext usage)
 {
     public const int MaxAttempts = 3;
     public const string FailedMessage = "The agent couldn't finish this step. Try again.";
@@ -45,6 +46,7 @@ internal sealed class StageRunner(
             return;
         }
 
+        using var usageScope = usage.Enter(new AgentUsageScope(run.BrandId, room.Id, run.Id));
         var work = queue.Find(run.Kind);
         if (run.Attempts > (work?.AttemptsFor(run) ?? MaxAttempts))
         {
@@ -78,9 +80,11 @@ internal sealed class StageRunner(
             activity?.SetStatus(ActivityStatusCode.Error);
             await AlertSecondFailureAsync(run, cancellationToken);
             logger.LogWarning(exception, "Stage run {RunId} ({Kind}) failed on attempt {Attempt}.", run.Id, run.Kind, run.Attempts);
-            if (exception.Code == AgentCallException.NotConfigured || run.Attempts >= work.AttemptsFor(run))
+            if (exception.Code is AgentCallException.NotConfigured or AgentCallException.GenerationLimitExceeded || run.Attempts >= work.AttemptsFor(run))
             {
-                await FailAsync(run, lease, exception.Code, FailedMessage, cancellationToken);
+                await FailAsync(run, lease, exception.Code,
+                    exception.Code == AgentCallException.GenerationLimitExceeded ? "The campaign generation limit was reached." : FailedMessage,
+                    cancellationToken);
             }
             else
             {

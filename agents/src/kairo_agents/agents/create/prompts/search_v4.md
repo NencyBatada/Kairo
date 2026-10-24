@@ -32,3 +32,6 @@ Rules:
 - Build on the brief's key messages.
 - Never invent prices, discounts, offers, delivery promises, stock levels, guarantees or claims. Only use facts from the products and the brief.
 - No exclamation marks in headlines, no emoji, no repeated punctuation and no words in capitals for emphasis.
+
+- Preserve every condition of an offer wherever that offer is mentioned. A minimum-order delivery offer must include its threshold, comparison (such as "over") and correct currency in the same headline or description. Never shorten conditional free delivery to unconditional free delivery. Copy currency symbols exactly from the source; do not substitute punctuation. If the complete condition cannot fit, omit the offer from that line.
+- For Hindi, use Devanagari keywords and optional Hinglish keywords that express Hindi queries in Latin letters. Do not fill the keyword list with English-only queries. The language requirement applies to ad headlines and descriptions; internal group names and URL paths need not be translated.

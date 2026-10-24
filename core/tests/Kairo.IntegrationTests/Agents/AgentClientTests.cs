@@ -14,6 +14,19 @@ public sealed class AgentClientTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task A_generation_limit_keeps_its_code_when_invocation_closure_fails()
+    {
+        var agents = new FakeAgents { Respond = (_, _) => new(System.Net.HttpStatusCode.TooManyRequests)
+            { Content = System.Net.Http.Json.JsonContent.Create(new { error = "generation_limit_exceeded" }) } };
+        var invocation = new BrokenClosure();
+        var error = await Assert.ThrowsAsync<AgentCallException>(() =>
+            Client(agents, invocations: invocation).PostAsync<Echo, Echo>("create/copy", new("Acme", 1), Timeout, Token));
+        Assert.Equal(AgentCallException.GenerationLimitExceeded, error.Code);
+        Assert.True(invocation.Closed);
+        Assert.Single(agents.Requests);
+    }
+
+    [Fact]
     public async Task Carries_the_active_trace_and_safe_correlation_ids_to_python()
     {
         var agents = new FakeAgents { Respond = (_, _) => FakeAgents.Json(new { name = "ok", count = 0 }) };
@@ -116,7 +129,7 @@ public sealed class AgentClientTests
         Assert.Empty(agents.Requests);
     }
 
-    private static AgentClient Client(FakeAgents agents, string? url = "http://agents.test", string? audience = null, IAgentIdentity? identity = null)
+    private static AgentClient Client(FakeAgents agents, string? url = "http://agents.test", string? audience = null, IAgentIdentity? identity = null, IAgentInvocations? invocations = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
@@ -127,12 +140,24 @@ public sealed class AgentClientTests
             })
             .Build());
         services.AddKairoAgents();
+        if (invocations is not null) services.AddSingleton(invocations);
         services.AddSingleton(identity ?? new FakeAgentIdentity());
         services.AddHttpClient(AgentClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => agents);
         return services.BuildServiceProvider().GetRequiredService<AgentClient>();
     }
 
     private sealed record Echo(string Name, int Count);
+
+    private sealed class BrokenClosure : IAgentInvocations
+    {
+        public bool Closed { get; private set; }
+        public Task<AgentInvocation> OpenAsync(string operation, CancellationToken ct) => Task.FromResult(new AgentInvocation(Guid.NewGuid(), Guid.NewGuid(), new string('a', 64)));
+        public Task CloseAsync(Guid id, CancellationToken ct)
+        {
+            Closed = true;
+            throw new InvalidOperationException("database unavailable");
+        }
+    }
 
     private sealed class BrokenIdentity : IAgentIdentity
     {

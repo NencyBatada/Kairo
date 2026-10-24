@@ -85,6 +85,8 @@ internal static class BriefEndpoints
             BriefError.NotFound => TypedResults.NotFound(),
             BriefError.Invalid => TypedResults.ValidationProblem(result.Errors!),
             BriefError.AgentFailed => TypedResults.Problem(statusCode: StatusCodes.Status502BadGateway, title: result.Message),
+            BriefError.GenerationLimitExceeded => TypedResults.Problem(statusCode: StatusCodes.Status429TooManyRequests, title: result.Message,
+                extensions: new Dictionary<string, object?> { ["code"] = "generation_limit_exceeded" }),
             _ => TypedResults.Problem(statusCode: StatusCodes.Status409Conflict, title: result.Message),
         };
 }

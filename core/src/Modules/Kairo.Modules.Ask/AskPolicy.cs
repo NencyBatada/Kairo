@@ -18,6 +18,12 @@ internal static partial class AskPolicy
     public static string Hash(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     public static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json, AskJson.Options)!;
     public static string Write<T>(T value) => JsonSerializer.Serialize(value, AskJson.Options);
+    public static Guid? Campaign(AskTarget target) => target.Kind switch
+    {
+        "campaign" or "brief" or "report" => target.Id,
+        "asset" => target.CampaignId,
+        _ => null,
+    };
 
     public static string[] Sources(JsonElement data)
     {

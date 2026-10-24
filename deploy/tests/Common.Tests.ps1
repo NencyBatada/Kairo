@@ -161,3 +161,21 @@ Describe 'Test-Native when the program is missing' {
         Test-Native -FilePath 'kairo-no-such-tool' -ArgumentList @('describe') | Should -BeFalse
     }
 }
+
+Describe 'Campaign generation limits' {
+    It 'publishes campaign defaults for every environment' {
+        $settings = Get-KairoGenerationSettings -Environment $environment
+        $settings | Should -Be 'Kairo__Operations__Limits__TextCalls=100,Kairo__Operations__Limits__Images=50,Kairo__Operations__Limits__VideoClips=10'
+    }
+
+    It 'accepts configured caps including zero' {
+        (Get-KairoGenerationSettings -Environment @{ GenerationLimits = @{ TextCalls = 0; Images = 7; VideoClips = 2 } }) |
+            Should -Be 'Kairo__Operations__Limits__TextCalls=0,Kairo__Operations__Limits__Images=7,Kairo__Operations__Limits__VideoClips=2'
+    }
+
+    It 'rejects unknown fields and unsafe or negative values' {
+        { Get-KairoGenerationSettings -Environment @{ GenerationLimits = @{ Images = -1 } } } | Should -Throw
+        { Get-KairoGenerationSettings -Environment @{ GenerationLimits = @{ Images = '2,OTHER=1' } } } | Should -Throw
+        { Get-KairoGenerationSettings -Environment @{ GenerationLimits = @{ OTHER = 1 } } } | Should -Throw
+    }
+}

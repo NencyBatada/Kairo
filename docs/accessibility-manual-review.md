@@ -15,7 +15,7 @@ Record the date, tested commit/deployment revision, Windows, Chrome and NVDA ver
 5. Open Ask Kairo. Check loading, answering and completion announcements with an approved test question when generation is available. Each result should be announced without replaying the full conversation or taking focus away from typing. Opening/dismissal alone does not verify streaming announcements.
 6. Check actual images, audio and video. Compare alternatives with the entire final file, including names, speech, meaningful sounds, visual action and on-screen text. Play captions and described video; confirm correct language and timing. Review a draft, stale file, unavailable caption and failed save. None may be labelled complete. Audio description must convey essential visuals; a transcript alone is insufficient where audio description is required.
 
-AI accessibility drafting remains disabled until PR #32 is merged and verified. Do not enable it to complete this checklist. Record any dependent check as blocked.
+PR #32 is merged and its accounting was verified. AI accessibility drafting remains disabled pending the accessibility-specific invocation integration and live media verification. Do not enable it to complete this checklist. Record any dependent check as blocked.
 
 ## Real Chrome zoom
 

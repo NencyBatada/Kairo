@@ -11,12 +11,13 @@ public static class AgentSetup
     {
         services.AddHttpClient(AgentClient.ClientName, client => client.Timeout = MaxTimeout).RemoveAllResilienceHandlers();
         services.TryAddSingleton<IAgentIdentity, GoogleAgentIdentity>();
-        services.TryAddSingleton<AgentClient>();
-        services.TryAddSingleton<PlanAgent>();
-        services.TryAddSingleton<ProofPlanAgent>();
-        services.TryAddSingleton<LiftAgent>();
-        services.TryAddSingleton<ReportAgent>();
-        services.TryAddSingleton<ImpactLabAgent>();
+        services.TryAddScoped<AgentUsageContext>();
+        services.TryAddScoped<AgentClient>();
+        services.TryAddScoped<PlanAgent>();
+        services.TryAddScoped<ProofPlanAgent>();
+        services.TryAddScoped<LiftAgent>();
+        services.TryAddScoped<ReportAgent>();
+        services.TryAddScoped<ImpactLabAgent>();
         return services;
     }
 }

@@ -23,6 +23,25 @@ public sealed class BrandGuardianTests(SqlServer sqlServer) : IAsyncLifetime
     public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
+    public async Task Automatic_repairs_stop_at_a_generation_limit_without_queuing_another_check()
+    {
+        var room = await ApprovedAsync();
+        Assert.Equal(1, await _world.RunStagesAsync());
+        _world.Check.Findings = FlagOriginalHeadline;
+        _world.Create.ErrorCode = "generation_limit_exceeded";
+        await RunAllAsync();
+        Assert.Single(_world.Create.Instructions);
+        _world.Api.Clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.Equal(0, await _world.RunStagesAsync());
+        await using var scope = _world.Api.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<KairoDatabase>().UseBrandAsync(_world.BrandId, Token);
+        var run = await scope.ServiceProvider.GetRequiredService<CampaignRoomsDbContext>().StageRuns.SingleAsync(row => row.RoomId == room && row.Kind == "check_fix", Token);
+        Assert.Equal("failed", run.Status);
+        Assert.Equal("generation_limit_exceeded", run.ErrorCode);
+        Assert.Equal(1, run.Attempts);
+    }
+
+    [Fact]
     public async Task Checked_assets_wait_in_creating_until_the_marketer_requests_gate_two()
     {
         var roomId = await ApprovedAsync();

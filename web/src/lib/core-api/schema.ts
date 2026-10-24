@@ -2974,6 +2974,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/campaigns/{campaignId}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    campaignId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CampaignUsage"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/campaigns/{campaignId}/launch-plan": {
         parameters: {
             query?: never;
@@ -6667,6 +6704,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/operations/invocations/{invocationId}/reserve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    invocationId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReserveCall"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnonymousTypeOfGuid"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/operations/invocations/{invocationId}/calls/{requestId}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    invocationId: string;
+                    requestId: string;
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReportCall"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AnonymousTypeOfboolean"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -6709,6 +6829,12 @@ export interface components {
             revision: number | string;
             sourceHash: string;
             content: components["schemas"]["AlternativeContent"];
+        };
+        AnonymousTypeOfboolean: {
+            recorded: boolean;
+        };
+        AnonymousTypeOfGuid: {
+            requestId: string;
         };
         AnswerSegment: {
             text: string;
@@ -7176,6 +7302,7 @@ export interface components {
             inputTokens: null | number | string;
             outputTokens: null | number | string;
             error: null | string;
+            errorCode?: null | string;
         };
         CampaignSendBackView: {
             from: string;
@@ -7204,6 +7331,17 @@ export interface components {
             owner: string;
             nextAction: string;
             enteredAt: string;
+        };
+        CampaignUsage: {
+            campaignId: string;
+            providerCalls: number | string;
+            consumed: components["schemas"]["GenerationCapacity"];
+            limits: components["schemas"]["GenerationCapacity"];
+            remaining: components["schemas"]["GenerationCapacity"];
+            totals: components["schemas"]["UsageTotals"];
+            knownEstimatedUsd: number | string;
+            costComplete: boolean;
+            unknownCostCalls: number | string;
         };
         CatalogueSummary: {
             products: number | string;
@@ -7480,6 +7618,11 @@ export interface components {
             link: null | string;
             imageLink: null | string;
             category: null | string;
+        };
+        GenerationCapacity: {
+            textCalls: number | string;
+            images: number | string;
+            videoClips: number | string;
         };
         HealthAlert: {
             kind: string;
@@ -8407,6 +8550,32 @@ export interface components {
             growth: null | number | string;
             rising: boolean;
         };
+        ReportCall: {
+            outcome: string;
+            resolvedModel?: null | string;
+            inputTokens?: null | number | string;
+            outputTokens?: null | number | string;
+            thoughtTokens?: null | number | string;
+            cachedTokens?: null | number | string;
+            imageTokens?: null | number | string;
+            generatedImages?: null | number | string;
+            videoSeconds?: null | number | string;
+            speechCharacters?: null | number | string;
+            speechSeconds?: null | number | string;
+        };
+        ReserveCall: {
+            requestId: string;
+            model: string;
+            operation: string;
+            region: string;
+            textCalls: number | string;
+            images: number | string;
+            videoClips: number | string;
+            requestedVideoSeconds?: null | number | string;
+            speechCharacters?: null | number | string;
+            videoAudio?: null | boolean;
+            videoResolution?: null | string;
+        };
         RetryLaunch: {
             version: number | string;
         };
@@ -8658,6 +8827,16 @@ export interface components {
         UpdateWorkspaceRequest: {
             name: null | string;
             timeZone: null | string;
+        };
+        UsageTotals: {
+            inputTokens: null | number | string;
+            outputTokens: null | number | string;
+            thoughtTokens: null | number | string;
+            cachedTokens: null | number | string;
+            generatedImages: null | number | string;
+            videoSeconds: null | number | string;
+            speechCharacters: null | number | string;
+            speechSeconds: null | number | string;
         };
         VersionOrigin: "manual" | "drafted" | "restored";
         VersionStatus: "draft" | "approved" | "superseded" | "discarded";

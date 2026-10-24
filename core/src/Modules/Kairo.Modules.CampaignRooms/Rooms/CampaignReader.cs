@@ -251,5 +251,6 @@ internal sealed class CampaignReader(
         run.PromptVersion,
         run.InputTokens,
         run.OutputTokens,
-        run.ErrorMessage);
+        run.ErrorMessage,
+        run.ErrorCode);
 }
