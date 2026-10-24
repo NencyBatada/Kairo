@@ -40,6 +40,15 @@ function getServerWideSnapshot() {
   return false;
 }
 
+function visibleFocusTarget(element: HTMLElement | null): element is HTMLElement {
+  return !!element?.isConnected && !element.closest('[hidden], [inert], [aria-hidden="true"]')
+    && (element.checkVisibility?.() ?? true);
+}
+
+function currentTrigger() {
+  return [...document.querySelectorAll<HTMLElement>("[data-ask-kairo-trigger]")].find(visibleFocusTarget) ?? null;
+}
+
 export function useWorkspaceAssistant() {
   return useContext(AssistantContext);
 }
@@ -68,10 +77,10 @@ export function WorkspaceAssistant({ children }: { children: ReactNode }) {
   }, [open, wide]);
 
   function changeOpen(next: boolean, trigger?: HTMLElement) {
-    if (next) returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : document.getElementById("ask-kairo-trigger"));
+    if (next) returnFocus.current = trigger ?? (document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : currentTrigger());
     setOpen(next);
     if (!next) {
-      window.setTimeout(() => (returnFocus.current?.isConnected ? returnFocus.current : document.getElementById("ask-kairo-trigger"))?.focus(), 0);
+      window.setTimeout(() => (visibleFocusTarget(returnFocus.current) ? returnFocus.current : currentTrigger())?.focus(), 0);
     }
   }
 

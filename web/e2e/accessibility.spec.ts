@@ -99,7 +99,8 @@ test("Ask Kairo supports keyboard opening, dismissal and focus restoration in bo
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/acme/today");
     await expect(page.locator("main h1")).toHaveCount(1);
-    const trigger = page.locator("#ask-kairo-trigger");
+    const trigger = page.getByRole("button", { name: "Ask Kairo", exact: true });
+    await expect(trigger).toHaveCount(1);
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByLabel("Your question")).toBeVisible();

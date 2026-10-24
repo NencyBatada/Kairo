@@ -120,3 +120,24 @@ test("closing an asset question returns keyboard focus to its actual trigger", a
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "Ask Kairo" })).toBeNull());
   await waitFor(() => expect(document.activeElement).toBe(trigger));
 });
+
+
+test("streamed hidden triggers have unique IDs and cannot receive restored focus", async () => {
+  const view = render(<WorkspaceAssistant>
+    <div hidden><PageHeader title="Retained page" /></div>
+    <PageHeader title="Today" />
+  </WorkspaceAssistant>);
+  const buttons = screen.getAllByRole("button", { name: "Ask Kairo", hidden: true });
+  expect(new Set(buttons.map(button => button.id)).size).toBe(2);
+  const original = screen.getByRole("button", { name: "Ask Kairo" });
+  fireEvent.click(original);
+  const dialog = await screen.findByRole("dialog", { name: "Ask Kairo" });
+  // A streamed replacement can remove the opening control before dismissal.
+  view.rerender(<WorkspaceAssistant>
+    <div hidden><PageHeader title="Retained page" /></div>
+    <PageHeader key="replacement" title="Settings" />
+  </WorkspaceAssistant>);
+  fireEvent.keyDown(dialog, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Ask Kairo" })));
+});
