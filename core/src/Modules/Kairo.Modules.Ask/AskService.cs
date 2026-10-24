@@ -14,7 +14,7 @@ internal sealed record AgentTurn(Guid BrandId, Guid MessageId, string Token, str
 internal sealed record AgentAnswer(string Model, string PromptVersion);
 internal sealed record ConversationView(Guid Id, string Title, DateTimeOffset UpdatedAt);
 internal sealed record MessageView(Guid Id, Guid RequestId, string Question, AskTarget Context, string Status, AnswerSegment[] Segments, Evidence[] Evidence, string? Error, DateTimeOffset CreatedAt, string? Model, string? PromptVersion);
-internal sealed record PreviewFileView(string Name, string Url, string ContentType);
+internal sealed record PreviewFileView(string Name, string Url, string ContentType, string? AccessibilityUrl = null);
 internal sealed record ProposalView(Guid Id, Guid MessageId, AskTarget Target, string Status, JsonElement? Before, JsonElement? After, string[] Warnings, PreviewFileView[] Files, string? Error, DateTimeOffset ExpiresAt, DateTimeOffset? AppliedAt);
 internal sealed record ConversationDetail(ConversationView Conversation, MessageView[] Messages, ProposalView[] Proposals);
 
@@ -22,6 +22,9 @@ internal sealed class AskService(
     AskDbContext db, KairoDatabase database, CurrentMember member, IEnumerable<IAskResource> resources,
     IBrandDirectory brands, ILiveUpdates live, IAuditLog audit, AgentClient agent, TimeProvider time, AgentUsageContext usage)
 {
+    public bool CanEdit(AskTarget target) => resources.SingleOrDefault(value => value.Kind == target.Kind) is { } resource
+        && resource.Editors != BrandRoles.None && member.Has(resource.Editors);
+
     public IAskResource Resource(AskTarget target, bool edit = false)
     {
         if (target is null) throw new AskResourceException("Supply the current item context.", 400);
@@ -286,7 +289,8 @@ internal sealed class AskService(
     {
         var change = row.Preview is null ? null : AskPolicy.Read<AskChange>(row.Preview);
         return new(row.Id, row.MessageId, AskPolicy.Read<AskTarget>(row.Target), row.Status, change?.Before, change?.After, change?.Warnings ?? [],
-            [.. (change?.Files ?? []).Select(file => new PreviewFileView(file.Name, $"/api/brands/{row.BrandId}/ask/conversations/{row.ConversationId}/proposals/{row.Id}/files/{Uri.EscapeDataString(file.Name)}", file.ContentType))],
+            [.. (change?.Files ?? []).Select(file => new PreviewFileView(file.Name, $"/api/brands/{row.BrandId}/ask/conversations/{row.ConversationId}/proposals/{row.Id}/files/{Uri.EscapeDataString(file.Name)}", file.ContentType,
+                Kairo.Contracts.Media.MediaAccessibilityLinks.For(row.BrandId, new("ask_preview", row.Id, 1, ConversationId: row.ConversationId, Name: file.Name))))],
             row.Error, row.ExpiresAt, row.AppliedAt);
     }
 }

@@ -457,7 +457,7 @@ Every list and page has all three.
 
 ## 10. Accessibility
 
-Kairo's core screens meet **WCAG 2.2 AA**.
+Kairo targets **WCAG 2.2 AA** across its core screens. Completion requires the automated and manual evidence recorded in [the accessibility audit](accessibility.md); passing token tests alone is not a conformance claim.
 
 | Area | Rule |
 | --- | --- |
@@ -470,7 +470,7 @@ Kairo's core screens meet **WCAG 2.2 AA**.
 | Announcements | Form results use `role="status"` or `role="alert"`. Live counts announce in words, such as "3 approvals waiting". |
 | Colour | Never the only signal. Status always pairs an icon with words. |
 | Motion | Respects `prefers-reduced-motion` |
-| Reflow | Works at 320px wide and at 200% zoom without sideways scrolling, except inside data tables |
+| Reflow | Works at 320 CSS pixels wide, with 200% text enlargement and text-spacing overrides. Verify real 400% browser zoom separately; contain necessary two-dimensional tables and maps within their own regions. |
 | Language | `lang="en"` on the page. Hindi content is marked with `lang="hi"`. |
 
 ## 11. Implementation

@@ -11,6 +11,7 @@ public sealed class AskModule : IModule
 {
     public void AddServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<Kairo.Contracts.Media.IAccessibleMedia, AskAccessibleMedia>();
         services.AddDbContext<AskDbContext>((provider, options) => options.UseKairoDatabase(provider, AskDbContext.SchemaName));
         services.AddScoped<AskService>();
         services.AddScoped<AskJobs>();

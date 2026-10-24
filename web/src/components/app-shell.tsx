@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { MobileNav } from "@/components/mobile-nav";
 import { WorkspaceAssistant } from "@/components/workspace-assistant";
+import { SkipLink } from "@/components/skip-link";
 
 type AppShellProps = {
   sidebar: ReactNode;
@@ -13,12 +14,7 @@ type AppShellProps = {
 export function AppShell({ sidebar, topBar, topBarActions, children }: AppShellProps) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[15.5rem_minmax(0,1fr)]">
-      <a
-        href="#main"
-        className="sr-only z-50 rounded-md bg-card text-sm font-semibold text-foreground shadow-popover focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:px-4 focus:py-2"
-      >
-        Skip to content
-      </a>
+      <SkipLink />
       <aside className="sticky top-0 hidden h-dvh overflow-y-auto border-r border-border bg-sidebar lg:block">{sidebar}</aside>
       <MobileNav context={topBar} actions={topBarActions}>
         {sidebar}

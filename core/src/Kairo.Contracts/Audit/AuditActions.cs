@@ -4,6 +4,9 @@ public static class AuditActions
 {
     public static IReadOnlyList<KeyValuePair<string, string>> All { get; } =
     [
+        new("media_alternative.saved", "Saved media alternatives"),
+        new("media_alternative.confirmed", "Reviewed media alternatives against the source file"),
+        new("media_alternative.described", "Attached an audio-described video"),
         new("ask.proposal_created", "Requested an Ask Kairo change preview"),
         new("ask.proposal_applied", "Confirmed an Ask Kairo change preview"),
         new("ask.proposal_rejected", "Rejected an Ask Kairo change preview"),

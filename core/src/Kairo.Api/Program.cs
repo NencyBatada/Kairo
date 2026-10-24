@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Kairo.Api;
 using Kairo.Modules.Approvals;
 using Kairo.Modules.Ask;
+using Kairo.Modules.Accessibility;
 using Kairo.Modules.Operations;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
@@ -60,6 +61,7 @@ IModule[] modules =
     new LiveModule(),
     new AuditModule(),
     new AskModule(),
+    new AccessibilityModule(),
     new OperationsModule(),
 ];
 

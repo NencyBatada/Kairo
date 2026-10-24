@@ -1,12 +1,13 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useWorkspaceAssistant } from "@/components/workspace-assistant";
 
 export function AskKairoTrigger({ area }: { area: string }) {
+  const id = useId();
   const assistant = useWorkspaceAssistant();
   const setArea = assistant?.setArea;
 
@@ -20,7 +21,8 @@ export function AskKairoTrigger({ area }: { area: string }) {
 
   return (
     <Button
-      id="ask-kairo-trigger"
+      id={id}
+      data-ask-kairo-trigger
       variant="secondary"
       aria-expanded={assistant.open}
       onClick={event => { assistant.clearTarget(); assistant.setOpen(!assistant.open, event.currentTarget); }}

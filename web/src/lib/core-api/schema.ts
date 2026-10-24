@@ -6460,6 +6460,250 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/brands/{brandId}/media-accessibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    Kind: string;
+                    Id: string;
+                    Version: number | string;
+                    CampaignId?: string;
+                    ConversationId?: string;
+                    Name?: string;
+                    File?: string;
+                    Revision?: number | string;
+                    SourceHash?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AlternativeWrite"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlternativeView"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/media-accessibility/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AlternativeWrite"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlternativeView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/media-accessibility/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AlternativeWrite"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlternativeView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/media-accessibility/describe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AlternativeWrite"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlternativeView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/brands/{brandId}/media-accessibility/described": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query: {
+                    Kind: string;
+                    Id: string;
+                    Version: number | string;
+                    CampaignId?: string;
+                    ConversationId?: string;
+                    Name?: string;
+                    File?: string;
+                    Revision?: number | string;
+                    SourceHash?: string;
+                };
+                header?: never;
+                path: {
+                    brandId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "video/mp4": string;
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AlternativeView"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/brands/{brandId}/operations/invocations/{invocationId}/reserve": {
         parameters: {
             query?: never;
@@ -6555,6 +6799,36 @@ export interface components {
             route: string;
             digest: string;
             language: null | string;
+        };
+        AlternativeContent: {
+            language: string;
+            altText: null | string;
+            transcript: null | string;
+            captions: components["schemas"]["MediaCue"][];
+            visualDescription: null | string;
+            audioConveysVisuals: boolean;
+            silentVideo: boolean;
+            descriptionCues?: null | components["schemas"]["MediaCue"][];
+        };
+        AlternativeView: {
+            target: components["schemas"]["MediaTarget"];
+            revision: number | string;
+            sourceHash: string;
+            content: components["schemas"]["AlternativeContent"];
+            canEdit: boolean;
+            status: string;
+            missing: string[];
+            reviewedBy: null | string;
+            reviewedAt: null | string;
+            captionsUrl: null | string;
+            describedMediaUrl: null | string;
+            canDraft: boolean;
+        };
+        AlternativeWrite: {
+            target: components["schemas"]["MediaTarget"];
+            revision: number | string;
+            sourceHash: string;
+            content: components["schemas"]["AlternativeContent"];
         };
         AnonymousTypeOfboolean: {
             recorded: boolean;
@@ -6770,6 +7044,7 @@ export interface components {
             check: components["schemas"]["AssetCheckView"];
             canOverride: boolean;
             canSendBack: boolean;
+            accessibilityUrl?: null | string;
         };
         AuditActionOption: {
             action: string;
@@ -7858,6 +8133,19 @@ export interface components {
             salePrice: null | number | string;
             currency: null | string;
         };
+        MediaCue: {
+            start: number | string;
+            end: number | string;
+            text: string;
+        };
+        MediaTarget: {
+            kind: string;
+            id: string;
+            version: number | string;
+            campaignId?: null | string;
+            conversationId?: null | string;
+            name?: null | string;
+        };
         MemberResponse: {
             userId: string;
             name: string;
@@ -8077,6 +8365,7 @@ export interface components {
             name: string;
             url: string;
             contentType: string;
+            accessibilityUrl?: null | string;
         };
         ProductAccount: {
             id: string;

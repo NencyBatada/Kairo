@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { Logo } from "@/components/logo";
+import { SkipLink } from "@/components/skip-link";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { SignalMotif } from "./_components/signal-motif";
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
   return (
     <div className="grid min-h-dvh bg-background lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <SkipLink />
       <div className="relative hidden flex-col overflow-hidden border-r border-border bg-sidebar p-10 lg:flex xl:p-14">
         <Logo />
         <div className="mt-auto max-w-xl">
@@ -23,7 +25,7 @@ export default function SignInPage({ searchParams }: PageProps<"/sign-in">) {
         </div>
         <SignalMotif className="mt-12 w-full max-w-xl" />
       </div>
-      <main className="flex flex-col px-4 py-8 md:px-8">
+      <main id="main" tabIndex={-1} className="flex flex-col px-4 py-8 focus-visible:outline-none md:px-8">
         <Logo className="lg:hidden" />
         <div className="mx-auto my-auto w-full max-w-sm py-12">
           <h1 className="font-display text-display-md text-foreground md:text-display-lg">Sign in</h1>

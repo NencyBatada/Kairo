@@ -1,5 +1,6 @@
 using Kairo.Modules.Approvals;
 using Kairo.Modules.Ask;
+using Kairo.Modules.Accessibility;
 using Kairo.Modules.Operations;
 using Kairo.Modules.Audit;
 using Kairo.Modules.BrandKit;
@@ -48,7 +49,8 @@ public static class MigratorHost
             new LiveModule(),
             new AuditModule(),
             new AskModule(),
-    new OperationsModule(),
+            new AccessibilityModule(),
+            new OperationsModule(),
         ];
 
         foreach (var module in modules)

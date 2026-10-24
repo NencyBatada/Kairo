@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { SkipLink } from "@/components/skip-link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyInvitations, getMyWorkspaces } from "@/lib/core-api/queries";
@@ -22,8 +23,9 @@ export const metadata: Metadata = { title: "Welcome" };
 export default function WelcomePage() {
   return (
     <div className="min-h-dvh bg-background">
+      <SkipLink />
       <WelcomeHeader />
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-4 py-10 md:py-14">
+      <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-2xl flex-col gap-10 px-4 py-10 focus-visible:outline-none md:py-14">
         <PageHeader title="Welcome to Kairo" description="Join a workspace you've been invited to, or create one for your brand." />
         <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
           <YourWorkspaces />

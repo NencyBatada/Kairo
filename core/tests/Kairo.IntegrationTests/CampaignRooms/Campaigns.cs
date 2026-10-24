@@ -64,10 +64,10 @@ public sealed class CampaignWorld : IAsyncDisposable
 
     public HttpClient Admin => Brand.Admin.Browser;
 
-    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null)
+    public static async Task<CampaignWorld> CreateAsync(SqlServer sqlServer, Action<FakeSense, FakeKeywordPlanner>? demand = null, Action<IServiceCollection>? configureServices = null)
     {
         var database = await IsolatedDatabase.CreateAsync(sqlServer);
-        var api = new KairoApiFactory(database);
+        var api = new KairoApiFactory(database, configureServices);
         var worker = new KairoWorkerFactory(database, api.GoogleApis, api.Clock.GetUtcNow());
         var sense = new FakeSense();
         sense.Attach(worker.Agents);

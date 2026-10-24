@@ -15,6 +15,18 @@ public static partial class KairoOpenApi
             });
             options.AddOperationTransformer((operation, context, _) =>
             {
+                if (context.Description.RelativePath?.EndsWith("/media-accessibility/described", StringComparison.Ordinal) == true)
+                {
+                    operation.RequestBody = new OpenApiRequestBody
+                    {
+                        Required = true,
+                        Content = new Dictionary<string, OpenApiMediaType>
+                        {
+                            ["video/mp4"] = new() { Schema = new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" } },
+                        },
+                    };
+                }
+
                 foreach (Match match in RouteParameter().Matches(context.Description.RelativePath ?? ""))
                 {
                     var name = match.Groups["name"].Value;

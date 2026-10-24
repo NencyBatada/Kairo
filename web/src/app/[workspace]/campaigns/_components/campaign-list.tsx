@@ -10,7 +10,7 @@ export function CampaignList({ campaigns, base, timeZone }: { campaigns: compone
   const dates = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone });
   return <ul aria-label="Campaign rooms" className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">{campaigns.map((campaign) => {
     const variant = campaign.status === "needs_attention" ? "destructive" : campaign.status === "waiting_approval" ? "gate" : campaign.status === "agent_working" ? "info" : campaign.stage === "live" || campaign.stage === "results_ready" ? "success" : "neutral";
-    return <li key={campaign.id}><Link aria-label={campaign.title} href={`${base}/${encodeURIComponent(campaign.id)}`} className="group flex items-start gap-4 p-4 transition-colors duration-120 hover:bg-accent focus-visible:bg-accent focus-visible:ring-inset md:p-5">
+    return <li key={campaign.id}><Link href={`${base}/${encodeURIComponent(campaign.id)}`} className="group flex items-start gap-4 p-4 transition-colors duration-120 hover:bg-accent focus-visible:bg-accent focus-visible:ring-inset md:p-5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-col items-start gap-2 sm:flex-row"><h2 className="min-w-0 w-full font-display text-display-sm wrap-anywhere sm:w-auto sm:flex-1">{campaign.title}</h2><Badge variant={variant}>{campaign.status === "waiting_approval" && <Clock aria-hidden="true" />}{statuses[campaign.status] ?? campaign.status}</Badge></div>
         <p className="mt-2 text-small text-muted-foreground wrap-anywhere">{campaign.products.length ? campaign.products.map((product) => product.title).join(" · ") : "No product names are available."}</p>

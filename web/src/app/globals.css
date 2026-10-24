@@ -224,6 +224,20 @@
     outline-offset: 2px;
   }
 
+  :where(button, a, input, select, textarea, summary, [tabindex]) {
+    scroll-margin-block: 1rem;
+  }
+
+  summary {
+    min-height: 1.5rem;
+  }
+
+  @media (pointer: coarse) {
+    summary {
+      min-height: 2.75rem;
+    }
+  }
+
   svg.lucide {
     stroke-width: 1.75;
   }

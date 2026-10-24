@@ -26,7 +26,7 @@ export function WorkspaceForm({ action, workspace, timeZones, canEdit }: Workspa
   const errors = state.fieldErrors ?? {};
 
   return (
-    <form action={formAction} className="max-w-160">
+    <form action={formAction} onReset={event => event.preventDefault()} className="max-w-160">
       <Card>
         <CardHeader>
           <CardTitle>Workspace details</CardTitle>
