@@ -688,3 +688,31 @@ def test_copy_refuses_too_many_memory_lessons(models) -> None:
 
     assert response.status_code == 422
     assert models.calls == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Free delivery",
+        "Free delivery over ‡999",
+        "Free delivery over ₹99",
+        "Free delivery at ₹999",
+        "फ्री डिलीवरी",
+        "₹99 से ऊपर फ्री डिलीवरी",
+    ],
+)
+def test_conditional_delivery_cannot_lose_its_currency_minimum_or_comparison(text):
+    assert not guard().allows(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Free delivery over ₹999",
+        "Free delivery above Rs. 999",
+        "₹999 से ऊपर फ्री डिलीवरी",
+        "₹999 से अधिक मुफ्त डिलीवरी",
+    ],
+)
+def test_complete_supported_delivery_conditions_survive_in_both_languages(text):
+    assert guard().allows(text)

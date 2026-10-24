@@ -14,7 +14,7 @@ internal static class OpportunitiesSetup
         services.AddHttpClient(AdsHttp.ClientName, client => client.Timeout = AdsHttp.Timeout).RemoveAllResilienceHandlers();
         services.AddSingleton<OpportunityOptions>();
         services.AddSingleton<KeywordPlanner>();
-        services.AddSingleton<SenseAgent>();
+        services.AddScoped<SenseAgent>();
         services.AddSingleton<RefreshRunner>();
         services.AddScoped<BrandRefresher>();
         services.AddScoped<OpportunityReader>();

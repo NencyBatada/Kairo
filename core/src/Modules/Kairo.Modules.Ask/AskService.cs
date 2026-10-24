@@ -20,7 +20,7 @@ internal sealed record ConversationDetail(ConversationView Conversation, Message
 
 internal sealed class AskService(
     AskDbContext db, KairoDatabase database, CurrentMember member, IEnumerable<IAskResource> resources,
-    IBrandDirectory brands, ILiveUpdates live, IAuditLog audit, AgentClient agent, TimeProvider time)
+    IBrandDirectory brands, ILiveUpdates live, IAuditLog audit, AgentClient agent, TimeProvider time, AgentUsageContext usage)
 {
     public IAskResource Resource(AskTarget target, bool edit = false)
     {
@@ -100,6 +100,7 @@ internal sealed class AskService(
 
         AgentAnswer? answer = null;
         var failed = false;
+        string? failureCode = null;
         try
         {
             var history = await db.Messages.AsNoTracking().Where(row => row.ConversationId == id && row.UserId == member.UserId && row.Id != message.Id && row.Status == "completed")
@@ -109,6 +110,8 @@ internal sealed class AskService(
                 new { role = "user", text = row.Question },
                 new { role = "model", text = HistoryText(row) },
             }).ToArray();
+            var campaignId = AskPolicy.Campaign(request.Context);
+            using var usageScope = usage.Enter(new AgentUsageScope(member.BrandId, campaignId, message.Id));
             answer = await agent.PostAsync<AgentTurn, AgentAnswer>("/ask/turn", new AgentTurn(member.BrandId, message.Id, token,
                 message.Question, request.Context, turns, now), AskPolicy.InvocationLifetime, ct);
             if (answer.Model is not { Length: > 0 and <= 100 } || answer.PromptVersion is not { Length: > 0 and <= 100 })
@@ -117,6 +120,7 @@ internal sealed class AskService(
         catch (Exception exception) when (exception is AgentCallException or AskResourceException or OperationCanceledException)
         {
             failed = true;
+            if (exception is AgentCallException { Code: AgentCallException.GenerationLimitExceeded }) failureCode = AgentCallException.GenerationLimitExceeded;
         }
         await database.BeginTransactionAsync(CancellationToken.None);
         try
@@ -127,7 +131,7 @@ internal sealed class AskService(
             {
                 failed |= AskPolicy.Read<AnswerSegment[]>(message.Segments).Length == 0;
                 message.Status = failed ? "failed" : "completed";
-                message.Error = failed ? "Kairo couldn't finish this answer. Your saved conversation is available; ask again." : null;
+                message.Error = failed ? failureCode ?? "Kairo couldn't finish this answer. Your saved conversation is available; ask again." : null;
                 message.Model = failed ? null : answer?.Model;
                 message.PromptVersion = failed ? null : answer?.PromptVersion;
                 message.TokenHash = "";

@@ -31,6 +31,14 @@ Describe 'Invoke-KairoDeploy' {
         }
     }
 
+    It 'applies campaign generation caps to both accounting hosts' {
+        Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
+        @($calls | Where-Object { $_ -like 'run deploy kairo-api *' -or $_ -like 'run deploy kairo-worker *' }).Count | Should -Be 2
+        foreach ($call in ($calls | Where-Object { $_ -like 'run deploy kairo-api *' -or $_ -like 'run deploy kairo-worker *' })) {
+            $call | Should -BeLike '*Kairo__Operations__Limits__TextCalls=100*Kairo__Operations__Limits__Images=50*Kairo__Operations__Limits__VideoClips=10*'
+        }
+    }
+
     It 'tests, builds, migrates, then deploys the services' {
         Invoke-KairoDeploy -Environment $environment -Root $root | Out-Null
 

@@ -67,7 +67,7 @@ jobs:
     needs: select
     if: needs.select.outputs.required == 'true' && needs.select.outputs.trusted == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     permissions:
       contents: read
       id-token: write

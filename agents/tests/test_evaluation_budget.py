@@ -97,7 +97,7 @@ def test_unavailable_required_models_stop_further_spending_and_remain_failing(st
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize("status", [429, 503])
+@pytest.mark.parametrize("status", [429, 500, 503, 504])
 def test_temporary_text_failures_retry_with_a_new_reservation_and_preserved_failure(
     monkeypatch, status
 ):
@@ -263,5 +263,34 @@ def test_thinking_and_cached_token_usage_is_preserved_when_reported():
         assert call["cachedInputTokens"] == 5
         assert call["totalTokens"] == 60
         assert call["outputTokens"] == 10
+
+    asyncio.run(run())
+
+
+def test_slow_requests_are_bounded_and_waiters_do_not_consume_capacity():
+    async def run():
+        budget = Budget()
+        active = peak = 0
+        started = asyncio.Event()
+        release = asyncio.Event()
+
+        async def generate(**kwargs):
+            nonlocal active, peak
+            active += 1
+            peak = max(peak, active)
+            if active == 2:
+                started.set()
+            await release.wait()
+            active -= 1
+            return SimpleNamespace(usage_metadata=None)
+
+        models = BudgetedModels(SimpleNamespace(generate_content=generate), budget)
+        tasks = [asyncio.create_task(models.generate_content(model="model")) for _ in range(6)]
+        await asyncio.wait_for(started.wait(), 1)
+        assert budget.counts["text"] == 2
+        release.set()
+        await asyncio.gather(*tasks)
+        assert peak == 2
+        assert budget.counts["text"] == 6
 
     asyncio.run(run())

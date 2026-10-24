@@ -20,6 +20,27 @@ public sealed class StageRunTests(SqlServer sqlServer) : IAsyncLifetime
     public async ValueTask InitializeAsync() => _world = await CampaignWorld.CreateAsync(sqlServer);
 
     [Fact]
+    public async Task Generation_limit_failures_keep_a_stable_code_and_never_retry_automatically()
+    {
+        var room = await _world.AcceptAsync();
+        _world.Plan.ErrorCode = "generation_limit_exceeded";
+        Assert.Equal(1, await _world.RunStagesAsync());
+        _world.Api.Clock.Advance(TimeSpan.FromMinutes(10));
+        Assert.Equal(0, await _world.RunStagesAsync());
+        Assert.Single(_world.Plan.Requests);
+        var run = Assert.Single((await Campaigns.DetailAsync(_world.Marketer, _world.BrandId, room)).GetProperty("runs").EnumerateArray());
+        Assert.Equal("failed", run.GetProperty("status").GetString());
+        Assert.Equal("generation_limit_exceeded", run.GetProperty("errorCode").GetString());
+        Assert.Equal("The campaign generation limit was reached.", run.GetProperty("error").GetString());
+        await using var connection = new SqlConnection(_world.Database);
+        await connection.OpenAsync(Token);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "EXEC sys.sp_set_session_context @key=N'kairo.all_brands', @value=1; SELECT ErrorCode FROM campaign_rooms.StageRuns WHERE RoomId=@room;";
+        command.Parameters.AddWithValue("@room", room);
+        Assert.Equal("generation_limit_exceeded", await command.ExecuteScalarAsync(Token));
+    }
+
+    [Fact]
     public async Task A_persisted_run_keeps_the_request_trace_when_a_later_worker_claims_it()
     {
         var stages = new ConcurrentBag<Activity>();

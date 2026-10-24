@@ -74,7 +74,8 @@ internal sealed class CheckFixWork(
                     cancellationToken);
                 done.Add(new FixedAsset(regenerated, asset.Kind, [.. issues.Select(issue => issue.Rule).Distinct()]));
             }
-            catch (Exception exception) when (exception is AgentCallException or StageFailure)
+            catch (Exception exception) when ((exception is AgentCallException or StageFailure)
+                && exception is not AgentCallException { Code: AgentCallException.GenerationLimitExceeded })
             {
                 failed.Add(new FixFailure(asset.Id, current.Version, exception is AgentCallException call ? call.Code : ((StageFailure)exception).Code));
             }

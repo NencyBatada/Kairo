@@ -12,6 +12,7 @@
     <Project Path="src/Modules/Kairo.Modules.Approvals/Kairo.Modules.Approvals.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Audit/Kairo.Modules.Audit.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Ask/Kairo.Modules.Ask.csproj" />
+    <Project Path="src/Modules/Kairo.Modules.Operations/Kairo.Modules.Operations.csproj" />
     <Project Path="src/Modules/Kairo.Modules.BrandKit/Kairo.Modules.BrandKit.csproj" />
     <Project Path="src/Modules/Kairo.Modules.BrandMemory/Kairo.Modules.BrandMemory.csproj" />
     <Project Path="src/Modules/Kairo.Modules.Brands/Kairo.Modules.Brands.csproj" />

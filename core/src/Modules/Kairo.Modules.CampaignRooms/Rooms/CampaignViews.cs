@@ -71,7 +71,8 @@ internal sealed record CampaignRunView(
     string? PromptVersion,
     int? InputTokens,
     int? OutputTokens,
-    string? Error);
+    string? Error,
+    string? ErrorCode = null);
 
 internal sealed record CampaignActionsView(
     string? RequestApproval,

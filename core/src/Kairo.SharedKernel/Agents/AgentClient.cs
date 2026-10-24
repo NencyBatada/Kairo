@@ -4,10 +4,11 @@ using System.Text.Json;
 using System.Diagnostics;
 using Kairo.SharedKernel.Observability;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Kairo.SharedKernel.Agents;
 
-public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity, IConfiguration configuration)
+public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity, IConfiguration configuration, IAgentInvocations? invocations = null, ILogger<AgentClient>? logger = null)
 {
     public const string ClientName = "kairo-agents";
     public const string UrlSetting = "Kairo:Agents:Url";
@@ -31,6 +32,13 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await TokenAsync(audience, cancellationToken));
         }
 
+        var invocation = invocations is null ? null : await invocations.OpenAsync(path, cancellationToken);
+        if (invocation is not null)
+        {
+            request.Headers.Add("X-Kairo-Usage-Invocation", invocation.Id.ToString());
+            request.Headers.Add("X-Kairo-Usage-Brand", invocation.BrandId.ToString());
+            request.Headers.Add("X-Kairo-Usage-Token", invocation.Token);
+        }
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         if (KairoTelemetry.CaptureParent() is { } parent) request.Headers.TryAddWithoutValidation("traceparent", parent);
         foreach (var name in new[] { "brand", "campaign", "run" })
@@ -45,6 +53,8 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
             var text = await response.Content.ReadAsStringAsync(deadline.Token);
             if (!response.IsSuccessStatusCode)
             {
+                if (ErrorCode(text) == AgentCallException.GenerationLimitExceeded)
+                    throw new AgentCallException(AgentCallException.GenerationLimitExceeded, "The campaign generation limit was reached.");
                 throw new AgentCallException(AgentCallException.Failed, $"The agent service answered {(int)response.StatusCode}: {Shorten(text)}");
             }
 
@@ -71,6 +81,18 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         finally
         {
             KairoTelemetry.AgentFinished(path, outcome, Stopwatch.GetElapsedTime(started).TotalSeconds);
+            if (invocation is not null)
+            {
+                try
+                {
+                    using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                    await invocations!.CloseAsync(invocation.Id, closing.Token);
+                }
+                catch (Exception)
+                {
+                    logger?.LogWarning("Usage invocation {InvocationId} closure failed; its expiry remains effective.", invocation.Id);
+                }
+            }
         }
     }
 
@@ -84,6 +106,18 @@ public sealed class AgentClient(IHttpClientFactory http, IAgentIdentity identity
         {
             throw new AgentCallException(AgentCallException.Failed, "Couldn't get an identity token for the agent service.", exception);
         }
+    }
+
+    private static string? ErrorCode(string text)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("error", out var error)
+                && error.ValueKind == JsonValueKind.String ? error.GetString() : null;
+        }
+        catch (JsonException) { return null; }
     }
 
     private static string Shorten(string text) => text.Length > 300 ? text[..300] : text;
